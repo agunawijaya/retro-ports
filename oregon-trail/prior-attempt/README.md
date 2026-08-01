@@ -40,17 +40,53 @@ It also establishes that this program is **Turbo Pascal**, which no other game
 in this repository is, and which changes what the toolkit can do — see the
 [folder README](../README.md#it-is-turbo-pascal).
 
-## Why it is quarantined anyway
+## The check has now been run, and `src/` is not the source
 
-The reconstruction has never been through the check that makes a reconstruction
-mean anything:
+This section used to say the reconstruction had never faced the question that
+makes a reconstruction mean anything:
 
 > Does it compile, and does the result match the original binary?
 
-Until that is answered, `src/` is a **hypothesis written in Pascal**. It may be
-an excellent one. It reads like careful work. But this repository's whole
-argument is that reading carefully and being right are different things, and
-that only an oracle tells them apart — which is why:
+**It has now.** Turbo Pascal 5.0 and 5.5 were fetched from the Internet Archive
+and run under DOSBox-X against the seventeen units here, in the order this
+folder's own `MAKEFILE` gives. Three compiled — `GAMETYPE`, `GAMESTAT`, `RNG`.
+Thirteen did not, and the errors are language features rather than mistakes:
+
+```
+LANDMARK.PAS(64): Error 2: Identifier expected.   const Nm : TString30;
+UI.PAS(14):       Error 2: Identifier expected.   function P(const S : String)
+STORE.PAS(129):   Error 3: Unknown identifier.    Continue;
+```
+
+`const` parameters are a Turbo Pascal 6.0 feature and `Continue` is a 7.0 one.
+Neither compiler here accepts either — verified directly with a four-line test
+program rather than inferred.
+
+Meanwhile the original `OREGON.EXE` has been matched against Borland's own
+runtime libraries and was built with **Turbo Pascal 5.0**: 86% of its runtime
+segment is covered by 5.0's `TURBO.TPL`, with a 1,587-byte unbroken identical
+run, against 74% and 545 bytes for 5.5.
+
+So the conclusion is not that this reconstruction has bugs in it:
+
+> **It is written in a dialect that did not exist when the game was compiled.**
+> It is not the original source, and no amount of repair would make it so.
+
+The `MAKEFILE` here says `Targets Turbo Pascal 6.0`, so the earlier session was
+never claiming otherwise. What the test settles is what this folder *is*: a
+readable modern restatement of what the game appears to do — genuinely useful to
+a porter, and useful in a completely different way from source.
+
+Everything below was written before that test and is left as it stood.
+
+---
+
+## Why it was quarantined
+
+`src/` is a **hypothesis written in Pascal**. It may be an excellent one. It
+reads like careful work. But this repository's whole argument is that reading
+carefully and being right are different things, and that only an oracle tells
+them apart — which is why:
 
 - [Hard Hat Mack's sprites](../../hard-hat-mack/docs/02-architecture.md) were
   documented as mirrored for a week, and were not;

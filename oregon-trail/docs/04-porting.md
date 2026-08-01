@@ -119,32 +119,55 @@ particular program is unusually high because the rules are a small, legible
 simulation — resource allocation with weather and bad luck — and that is worth
 having in a language people can read.
 
-## The one experiment worth running first
+## The experiment was run, and it answered
 
-Before any porting decision: **try to compile `prior-attempt/src/`.**
+This section used to recommend compiling `prior-attempt/src/` as the strongest
+untaken step. **It has now been taken**, and the result is worth more than the
+recommendation was.
 
-Turbo Pascal 5.5 was released as free abandonware by Borland and is findable.
-The 17 units in that folder are a complete claimed reconstruction. Compiling
-them gives, in increasing order of value:
+Turbo Pascal 5.0 and 5.5 were downloaded from the Internet Archive, run under
+DOSBox-X, and pointed at the seventeen units in that folder in the order its own
+`MAKEFILE` specifies. Three compiled. Thirteen did not, and the errors are not
+noise:
 
-1. **Does it build at all?** If not, the reconstruction is further from the
-   original than it looks.
-2. **How big is the result?** The original's code is 144,512 bytes with ~6,800
-   of runtime. A reconstruction that produces 30 KB is not the same program, and
-   the comparison costs nothing.
-3. **Does the segment structure match?** `tpscan.py` will read the units out of
-   the rebuilt binary exactly as it read them out of the original. Eleven
-   segments against eleven, with comparable sizes, would be strong evidence.
-   Three against eleven would be strong evidence the other way.
+```
+LANDMARK.PAS(64): Error 2: Identifier expected.
+                     const Nm : TString30;
+UI.PAS(14):       Error 2: Identifier expected.
+   function PromptChoice(const Prompt : String; Lo, Hi : Char) : Char;
+STORE.PAS(129):   Error 3: Unknown identifier.
+      Continue;
+```
 
-None of that is byte-identity, and it should not be presented as such. But it
-converts a folder full of plausible Pascal into a measurement, which is what
-this repository means by an oracle — and it is a day's work, not a month's.
+Those are **language features, not typos**. `const` parameters arrived in Turbo
+Pascal 6.0; `Continue` arrived in 7.0. Neither exists in 5.0 or 5.5 — checked
+directly, by compiling a four-line program using each under both compilers, and
+both refuse both.
+
+And the original game was built with **Turbo Pascal 5.0**
+([document two](02-architecture.md#and-the-version-is-50)).
+
+So the finding is not "the reconstruction has bugs". It is:
+
+> **The reconstruction is written in a dialect that did not exist when the game
+> was compiled.** Whatever it is, it is not the original source, and no amount
+> of fixing it would make it so.
+
+Its own `MAKEFILE` says `Targets Turbo Pascal 6.0` — the earlier session was
+never claiming otherwise, and this is not a criticism of it. But it settles what
+the folder is: **a readable modern restatement of what the game seems to do**,
+not a recovery of what it was. That is still useful for a porter, and it is
+useful in a completely different way from source.
+
+What the experiment cost was an afternoon, and what it replaced was an argument
+that could have run indefinitely.
+
+### The second experiment, still open
 
 If the toolkit's `comrun.py` gains MZ support — it was being added while this
-was written — a second experiment opens up: run the original, force the free
-heap below 35,000 bytes, and confirm the 512K message appears. That would be the
-first behavioural check anything in this folder has ever had.
+was written — run the original, force the free heap below 35,000 bytes, and
+confirm the 512K message appears. That would be the first behavioural check
+anything in this folder has ever had.
 
 ## Five things that will bite
 

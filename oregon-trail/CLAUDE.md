@@ -18,7 +18,8 @@ shorter working reference you come back to.
 | the files | **verified as shipped** — all 19 match the distribution archive byte for byte |
 | unpacking | **done** — LZEXE 0.91, 81,896 → 201,184 bytes |
 | entry point | **done, authoritative** — `0x10A`, from LZEXE's own header, not guessed |
-| compiler | **Turbo Pascal**, established twice over; **version not determined** |
+| compiler | **Turbo Pascal 5.0** — matched against Borland's own `TURBO.TPL` |
+| `prior-attempt/src/` | **tested: it is not the original source** — needs TP 6.0/7.0 syntax |
 | module structure | **done** — 11 segments, all named, third-party split measured |
 | artwork | **done** — 58 of 58 images decoded and rendered |
 | data files | **done** — `DIALOGS.REC` is 51 records of 286 bytes, exactly |
@@ -76,8 +77,11 @@ segment different from anything you disassemble here.
 
 **`0x14BF3` is a memory check, not copy protection.** See below.
 
-**Do not assert a Turbo Pascal version.** The runtime error message format is
-identical across 4.0, 5.0, 5.5 and 6.0.
+**The version is 5.0, and no string in the file says so.** The runtime error
+format is identical across 4.0 to 6.0; the *code* is what separates them.
+`tpscan.py --tpl <5.0>/TURBO.TPL --tpl <5.5>/TURBO.TPL` reproduces it. Both
+libraries are on the Internet Archive and `fatextract.py` opens the floppy
+images; put them wherever you like and pass the paths.
 
 ## Where things are
 
@@ -174,11 +178,11 @@ MECC's school-lab licensing. Located, not traced.
 
 ## What is genuinely open
 
-1. **The Turbo Pascal version.** Needs `.TPU` files to compare against — the
-   same shape of problem `libscan.py` solves for C. None on this machine.
-2. **The game's logic** — the trail, the store, the rivers, the hunting, the
-   illnesses. Now *located*: 66,592 bytes in segments `0x00000` and `0x007B6`.
-   `prior-attempt/src/` has a unit per topic and every one is untested.
+1. **The game's logic as code** — the illness model, the store's prices, the
+   odds on a river crossing, how pace and rations combine. Located: 66,592
+   bytes in segments `0x00000` and `0x007B6`. `prior-attempt/src/` has a unit
+   per topic, and it is now known **not** to be the original source, so treat
+   it as a description rather than a recovery.
 3. **The licence check's code.** Segment `0x0151C`, 2,544 bytes, all strings
    recovered, code not followed. The most self-contained thing left and
    probably an afternoon's work.

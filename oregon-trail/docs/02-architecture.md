@@ -135,12 +135,42 @@ stable from version 4.0 through 6.0. It is worth more than a yes: `0x3348` is
 **DGROUP**, and DGROUP is the boundary between code and data — which nothing
 else recovers for a Pascal program.
 
-**The version is not determined, and should not be asserted.** The runtime error
-message format is identical across 4.0, 5.0, 5.5 and 6.0. Separating them needs
-`.TPU` files to compare the runtime against, which is the same shape of problem
-`libscan.py` solves for C and was not available here. The program was built
-between 1988 and 1990 **[inferred, from the Genus library's copyright line and
-the release date]**, which narrows it to 5.0, 5.5 or 6.0 and no further.
+### And the version is 5.0
+
+No string separates the versions — the runtime error format is identical from
+4.0 to 6.0. The runtime's *code* does.
+
+`TURBO.TPL` is the library of compiled standard units that ships with each
+Turbo Pascal. Comparing the program's 6,800-byte runtime segment against two of
+them:
+
+| library | signature | covered | longest identical run |
+|---|---|---|---|
+| **Turbo Pascal 5.0** | `TPU5` | **86%** | **1,587 bytes** |
+| Turbo Pascal 5.5 | `TPU6` | 74% | 545 bytes |
+| `TPC.EXE` — right product, wrong file | — | 2% | — |
+| Zaxxon — not Pascal at all | — | 0% | — |
+
+**A 1,587-byte unbroken identical run is not a coincidence.** The game was built
+with **Turbo Pascal 5.0**.
+
+Two details make that claim worth believing rather than merely plausible.
+
+The comparison could not be a simple alignment, because Turbo Pascal
+**smart-links**: procedures the program never calls are dropped from the linked
+runtime and everything after them shifts. So the measure is *coverage* — how
+much of the segment can be found verbatim anywhere in the library — which
+survives both the dropped procedures and the relocated segment words.
+
+And the bottom two rows are the argument, not the top one. Turbo Pascal 5.0 and
+5.5 cover only **62% of each other**: different enough for the comparison to
+mean something, similar enough that a single library on its own would have
+proved nothing. The tool that does this refuses to name a version at all unless
+one library beats the next by half again.
+
+*Both libraries were downloaded from the Internet Archive — 5.5 from
+Embarcadero's own Antique Software release, 5.0 from a floppy image set that the
+toolkit's `fatextract.py` opened directly.*
 
 ## Eleven segments, one per unit
 
@@ -471,22 +501,21 @@ program's code is a compiler's output that no tool here can reconstruct at all.
 
 ## What is still unknown
 
-1. **The Turbo Pascal version.** 5.0, 5.5 or 6.0. Needs `.TPU` files.
-2. **The game's own logic as *code*.** The trail table is recovered
+1. **The game's own logic as *code*.** The trail table is recovered
    ([document three](03-the-code.md#the-trail-itself-which-is-a-table)) and the
    simulation's shape is readable from its strings, but the routines that
    consume them — the illness model, the store's prices, the odds on a river
    crossing, how pace and rations combine — have not been traced. That is the
    66,592 bytes in segments `0x00000` and `0x007B6`.
    `prior-attempt/src/` has a unit per topic and not one has been checked.
-3. **The network licence check.** Its segment is identified exactly
+2. **The network licence check.** Its segment is identified exactly
    (`0x0151C`, 2,544 bytes) and every one of its strings is recovered. The
    *code* has not been followed, so what triggers it is unknown.
-4. **What the program does with the date it reads** at image `0x1DBF4`.
-5. **`0x0213D` as Borland's `Crt` unit** is **[inferred]** from its interrupt
+3. **What the program does with the date it reads** at image `0x1DBF4`.
+4. **`0x0213D` as Borland's `Crt` unit** is **[inferred]** from its interrupt
    use and its position in link order, not established. Likewise `0x015BB` as
    the Genus font library.
-6. **Whether any of this behaves as described at run time.** Every claim above
+5. **Whether any of this behaves as described at run time.** Every claim above
    comes from reading the file. The ones that were established twice over — the
    entry point, the segment list, the container layout — say so; the rest have
    one source each and should be read accordingly.
