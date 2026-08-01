@@ -1,6 +1,6 @@
 # Zaxxon — the game
 
-*Document one of three. Next: [02 — architecture](02-architecture.md), then
+*Document one of four. Next: [02 — architecture](02-architecture.md), then
 [03 — the code](03-the-code.md). Start at the [game's README](../README.md).*
 
 ---

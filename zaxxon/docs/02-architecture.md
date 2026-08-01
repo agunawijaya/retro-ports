@@ -1,6 +1,6 @@
 # Zaxxon — how the program is built
 
-*Document two of three. Before this: [01 — the game](01-the-game.md). After
+*Document two of four. Before this: [01 — the game](01-the-game.md). After
 it: [03 — the code](03-the-code.md), which walks through the routines
 themselves.*
 

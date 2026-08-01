@@ -1,6 +1,6 @@
 # Zaxxon — the code
 
-*Document three of three. Before this: [01 — the game](01-the-game.md) and
+*Document three of four. Before this: [01 — the game](01-the-game.md) and
 [02 — architecture](02-architecture.md), which explains the memory layout, the
 coordinate system and the data formats this document assumes.*
 

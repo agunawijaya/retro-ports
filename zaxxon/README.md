@@ -17,7 +17,8 @@ decompilation came first, and porting was deliberately not part of this work.*
 |---|---|
 | [**docs/01-the-game.md**](docs/01-the-game.md) | what it is, how it plays, why the isometric view mattered, and the crack-group banner in the first 128 bytes |
 | [**docs/02-architecture.md**](docs/02-architecture.md) | how the program is built: the entry stub that rewrites its own code, the off-screen buffer, 94 tiles compressed 49:1, 34 sprites in 8 formats, and the shadow that is a sprite made only of holes |
-| [**docs/03-the-code.md**](docs/03-the-code.md) | the routines, in the order the program runs them, from the joystick measurement loop to the score kept as decimal digits |
+| [**docs/03-the-code.md**](docs/03-the-code.md) | the routines, in the order the program runs them, from the joystick measurement loop to the boss cut out of one compressed picture |
+| [**docs/04-porting.md**](docs/04-porting.md) | what it would take to rebuild it: five options with their costs, why you must not build the isometric view as 3D, and three pieces of 1984 engineering to deliberately leave behind |
 
 Each marks plainly what was read from the binary and what was inferred, and
 [what is still unknown](docs/02-architecture.md#what-is-still-unknown) is
