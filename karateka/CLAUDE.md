@@ -9,14 +9,16 @@ document written so far and it holds everything established.
 
 ## State of the work
 
-**Just started. The reconstruction is done; almost nothing else is.**
+**The reconstruction and the data formats are done. The fighting is not.**
 
 | | |
 |---|---|
 | rebuild | byte-identical, rung 1b — the whole `.EXE`, header and all |
 | code region | **85.0% recovered** |
 | the ninety data files | container **and** record format settled — 666 of 666 |
-| documents | 1 of 4 |
+| the compiler | **Lattice C 2.1**, stated in the binary's own data segment |
+| the animation system | a 14-command interpreter, names read from its dispatch table |
+| documents | **4 of 4** |
 | port | none, and not in scope yet |
 
 ## Regenerating
@@ -50,6 +52,11 @@ against the `.EXE` is the mistake to avoid** — it is 512 bytes short and will
 look like a failure that is not one.
 
 ## The three things that will trip you
+
+**The drawing is C-calling-convention, the inner loops are not.** 117 `push bp`
+prologues, thirty with a stack check against `[0x17]` — but the blitter and the
+decoder have no prologue at all and keep their state in globals. Mixed C and
+assembly, so do not expect one reading style to fit the whole program.
 
 **Addresses are file offsets minus 512.** The MZ header is stripped before the
 walk, so image offset `0x2` is file offset `0x202`. The documents use image
@@ -129,7 +136,9 @@ a quiet deletion.
 
 ## What to do next
 
-1. **The remaining three documents** — `01-the-game.md`, `03-the-code.md`, `04-porting.md`.
+1. **The fighting.** Nothing has read it. That is the largest gap and the
+   reason a port cannot start: you can draw Karateka today and cannot say what
+   makes a guard step forward.
 2. **A container reader in the toolkit**, not in this folder — an index-and-heap
    pair is not Broderbund's invention and the next game may use one.
 3. **The remaining three documents.** `01-the-game.md`, `03-the-code.md`,

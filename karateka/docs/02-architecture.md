@@ -1,6 +1,10 @@
 # Karateka — architecture
 
-*What the program is made of. Facts here were read from the binary; anything
+*Document two of four. [01-the-game.md](01-the-game.md) is what the game is;
+[03-the-code.md](03-the-code.md) walks its routines; [04-porting.md](04-porting.md)
+is what rebuilding it would take.*
+
+*Facts here were read from the binary; anything
 reasoned rather than observed is marked **[inferred]**, and
 [what is still unknown](#what-is-still-unknown) is listed at the end.*
 
@@ -79,12 +83,69 @@ so before the work started, in as falsifiable a form as could be managed.
 | `cmc` straight after a compare | 99% of them | — |
 
 Zero `cmc` in 9,740 instructions, against 914 compares. There is no carry-flag
-adapter because nothing needed adapting: this is hand-written 8088 assembly.
-Broderbund's DOS conversion was a rewrite where Electronic Arts' was a
-translation.
+adapter because nothing needed adapting. Brøderbund's DOS conversion was a
+rewrite where Electronic Arts' was a translation.
 
 **[inferred]** — that is a claim about the code, not about who wrote it. The
 binary shows a rewrite; it does not say whose.
+
+## It is a C program, and it says so
+
+This document first concluded the rewrite was in hand-written assembly, on the
+strength of triage's **0.4 stack frames per KB**. That figure is correct and the
+conclusion drawn from it was not, for a reason worth stating: it is computed
+over the *whole file*, and 68% of this file is data. Over the code region alone
+the density is about **4 per KB**, which is an entirely different signal.
+
+The program settles it without being asked. The first string in its data
+segment is:
+
+```
+DS:0x0002   Lattice C 2.1
+DS:0x0082   Invalid stack size
+DS:0x0096   Invalid I/O redirection
+DS:0x00B0   Insufficient memory
+DS:0x00C6   *** STACK OVERFLOW ***
+```
+
+A compiler name, followed by its runtime's own start-up errors. And the code
+agrees: 117 `push bp` prologues, thirty of them carrying a stack-limit check
+against a global at `[0x17]`, all branching to one shared routine that prints
+`*** STACK OVERFLOW ***` and exits with `AX = 0x4C01`.
+
+```nasm
+    push bp
+    sub  sp, 2
+    jb   .overflow
+    cmp  sp, word [0x17]        ; the stack limit, a runtime global
+    ja   .ok
+.overflow:
+    jmp  stack_error
+.ok:
+    mov  bp, sp
+```
+
+Three independent sources — the version string, the runtime's message set, and
+the prologue idiom — and they agree.
+
+**But the drawing routines have no prologues at all.** The blitter and the
+decoder in [03-the-code.md](03-the-code.md) use every register, keep their state
+in globals, and never touch `bp`. So Karateka is **mixed**: C for the game, hand
+-written assembly for the inner loops, which is exactly what a 1984 developer
+would do and exactly what the mixed prologue density was telling us before it
+was misread.
+
+**[inferred]** that the assembly routines were written as assembly rather than
+emitted by the compiler. Lattice C 2.1 did not generate code like this, and the
+surrounding C does not either — but no `.OBJ` survives to prove it.
+
+### What this does not unlock
+
+`libscan.py` subtracts a C runtime by matching modules out of an OMF `.LIB`,
+recovers the entry point from the startup module, and names the runtime's
+functions from its PUBDEF records. It would apply here in principle — and there
+is no copy of Lattice C 2.1's library on this machine to try it with. The
+compiler is identified; its runtime is not subtracted.
 
 ## Ninety files outside the executable
 

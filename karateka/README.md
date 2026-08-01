@@ -30,8 +30,14 @@ Not packed, which makes it the more approachable of the two games added
 alongside it. Four relocations over 85 KB means almost everything is addressed
 within one segment.
 
-**0.4 prologues per KB is the signature of hand-written assembly**, and the same
-figure [Hard Hat Mack](../hard-hat-mack/) shows. That was stated here as a
+**0.4 prologues per KB looks like the signature of hand-written assembly**, and
+it is the same figure [Hard Hat Mack](../hard-hat-mack/) shows. It was read that
+way here and that was wrong — the figure is computed over the whole file, and
+68% of this file is data. The program turns out to be **Lattice C 2.1**, which
+it states in the first string of its own data segment. See
+[docs/02-architecture.md](docs/02-architecture.md#it-is-a-c-program-and-it-says-so).
+
+The rest of the prediction stood: That was stated here as a
 prediction before any work was done, because it was falsifiable: if this is a
 6502 port like Hard Hat Mack was, `comrec.py` would report it —
 
@@ -76,10 +82,18 @@ and the `.COM` route — which reaches a byte-identical rebuild — applies to i
 source. See
 [docs/02-architecture.md](docs/02-architecture.md#it-is-an-mz-but-it-is-really-a-com).
 
-The **container format of the ninety data files is settled**: `(id, offset)`
-pairs terminated by `0xFFFF`, verified against all twenty-eight `.IND`/`.DAT`
-pairs at once. What is *inside* a record is not settled, and is left undecoded
-rather than guessed at.
+**The ninety data files are decoded, all 666 records.** `(id, offset)` pairs
+terminated by `0xFFFF`; records are run-length encoded with `0x7B` as the
+escape; `KS*` holds shapes and `KM*` the matching silhouettes. The format was
+settled by running the game and reading the routines that consume the data, not
+by inspecting the bytes — an earlier guess reached 282 of 284 and was wrong.
+
+```
+python tools/render-sprites.py --sheet KSC --toolkit <path-to>/dos-decompiler
+  60 records -> reference/sprites/KSC.png
+```
+
+Sixty frames of Jordan Mechner's rotoscoped animation, out of the file.
 
 ## What is here
 
@@ -88,7 +102,7 @@ rather than guessed at.
 | `original/` | the game as it shipped, plus the archive it came in — **not committed** |
 | `prior-attempt/` | an earlier session's work: notes, extraction scripts, a web remake. Committed, and **unverified** — see its own README |
 | `reference/` | the Apple II disk images, extracted sprites, memory dumps, screenshots, and a patched copy of the executable someone else made — **not committed** |
-| `docs/` | [02-architecture.md](docs/02-architecture.md) — what the program is made of. The other three are not written yet |
+| `docs/` | [four documents](docs/) — the game, the architecture, the code, and porting |
 
 ## A note on `KARATEKA_NOCHK.EXE`
 

@@ -52,7 +52,7 @@ the smallest honest examples of them.
 | [**ParaTrooper**](paratrooper/) | 1982 | 8088 assembly, CGA, PC speaker | HTML / CSS / JavaScript | [6 documents](paratrooper/docs/) |
 | [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [4 documents](hard-hat-mack/docs/) |
 | [**Zaxxon**](zaxxon/) | 1984 | 8088 assembly, CGA, isometric | not yet | [4 documents](zaxxon/docs/) |
-| [**Karateka**](karateka/) | 1984 | 8088 assembly, and ninety data files | not yet | [1 document](karateka/docs/) |
+| [**Karateka**](karateka/) | 1984 | **Lattice C 2.1**, and ninety data files | not yet | [4 documents](karateka/docs/) |
 | [**The Oregon Trail**](oregon-trail/) | 1990 | **Turbo Pascal**, LZEXE-packed | not yet | [4 documents](oregon-trail/docs/) |
 
 Hard Hat Mack is decompiled and documented but not yet ported — the analysis
@@ -60,11 +60,17 @@ came first, and it turned up something worth the wait: the IBM version was
 **mechanically translated from the Apple II original**, and the binary still
 carries the evidence.
 
-Karateka is set up and triaged but not started. It carries a folder of work
-from a session that predates the toolkit, kept as hypotheses rather than as
-results — the reasoning is in its `prior-attempt/README.md` — and it was added
-because it keeps its artwork in ninety separate data files rather than inside
-the executable.
+Karateka is decompiled — byte-identical, and every one of its 666 sprite
+records decoded — but not ported. It is the one game here that states its own
+compiler: `Lattice C 2.1`, in the first string of its data segment. Its ninety
+data files were the first time a game in this repository kept its artwork
+outside the executable, and closing that gap put an index-and-heap detector into
+the toolkit.
+
+The Oregon Trail is set up and triaged but not started. It carries a folder of
+work from a session that predates the toolkit, kept as hypotheses rather than
+results — the reasoning is in its `prior-attempt/README.md`. It is **Turbo
+Pascal**, which nothing here has handled before.
 
 The Oregon Trail is a different case again, and it is the first game here that
 was chosen for what it would teach the *toolkit* rather than for the game. It
