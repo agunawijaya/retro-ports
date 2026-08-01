@@ -468,6 +468,41 @@ are not invented. The running game draws them, at exactly those coordinates,
 placements and attributed them to the wrong phase, which is a different fault
 from making things up and has a different fix.
 
+### Starting the game, which took a working keyboard
+
+None of the above could be seen until the harness could press a key, and that
+took longer than it should have for two reasons worth writing down.
+
+**The emulator's port hook returns the value read, not a success flag.** It was
+returning `True`, so every `in al, 0x60` produced 1. The handler then did
+everything right — filtered the scancode, acknowledged the hardware, translated
+it through the game's table, stored the result — and every key delivered was
+Escape. Nothing failed. Three different scancodes producing the same stored
+byte is what gave it away.
+
+**An injected interrupt has to return where the program was.** Pushing a
+sentinel return address is the obvious shortcut; it means the `iret` lands
+execution at an address the program has never been at, and the next fetch
+faults. Push the real `CS:IP`, exactly as the hardware does, and the handler
+becomes invisible to the program it interrupts.
+
+With both fixed, the title screen answers. The loop at file `0x0AA8` spins until
+`[0x0B62]` is non-zero, and the routine that sets it compares the stored key
+against three values:
+
+```nasm
+    cmp al, 0xca          ; 'J' -- switches something and stays on the title
+    je  .set_mode
+    cmp al, 0xa0          ; the space bar
+    je  .start
+    cmp al, 0xcb          ; 'K'
+    je  .start
+```
+
+`0xA0` is the space bar with the high bit set — the bit the handler adds to
+mean *this key has not been read yet*. Deliver scancode `0x39` and the game
+starts.
+
 ## Reading the rest
 
 `recovered/hhm.asm` covers all 42,112 bytes and reassembles to the original

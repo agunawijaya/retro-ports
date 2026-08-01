@@ -966,11 +966,25 @@ Five things, stated plainly:
   fraction cannot answer this; only comparison with the real game can, and the
   only comparison made so far is by eye. One error of exactly this kind was
   found and fixed while the fraction sat at 100%.
-- **The 405 variables.** Seven are named — the column, row and selector pairs
-  the drawing routines read, plus the level number and the loop counter — and
-  those came from the routines that consume them rather than from guessing.
-  The rest are not. Doing it honestly means watching every routine that touches
-  each one, and with 222 subroutines that is a project of its own.
+- **The 405 variables.** Nine are named. Seven came from the routines that
+  consume them — the column, row and selector pairs the drawing routines read,
+  plus the level number and the loop counter. Two more came from running the
+  game: `[0x0781]` holds the last key, with its top bit set to mean *unread*
+  (every consumer clears it with `and byte [0x781], 0x7f`), and `[0x0B62]` is
+  the flag that ends the title loop, set when the key is `0xA0` — the space
+  bar, through the game's own translation table.
+
+  **And a negative result, which is the interesting part.** The obvious way to
+  name the rest is to correlate: play the game, and see which byte follows a
+  sprite's position. Forty frames were captured with the whole 42 KB image
+  frozen *at the instant each sprite was drawn*, so there is no timing skew to
+  explain a miss. The moving characters range across 112 pixels — and **no
+  single byte of the image holds their position at the moment they are drawn**.
+
+  So the position is not simply stored. It is computed, or held as a word, or
+  reached through a table this comparison did not model. That is a much better
+  question than "405 variables are unnamed", and it is one the harness can now
+  be pointed at.
 - **The two bytes at file `0x0001`.** The program's first instruction jumps
   over `FF FC`, and **nothing in the program ever reads them** — checked, zero
   references to addresses `0x100`–`0x103`. What they meant is not recoverable
