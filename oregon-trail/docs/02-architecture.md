@@ -173,6 +173,26 @@ one library beats the next by half again.
 Embarcadero's own Antique Software release, 5.0 from a floppy image set that the
 toolkit's `fatextract.py` opened directly.*
 
+### Confirmed twice more, without disassembling anything
+
+Having the actual compiler makes two further checks almost free, and both agree.
+
+**The game ships Borland's graphics driver unmodified.** `CGA.BGI` in
+`original/` is 6,253 bytes. `CGA.BGI` from the Turbo Pascal 5.0 distribution is
+6,253 bytes. They are **byte-identical** — same SHA-256. `VGA256.BGI` is
+Borland's too, and says so: `BGI Device Driver (VGA256) 2.00 - Mar 21 1988,
+Copyright (c) 1987,1988 Borland International`. It simply was not in the retail
+box, which is why it is not on the 5.0 floppies.
+
+**And the `Graph` segment is Borland's `Graph` unit.** `GRAPH.TPU` ships in
+`BGI.ARC` rather than in `TURBO.TPL`, which is why the library comparison above
+scored it at only 1.5%. Extracted with Borland's own `UNPACK.COM` and compared
+directly: **73.7% covered, with a single unbroken identical run of 6,636 bytes**
+— half the segment in one piece.
+
+So the compiler is established three separate ways: the runtime's code, a
+byte-identical driver file, and a 6,636-byte match against the graphics unit.
+
 ## Eleven segments, one per unit
 
 Here is the fact that makes a Pascal program readable without any symbol
@@ -219,13 +239,35 @@ inside code. And a unit's strings say what the unit is:
 
 **Having no strings is evidence too.** A library is code without messages;
 application code is not. The four silent segments are exactly the four
-third-party or runtime units that are not `System` or `Graph`, and they were
-identified by what they *do* instead:
+third-party or runtime units that are not `System` or `Graph`.
+
+Once Borland's own libraries were in hand, guessing stopped being necessary.
+Matching every segment against `TURBO.TPL` and `GRAPH.TPU` settles which are
+Borland's and which are not, in one pass:
+
+| segment | covered by Borland's libraries | longest run | verdict |
+|---|---|---|---|
+| `0x01DB8` Dos | **98.2%** | 240 | Borland |
+| `0x0219F` System | **86.8%** | 1,587 | Borland |
+| `0x01DE9` Graph | **73.7%** | 6,636 | Borland |
+| `0x0213D` Crt | **71.3%** | 132 | Borland |
+| `0x015BB` | **0.0%** | 0 | **not Borland** |
+| `0x018DC` | **0.0%** | 0 | **not Borland** |
+| MECC's five | 0.0 – 0.1% | ≤ 17 | not Borland |
+
+That is a clean separation with nothing in between — four segments above 71%
+and everything else at or below 0.1%. `0x0213D` was marked **[inferred]** as
+`Crt`; it is now established as a Borland runtime unit, and `Crt` specifically
+on its four `INT 16h` calls. And `0x015BB` and `0x018DC` are established as
+**not Borland's**, which is what "third-party" needed to mean.
+
+The four were also identified by what they *do*, before the libraries arrived,
+and the two accounts agree:
 
 - **`0x01db8`, 784 bytes — Borland's `Dos` unit.** Eighteen `INT 21h` calls and
   nothing else in the whole segment. It contains the program's only
   `mov ah, 0x2A / int 0x21` — DOS get-date.
-- **`0x0213d`, 1,568 bytes — Borland's `Crt` unit [inferred].** Four `INT 16h`
+- **`0x0213d`, 1,568 bytes — Borland's `Crt` unit.** Four `INT 16h`
   (keyboard) and one `INT 10h`, called from everywhere, sitting immediately
   before `System` in link order.
 - **`0x018dc`, 19,904 bytes — the Genus graphics library.** Three independent
@@ -234,7 +276,10 @@ identified by what they *do* instead:
   `INT 21h` and 20 `INT 10h` calls, which is file reading and video mode
   setting; and it is called by the artwork loader, the segment holding
   `OTMCGA.PCL`.
-- **`0x015bb`, 12,816 bytes — the Genus text/font library [inferred].** Same
+- **`0x015bb`, 12,816 bytes — the Genus text/font library.** That it is *not*
+  Borland's is established (0.0% against both libraries); that it is *Genus* is
+  **[inferred]** by elimination — the program links exactly two third-party
+  libraries and this is the other one. Same
   shape — file and video calls, no strings — driven by the UI segment, which
   is also where `BIT8X8.GFT` and `Problem unloading font.` live.
 
@@ -560,9 +605,11 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    (`0x0151C`, 2,544 bytes) and every one of its strings is recovered. The
    *code* has not been followed, so what triggers it is unknown.
 3. **What the program does with the date it reads** at image `0x1DBF4`.
-4. **`0x0213D` as Borland's `Crt` unit** is **[inferred]** from its interrupt
-   use and its position in link order, not established. Likewise `0x015BB` as
-   the Genus font library.
+4. **That `0x015BB` is specifically *Genus's*.** It is established as not
+   Borland's — 0.0% against both of Borland's libraries — and the program links
+   exactly two third-party libraries, so this is the other one by elimination.
+   Settling it properly would need Genus's own library to compare against, and
+   the PCX Programmer's Toolkit does not appear to be archived anywhere.
 5. **Whether any of this behaves as described at run time.** Every claim above
    comes from reading the file, except the entry point, the unit-init order and
    the segment identities, which [running it](#running-it-at-last) confirmed.
