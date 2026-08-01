@@ -1,0 +1,54 @@
+resource_names_143e0 at load offset 143E0:
+ASCII preview:
+..........~.........~..p..O......O........p...........p...;.R.........O.....O......&......................O7.............................~.....b...(.b......c..O..<0.O......O..............<@.........~..i........p..........~..i........p......0.~.............~....A.....~..p(.O................o...........o........#.Q......O..............<@..............~(.c..O...........p..*........~........~..pF.I......O........~..p(.R..O..............p(.R........~..p..c..R..HP.<........................~.....c.....c.....c.....
+Disassembly preview (may be data):
+143E0: 01 D3              add bx, dx
+143E2: 04 01              add al, 1
+143E4: A8 08              test al, 8
+143E6: FF 00              inc word ptr [bx + si]
+143E8: 18 01              sbb byte ptr [bx + di], al
+143EA: 7E 08              jle 0x143f4
+143EC: FF 00              inc word ptr [bx + si]
+143EE: FE 0A              dec byte ptr [bp + si]
+143F0: 01 BC 0A 01        add word ptr [si + 0x10a], di
+143F4: 7E 0C              jle 0x14402
+143F6: 01 70 10           add word ptr [bx + si + 0x10], si
+143F9: 01 4F 04           add word ptr [bx + 4], cx
+143FC: FF 00              inc word ptr [bx + si]
+143FE: FE 04              inc byte ptr [si]
+14400: 02 4F 04           add cl, byte ptr [bx + 4]
+14403: 01 BC 04 01        add word ptr [si + 0x104], di
+14407: A8 08              test al, 8
+14409: 01 70 08           add word ptr [bx + si + 8], si
+1440C: FF 00              inc word ptr [bx + si]
+1440E: 02 01              add al, byte ptr [bx + di]
+14410: 85 02              test word ptr [bp + si], ax
+14412: FF 00              inc word ptr [bx + si]
+14414: 04 01              add al, 1
+14416: 70 08              jo 0x14420
+14418: FF 00              inc word ptr [bx + si]
+1441A: 3B 01              cmp ax, word ptr [bx + di]
+1441C: 52                 push dx
+1441D: FF 06 C0 FE        inc word ptr [0xfec0]
+14421: 14 FF              adc al, 0xff
+14423: FF 11              call word ptr [bx + di]
+14425: 02 4F 03           add cl, byte ptr [bx + 3]
+14428: FF 00              inc word ptr [bx + si]
+1442A: 07                 pop es
+1442B: 02 4F 04           add cl, byte ptr [bx + 4]
+1442E: 03 A4 04 02        add sp, word ptr [si + 0x204]
+14432: FB                 sti
+14433: 26 01 FB           add bx, di
+14436: 05 03 80           add ax, 0x8003
+14439: 05 02 A9           add ax, 0xa902
+1443C: 14 01              adc al, 1
+1443E: FB                 sti
+1443F: 03 FF              add di, di
+14441: 00 0B              add byte ptr [bp + di], cl
+14443: 01 FB              add bx, di
+14445: 07                 pop es
+14446: 02 FB              add bh, bl
+14448: 07                 pop es
+14449: 02 4F 37           add cl, byte ptr [bx + 0x37]
+1444C: 01 FB              add bx, di
+1444E: 14 FF              adc al, 0xff

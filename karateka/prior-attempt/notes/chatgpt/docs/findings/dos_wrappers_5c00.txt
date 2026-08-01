@@ -1,0 +1,181 @@
+dos_wrappers_5c00 at load offset 5C00:
+5C00: 46                 inc si
+5C01: 04 EB              add al, 0xeb
+5C03: E0 8B              loopne 0x5b90
+5C05: 76 04              jbe 0x5c0b
+5C07: C6 04 00           mov byte ptr [si], 0
+5C0A: 8B 46 0A           mov ax, word ptr [bp + 0xa]
+5C0D: 83 C4 06           add sp, 6
+5C10: 5D                 pop bp
+5C11: C3                 ret
+5C12: 55                 push bp
+5C13: 8B EC              mov bp, sp
+5C15: 06                 push es
+5C16: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5C1C: 8B 1E 5F 00        mov bx, word ptr [0x5f]
+5C20: 2B 1E 5B 00        sub bx, word ptr [0x5b]
+5C24: 89 1E 69 00        mov word ptr [0x69], bx
+5C28: 8B 56 04           mov dx, word ptr [bp + 4]
+5C2B: 8B 0E 5F 00        mov cx, word ptr [0x5f]
+5C2F: 8C D8              mov ax, ds
+5C31: 2B C8              sub cx, ax
+5C33: 03 CA              add cx, dx
+5C35: 72 1A              jb 0x5c51
+5C37: 03 DA              add bx, dx
+5C39: 53                 push bx
+5C3A: C4 06 59 00        les ax, ptr [0x59]
+5C3E: B4 4A              mov ah, 0x4a
+5C40: CD 21              int 0x21
+5C42: 5B                 pop bx
+5C43: 72 09              jb 0x5c4e
+5C45: 89 1E 69 00        mov word ptr [0x69], bx
+5C49: 33 C0              xor ax, ax
+5C4B: 07                 pop es
+5C4C: 5D                 pop bp
+5C4D: C3                 ret
+5C4E: A3 80 00           mov word ptr [0x80], ax
+5C51: B8 FF FF           mov ax, 0xffff
+5C54: 07                 pop es
+5C55: 5D                 pop bp
+5C56: C3                 ret
+5C57: 55                 push bp
+5C58: 8B EC              mov bp, sp
+5C5A: 06                 push es
+5C5B: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5C61: 8C DB              mov bx, ds
+5C63: 2B 1E 5B 00        sub bx, word ptr [0x5b]
+5C67: A1 69 00           mov ax, word ptr [0x69]
+5C6A: 2B C3              sub ax, bx
+5C6C: 03 46 04           add ax, word ptr [bp + 4]
+5C6F: A9 00 F0           test ax, 0xf000
+5C72: 75 21              jne 0x5c95
+5C74: 8B 1E 69 00        mov bx, word ptr [0x69]
+5C78: 03 5E 04           add bx, word ptr [bp + 4]
+5C7B: 72 18              jb 0x5c95
+5C7D: C4 06 59 00        les ax, ptr [0x59]
+5C81: 53                 push bx
+5C82: B4 4A              mov ah, 0x4a
+5C84: CD 21              int 0x21
+5C86: 5B                 pop bx
+5C87: 72 09              jb 0x5c92
+5C89: 89 1E 69 00        mov word ptr [0x69], bx
+5C8D: 33 C0              xor ax, ax
+5C8F: 07                 pop es
+5C90: 5D                 pop bp
+5C91: C3                 ret
+5C92: A3 80 00           mov word ptr [0x80], ax
+5C95: B8 FF FF           mov ax, 0xffff
+5C98: 07                 pop es
+5C99: 5D                 pop bp
+5C9A: C3                 ret
+5C9B: 55                 push bp
+5C9C: 8B EC              mov bp, sp
+5C9E: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5CA4: 8B 56 04           mov dx, word ptr [bp + 4]
+5CA7: 8B 4E 06           mov cx, word ptr [bp + 6]
+5CAA: B4 3C              mov ah, 0x3c
+5CAC: CD 21              int 0x21
+5CAE: 73 03              jae 0x5cb3
+5CB0: A3 80 00           mov word ptr [0x80], ax
+5CB3: 5D                 pop bp
+5CB4: C3                 ret
+5CB5: 55                 push bp
+5CB6: 8B EC              mov bp, sp
+5CB8: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5CBE: 8B 56 04           mov dx, word ptr [bp + 4]
+5CC1: 8B 46 06           mov ax, word ptr [bp + 6]
+5CC4: B4 3D              mov ah, 0x3d
+5CC6: CD 21              int 0x21
+5CC8: 73 03              jae 0x5ccd
+5CCA: A3 80 00           mov word ptr [0x80], ax
+5CCD: 5D                 pop bp
+5CCE: C3                 ret
+5CCF: 55                 push bp
+5CD0: 8B EC              mov bp, sp
+5CD2: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5CD8: 8B 5E 04           mov bx, word ptr [bp + 4]
+5CDB: B4 3E              mov ah, 0x3e
+5CDD: CD 21              int 0x21
+5CDF: 73 03              jae 0x5ce4
+5CE1: A3 80 00           mov word ptr [0x80], ax
+5CE4: 5D                 pop bp
+5CE5: C3                 ret
+5CE6: 55                 push bp
+5CE7: 8B EC              mov bp, sp
+5CE9: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5CEF: 8B 5E 04           mov bx, word ptr [bp + 4]
+5CF2: 8B 4E 08           mov cx, word ptr [bp + 8]
+5CF5: 8B 56 06           mov dx, word ptr [bp + 6]
+5CF8: B4 3F              mov ah, 0x3f
+5CFA: CD 21              int 0x21
+5CFC: 73 05              jae 0x5d03
+5CFE: A3 80 00           mov word ptr [0x80], ax
+5D01: 33 C0              xor ax, ax
+5D03: 5D                 pop bp
+5D04: C3                 ret
+5D05: 55                 push bp
+5D06: 8B EC              mov bp, sp
+5D08: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5D0E: 8B 5E 04           mov bx, word ptr [bp + 4]
+5D11: 8B 4E 08           mov cx, word ptr [bp + 8]
+5D14: 8B 56 06           mov dx, word ptr [bp + 6]
+5D17: B4 40              mov ah, 0x40
+5D19: CD 21              int 0x21
+5D1B: 73 05              jae 0x5d22
+5D1D: A3 80 00           mov word ptr [0x80], ax
+5D20: 33 C0              xor ax, ax
+5D22: 5D                 pop bp
+5D23: C3                 ret
+5D24: 55                 push bp
+5D25: 8B EC              mov bp, sp
+5D27: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5D2D: 8B 46 0A           mov ax, word ptr [bp + 0xa]
+5D30: B4 42              mov ah, 0x42
+5D32: 8B 5E 04           mov bx, word ptr [bp + 4]
+5D35: 8B 4E 08           mov cx, word ptr [bp + 8]
+5D38: 8B 56 06           mov dx, word ptr [bp + 6]
+5D3B: CD 21              int 0x21
+5D3D: 73 03              jae 0x5d42
+5D3F: A3 80 00           mov word ptr [0x80], ax
+5D42: 8B D8              mov bx, ax
+5D44: 8B C2              mov ax, dx
+5D46: 5D                 pop bp
+5D47: C3                 ret
+5D48: 55                 push bp
+5D49: 8B EC              mov bp, sp
+5D4B: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5D51: 8B 56 04           mov dx, word ptr [bp + 4]
+5D54: B4 41              mov ah, 0x41
+5D56: CD 21              int 0x21
+5D58: 73 03              jae 0x5d5d
+5D5A: A3 80 00           mov word ptr [0x80], ax
+5D5D: 5D                 pop bp
+5D5E: C3                 ret
+5D5F: 55                 push bp
+5D60: 8B EC              mov bp, sp
+5D62: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5D68: 8B 56 04           mov dx, word ptr [bp + 4]
+5D6B: 8B 46 06           mov ax, word ptr [bp + 6]
+5D6E: B4 43              mov ah, 0x43
+5D70: 8B 4E 08           mov cx, word ptr [bp + 8]
+5D73: CD 21              int 0x21
+5D75: 73 03              jae 0x5d7a
+5D77: A3 80 00           mov word ptr [0x80], ax
+5D7A: 8B C1              mov ax, cx
+5D7C: 5D                 pop bp
+5D7D: C3                 ret
+5D7E: 55                 push bp
+5D7F: 8B EC              mov bp, sp
+5D81: 8B 5E 04           mov bx, word ptr [bp + 4]
+5D84: B8 00 44           mov ax, 0x4400
+5D87: CD 21              int 0x21
+5D89: 8B C2              mov ax, dx
+5D8B: 5D                 pop bp
+5D8C: C3                 ret
+5D8D: 55                 push bp
+5D8E: 8B EC              mov bp, sp
+5D90: C7 06 80 00 00 00  mov word ptr [0x80], 0
+5D96: 8B 56 04           mov dx, word ptr [bp + 4]
+5D99: 8B 7E 06           mov di, word ptr [bp + 6]
+5D9C: B4 56              mov ah, 0x56
+5D9E: CD 21              int 0x21

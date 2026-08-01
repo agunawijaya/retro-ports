@@ -1,0 +1,221 @@
+runtime_entry_0200 at load offset 0200:
+0200: 00 4C CD           add byte ptr [si - 0x33], cl
+0203: 21 8B E5 CB        and word ptr [bp + di - 0x341b], cx
+0207: B4 09              mov ah, 9
+0209: CD 21              int 0x21
+020B: 8E 06 5B 00        mov es, word ptr [0x5b]
+020F: 80 3E 0F 00 02     cmp byte ptr [0xf], 2
+0214: 7C 05              jl 0x21b
+0216: B8 01 4C           mov ax, 0x4c01
+0219: CD 21              int 0x21
+021B: 06                 push es
+021C: 33 C0              xor ax, ax
+021E: 50                 push ax
+021F: CB                 retf
+0220: A1 15 00           mov ax, word ptr [0x15]
+0223: 2D 04 00           sub ax, 4
+0226: 8B E0              mov sp, ax
+0228: BA C7 00           mov dx, 0xc7
+022B: B4 09              mov ah, 9
+022D: CD 21              int 0x21
+022F: 80 3E 0F 00 02     cmp byte ptr [0xf], 2
+0234: 7C 05              jl 0x23b
+0236: B8 01 4C           mov ax, 0x4c01
+0239: CD 21              int 0x21
+023B: CB                 retf
+023C: 80 3E 0F 00 02     cmp byte ptr [0xf], 2
+0241: 7C 09              jl 0x24c
+0243: 8B EC              mov bp, sp
+0245: 8B 46 02           mov ax, word ptr [bp + 2]
+0248: B4 4C              mov ah, 0x4c
+024A: CD 21              int 0x21
+024C: A1 15 00           mov ax, word ptr [0x15]
+024F: 2D 04 00           sub ax, 4
+0252: 8B E0              mov sp, ax
+0254: CB                 retf
+0255: 55                 push bp
+0256: 83 EC 04           sub sp, 4
+0259: 72 06              jb 0x261
+025B: 3B 26 17 00        cmp sp, word ptr [0x17]
+025F: 77 03              ja 0x264
+0261: E9 BC FF           jmp 0x220
+0264: 8B EC              mov bp, sp
+0266: C7 46 02 00 00     mov word ptr [bp + 2], 0
+026B: E8 E9 3F           call 0x4257
+026E: E8 E1 40           call 0x4352
+0271: 85 C0              test ax, ax
+0273: 75 0C              jne 0x281
+0275: B8 B7 41           mov ax, 0x41b7
+0278: 50                 push ax
+0279: E8 1E 56           call 0x589a
+027C: 8B E5              mov sp, bp
+027E: E8 FE 48           call 0x4b7f
+0281: E8 92 3B           call 0x3e16
+0284: E8 A4 45           call 0x482b
+0287: E8 8F 43           call 0x4619
+028A: 85 C0              test ax, ax
+028C: 75 08              jne 0x296
+028E: C7 06 46 DF 01 00  mov word ptr [0xdf46], 1
+0294: EB 06              jmp 0x29c
+0296: C7 06 46 DF 00 00  mov word ptr [0xdf46], 0
+029C: B8 37 07           mov ax, 0x737
+029F: 50                 push ax
+02A0: B8 37 03           mov ax, 0x337
+02A3: 50                 push ax
+02A4: 33 C0              xor ax, ax
+02A6: 50                 push ax
+02A7: E8 F2 13           call 0x169c
+02AA: 8B E5              mov sp, bp
+02AC: E8 69 14           call 0x1718
+02AF: 85 C0              test ax, ax
+02B1: 75 05              jne 0x2b8
+02B3: E8 47 3D           call 0x3ffd
+02B6: EB E4              jmp 0x29c
+02B8: E8 F3 16           call 0x19ae
+02BB: 33 C0              xor ax, ax
+02BD: C7 06 14 01 0D 00  mov word ptr [0x114], 0xd
+02C3: A3 18 01           mov word ptr [0x118], ax
+02C6: A3 1A 01           mov word ptr [0x11a], ax
+02C9: A3 E2 00           mov word ptr [0xe2], ax
+02CC: A3 F0 00           mov word ptr [0xf0], ax
+02CF: A3 EC 00           mov word ptr [0xec], ax
+02D2: A3 70 01           mov word ptr [0x170], ax
+02D5: A3 6C 01           mov word ptr [0x16c], ax
+02D8: A3 6E 01           mov word ptr [0x16e], ax
+02DB: A3 72 01           mov word ptr [0x172], ax
+02DE: A3 74 01           mov word ptr [0x174], ax
+02E1: A3 2A 01           mov word ptr [0x12a], ax
+02E4: A3 E6 00           mov word ptr [0xe6], ax
+02E7: A3 E8 00           mov word ptr [0xe8], ax
+02EA: A3 F2 00           mov word ptr [0xf2], ax
+02ED: A3 F6 00           mov word ptr [0xf6], ax
+02F0: A3 F8 00           mov word ptr [0xf8], ax
+02F3: A3 FA 00           mov word ptr [0xfa], ax
+02F6: A3 2C 01           mov word ptr [0x12c], ax
+02F9: A3 30 01           mov word ptr [0x130], ax
+02FC: A3 66 01           mov word ptr [0x166], ax
+02FF: A3 AA D5           mov word ptr [0xd5aa], ax
+0302: E8 C2 00           call 0x3c7
+0305: 33 C0              xor ax, ax
+0307: A3 FC 00           mov word ptr [0xfc], ax
+030A: A3 30 01           mov word ptr [0x130], ax
+030D: E8 DF 15           call 0x18ef
+0310: C7 06 6A 01 00 00  mov word ptr [0x16a], 0
+0316: 83 3E 6A 01 01     cmp word ptr [0x16a], 1
+031B: 74 9B              je 0x2b8
+031D: 83 3E 44 DF 00     cmp word ptr [0xdf44], 0
+0322: 7F 94              jg 0x2b8
+0324: B8 01 00           mov ax, 1
+0327: 50                 push ax
+0328: E8 1E 3E           call 0x4149
+032B: 8B E5              mov sp, bp
+032D: E8 C8 15           call 0x18f8
+0330: E8 AE 1F           call 0x22e1
+0333: E8 A7 28           call 0x2bdd
+0336: E8 90 08           call 0xbc9
+0339: A1 54 01           mov ax, word ptr [0x154]
+033C: 85 C0              test ax, ax
+033E: 7E 43              jle 0x383
+0340: 3D 02 00           cmp ax, 2
+0343: 75 0B              jne 0x350
+0345: B8 08 00           mov ax, 8
+0348: 50                 push ax
+0349: E8 62 38           call 0x3bae
+034C: 8B E5              mov sp, bp
+034E: EB 2D              jmp 0x37d
+0350: 83 3E 54 01 03     cmp word ptr [0x154], 3
+0355: 75 0B              jne 0x362
+0357: B8 18 00           mov ax, 0x18
+035A: 50                 push ax
+035B: E8 50 38           call 0x3bae
+035E: 8B E5              mov sp, bp
+0360: EB 1B              jmp 0x37d
+0362: 83 3E 54 01 04     cmp word ptr [0x154], 4
+0367: 75 0B              jne 0x374
+0369: B8 16 00           mov ax, 0x16
+036C: 50                 push ax
+036D: E8 3E 38           call 0x3bae
+0370: 8B E5              mov sp, bp
+0372: EB 09              jmp 0x37d
+0374: B8 01 00           mov ax, 1
+0377: 50                 push ax
+0378: E8 33 38           call 0x3bae
+037B: 8B E5              mov sp, bp
+037D: C7 06 54 01 00 00  mov word ptr [0x154], 0
+0383: 33 C0              xor ax, ax
+0385: 83 3E 6A 01 00     cmp word ptr [0x16a], 0
+038A: A3 EE 00           mov word ptr [0xee], ax
+038D: 75 06              jne 0x395
+038F: E8 18 2E           call 0x31aa
+0392: A3 6A 01           mov word ptr [0x16a], ax
+0395: 83 3E 2A 01 02     cmp word ptr [0x12a], 2
+039A: 75 0F              jne 0x3ab
+039C: C7 06 2A 01 00 00  mov word ptr [0x12a], 0
+03A2: B8 01 00           mov ax, 1
+03A5: 50                 push ax
+03A6: E8 05 38           call 0x3bae
+03A9: 8B E5              mov sp, bp
+03AB: 83 3E 2A 01 01     cmp word ptr [0x12a], 1
+03B0: 75 0F              jne 0x3c1
+03B2: C7 06 2A 01 02 00  mov word ptr [0x12a], 2
+03B8: C7 06 A6 C3 01 00  mov word ptr [0xc3a6], 1
+03BE: E8 C9 36           call 0x3a8a
+03C1: E8 58 2C           call 0x301c
+03C4: E9 4F FF           jmp 0x316
+03C7: 55                 push bp
+03C8: 83 EC 04           sub sp, 4
+03CB: 72 06              jb 0x3d3
+03CD: 3B 26 17 00        cmp sp, word ptr [0x17]
+03D1: 77 03              ja 0x3d6
+03D3: E9 4A FE           jmp 0x220
+03D6: 8B EC              mov bp, sp
+03D8: E8 58 3E           call 0x4233
+03DB: 33 C0              xor ax, ax
+03DD: BB 3E CE           mov bx, 0xce3e
+03E0: 53                 push bx
+03E1: BB F4 41           mov bx, 0x41f4
+03E4: 53                 push bx
+03E5: A3 F6 00           mov word ptr [0xf6], ax
+03E8: A3 5C 01           mov word ptr [0x15c], ax
+03EB: A3 5A 01           mov word ptr [0x15a], ax
+03EE: E8 86 0E           call 0x1277
+03F1: 8B E5              mov sp, bp
+03F3: E8 AC 15           call 0x19a2
+03F6: B8 DC 05           mov ax, 0x5dc
+03F9: 50                 push ax
+03FA: B8 FB 41           mov ax, 0x41fb
+03FD: 50                 push ax
+03FE: E8 51 0B           call 0xf52
+0401: 8B E5              mov sp, bp
+0403: C7 06 EA 00 00 00  mov word ptr [0xea], 0
+0409: FF 36 EA 00        push word ptr [0xea]
+040D: E8 B2 16           call 0x1ac2
+0410: 8B E5              mov sp, bp
+0412: C7 06 44 DF 00 00  mov word ptr [0xdf44], 0
+0418: B8 0D 00           mov ax, 0xd
+041B: 50                 push ax
+041C: E8 08 0C           call 0x1027
+041F: 8B E5              mov sp, bp
+0421: E8 03 0B           call 0xf27
+0424: 85 C0              test ax, ax
+0426: 74 06              je 0x42e
+0428: E8 82 01           call 0x5ad
+042B: E9 14 01           jmp 0x542
+042E: 33 C0              xor ax, ax
+0430: 50                 push ax
+0431: B8 04 42           mov ax, 0x4204
+0434: 50                 push ax
+0435: E8 1A 0B           call 0xf52
+0438: 8B E5              mov sp, bp
+043A: E8 7A 3B           call 0x3fb7
+043D: 85 C0              test ax, ax
+043F: 74 06              je 0x447
+0441: E8 69 01           call 0x5ad
+0444: E9 FB 00           jmp 0x542
+0447: E8 90 3B           call 0x3fda
+044A: 85 C0              test ax, ax
+044C: 74 06              je 0x454
+044E: E8 5C 01           call 0x5ad
+0451: E9 EE 00           jmp 0x542
+0454: E8 97 0A           call 0xeee
+0457: 85 C0              test ax, ax

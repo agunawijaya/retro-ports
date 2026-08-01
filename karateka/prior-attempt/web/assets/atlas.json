@@ -1,0 +1,909 @@
+{
+  "image": "atlas.png",
+  "frames": {
+    "hero_idle_1": [
+      0,
+      0,
+      20,
+      48
+    ],
+    "hero_stance_3": [
+      21,
+      0,
+      24,
+      48
+    ],
+    "hero_stance_4": [
+      46,
+      0,
+      24,
+      48
+    ],
+    "hero_walk_1": [
+      71,
+      0,
+      20,
+      48
+    ],
+    "hero_walk_2": [
+      92,
+      0,
+      24,
+      48
+    ],
+    "hero_walk_3": [
+      117,
+      0,
+      26,
+      48
+    ],
+    "hero_walk_4": [
+      144,
+      0,
+      18,
+      48
+    ],
+    "hero_walk_5": [
+      163,
+      0,
+      20,
+      48
+    ],
+    "hero_walk_6": [
+      184,
+      0,
+      26,
+      48
+    ],
+    "hero_walk_7": [
+      211,
+      0,
+      26,
+      48
+    ],
+    "hero_walk_8": [
+      238,
+      0,
+      18,
+      48
+    ],
+    "hero_run_1": [
+      257,
+      0,
+      20,
+      48
+    ],
+    "hero_run_2": [
+      278,
+      0,
+      24,
+      48
+    ],
+    "hero_run_3": [
+      303,
+      0,
+      26,
+      48
+    ],
+    "hero_run_4": [
+      330,
+      0,
+      18,
+      48
+    ],
+    "hero_run_5": [
+      349,
+      0,
+      20,
+      48
+    ],
+    "hero_run_6": [
+      370,
+      0,
+      26,
+      48
+    ],
+    "hero_run_7": [
+      397,
+      0,
+      26,
+      48
+    ],
+    "hero_run_8": [
+      424,
+      0,
+      18,
+      48
+    ],
+    "hero_punch_1": [
+      443,
+      0,
+      24,
+      43
+    ],
+    "hero_punch_2": [
+      468,
+      0,
+      31,
+      43
+    ],
+    "hero_punch_3": [
+      0,
+      49,
+      24,
+      43
+    ],
+    "hero_punch_4": [
+      25,
+      49,
+      31,
+      43
+    ],
+    "hero_punch_5": [
+      57,
+      49,
+      31,
+      43
+    ],
+    "hero_punch_6": [
+      89,
+      49,
+      24,
+      43
+    ],
+    "hero_punch_7": [
+      114,
+      49,
+      31,
+      43
+    ],
+    "hero_punch_8": [
+      146,
+      49,
+      31,
+      43
+    ],
+    "hero_kick_1": [
+      178,
+      49,
+      20,
+      44
+    ],
+    "hero_kick_2": [
+      199,
+      49,
+      32,
+      44
+    ],
+    "hero_kick_3": [
+      232,
+      49,
+      36,
+      44
+    ],
+    "hero_kick_4": [
+      269,
+      49,
+      32,
+      44
+    ],
+    "hero_fall_0": [
+      302,
+      49,
+      24,
+      33
+    ],
+    "hero_fall_1": [
+      327,
+      49,
+      26,
+      33
+    ],
+    "hero_fall_2": [
+      354,
+      49,
+      24,
+      33
+    ],
+    "hero_fall_3": [
+      379,
+      49,
+      31,
+      33
+    ],
+    "hero_fall_4": [
+      411,
+      49,
+      32,
+      33
+    ],
+    "enemy_idle_1": [
+      444,
+      49,
+      20,
+      48
+    ],
+    "enemy_stance_3": [
+      465,
+      49,
+      24,
+      48
+    ],
+    "enemy_stance_4": [
+      0,
+      98,
+      24,
+      48
+    ],
+    "enemy_walk_1": [
+      25,
+      98,
+      20,
+      48
+    ],
+    "enemy_walk_2": [
+      46,
+      98,
+      24,
+      48
+    ],
+    "enemy_walk_3": [
+      71,
+      98,
+      26,
+      48
+    ],
+    "enemy_walk_4": [
+      98,
+      98,
+      19,
+      48
+    ],
+    "enemy_walk_5": [
+      118,
+      98,
+      20,
+      48
+    ],
+    "enemy_walk_6": [
+      139,
+      98,
+      26,
+      48
+    ],
+    "enemy_walk_7": [
+      166,
+      98,
+      26,
+      48
+    ],
+    "enemy_walk_8": [
+      193,
+      98,
+      19,
+      48
+    ],
+    "enemy_run_1": [
+      213,
+      98,
+      20,
+      48
+    ],
+    "enemy_run_2": [
+      234,
+      98,
+      24,
+      48
+    ],
+    "enemy_run_3": [
+      259,
+      98,
+      26,
+      48
+    ],
+    "enemy_run_4": [
+      286,
+      98,
+      19,
+      48
+    ],
+    "enemy_run_5": [
+      306,
+      98,
+      20,
+      48
+    ],
+    "enemy_run_6": [
+      327,
+      98,
+      26,
+      48
+    ],
+    "enemy_run_7": [
+      354,
+      98,
+      26,
+      48
+    ],
+    "enemy_run_8": [
+      381,
+      98,
+      19,
+      48
+    ],
+    "enemy_punch_1": [
+      401,
+      98,
+      24,
+      43
+    ],
+    "enemy_punch_2": [
+      426,
+      98,
+      31,
+      43
+    ],
+    "enemy_punch_3": [
+      458,
+      98,
+      24,
+      43
+    ],
+    "enemy_punch_4": [
+      0,
+      147,
+      31,
+      43
+    ],
+    "enemy_kick_1": [
+      32,
+      147,
+      20,
+      44
+    ],
+    "enemy_kick_2": [
+      53,
+      147,
+      32,
+      44
+    ],
+    "enemy_kick_3": [
+      86,
+      147,
+      36,
+      44
+    ],
+    "enemy_kick_4": [
+      123,
+      147,
+      32,
+      44
+    ],
+    "enemy_fall_4": [
+      222,
+      147,
+      32,
+      44
+    ],
+    "akuma_stance_0": [
+      255,
+      147,
+      24,
+      43
+    ],
+    "akuma_walk_0": [
+      280,
+      147,
+      24,
+      43
+    ],
+    "akuma_walk_1": [
+      305,
+      147,
+      24,
+      43
+    ],
+    "akuma_walk_2": [
+      330,
+      147,
+      31,
+      43
+    ],
+    "akuma_punch_0": [
+      362,
+      147,
+      20,
+      44
+    ],
+    "akuma_punch_1": [
+      383,
+      147,
+      20,
+      44
+    ],
+    "akuma_punch_2": [
+      404,
+      147,
+      32,
+      44
+    ],
+    "akuma_punch_3": [
+      437,
+      147,
+      32,
+      44
+    ],
+    "akuma_kick_0": [
+      470,
+      147,
+      24,
+      33
+    ],
+    "akuma_kick_1": [
+      0,
+      192,
+      26,
+      33
+    ],
+    "akuma_kick_2": [
+      27,
+      192,
+      23,
+      33
+    ],
+    "akuma_kick_3": [
+      51,
+      192,
+      31,
+      33
+    ],
+    "akuma_fall_4": [
+      83,
+      192,
+      32,
+      33
+    ],
+    "mariko_stand": [
+      116,
+      192,
+      14,
+      48
+    ]
+  },
+  "anchors": {
+    "hero_idle_1": [
+      10,
+      47
+    ],
+    "hero_stance_3": [
+      12,
+      47
+    ],
+    "hero_stance_4": [
+      12,
+      47
+    ],
+    "hero_walk_1": [
+      10,
+      47
+    ],
+    "hero_walk_2": [
+      12,
+      47
+    ],
+    "hero_walk_3": [
+      13,
+      47
+    ],
+    "hero_walk_4": [
+      9,
+      47
+    ],
+    "hero_walk_5": [
+      10,
+      47
+    ],
+    "hero_walk_6": [
+      13,
+      47
+    ],
+    "hero_walk_7": [
+      13,
+      47
+    ],
+    "hero_walk_8": [
+      9,
+      47
+    ],
+    "hero_run_1": [
+      10,
+      47
+    ],
+    "hero_run_2": [
+      12,
+      47
+    ],
+    "hero_run_3": [
+      13,
+      47
+    ],
+    "hero_run_4": [
+      9,
+      47
+    ],
+    "hero_run_5": [
+      10,
+      47
+    ],
+    "hero_run_6": [
+      13,
+      47
+    ],
+    "hero_run_7": [
+      13,
+      47
+    ],
+    "hero_run_8": [
+      9,
+      47
+    ],
+    "hero_punch_1": [
+      12,
+      42
+    ],
+    "hero_punch_2": [
+      15,
+      42
+    ],
+    "hero_punch_3": [
+      12,
+      42
+    ],
+    "hero_punch_4": [
+      15,
+      42
+    ],
+    "hero_punch_5": [
+      15,
+      42
+    ],
+    "hero_punch_6": [
+      12,
+      42
+    ],
+    "hero_punch_7": [
+      15,
+      42
+    ],
+    "hero_punch_8": [
+      15,
+      42
+    ],
+    "hero_kick_1": [
+      10,
+      43
+    ],
+    "hero_kick_2": [
+      16,
+      43
+    ],
+    "hero_kick_3": [
+      18,
+      43
+    ],
+    "hero_kick_4": [
+      16,
+      43
+    ],
+    "hero_fall_0": [
+      12,
+      32
+    ],
+    "hero_fall_1": [
+      13,
+      32
+    ],
+    "hero_fall_2": [
+      12,
+      32
+    ],
+    "hero_fall_3": [
+      15,
+      32
+    ],
+    "hero_fall_4": [
+      16,
+      32
+    ],
+    "enemy_idle_1": [
+      10,
+      47
+    ],
+    "enemy_stance_3": [
+      12,
+      47
+    ],
+    "enemy_stance_4": [
+      12,
+      47
+    ],
+    "enemy_walk_1": [
+      10,
+      47
+    ],
+    "enemy_walk_2": [
+      12,
+      47
+    ],
+    "enemy_walk_3": [
+      13,
+      47
+    ],
+    "enemy_walk_4": [
+      9,
+      47
+    ],
+    "enemy_walk_5": [
+      10,
+      47
+    ],
+    "enemy_walk_6": [
+      13,
+      47
+    ],
+    "enemy_walk_7": [
+      13,
+      47
+    ],
+    "enemy_walk_8": [
+      9,
+      47
+    ],
+    "enemy_run_1": [
+      10,
+      47
+    ],
+    "enemy_run_2": [
+      12,
+      47
+    ],
+    "enemy_run_3": [
+      13,
+      47
+    ],
+    "enemy_run_4": [
+      9,
+      47
+    ],
+    "enemy_run_5": [
+      10,
+      47
+    ],
+    "enemy_run_6": [
+      13,
+      47
+    ],
+    "enemy_run_7": [
+      13,
+      47
+    ],
+    "enemy_run_8": [
+      9,
+      47
+    ],
+    "enemy_punch_1": [
+      12,
+      42
+    ],
+    "enemy_punch_2": [
+      15,
+      42
+    ],
+    "enemy_punch_3": [
+      12,
+      42
+    ],
+    "enemy_punch_4": [
+      15,
+      42
+    ],
+    "enemy_kick_1": [
+      10,
+      43
+    ],
+    "enemy_kick_2": [
+      16,
+      43
+    ],
+    "enemy_kick_3": [
+      18,
+      43
+    ],
+    "enemy_kick_4": [
+      16,
+      43
+    ],
+    "enemy_fall_4": [
+      16,
+      43
+    ],
+    "akuma_stance_0": [
+      12,
+      42
+    ],
+    "akuma_walk_0": [
+      12,
+      42
+    ],
+    "akuma_walk_1": [
+      12,
+      42
+    ],
+    "akuma_walk_2": [
+      15,
+      42
+    ],
+    "akuma_punch_0": [
+      10,
+      43
+    ],
+    "akuma_punch_1": [
+      10,
+      43
+    ],
+    "akuma_punch_2": [
+      16,
+      43
+    ],
+    "akuma_punch_3": [
+      16,
+      43
+    ],
+    "akuma_kick_0": [
+      12,
+      32
+    ],
+    "akuma_kick_1": [
+      13,
+      32
+    ],
+    "akuma_kick_2": [
+      11,
+      32
+    ],
+    "akuma_kick_3": [
+      15,
+      32
+    ],
+    "akuma_fall_4": [
+      16,
+      32
+    ],
+    "mariko_stand": [
+      7,
+      47
+    ]
+  },
+  "anims": {
+    "hero.idle": [
+      "hero_idle_1"
+    ],
+    "hero.stance": [
+      "hero_stance_3",
+      "hero_stance_4"
+    ],
+    "hero.walk": [
+      "hero_walk_1",
+      "hero_walk_2",
+      "hero_walk_3",
+      "hero_walk_4",
+      "hero_walk_5",
+      "hero_walk_6",
+      "hero_walk_7",
+      "hero_walk_8"
+    ],
+    "hero.run": [
+      "hero_run_1",
+      "hero_run_2",
+      "hero_run_3",
+      "hero_run_4",
+      "hero_run_5",
+      "hero_run_6",
+      "hero_run_7",
+      "hero_run_8"
+    ],
+    "hero.punch": [
+      "hero_punch_1",
+      "hero_punch_2",
+      "hero_punch_3",
+      "hero_punch_4",
+      "hero_punch_5",
+      "hero_punch_6",
+      "hero_punch_7",
+      "hero_punch_8"
+    ],
+    "hero.kick": [
+      "hero_kick_1",
+      "hero_kick_2",
+      "hero_kick_3",
+      "hero_kick_4"
+    ],
+    "hero.fall": [
+      "hero_fall_0",
+      "hero_fall_1",
+      "hero_fall_2",
+      "hero_fall_3",
+      "hero_fall_4"
+    ],
+    "enemy.idle": [
+      "enemy_idle_1"
+    ],
+    "enemy.stance": [
+      "enemy_stance_3",
+      "enemy_stance_4"
+    ],
+    "enemy.walk": [
+      "enemy_walk_1",
+      "enemy_walk_2",
+      "enemy_walk_3",
+      "enemy_walk_4",
+      "enemy_walk_5",
+      "enemy_walk_6",
+      "enemy_walk_7",
+      "enemy_walk_8"
+    ],
+    "enemy.run": [
+      "enemy_run_1",
+      "enemy_run_2",
+      "enemy_run_3",
+      "enemy_run_4",
+      "enemy_run_5",
+      "enemy_run_6",
+      "enemy_run_7",
+      "enemy_run_8"
+    ],
+    "enemy.punch": [
+      "enemy_punch_1",
+      "enemy_punch_2",
+      "enemy_punch_3",
+      "enemy_punch_4"
+    ],
+    "enemy.kick": [
+      "enemy_kick_1",
+      "enemy_kick_2",
+      "enemy_kick_3",
+      "enemy_kick_4"
+    ],
+    "enemy.fall": [
+      "enemy_fall_4",
+      "enemy_fall_4",
+      "enemy_fall_4"
+    ],
+    "akuma.stance": [
+      "akuma_stance_0"
+    ],
+    "akuma.walk": [
+      "akuma_walk_0",
+      "akuma_walk_1",
+      "akuma_walk_2"
+    ],
+    "akuma.punch": [
+      "akuma_punch_0",
+      "akuma_punch_1",
+      "akuma_punch_2",
+      "akuma_punch_3"
+    ],
+    "akuma.kick": [
+      "akuma_kick_0",
+      "akuma_kick_1",
+      "akuma_kick_2",
+      "akuma_kick_3"
+    ],
+    "akuma.fall": [
+      "akuma_fall_4"
+    ],
+    "mariko.stance": [
+      "mariko_stand"
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+text_strings_12900 at load offset 12900:
+ASCII preview:
+........................castle.bcg.r.%d.%d %d %d.%d %d %d %d.%d %d..KARATEKA COPYRIGHT 1986 BRODERBUND SOFTWARE.....................................B.L.V.l...........d.d....d..Z...............................................................................................................................................................................................................................................................................................................................................
+Disassembly preview (may be data):
+12900: 00 00              add byte ptr [bx + si], al
+12902: 00 00              add byte ptr [bx + si], al
+12904: 00 00              add byte ptr [bx + si], al
+12906: 00 00              add byte ptr [bx + si], al
+12908: 00 00              add byte ptr [bx + si], al
+1290A: 00 00              add byte ptr [bx + si], al
+1290C: 00 00              add byte ptr [bx + si], al
+1290E: 00 00              add byte ptr [bx + si], al
+12910: 00 00              add byte ptr [bx + si], al
+12912: 00 00              add byte ptr [bx + si], al
+12914: 00 00              add byte ptr [bx + si], al
+12916: 00 00              add byte ptr [bx + si], al
+12918: 63 61 73           arpl word ptr [bx + di + 0x73], sp
+1291B: 74 6C              je 0x12989
+1291D: 65 2E 62 63 67     bound sp, dword ptr cs:[bp + di + 0x67]
+12922: 00 72 00           add byte ptr [bp + si], dh
+12925: 25 64 00           and ax, 0x64
+12928: 25 64 20           and ax, 0x2064
+1292B: 25 64 20           and ax, 0x2064
+1292E: 25 64 00           and ax, 0x64
+12931: 25 64 20           and ax, 0x2064
+12934: 25 64 20           and ax, 0x2064
+12937: 25 64 20           and ax, 0x2064
+1293A: 25 64 00           and ax, 0x64
+1293D: 25 64 20           and ax, 0x2064
+12940: 25 64 00           and ax, 0x64
+12943: 00 4B 41           add byte ptr [bp + di + 0x41], cl
+12946: 52                 push dx
+12947: 41                 inc cx
+12948: 54                 push sp
+12949: 45                 inc bp
+1294A: 4B                 dec bx
+1294B: 41                 inc cx
+1294C: 20 43 4F           and byte ptr [bp + di + 0x4f], al
+1294F: 50                 push ax
+12950: 59                 pop cx
+12951: 52                 push dx
+12952: 49                 dec cx
+12953: 47                 inc di
+12954: 48                 dec ax
+12955: 54                 push sp
+12956: 20 31              and byte ptr [bx + di], dh
+12958: 39 38              cmp word ptr [bx + si], di
+1295A: 36 20 42 52        and byte ptr ss:[bp + si + 0x52], al
+1295E: 4F                 dec di
+1295F: 44                 inc sp
+12960: 45                 inc bp
+12961: 52                 push dx
+12962: 42                 inc dx
+12963: 55                 push bp
+12964: 4E                 dec si
+12965: 44                 inc sp
+12966: 20 53 4F           and byte ptr [bp + di + 0x4f], dl
+12969: 46                 inc si
+1296A: 54                 push sp
+1296B: 57                 push di
+1296C: 41                 inc cx
+1296D: 52                 push dx
+1296E: 45                 inc bp
+1296F: 00 00              add byte ptr [bx + si], al
+12971: 00 00              add byte ptr [bx + si], al
+12973: 00 10              add byte ptr [bx + si], dl
+12975: 00 00              add byte ptr [bx + si], al
+12977: 00 00              add byte ptr [bx + si], al
+12979: 00 00              add byte ptr [bx + si], al
+1297B: 00 00              add byte ptr [bx + si], al
+1297D: 00 00              add byte ptr [bx + si], al
+1297F: 00 00              add byte ptr [bx + si], al
+12981: 00 00              add byte ptr [bx + si], al
+12983: 00 00              add byte ptr [bx + si], al
+12985: 00 00              add byte ptr [bx + si], al
+12987: 00 86 17 93        add byte ptr [bp - 0x6ce9], al
+1298B: 17                 pop ss
+1298C: A0 17 DB           mov al, byte ptr [0xdb17]
+1298F: 17                 pop ss
+12990: FB                 sti
+12991: 17                 pop ss
+12992: 0D 18 42           or ax, 0x4218
+12995: 18 4C 18           sbb byte ptr [si + 0x18], cl
+12998: 56                 push si
+12999: 18 6C 18           sbb byte ptr [si + 0x18], ch
+1299C: 93                 xchg bx, ax
+1299D: 18 B0 18 BF        sbb byte ptr [bx + si - 0x40e8], dh
+129A1: 18 00              sbb byte ptr [bx + si], al
+129A3: 00 04              add byte ptr [si], al
+129A5: 02 64 00           add ah, byte ptr [si]
+129A8: 64 04 01           add al, 1
+129AB: 96                 xchg si, ax
+129AC: 00 64 08           add byte ptr [si + 8], ah
+129AF: 10 5A 06           adc byte ptr [bp + si + 6], bl
+129B2: 01 02              add word ptr [bp + si], ax
+129B4: 96                 xchg si, ax
+129B5: 00 14              add byte ptr [si], dl
+129B7: 08 FF              or bh, bh
+129B9: 00 00              add byte ptr [bx + si], al
+129BB: 00 00              add byte ptr [bx + si], al
+129BD: 00 00              add byte ptr [bx + si], al
+129BF: 00 00              add byte ptr [bx + si], al
+129C1: 00 00              add byte ptr [bx + si], al
+129C3: 00 00              add byte ptr [bx + si], al

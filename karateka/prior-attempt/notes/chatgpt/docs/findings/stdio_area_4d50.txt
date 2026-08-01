@@ -1,0 +1,4 @@
+stdio_area_4d50 4D50
+4D50: 67 00 89 1E 65 00 A1 add byte ptr [ecx - 0x5eff9ae2], cl
+4D57: 5D                 pop bp
+4D58: 00 33              add byte ptr [bp + di], dh

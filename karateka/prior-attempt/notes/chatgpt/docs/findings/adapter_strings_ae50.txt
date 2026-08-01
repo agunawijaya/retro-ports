@@ -1,0 +1,104 @@
+adapter_strings_ae50 at load offset AE50:
+ASCII preview:
+.......Karateka needs a graphics adapter card to operate correctly..allgal.fuji.bcg.title.bcg.cal00.cal01..................P...........?........................................................................................................................................................................................................................................................................................................................................................................................
+Disassembly preview (may be data):
+AE50: 00 00              add byte ptr [bx + si], al
+AE52: 00 00              add byte ptr [bx + si], al
+AE54: 00 00              add byte ptr [bx + si], al
+AE56: 00 4B 61           add byte ptr [bp + di + 0x61], cl
+AE59: 72 61              jb 0xaebc
+AE5B: 74 65              je 0xaec2
+AE5D: 6B 61 20 6E        imul sp, word ptr [bx + di + 0x20], 0x6e
+AE61: 65 65 64 73 20     jae 0xae86
+AE66: 61                 popaw
+AE67: 20 67 72           and byte ptr [bx + 0x72], ah
+AE6A: 61                 popaw
+AE6B: 70 68              jo 0xaed5
+AE6D: 69 63 73 20 61     imul sp, word ptr [bp + di + 0x73], 0x6120
+AE72: 64 61              popaw
+AE74: 70 74              jo 0xaeea
+AE76: 65 72 20           jb 0xae99
+AE79: 63 61 72           arpl word ptr [bx + di + 0x72], sp
+AE7C: 64 20 74 6F        and byte ptr fs:[si + 0x6f], dh
+AE80: 20 6F 70           and byte ptr [bx + 0x70], ch
+AE83: 65 72 61           jb 0xaee7
+AE86: 74 65              je 0xaeed
+AE88: 20 63 6F           and byte ptr [bp + di + 0x6f], ah
+AE8B: 72 72              jb 0xaeff
+AE8D: 65 63 74 6C        arpl word ptr gs:[si + 0x6c], si
+AE91: 79 2E              jns 0xaec1
+AE93: 00 61 6C           add byte ptr [bx + di + 0x6c], ah
+AE96: 6C                 insb byte ptr es:[di], dx
+AE97: 67 61              popaw
+AE99: 6C                 insb byte ptr es:[di], dx
+AE9A: 00 66 75           add byte ptr [bp + 0x75], ah
+AE9D: 6A 69              push 0x69
+AE9F: 2E 62 63 67        bound sp, dword ptr cs:[bp + di + 0x67]
+AEA3: 00 74 69           add byte ptr [si + 0x69], dh
+AEA6: 74 6C              je 0xaf14
+AEA8: 65 2E 62 63 67     bound sp, dword ptr cs:[bp + di + 0x67]
+AEAD: 00 63 61           add byte ptr [bp + di + 0x61], ah
+AEB0: 6C                 insb byte ptr es:[di], dx
+AEB1: 30 30              xor byte ptr [bx + si], dh
+AEB3: 00 63 61           add byte ptr [bp + di + 0x61], ah
+AEB6: 6C                 insb byte ptr es:[di], dx
+AEB7: 30 31              xor byte ptr [bx + di], dh
+AEB9: 00 00              add byte ptr [bx + si], al
+AEBB: 00 00              add byte ptr [bx + si], al
+AEBD: 00 00              add byte ptr [bx + si], al
+AEBF: 00 00              add byte ptr [bx + si], al
+AEC1: 00 00              add byte ptr [bx + si], al
+AEC3: 00 00              add byte ptr [bx + si], al
+AEC5: 00 00              add byte ptr [bx + si], al
+AEC7: 00 00              add byte ptr [bx + si], al
+AEC9: 00 00              add byte ptr [bx + si], al
+AECB: 50                 push ax
+AECC: 00 00              add byte ptr [bx + si], al
+AECE: 00 00              add byte ptr [bx + si], al
+AED0: 00 00              add byte ptr [bx + si], al
+AED2: 00 00              add byte ptr [bx + si], al
+AED4: 00 FF              add bh, bh
+AED6: C0 3F F0           sar byte ptr [bx], 0xf0
+AED9: 0F FC 03           paddb mm0, qword ptr [bp + di]
+AEDC: 00 00              add byte ptr [bx + si], al
+AEDE: 00 00              add byte ptr [bx + si], al
+AEE0: 00 00              add byte ptr [bx + si], al
+AEE2: 00 00              add byte ptr [bx + si], al
+AEE4: 00 00              add byte ptr [bx + si], al
+AEE6: 00 00              add byte ptr [bx + si], al
+AEE8: 00 00              add byte ptr [bx + si], al
+AEEA: 00 00              add byte ptr [bx + si], al
+AEEC: 00 00              add byte ptr [bx + si], al
+AEEE: 00 00              add byte ptr [bx + si], al
+AEF0: 00 00              add byte ptr [bx + si], al
+AEF2: 00 00              add byte ptr [bx + si], al
+AEF4: 00 00              add byte ptr [bx + si], al
+AEF6: 00 00              add byte ptr [bx + si], al
+AEF8: 00 00              add byte ptr [bx + si], al
+AEFA: 00 00              add byte ptr [bx + si], al
+AEFC: 00 00              add byte ptr [bx + si], al
+AEFE: 00 00              add byte ptr [bx + si], al
+AF00: 00 00              add byte ptr [bx + si], al
+AF02: 00 00              add byte ptr [bx + si], al
+AF04: 00 00              add byte ptr [bx + si], al
+AF06: 00 00              add byte ptr [bx + si], al
+AF08: 00 00              add byte ptr [bx + si], al
+AF0A: 00 00              add byte ptr [bx + si], al
+AF0C: 00 00              add byte ptr [bx + si], al
+AF0E: 00 00              add byte ptr [bx + si], al
+AF10: 00 00              add byte ptr [bx + si], al
+AF12: 00 00              add byte ptr [bx + si], al
+AF14: 00 00              add byte ptr [bx + si], al
+AF16: 00 00              add byte ptr [bx + si], al
+AF18: 00 00              add byte ptr [bx + si], al
+AF1A: 00 00              add byte ptr [bx + si], al
+AF1C: 00 00              add byte ptr [bx + si], al
+AF1E: 00 00              add byte ptr [bx + si], al
+AF20: 00 00              add byte ptr [bx + si], al
+AF22: 00 00              add byte ptr [bx + si], al
+AF24: 00 00              add byte ptr [bx + si], al
+AF26: 00 00              add byte ptr [bx + si], al
+AF28: 00 00              add byte ptr [bx + si], al
+AF2A: 00 00              add byte ptr [bx + si], al
+AF2C: 00 00              add byte ptr [bx + si], al
+AF2E: 00 00              add byte ptr [bx + si], al

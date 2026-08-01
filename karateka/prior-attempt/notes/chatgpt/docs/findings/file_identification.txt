@@ -1,0 +1,114 @@
+File: KARATEKA.EXE
+Size: 87990 bytes
+Magic: MZ
+Header size: 512 bytes (32 paragraphs)
+EXE image size from header: 87990 bytes
+Load image size: 87478 bytes
+Relocations: 4
+Relocation table offset: 0x001E
+Entry point: CS:IP 0000:0002 (load-image linear 0x0002, file offset 0x0202)
+Initial SS:SP: 155C:0080 (load-image linear 0x15640)
+Min alloc: 0x0009
+Max alloc: 0xFFFF
+Overlay number: 0
+Relocation entries:
+  00: 0000:0004
+  01: 0000:0009
+  02: 0000:4819
+  03: 0000:482D
+
+Entropy:
+  whole file: 3.304 bits/byte
+  load image: 3.318 bits/byte
+
+Sibling files:
+  ALLBAL                184 bytes
+  ALLCAL               2727 bytes
+  ALLGAL               8762 bytes
+  ALLPAL              10095 bytes
+  ALLPAL.BAK          10241 bytes
+  ALLVAL               5641 bytes
+  BAL00                 217 bytes
+  BAL01                 650 bytes
+  BAL02                2907 bytes
+  BAL02A                355 bytes
+  BAL02B                376 bytes
+  BAL02C                397 bytes
+  BAL02D                418 bytes
+  BAL02E                439 bytes
+  BAL03                 561 bytes
+  BAL03A                 89 bytes
+  BAL03B                 57 bytes
+  BAL03C                 89 bytes
+  BAL03D                 88 bytes
+  BAL03E                109 bytes
+  BAL03F                125 bytes
+  CAL00                4014 bytes
+  CAL01                 382 bytes
+  CAL02                 225 bytes
+  CAL03                 308 bytes
+  CAL04                 182 bytes
+  CAL05                 335 bytes
+  CAL06                 485 bytes
+  CAL07                1216 bytes
+  CAL07A               1216 bytes
+  CASTLE.BCG          15360 bytes
+  FUJI.BCG             2816 bytes
+  KARATEKA.EXE        87990 bytes
+  KM0.DAT               969 bytes
+  KM0.IND               304 bytes
+  KM1.DAT               556 bytes
+  KM1.IND               320 bytes
+  KM2.DAT              1937 bytes
+  KM2.IND               408 bytes
+  KM3.DAT              2209 bytes
+  KM3.IND               408 bytes
+  KM4.DAT              3156 bytes
+  KM4.IND               364 bytes
+  KMC.DAT              7355 bytes
+  KMC.IND               500 bytes
+  KMI.DAT               173 bytes
+  KMI.IND               272 bytes
+  KMI0.DAT             2960 bytes
+  KMI0.IND              368 bytes
+  KMI1.DAT             2233 bytes
+  KMI1.IND              328 bytes
+  KMI2.DAT              855 bytes
+  KMI2.IND              276 bytes
+  KMI3.DAT             1281 bytes
+  KMI3.IND              292 bytes
+  KMI4.DAT             2465 bytes
+  KMI4.IND              340 bytes
+  KMIO.IND              364 bytes
+  KMJ2.DAT             2366 bytes
+  KMJ2.IND              352 bytes
+  KMJ4.DAT             2133 bytes
+  KMJ4.IND              328 bytes
+  KS0.DAT              6040 bytes
+  KS0.IND               328 bytes
+  KS1.DAT              7109 bytes
+  KS1.IND               348 bytes
+  KS2.DAT              6808 bytes
+  KS2.IND               428 bytes
+  KS3.DAT              8874 bytes
+  KS3.IND               432 bytes
+  KS4.DAT              9440 bytes
+  KS4.IND               384 bytes
+  KSC.DAT              7606 bytes
+  KSC.IND               500 bytes
+  KSI.DAT              1066 bytes
+  KSI.IND               272 bytes
+  KSI0.DAT             7516 bytes
+  KSI0.IND              392 bytes
+  KSI1.DAT             5137 bytes
+  KSI1.IND              340 bytes
+  KSI2.DAT             2601 bytes
+  KSI2.IND              284 bytes
+  KSI3.DAT             3026 bytes
+  KSI3.IND              300 bytes
+  KSI4.DAT             7776 bytes
+  KSI4.IND              364 bytes
+  KSJ2.DAT             5241 bytes
+  KSJ2.IND              364 bytes
+  KSJ4.DAT             5838 bytes
+  KSJ4.IND              348 bytes

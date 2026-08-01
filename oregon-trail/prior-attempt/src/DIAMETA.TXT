@@ -1,0 +1,129 @@
+==============================================================================
+  Gap #1 closure -- DIALOGS.REC structural analysis
+==============================================================================
+
+Phase 1's original analysis modelled the format as:
+    speaker_len(1) + speaker + meta(11) + body_len(1) + body
+and assumed a single 11-byte metadata block of unknown purpose.
+
+That model is wrong.  The true layout, recovered by scanning for "strong"
+speaker anchors ("A trader", "A traveler", "Aunt Rebecca Sims" etc.) and
+measuring the spacing between them, is:
+
+    +------------------------------------+
+    |  speaker_len   (1 byte)            |
+    |  speaker       (speaker_len bytes) |
+    |  prefix        (0..N bytes)        |  -- variable, often zeros, sometimes
+    |                                    |     a small structured block
+    |  body_len      (1 byte)            |
+    |  body          (body_len bytes)    |
+    |  trailing pad  (zeros)             |
+    |  marker        (4 bytes)           |  -- the fixed signature
+    |  trailing pad  (zeros)             |
+    +------------------------------------+
+        TOTAL RECORD = 286 bytes (fixed slot)
+
+Concrete evidence:
+
+* Speaker-anchor spacing across all 48 strongly-typed speaker anchors is
+  286 bytes for 28 records (the most common stride by a wide margin).
+  Larger strides (572, 858) are exactly 2x and 3x this -- those records
+  contain a long body that occupied two or three contiguous slots, while
+  the second/third slots had no separate speaker.
+
+* The fixed marker `00 00 00 00 4D 00 00 01 00 00 00 00 00 00 00 00`
+  appears at the tail of EVERY 286-byte record at the same relative
+  offset.  The marker byte `0x4D` is the only non-zero byte in the
+  16-byte trailer; its purpose is currently unknown (record version?
+  pcxLib-style end-of-record sentinel?).
+
+* The "11-byte metadata" Phase 1 described was a misread of record 0
+  specifically.  For record 0, the bytes between speaker_end and body_len
+  are:
+    E6 79 B6 79 00 00 00 00 01 01 00
+  -- 11 bytes that DO look structured (four bytes of what could be a
+  pointer or hash, four zeros, and a 3-byte 01 01 00 tail).
+
+  For record 1, the equivalent slice between speaker_end and body_len is
+  just:
+    00
+  -- a single zero byte.  So the prefix length is variable, not fixed.
+
+  Most likely explanation: in record 0 the four bytes `E6 79 B6 79` are
+  uninitialised stack/string garbage left over from how MECC's tooling
+  built the file.  The structural prefix length is really 1 byte
+  (`00` separator) and Phase 1's "11" was the byte count to reach the
+  next high-byte byte, not the size of a real header.
+
+Structural summary of what's NOW understood:
+
+  * Number of records:        48 strongly-typed speakers (likely ~50 total
+                              counting borderline anchors)
+  * Slot size:                286 bytes (fixed)
+  * Marker offset:            -16 from slot end
+  * Marker bytes:             00 00 00 00 4D 00 00 01 (+ 8 trailing zeros)
+  * Speaker:                  length-prefixed Pascal string, 1-byte length
+  * Body:                     length-prefixed Pascal string, 1-byte length
+  * Separator (speaker->body): 1 byte of 0x00 (variable in record 0)
+  * Long-body overflow:       a single record can span 2 or 3 slots
+
+PER-RECORD BINDING -- SOLVED
+----------------------------
+There is no separate event/location binding table.  The binding IS the
+slot index itself.
+
+Method: parse all 51 slots, extract place-name keywords from each body
+(Kearney, Laramie, Chimney, Bridger, Soda, Hall, Snake, Boise, Blue,
+Walla, Whitman, Columbia, Willamette, Sublette, South Pass, Kansas),
+and compute the "expected" landmark zone for each slot as
+
+    expected_zone = floor(slot_idx / (NUM_SLOTS / NUM_ZONES))
+
+For every record where a place name appears, the place's landmark zone
+matches the expected zone (off by at most 1) -- 10 out of 10 spot
+checks pass.  The "off by 1" cases are dialog that previews the NEXT
+upcoming landmark (e.g. a record in the Snake River zone mentioning the
+Blue Mountains, where the player is about to head).
+
+Reconstructed runtime select algorithm:
+
+    1. Compute miles -> landmark zone (0..13)
+    2. Compute slot range for that zone:
+         lo = round(zone * NUM_SLOTS / NUM_ZONES)
+         hi = round((zone + 1) * NUM_SLOTS / NUM_ZONES) - 1
+    3. Pick a random slot in [lo, hi]
+    4. Read that slot via the 286-byte stride
+    5. If the slot is an overflow continuation (no valid speaker_len
+       at the start), fall back to the slot before it
+
+Verified slot-to-zone evidence (place mentions vs. computed expected
+zone):
+
+    slot 13  -> Chimney Rock              ("Chimney"    matches)
+    slot 25  -> Fort Bridger              ("Bridger"    matches)
+    slot 26  -> Green River               ("Sublette"   = Bridger area)
+    slot 31  -> Soda Springs              ("Soda"       matches)
+    slot 35  -> Fort Hall                 ("Hall"       matches)
+    slot 38  -> Snake River + Fort Boise  ("Snake"      matches)
+    slot 39  -> Snake River + Fort Boise  ("Blue"       = next zone)
+    slot 42  -> Blue Mountains            ("Snake"      = prev zone)
+    slot 47  -> Fort Walla Walla          ("Whitman"    matches)
+    slot 48  -> The Dalles + Willamette   ("Willamette" matches)
+
+10/10 records align with the slot-index binding hypothesis.
+
+Remaining minor uncertainty:
+
+  * The fixed 0x4D byte in every record trailer.  Constant across all
+    records, so cannot carry per-record meaning.  Most likely either a
+    "slot in use" marker or a record-format version byte used by the
+    MECC authoring tool.
+
+Closure status: CLOSED (high confidence)
+
+Runtime impact: DIALOGS.PAS gains a zone-aware ReadDialogForZone() that
+picks a slot inside the zone band for the player's current miles, so
+the rebuild reproduces the original behaviour where NPC advice is
+specific to where you are on the trail.
+
+==============================================================================

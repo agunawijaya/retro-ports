@@ -1,0 +1,121 @@
+speaker_area_3b80 at load offset 3B80:
+3B80: C0 A3 16 01 75     shl byte ptr [bp + di + 0x116], 0x75
+3B85: 13 C7              adc ax, di
+3B87: 06                 push es
+3B88: F8                 clc
+3B89: 00 01              add byte ptr [bx + di], al
+3B8B: 00 A1 0C C4        add byte ptr [bx + di - 0x3bf4], ah
+3B8F: A3 D2 C3           mov word ptr [0xc3d2], ax
+3B92: 33 C0              xor ax, ax
+3B94: 83 C4 02           add sp, 2
+3B97: 5D                 pop bp
+3B98: C3                 ret
+3B99: FF 06 24 01        inc word ptr [0x124]
+3B9D: C7 06 0C 01 00 00  mov word ptr [0x10c], 0
+3BA3: A1 D4 C3           mov ax, word ptr [0xc3d4]
+3BA6: A3 D2 C3           mov word ptr [0xc3d2], ax
+3BA9: 83 C4 02           add sp, 2
+3BAC: 5D                 pop bp
+3BAD: C3                 ret
+3BAE: 55                 push bp
+3BAF: 8B EC              mov bp, sp
+3BB1: 8B 5E 04           mov bx, word ptr [bp + 4]
+3BB4: 80 FB 00           cmp bl, 0
+3BB7: 74 2E              je 0x3be7
+3BB9: 80 3E BC D6 00     cmp byte ptr [0xd6bc], 0
+3BBE: 74 1A              je 0x3bda
+3BC0: 80 3E BC D6 01     cmp byte ptr [0xd6bc], 1
+3BC5: 74 02              je 0x3bc9
+3BC7: 5D                 pop bp
+3BC8: C3                 ret
+3BC9: 80 FB 09           cmp bl, 9
+3BCC: 72 0C              jb 0x3bda
+3BCE: 80 FB 16           cmp bl, 0x16
+3BD1: 72 14              jb 0x3be7
+3BD3: 80 FB 19           cmp bl, 0x19
+3BD6: 72 02              jb 0x3bda
+3BD8: 5D                 pop bp
+3BD9: C3                 ret
+3BDA: E4 61              in al, 0x61
+3BDC: 24 FC              and al, 0xfc
+3BDE: E6 61              out 0x61, al
+3BE0: 4B                 dec bx
+3BE1: D1 E3              shl bx, 1
+3BE3: FF A7 BD D6        jmp word ptr [bx - 0x2943]
+3BE7: 5D                 pop bp
+3BE8: C3                 ret
+3BE9: B9 02 00           mov cx, 2
+3BEC: 51                 push cx
+3BED: E8 E5 01           call 0x3dd5
+3BF0: E8 C6 01           call 0x3db9
+3BF3: 59                 pop cx
+3BF4: 41                 inc cx
+3BF5: 83 F9 28           cmp cx, 0x28
+3BF8: 7C F2              jl 0x3bec
+3BFA: 5D                 pop bp
+3BFB: C3                 ret
+3BFC: B9 02 00           mov cx, 2
+3BFF: 51                 push cx
+3C00: E8 D2 01           call 0x3dd5
+3C03: E8 B3 01           call 0x3db9
+3C06: 59                 pop cx
+3C07: 41                 inc cx
+3C08: 41                 inc cx
+3C09: 83 F9 3A           cmp cx, 0x3a
+3C0C: 7C F1              jl 0x3bff
+3C0E: 5D                 pop bp
+3C0F: C3                 ret
+3C10: B9 02 00           mov cx, 2
+3C13: 51                 push cx
+3C14: E8 BE 01           call 0x3dd5
+3C17: E8 9F 01           call 0x3db9
+3C1A: 59                 pop cx
+3C1B: 41                 inc cx
+3C1C: 41                 inc cx
+3C1D: 83 F9 24           cmp cx, 0x24
+3C20: 7E F1              jle 0x3c13
+3C22: 5D                 pop bp
+3C23: C3                 ret
+3C24: B3 0A              mov bl, 0xa
+3C26: B9 05 00           mov cx, 5
+3C29: E8 8D 01           call 0x3db9
+3C2C: E8 A6 01           call 0x3dd5
+3C2F: FE CB              dec bl
+3C31: 75 F3              jne 0x3c26
+3C33: 5D                 pop bp
+3C34: C3                 ret
+3C35: B3 10              mov bl, 0x10
+3C37: B9 0A 00           mov cx, 0xa
+3C3A: E8 7C 01           call 0x3db9
+3C3D: E8 95 01           call 0x3dd5
+3C40: FE CB              dec bl
+3C42: 75 F3              jne 0x3c37
+3C44: 5D                 pop bp
+3C45: C3                 ret
+3C46: B9 10 00           mov cx, 0x10
+3C49: 51                 push cx
+3C4A: E8 88 01           call 0x3dd5
+3C4D: E8 69 01           call 0x3db9
+3C50: 59                 pop cx
+3C51: D1 E9              shr cx, 1
+3C53: 83 F9 01           cmp cx, 1
+3C56: 75 F1              jne 0x3c49
+3C58: 5D                 pop bp
+3C59: C3                 ret
+3C5A: B3 03              mov bl, 3
+3C5C: B9 10 00           mov cx, 0x10
+3C5F: E8 57 01           call 0x3db9
+3C62: E8 70 01           call 0x3dd5
+3C65: FE CB              dec bl
+3C67: 75 F3              jne 0x3c5c
+3C69: 5D                 pop bp
+3C6A: C3                 ret
+3C6B: A1 10 D7           mov ax, word ptr [0xd710]
+3C6E: A2 F8 D6           mov byte ptr [0xd6f8], al
+3C71: E8 6A 01           call 0x3dde
+3C74: 5D                 pop bp
+3C75: C3                 ret
+3C76: A1 12 D7           mov ax, word ptr [0xd712]
+3C79: A2 F8 D6           mov byte ptr [0xd6f8], al
+3C7C: E8 5F 01           call 0x3dde
+3C7F: 5D                 pop bp

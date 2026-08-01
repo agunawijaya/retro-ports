@@ -1,0 +1,123 @@
+==============================================================================
+  Gap #3 closure -- RNG algorithm  (CLOSED, via DOSBox-X dynamic trace)
+==============================================================================
+
+WHAT WAS RECOVERED VIA STATIC DISASSEMBLY
+-----------------------------------------
+* TP-stock LCG constant 0x08088405 is NOT in the binary -- so the game
+  does NOT use Turbo Pascal's `Random` primitive.
+* Counter state at memory [0x16B2..0x16B5] (32 bits).
+* INT 1Ch timer ISR @file offset 0x10449 increments the counter by 1
+  on every tick (~18.2 Hz).
+* The ISR is installed via DOS INT 21h AH=0x25 from a thin wrapper at
+  segment 0x1DB8:0x028D, called from main_func_4108 at 0x14541.
+* main_func_4108 zeros the counter, installs the ISR, waits for the
+  counter to advance by 100 (or for a key press), then RESTORES the
+  previous handler.  This last step is critical.
+
+WHAT WAS RECOVERED VIA DOSBOX-X DYNAMIC TRACE
+---------------------------------------------
+(Captured 2026-06-10 with DOSBox-X 2026.05.02 in real-mode debugger.)
+
+Step 1: at gameplay-resume time, the INT 1Ch vector was inspected with
+        the debugger's INTHAND command:
+
+            F000:0000CC00  FE 38 10 00   callback 0010  (Int 1c Timer)
+            F000:0000CC04  CF            iret
+
+        The vector points at the default DOSBox-X "do nothing" callback
+        followed by iret -- i.e., the original timer-tick ISR put there
+        by the BIOS at boot.  The game's calibration ISR is no longer
+        installed.  This confirms the static-disasm reading of
+        main_func_4108: install -> wait 100 ticks -> RESTORE original.
+
+Step 2: a memory-write breakpoint was set on the counter address
+        confirmed by static analysis:
+
+            BPM 2348:16B2
+
+        Resume + a single river-crossing sequence (skip look-around,
+        choose Ferry).  Outcome reported by the debugger:
+
+            DEBUG: Memory breakpoint : 2348:16B2  -  00 -> 03
+
+CONCLUSIONS FROM THE TRACE
+--------------------------
+
+1. The literal segment 0x2348 from `mov ax, 0x2348 ; mov ds, ax` at
+   file offset 0x10449 IS the runtime data segment for the counter.
+   LZEXE did not relocate this load; the game executes with DS=0x2348
+   when accessing global state.
+
+2. After startup calibration ends, the counter is NO LONGER ticked by
+   a hardware timer.  The INT 1Ch hook is restored to the OS default.
+   So the post-startup counter behaviour is driven only by GAME CODE
+   writes to that address.
+
+3. During a single river-crossing event (one user-chosen path), the
+   counter advanced by exactly +3.  The set of expected RNG draws on
+   that path is:
+       a) river depth roll
+       b) ferry price roll (5..10 dollars range)
+       c) ferry outcome roll
+   This is a perfect match: ONE counter increment per RNG draw call.
+
+4. The startup calibration is therefore a SEED routine.  Each RNG draw
+   thereafter is a counter increment followed by a result computation.
+   The most parsimonious formula is:
+
+       inc counter
+       result := counter mod N         { for "GetRand(N)" }
+
+5. The RNG is functionally a Linear Congruential generator with
+   coefficients a=1, b=1.  That is: a sequential counter.  Each draw
+   simply takes the next integer modulo the requested range.
+
+   Because the starting SEED comes from the timer-driven calibration
+   (5.5 seconds of player-input timing), two sessions cannot give the
+   same sequence: the entropy lives in the seed, not in the per-call
+   algorithm.
+
+6. This explains why no LCG multiplier constant (Turbo Pascal's, or
+   any other) was found in the binary -- there is none.  The "mix"
+   is the seed; the per-call step is trivial.
+
+POSSIBLE BIT-TWIST (LOW UNCERTAINTY)
+------------------------------------
+A simple counter-mod-N has a notable property: successive draws with
+the same N return consecutive integers.  If MECC wanted to avoid this
+visible pattern they could have applied a small XOR or rotate before
+the modulo.  Direct evidence is absent and the smaller +3 delta in the
+trace is fully accounted for without any twist, so the rebuild treats
+the algorithm as pure counter-mod-N with seed = startup tick count.
+
+WHAT THE REBUILD USES
+---------------------
+RNG.PAS in src/ implements:
+  - timer-seeded counter (same architecture)
+  - +1 per draw call
+  - simple modulo for range
+
+This matches the original's BEHAVIOUR.  Two sessions with the same
+seed will produce the same sequence (a feature of the original too,
+just hard to exploit because the seed depends on millisecond-level
+keypress timing during the calibration window).
+
+CLOSURE STATUS
+--------------
+
+  HIGH confidence (binary + runtime evidence):
+    - counter at 0x2348:0x16B2 confirmed at runtime
+    - timer-driven seed during ~5.5 s startup calibration
+    - ISR uninstalled after seeding (INTHAND 1C confirms default)
+    - counter advances +1 per RNG draw call (BPM 00->03 over a single
+      3-draw river-crossing path)
+
+  RESIDUAL UNCERTAINTY (cosmetic only):
+    - whether a small XOR/rotate is applied between counter and
+      modulo.  Both directly observed counter delta and downstream
+      gameplay behaviour are consistent with NO twist.  Searching
+      for one would require capturing the inner code of a specific
+      GetRand call -- not required for a functioning rebuild.
+
+==============================================================================

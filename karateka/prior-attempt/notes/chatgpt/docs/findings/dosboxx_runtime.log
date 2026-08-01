@@ -1,0 +1,136 @@
+Logging: opened logfile 'E:\Projects\DOS Games\Karateka\karateka\docs\findings\dosboxx_runtime.log' successfully. All further logging will go to this file.
+Win32 EnumDisplayDevices #0: name=\\.\DISPLAY1 string=Intel(R) UHD Graphics
+Win32 EnumDisplayDevices #1: name=\\.\DISPLAY2 string=Intel(R) UHD Graphics
+Win32 EnumDisplayDevices #2: name=\\.\DISPLAY3 string=Intel(R) UHD Graphics
+Win32 EnumDisplayDevices #3: name=\\.\DISPLAY4 string=Intel(R) UHD Graphics
+Win32 EnumDisplayDevices #4: name=\\.\DISPLAY5 string=NVIDIA GeForce RTX 4060 Laptop GPU
+Win32 EnumDisplayDevices #5: name=\\.\DISPLAY6 string=NVIDIA GeForce RTX 4060 Laptop GPU
+Win32 EnumDisplayDevices #6: name=\\.\DISPLAY7 string=NVIDIA GeForce RTX 4060 Laptop GPU
+Win32 EnumDisplayDevices #7: name=\\.\DISPLAY8 string=NVIDIA GeForce RTX 4060 Laptop GPU
+DOSBox-X version 2026.05.02 Commit d35990b (Visual Studio SDL1 64-bit)
+Prevent capture: 0
+Windows keyboard layout ID is 0x0409
+Host keyboard layout is now us (US English)
+Mapper keyboard layout is now us (US English)
+The default output for the video system: direct3d
+Configured windowposition: -
+SDL: Windows 11 round corners will be disabled.
+Screen report: Method 'Win98base' (2560.000 x 1600.000 pixels) at (0.000 x 0.000) (677.333 x 423.333 mm) (26.667 x 16.667 in) (96.000 x 96.000 DPI)
+SDL_mapper: US keyboard detected, set usescancodes=false
+WARNING: DOS/V is only supported for VGA video cards.
+ISA BCLK: 8333333.333Hz (25000000/3)
+monopal: green, 
+Active save slot: 1 [Empty]
+USING AVI+ZMBV
+Pentium CMPXCHG8B emulation is enabled
+Max 1073741824 sz 16384
+Final 16384
+Final arrangement: Below 4GB = 16384KB, Above 4GB = 0KB
+MIDI:Opened device:win32
+mic_input: Selected microphone device: Stereo Mix (Realtek(R) Audio)
+VOODOO LFB now at d0000000
+Serial1: BASE 3f8h
+Serial2: BASE 2f8h
+disney=true. For compatibility with other DOSBox forks and SVN, LPT1 has been reserved for Disney Sound Source. Initializing it now.
+DOSBox-X also supports disney=false and parallel1=disney
+         0       PIT:RTC Timer at 1024.00 hz
+         0       PIT:RTC Timer at 1024.00 hz
+MPU-401 Registering I/O ports as if IBM PC MPU-401 at base 330h
+Memory I/O complexity optimization enabled aka option 'memory io optimization 1'. If the game or demo is unable to draw to the screen properly, set the option to false.
+The 'scanline render on demand' option is available and may provide a modest boost in video render performance if set to true.
+Allocated APM BIOS pm entry point at f000:ce40
+Writing code to fce40
+Writing code to fce60
+         0       KEYBOARD:Keyboard AUX emulation enabled
+Windows: IID_ITaskbarList3 is available
+         3       INT10:Set Video Mode 3
+         3       INT10:Set Video Mode 3
+         3       PIT:RTC Timer at 1024.00 hz
+ISA Plug & Play BIOS enabled
+         8       INT10:Set Video Mode 3
+         8       INT10:Set Video Mode 3
+pixratio 1.200, dw false, dh true
+Aspect ratio: 640 x 480  xToY=1.333 yToX=0.750
+   2984344       INT10:Set Video Mode 3
+   2984344       INT10:Set Video Mode 3
+   2984347       DOSMISC:DOS clipboard device (dummy access) is enabled with the name CLIP$
+WARNING: No translation support (to host) for code page 0
+   2984350       PIT:RTC Timer at 1024.00 hz
+DOS keyboard layout loaded with main language code US for layout us
+COMMAND.COM env size:             720 bytes
+COMMAND.COM environment block:    0x0701 sz=0x002d
+COMMAND.COM main body (PSP):      0x072f sz=0x009a
+COMMAND.COM stack:                0x0749
+   2988109       FILES:file open command 2 file CON
+   2988114       FILES:file open command 2 file CON
+   2988119       FILES:file open command 2 file CON
+   2988124       FILES:file open command 2 file PRN
+   2988124       FILES:file open command 2 file CON
+   2988132       EXEC:Execute z:\system\intro.COM 0
+   2988132       FILES:file open command 0 file z:\system\intro.COM
+   2988132       FILES:Closing file INTRO.COM
+   3011274       FILES:Closing file CON
+   3011274       FILES:Closing file CON
+   3011274       FILES:Closing file CON
+   3011274       FILES:Closing file CON
+   3011274       FILES:Closing file CON
+   3011276       FILES:Special file open command 80 file Z:\AUTOEXEC.BAT
+   3011276       FILES:Closing file AUTOEXEC.BAT
+   3011276       FILES:Special file open command 80 file Z:\AUTOEXEC.BAT
+   3011276       FILES:Closing file AUTOEXEC.BAT
+   3012043       EXEC:Execute Z:\SYSTEM\mount.COM 0
+   3012043       FILES:file open command 0 file Z:\SYSTEM\mount.COM
+   3012043       FILES:Closing file MOUNT.COM
+   3012053       DOSMISC:DIRCACHE: Set volume label to New Volume
+   3012997       DOSMISC:DIRCACHE: Set volume label to A_FLOPPY
+   3013001       FILES:Closing file CON
+   3013001       FILES:Closing file CON
+   3013001       FILES:Closing file CON
+   3013001       FILES:Closing file CON
+   3013001       FILES:Closing file CON
+   3013003       FILES:Special file open command 80 file Z:\AUTOEXEC.BAT
+   3013003       FILES:Closing file AUTOEXEC.BAT
+   3013083       FILES:Special file open command 80 file Z:\AUTOEXEC.BAT
+   3013083       FILES:Closing file AUTOEXEC.BAT
+   3013286       EXEC:Execute karateka.exe 0
+   3013286       FILES:file open command 0 file karateka.exe
+   3013286       FILES:Closing file KARATEKA.EXE
+   3013971       INT10:Set Video Mode 4
+   3013971       INT10:Set Video Mode 4
+pixratio 1.200, dw true, dh true
+   3835513       FILES:file open command 0 file allpal
+   6615974       FILES:Closing file ALLPAL
+   6686489       FILES:file open command 0 file ksc.ind
+   6889888       FILES:Closing file KSC.IND
+   6961283       FILES:file open command 0 file ksc.dat
+   8095116       FILES:Closing file KSC.DAT
+   8164624       FILES:file open command 0 file kmc.ind
+   8368023       FILES:Closing file KMC.IND
+   8439366       FILES:file open command 0 file kmc.dat
+   9539774       FILES:Closing file KMC.DAT
+   9609631       FILES:file open command 0 file allgal
+  12035751       FILES:Closing file ALLGAL
+  12106049       FILES:file open command 0 file fuji.bcg
+  12616490       FILES:Closing file FUJI.BCG
+  12685975       FILES:file open command 0 file ks0.ind
+  12866431       FILES:Closing file KS0.IND
+  12936465       FILES:file open command 0 file ks0.dat
+  13861531       FILES:Closing file KS0.DAT
+  13930996       FILES:file open command 0 file km0.ind
+  14108252       FILES:Closing file KM0.IND
+  14178076       FILES:file open command 0 file km0.dat
+  14426948       FILES:Closing file KM0.DAT
+  14496409       FILES:file open command 0 file bal00
+  14698122       FILES:Closing file BAL00
+  14768724       FILES:file open command 0 file ksi.ind
+  14941742       FILES:Closing file KSI.IND
+  15011318       FILES:file open command 0 file ksi.dat
+  15273101       FILES:Closing file KSI.DAT
+  15342607       FILES:file open command 0 file kmi.ind
+  15515560       FILES:Closing file KMI.IND
+  15585199       FILES:file open command 0 file kmi.dat
+  15727900       FILES:Closing file KMI.DAT
+  27548295       FILES:file open command 0 file title.bcg
+  27661601       FILES:file search attributes 8 name A:\*.*
+  27661601       DOSMISC:DIRCACHE: Set volume label to New Volume
+--END OF LOG--

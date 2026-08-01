@@ -1,0 +1,177 @@
+/* =============================================================================
+   Oregon Trail JS - Stylesheet
+   =============================================================================
+   Goal: a "retro DOS terminal" look. The game itself draws everything to the
+   canvas at the original 320x200 resolution; this stylesheet only handles the
+   page chrome, the scaled-up canvas, and the DOM-based UI panel below it.
+
+   Colour palette is inspired by the EGA/VGA green-on-black terminal feel
+   typical of educational software in the late 80s / early 90s.
+   ============================================================================= */
+
+/* FIX 5 (CSS layout): center horizontally + top margin from browser. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    background: #000;
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    -webkit-font-smoothing: none;
+}
+
+/* FIX 5: column flex starting from top, centred horizontally. The top
+   padding gives a small breathing gap above the canvas so the title
+   isn't flush with the browser chrome. */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding-top: 40px;
+}
+
+#game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* FIX 5: canvas border lives on the canvas itself now (not the parent
+   container) so the DOM panel below lines up with its outer edge. */
+#game-canvas {
+    width: 640px;
+    height: 400px;
+    image-rendering: pixelated;       /* modern Chrome/Edge */
+    image-rendering: crisp-edges;     /* Firefox fallback   */
+    border: 2px solid #00ff00;
+    display: block;
+    background: #000;
+}
+
+#ui-panel {
+    width: 640px;
+}
+
+/* The UI panel sits directly below the canvas. It contains:
+   - #message-log: scrolling event log (typhoid struck Charlie, etc.)
+   - #input-area:  menu buttons and text inputs presented as DOM */
+#ui-panel {
+    margin-top: 4px;
+    color: #00ff00;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+#message-log {
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 6px 8px;
+    border: 1px solid #007700;
+    background: #001100;
+    white-space: pre-wrap;            /* preserve newlines in event text */
+}
+
+#message-log .msg {
+    margin: 0 0 2px 0;
+}
+
+/* Each event line gets a faint timestamp prefix in a dimmer green so the
+   focus stays on the message body. */
+#message-log .msg .ts {
+    color: #007700;
+    margin-right: 6px;
+}
+
+#input-area {
+    padding: 8px;
+    border: 1px solid #007700;
+    border-top: none;
+    background: #000800;
+    min-height: 48px;
+}
+
+/* Menu list. The original game used a numbered menu - we keep numbers as a
+   visual cue but also make each row a real button for keyboard / mouse use. */
+.menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.menu li {
+    margin: 2px 0;
+}
+
+.menu button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #00ff00;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 2px 6px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+}
+
+.menu button:hover,
+.menu button:focus {
+    /* Highlight bar effect - similar to the inverse-video selection used by
+       Turbo Pascal CRT-based menus. */
+    background: #00aa00;
+    color: #000;
+    outline: none;
+    border: 1px solid #00ff00;
+}
+
+/* Text inputs (party names, custom quantities) get the same green theme. */
+.text-input {
+    background: #000;
+    border: 1px solid #00aa00;
+    color: #00ff00;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 2px 4px;
+    width: 200px;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: #00ff00;
+}
+
+/* Prompt / question text above an input or menu. */
+.prompt {
+    margin: 0 0 6px 0;
+    color: #ffff00;                  /* yellow for "speak to the player"  */
+}
+
+/* Generic "press a key" footer hint. */
+.hint {
+    color: #007700;
+    font-style: italic;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+/* Status row above #message-log: shows date, miles, weather, health summary.
+   Updated every frame while traveling. */
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: #002200;
+    color: #ccff99;
+    font-size: 13px;
+    border: 1px solid #007700;
+    margin-bottom: 4px;
+}
+
+.status-row .field {
+    margin-right: 12px;
+}
+.status-row .field b {
+    color: #ffff00;
+    font-weight: normal;
+}

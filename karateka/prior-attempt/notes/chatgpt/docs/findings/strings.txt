@@ -1,0 +1,166 @@
+0000026E: <=tA< t
+000002B5: It.F&
+000002BC: < t&<
+000002C2: t",0|(<
+000008D0: "BKu
+00000AF2: "BKu
+00000DAE: F<{u
+0000104B: @P$0
+00001332: <DSQP
+000018D5: Ot:r
+000018EE: Ot!s
+000028B8: "uF3
+00002EC1: HHP3
+00002FA5: HHP3
+0000320C: HHP3
+00003272: |Vu 
+000032A7: |!uH
+00003479: }+= 
+0000347E: ~&=>
+00003915: &4l4
+000043D5: !<Ku
+0000441A: !<Ku
+00004694: NO;6
+00004A10: SQRUVW
+00004A24: _^]ZY[
+00004EEA: ~j+V
+00006EA2: Lattice C 2.1
+00006F22: Invalid stack size
+00006F36: $Invalid I/O redirection
+00006F50: $Insufficient memory
+00006F66: $*** STACK OVERFLOW ***
+00007016: set_tune
+0000701F: set_bg
+00007026: set_fig
+0000702E: chg_fig
+00007036: do_scr
+0000703D: del_fig
+00007045: set_wipe
+0000704E: set_nowipe
+00007059: wait
+0000705E: init_sal
+00007067: set_pos
+0000706F: inc_x
+00007075: loop
+0000707A: end_animation
+000070A4: bal00
+000070AA: bal01
+000070B0: bal02
+000070B6: bal03
+000070DC: ksi0
+000070E1: ksi1
+000070E6: ksi2
+000070EB: ksj2
+000070F0: ksi3
+000070F5: ksi4
+000070FA: ksj4
+00007138: kmi0
+0000713D: kmi1
+00007142: kmi2
+00007147: kmj2
+0000714C: kmi3
+00007151: kmi4
+00007156: kmj4
+000071C2: qazwsx46 b0.ind
+000071D2: .dat
+0000B057: Karateka needs a graphics adapter card to operate correctly.
+0000B094: allgal
+0000B09B: fuji.bcg
+0000B0A4: title.bcg
+0000B0AE: cal00
+0000B0B4: cal01
+0001275C: 80|gcs
+0001282D: g7?g
+00012855: 8888
+000128CD: 8`g<
+00012909: \xpp
+0001291D: \|88
+00012924: A!#6<
+00012946: x@`l8
+00012B18: castle.bcg
+00012B28: %d %d %d
+00012B31: %d %d %d %d
+00012B3D: %d %d
+00012B44: KARATEKA COPYRIGHT 1986 BRODERBUND SOFTWARE
+0001443C: allpal
+00014520: cal07a
+00014527: fuji.bcg
+00014530: cal04
+00014536: cal05
+0001453C: cal06
+00014542: allval
+00014549: cal03
+0001454F: prngal
+00014556: cal07
+00014562: <$<5<F<Z<k<
+00014950: :7tj
+0001495E: >8|p
+00014980: <>8|8|8x9
+000149C6: >><~8
+000149E3: <<|<p
+00014A55: %high atop a craggy cliff|
+00014A70: guarded by an army of
+00014A86: fierce warriors| stands the
+00014AA2: fortress of the evil
+00014AB7: warlord akuma{ deep in the
+00014AD2: darkest dungeon of the
+00014AE9: castle| akuma gloats over
+00014B03: his lovely captive| the
+00014B1B: princess mariko{
+00014B2E: you are one trained in the
+00014B49: way of karate} a karateka{
+00014B64: alone and unarmed| you must
+00014B80: defeat akuma and rescue the
+00014B9C: beautiful mariko{
+00014BB0: put fear and self~concern
+00014BCA: behind you{  focus your will
+00014BE7: on your objective|
+00014BFA: accepting death as a
+00014C0F: possibility{  this is the way
+00014C2D: of the karateka{
+00014C61: and so this adventure ends{
+00014C7D: the evil akuma lies
+00014C91: vanquished| the beautiful
+00014CAB: mariko safe in your arms{
+00014CC5: for the first time in
+00014CDB: memory| the village basks in
+00014CF8: the sunlight of peace{ but
+00014D13: beware} for the true
+00014D28: karateka there is always a
+00014D43: next time{ { { {
+00014D56: the end
+00014D5E: a game by
+00014D68: jordan mechner
+00014D77: ibm version by
+00014D86: the connelley group
+00014D9A: make sure your karateka
+00014DB2: disk is in drive a{
+00014DC6: press any key to continue
+00015169: con:
+00015173: CON:
+0001517D: prn:
+00015187: PRN:
+00015191: lst:
+0001519B: LST:
+000151A5: lpt:
+000151AF: LPT:
+000151B9: lpt1:
+000151C3: LPT1:
+000151CD: aux:
+000151D7: AUX:
+000151E1: com:
+000151EB: COM:
+000151F5: com1:
+000151FF: COM1:
+00015209: rdr:
+00015213: RDR:
+0001521D: pun:
+00015227: PUN:
+00015231: nul:
+0001523B: NUL:
+00015245: null:
+0001524F: NULL:
+00015327: Can't open stdin file
+0001533E: Can't open stdout file
+00015365:          (((((                  H
+000153E4:           (((((                  H

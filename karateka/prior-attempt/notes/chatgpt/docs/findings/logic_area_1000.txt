@@ -1,0 +1,221 @@
+logic_area_1000 at load offset 1000:
+1000: 37                 aaa
+1001: 03 50 FF           add dx, word ptr [bx + si - 1]
+1004: 76 04              jbe 0x100a
+1006: 89 5E 06           mov word ptr [bp + 6], bx
+1009: E8 D1 3F           call 0x4fdd
+100C: 8B E5              mov sp, bp
+100E: FF 76 04           push word ptr [bp + 4]
+1011: E8 E5 45           call 0x55f9
+1014: 8B E5              mov sp, bp
+1016: E8 4F FD           call 0xd68
+1019: B8 19 00           mov ax, 0x19
+101C: 50                 push ax
+101D: E8 8E 2B           call 0x3bae
+1020: 8B E5              mov sp, bp
+1022: 83 C4 0C           add sp, 0xc
+1025: 5D                 pop bp
+1026: C3                 ret
+1027: 55                 push bp
+1028: 83 EC 2A           sub sp, 0x2a
+102B: 72 06              jb 0x1033
+102D: 3B 26 17 00        cmp sp, word ptr [0x17]
+1031: 77 03              ja 0x1036
+1033: E9 EA F1           jmp 0x220
+1036: 8B EC              mov bp, sp
+1038: 8B 46 2E           mov ax, word ptr [bp + 0x2e]
+103B: D1 E0              shl ax, 1
+103D: 8B F0              mov si, ax
+103F: FF B4 64 02        push word ptr [si + 0x264]
+1043: 8D 46 16           lea ax, [bp + 0x16]
+1046: 50                 push ax
+1047: E8 94 46           call 0x56de
+104A: 8B E5              mov sp, bp
+104C: B8 2D 03           mov ax, 0x32d
+104F: 50                 push ax
+1050: 8D 46 16           lea ax, [bp + 0x16]
+1053: 50                 push ax
+1054: E8 45 4B           call 0x5b9c
+1057: 8B E5              mov sp, bp
+1059: B8 00 80           mov ax, 0x8000
+105C: 50                 push ax
+105D: 8D 46 16           lea ax, [bp + 0x16]
+1060: 50                 push ax
+1061: E8 09 06           call 0x166d
+1064: 8B E5              mov sp, bp
+1066: 8B 1E 60 01        mov bx, word ptr [0x160]
+106A: 81 C3 3C 44        add bx, 0x443c
+106E: B9 A8 02           mov cx, 0x2a8
+1071: 51                 push cx
+1072: 53                 push bx
+1073: 50                 push ax
+1074: 89 46 08           mov word ptr [bp + 8], ax
+1077: E8 63 3F           call 0x4fdd
+107A: 8B E5              mov sp, bp
+107C: FF 76 08           push word ptr [bp + 8]
+107F: E8 77 45           call 0x55f9
+1082: 8B E5              mov sp, bp
+1084: C7 46 0C 00 00     mov word ptr [bp + 0xc], 0
+1089: 8B 46 0C           mov ax, word ptr [bp + 0xc]
+108C: 3D A8 02           cmp ax, 0x2a8
+108F: 7D 6A              jge 0x10fb
+1091: 8B 1E 60 01        mov bx, word ptr [0x160]
+1095: 03 C3              add ax, bx
+1097: 8B F0              mov si, ax
+1099: 8A 8C 3C 44        mov cl, byte ptr [si + 0x443c]
+109D: 30 ED              xor ch, ch
+109F: 8A 94 3F 44        mov dl, byte ptr [si + 0x443f]
+10A3: 30 F6              xor dh, dh
+10A5: 89 4E 14           mov word ptr [bp + 0x14], cx
+10A8: B1 08              mov cl, 8
+10AA: D3 E2              shl dx, cl
+10AC: 8A 8C 3E 44        mov cl, byte ptr [si + 0x443e]
+10B0: 30 ED              xor ch, ch
+10B2: 03 CA              add cx, dx
+10B4: 03 CB              add cx, bx
+10B6: 8B 5E 14           mov bx, word ptr [bp + 0x14]
+10B9: D1 E3              shl bx, 1
+10BB: 89 4E 12           mov word ptr [bp + 0x12], cx
+10BE: 81 E1 FF 00        and cx, 0xff
+10C2: 88 8F 3C 42        mov byte ptr [bx + 0x423c], cl
+10C6: B1 08              mov cl, 8
+10C8: 8B 56 12           mov dx, word ptr [bp + 0x12]
+10CB: D3 FA              sar dx, cl
+10CD: 88 97 3D 42        mov byte ptr [bx + 0x423d], dl
+10D1: 81 7E 14 FF 00     cmp word ptr [bp + 0x14], 0xff
+10D6: 89 46 00           mov word ptr [bp], ax
+10D9: 75 1A              jne 0x10f5
+10DB: 8A 84 3F 44        mov al, byte ptr [si + 0x443f]
+10DF: 30 E4              xor ah, ah
+10E1: B1 08              mov cl, 8
+10E3: D3 E0              shl ax, cl
+10E5: 8A 9C 3E 44        mov bl, byte ptr [si + 0x443e]
+10E9: 30 FF              xor bh, bh
+10EB: 03 D8              add bx, ax
+10ED: C7 46 0C A8 02     mov word ptr [bp + 0xc], 0x2a8
+10F2: 89 5E 0A           mov word ptr [bp + 0xa], bx
+10F5: 83 46 0C 04        add word ptr [bp + 0xc], 4
+10F9: EB 8E              jmp 0x1089
+10FB: 8B 46 2E           mov ax, word ptr [bp + 0x2e]
+10FE: D1 E0              shl ax, 1
+1100: 8B F0              mov si, ax
+1102: FF B4 64 02        push word ptr [si + 0x264]
+1106: 8D 46 16           lea ax, [bp + 0x16]
+1109: 50                 push ax
+110A: E8 D1 45           call 0x56de
+110D: 8B E5              mov sp, bp
+110F: B8 32 03           mov ax, 0x332
+1112: 50                 push ax
+1113: 8D 46 16           lea ax, [bp + 0x16]
+1116: 50                 push ax
+1117: E8 82 4A           call 0x5b9c
+111A: 8B E5              mov sp, bp
+111C: B8 00 80           mov ax, 0x8000
+111F: 50                 push ax
+1120: 8D 46 16           lea ax, [bp + 0x16]
+1123: 50                 push ax
+1124: E8 46 05           call 0x166d
+1127: 8B E5              mov sp, bp
+1129: 8B 5E 0A           mov bx, word ptr [bp + 0xa]
+112C: 8B 0E 60 01        mov cx, word ptr [0x160]
+1130: 81 C1 3C 44        add cx, 0x443c
+1134: 53                 push bx
+1135: 51                 push cx
+1136: 50                 push ax
+1137: 89 46 08           mov word ptr [bp + 8], ax
+113A: 89 5E 10           mov word ptr [bp + 0x10], bx
+113D: E8 9D 3E           call 0x4fdd
+1140: 8B E5              mov sp, bp
+1142: FF 76 08           push word ptr [bp + 8]
+1145: E8 B1 44           call 0x55f9
+1148: 8B E5              mov sp, bp
+114A: 83 3E 60 01 00     cmp word ptr [0x160], 0
+114F: 75 06              jne 0x1157
+1151: 8B 46 0A           mov ax, word ptr [bp + 0xa]
+1154: A3 60 01           mov word ptr [0x160], ax
+1157: 8B 46 2E           mov ax, word ptr [bp + 0x2e]
+115A: D1 E0              shl ax, 1
+115C: 8B F0              mov si, ax
+115E: FF B4 C0 02        push word ptr [si + 0x2c0]
+1162: 8D 46 16           lea ax, [bp + 0x16]
+1165: 50                 push ax
+1166: E8 75 45           call 0x56de
+1169: 8B E5              mov sp, bp
+116B: B8 2D 03           mov ax, 0x32d
+116E: 50                 push ax
+116F: 8D 46 16           lea ax, [bp + 0x16]
+1172: 50                 push ax
+1173: E8 26 4A           call 0x5b9c
+1176: 8B E5              mov sp, bp
+1178: B8 00 80           mov ax, 0x8000
+117B: 50                 push ax
+117C: 8D 46 16           lea ax, [bp + 0x16]
+117F: 50                 push ax
+1180: E8 EA 04           call 0x166d
+1183: 8B E5              mov sp, bp
+1185: 8B 1E 64 01        mov bx, word ptr [0x164]
+1189: 81 C3 3A 89        add bx, 0x893a
+118D: B9 A8 02           mov cx, 0x2a8
+1190: 51                 push cx
+1191: 53                 push bx
+1192: 50                 push ax
+1193: 89 46 08           mov word ptr [bp + 8], ax
+1196: E8 44 3E           call 0x4fdd
+1199: 8B E5              mov sp, bp
+119B: FF 76 08           push word ptr [bp + 8]
+119E: E8 58 44           call 0x55f9
+11A1: 8B E5              mov sp, bp
+11A3: C7 46 0C 00 00     mov word ptr [bp + 0xc], 0
+11A8: 8B 46 0C           mov ax, word ptr [bp + 0xc]
+11AB: 3D A8 02           cmp ax, 0x2a8
+11AE: 7D 6A              jge 0x121a
+11B0: 8B 1E 64 01        mov bx, word ptr [0x164]
+11B4: 03 C3              add ax, bx
+11B6: 8B F0              mov si, ax
+11B8: 8A 8C 3A 89        mov cl, byte ptr [si - 0x76c6]
+11BC: 30 ED              xor ch, ch
+11BE: 8A 94 3D 89        mov dl, byte ptr [si - 0x76c3]
+11C2: 30 F6              xor dh, dh
+11C4: 89 4E 14           mov word ptr [bp + 0x14], cx
+11C7: B1 08              mov cl, 8
+11C9: D3 E2              shl dx, cl
+11CB: 8A 8C 3C 89        mov cl, byte ptr [si - 0x76c4]
+11CF: 30 ED              xor ch, ch
+11D1: 03 CA              add cx, dx
+11D3: 03 CB              add cx, bx
+11D5: 8B 5E 14           mov bx, word ptr [bp + 0x14]
+11D8: D1 E3              shl bx, 1
+11DA: 89 4E 12           mov word ptr [bp + 0x12], cx
+11DD: 81 E1 FF 00        and cx, 0xff
+11E1: 88 8F 3A 87        mov byte ptr [bx - 0x78c6], cl
+11E5: B1 08              mov cl, 8
+11E7: 8B 56 12           mov dx, word ptr [bp + 0x12]
+11EA: D3 FA              sar dx, cl
+11EC: 88 97 3B 87        mov byte ptr [bx - 0x78c5], dl
+11F0: 81 7E 14 FF 00     cmp word ptr [bp + 0x14], 0xff
+11F5: 89 46 00           mov word ptr [bp], ax
+11F8: 75 1A              jne 0x1214
+11FA: 8A 84 3D 89        mov al, byte ptr [si - 0x76c3]
+11FE: 30 E4              xor ah, ah
+1200: B1 08              mov cl, 8
+1202: D3 E0              shl ax, cl
+1204: 8A 9C 3C 89        mov bl, byte ptr [si - 0x76c4]
+1208: 30 FF              xor bh, bh
+120A: 03 D8              add bx, ax
+120C: C7 46 0C A8 02     mov word ptr [bp + 0xc], 0x2a8
+1211: 89 5E 0A           mov word ptr [bp + 0xa], bx
+1214: 83 46 0C 04        add word ptr [bp + 0xc], 4
+1218: EB 8E              jmp 0x11a8
+121A: 8B 46 2E           mov ax, word ptr [bp + 0x2e]
+121D: D1 E0              shl ax, 1
+121F: 8B F0              mov si, ax
+1221: FF B4 C0 02        push word ptr [si + 0x2c0]
+1225: 8D 46 16           lea ax, [bp + 0x16]
+1228: 50                 push ax
+1229: E8 B2 44           call 0x56de
+122C: 8B E5              mov sp, bp
+122E: B8 32 03           mov ax, 0x332
+1231: 50                 push ax
+1232: 8D 46 16           lea ax, [bp + 0x16]
+1235: 50                 push ax
+1236: E8 63 49           call 0x5b9c

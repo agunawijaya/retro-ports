@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Karateka — Web</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #fafafa;
+    color: #333;
+    font-family: monospace;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  h1 {
+    font-size: 14px;
+    margin: 8px 0;
+    letter-spacing: 4px;
+    color: #555;
+  }
+  #stage {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 1px solid #ccc;
+    background: #f5f5f5;
+  }
+  #help {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+  <h1>KARATEKA</h1>
+  <canvas id="stage" width="280" height="192"></canvas>
+  <div id="help">&larr;/&rarr; run &nbsp;&nbsp; SPACE fight stance &nbsp;&nbsp; Z punch &nbsp;&nbsp; X kick &nbsp;&nbsp; ENTER start</div>
+  <script src="src/karateka.js"></script>
+</body>
+</html>

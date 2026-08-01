@@ -1,0 +1,181 @@
+resource_open_1600 1600
+1600: 46                 inc si
+1601: 00 40 89           add byte ptr [bx + si - 0x77], al
+1604: 04 8B              add al, 0x8b
+1606: 5E                 pop si
+1607: 18 8B 76 00        sbb byte ptr [bp + di + 0x76], cl
+160B: 03 F3              add si, bx
+160D: C6 04 18           mov byte ptr [si], 0x18
+1610: 8B 4E 08           mov cx, word ptr [bp + 8]
+1613: 41                 inc cx
+1614: 8B 56 16           mov dx, word ptr [bp + 0x16]
+1617: 03 D1              add dx, cx
+1619: 8B 76 1A           mov si, word ptr [bp + 0x1a]
+161C: FF 04              inc word ptr [si]
+161E: 03 D8              add bx, ax
+1620: 53                 push bx
+1621: B8 85 BC           mov ax, 0xbc85
+1624: 50                 push ax
+1625: 52                 push dx
+1626: E8 18 41           call 0x5741
+1629: 8B E5              mov sp, bp
+162B: EB 3B              jmp 0x1668
+162D: 8B 76 1A           mov si, word ptr [bp + 0x1a]
+1630: 8B 04              mov ax, word ptr [si]
+1632: FF 04              inc word ptr [si]
+1634: 8B 76 18           mov si, word ptr [bp + 0x18]
+1637: 03 F0              add si, ax
+1639: C6 04 FF           mov byte ptr [si], 0xff
+163C: EB 2A              jmp 0x1668
+163E: 64 13 98 13 CC     adc bx, word ptr fs:[bx + si - 0x33ed]
+1643: 13 47 14           adc ax, word ptr [bx + 0x14]
+1646: CE                 into 
+1647: 14 E0              adc al, 0xe0
+1649: 14 14              adc al, 0x14
+164B: 15 26 15           adc ax, 0x1526
+164E: 38 15              cmp byte ptr [di], dl
+1650: 6C                 insb byte ptr es:[di], dx
+1651: 15 7E 15           adc ax, 0x157e
+1654: BE 15 FA           mov si, 0xfa15
+1657: 15 2D 16           adc ax, 0x162d
+165A: 8B F0              mov si, ax
+165C: 83 FE 0E           cmp si, 0xe
+165F: 73 07              jae 0x1668
+1661: D1 E6              shl si, 1
+1663: 2E FF A4 3E 16     jmp word ptr cs:[si + 0x163e]
+1668: 83 C4 12           add sp, 0x12
+166B: 5D                 pop bp
+166C: C3                 ret 
+166D: 55                 push bp
+166E: 83 EC 04           sub sp, 4
+1671: 72 06              jb 0x1679
+1673: 3B 26 17 00        cmp sp, word ptr [0x17]
+1677: 77 03              ja 0x167c
+1679: E9 A4 EB           jmp 0x220
+167C: 8B EC              mov bp, sp
+167E: FF 76 0A           push word ptr [bp + 0xa]
+1681: FF 76 08           push word ptr [bp + 8]
+1684: E8 32 37           call 0x4db9
+1687: 8B E5              mov sp, bp
+1689: 89 46 02           mov word ptr [bp + 2], ax
+168C: 40                 inc ax
+168D: 75 05              jne 0x1694
+168F: E8 6B 29           call 0x3ffd
+1692: EB EA              jmp 0x167e
+1694: 8B 46 02           mov ax, word ptr [bp + 2]
+1697: 83 C4 04           add sp, 4
+169A: 5D                 pop bp
+169B: C3                 ret 
+169C: 89 EC              mov sp, bp
+169E: B8 B8 02           mov ax, 0x2b8
+16A1: 50                 push ax
+16A2: C3                 ret 
+16A3: B2 FF              mov dl, 0xff
+16A5: B4 06              mov ah, 6
+16A7: CD 21              int 0x21
+16A9: 74 04              je 0x16af
+16AB: 3C 11              cmp al, 0x11
+16AD: 74 01              je 0x16b0
+16AF: C3                 ret 
+16B0: B8 03 00           mov ax, 3
+16B3: CD 10              int 0x10
+16B5: A1 15 00           mov ax, word ptr [0x15]
+16B8: 2D 04 00           sub ax, 4
+16BB: 89 C4              mov sp, ax
+16BD: B8 01 4C           mov ax, 0x4c01
+16C0: CD 21              int 0x21
+16C2: 01 02              add word ptr [bp + si], ax
+16C4: 8B 5E 06           mov bx, word ptr [bp + 6]
+16C7: B5 0A              mov ch, 0xa
+16C9: B1 07              mov cl, 7
+16CB: B6 00              mov dh, 0
+16CD: 8A 56 04           mov dl, byte ptr [bp + 4]
+16D0: 1E                 push ds
+16D1: 07                 pop es
+16D2: 90                 nop 
+16D3: CD 13              int 0x13
+16D5: 4F                 dec di
+16D6: 74 3A              je 0x1712
+16D8: 72 E7              jb 0x16c1
+16DA: BF 04 00           mov di, 4
+16DD: B8 01 02           mov ax, 0x201
+16E0: 8B 5E 08           mov bx, word ptr [bp + 8]
+16E3: B5 0A              mov ch, 0xa
+16E5: B1 F1              mov cl, 0xf1
+16E7: 8A 56 04           mov dl, byte ptr [bp + 4]
+16EA: B6 00              mov dh, 0
+16EC: CD 13              int 0x13
+16EE: 4F                 dec di
+16EF: 74 21              je 0x1712
+16F1: 73 EA              jae 0x16dd
+16F3: 80 FC 10           cmp ah, 0x10
+16F6: 75 E5              jne 0x16dd
+16F8: FC                 cld 
+16F9: B9 10 00           mov cx, 0x10
+16FC: 8B 76 06           mov si, word ptr [bp + 6]
+16FF: 8B 7E 08           mov di, word ptr [bp + 8]
+1702: 81 C7 8C 00        add di, 0x8c
+1706: F3 A7              repe cmpsw word ptr [si], word ptr es:[di]
+1708: 83 F9 00           cmp cx, 0
+170B: 75 05              jne 0x1712
+170D: B8 01 00           mov ax, 1
+1710: EB 02              jmp 0x1714
+1712: 33 C0              xor ax, ax
+1714: 1F                 pop ds
+1715: 07                 pop es
+1716: 5D                 pop bp
+1717: C3                 ret 
+1718: 33 DB              xor bx, bx
+171A: 33 C0              xor ax, ax
+171C: 8A 8F A4 BC        mov cl, byte ptr [bx - 0x435c]
+1720: 3A 8F C3 07        cmp cl, byte ptr [bx + 0x7c3]
+1724: 75 0D              jne 0x1733
+1726: 43                 inc bx
+1727: 8A 8F A4 BC        mov cl, byte ptr [bx - 0x435c]
+172B: 80 F9 00           cmp cl, 0
+172E: 75 F0              jne 0x1720
+1730: B8 01 00           mov ax, 1
+1733: C3                 ret 
+1734: C6 06 D0 BC 01     mov byte ptr [0xbcd0], 1
+1739: E8 30 01           call 0x186c
+173C: C7 06 E6 BC 00 00  mov word ptr [0xbce6], 0
+1742: C6 06 D7 BC 00     mov byte ptr [0xbcd7], 0
+1747: 8B 36 E6 BC        mov si, word ptr [0xbce6]
+174B: 8A 9C 04 BD        mov bl, byte ptr [si - 0x42fc]
+174F: 80 FB FF           cmp bl, 0xff
+1752: 74 29              je 0x177d
+1754: B7 00              mov bh, 0
+1756: FF 36 E6 BC        push word ptr [0xbce6]
+175A: FF 97 E8 BC        call word ptr [bx - 0x4318]
+175E: 83 3E 56 01 00     cmp word ptr [0x156], 0
+1763: 74 15              je 0x177a
+1765: E8 E1 29           call 0x4149
+1768: 3D 00 00           cmp ax, 0
+176B: 74 0D              je 0x177a
+176D: E8 8C 2A           call 0x41fc
+1770: 8F 06 E6 BC        pop word ptr [0xbce6]
+1774: C6 06 D0 BC 00     mov byte ptr [0xbcd0], 0
+1779: C3                 ret 
+177A: 58                 pop ax
+177B: EB CA              jmp 0x1747
+177D: B8 00 00           mov ax, 0
+1780: C6 06 D0 BC 00     mov byte ptr [0xbcd0], 0
+1785: C3                 ret 
+1786: 8A 84 05 BD        mov al, byte ptr [si - 0x42fb]
+178A: A2 30 BB           mov byte ptr [0xbb30], al
+178D: 83 06 E6 BC 02     add word ptr [0xbce6], 2
+1792: C3                 ret 
+1793: 8A 84 05 BD        mov al, byte ptr [si - 0x42fb]
+1797: A2 32 BB           mov byte ptr [0xbb32], al
+179A: 83 06 E6 BC 02     add word ptr [0xbce6], 2
+179F: C3                 ret 
+17A0: 8B 3E 2E BB        mov di, word ptr [0xbb2e]
+17A4: 8A 84 05 BD        mov al, byte ptr [si - 0x42fb]
+17A8: 88 85 30 BB        mov byte ptr [di - 0x44d0], al
+17AC: 8B 84 06 BD        mov ax, word ptr [si - 0x42fa]
+17B0: 80 3E D7 BC 00     cmp byte ptr [0xbcd7], 0
+17B5: 74 08              je 0x17bf
+17B7: FE 0E D7 BC        dec byte ptr [0xbcd7]
+17BB: 03 06 D5 BC        add ax, word ptr [0xbcd5]
+17BF: 89 85 31 BB        mov word ptr [di - 0x44cf], ax
+17C3: 8A 84 08 BD        mov al, byte ptr [si - 0x42f8]

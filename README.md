@@ -52,11 +52,21 @@ the smallest honest examples of them.
 | [**ParaTrooper**](paratrooper/) | 1982 | 8088 assembly, CGA, PC speaker | HTML / CSS / JavaScript | [6 documents](paratrooper/docs/) |
 | [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [4 documents](hard-hat-mack/docs/) |
 | [**Zaxxon**](zaxxon/) | 1984 | 8088 assembly, CGA, isometric | not yet | [4 documents](zaxxon/docs/) |
+| [**Karateka**](karateka/) | 1984 | 8088 assembly, and ninety data files | not yet | not started |
+| [**The Oregon Trail**](oregon-trail/) | 1990 | **Turbo Pascal**, LZEXE-packed | not yet | not started |
 
 Hard Hat Mack is decompiled and documented but not yet ported — the analysis
 came first, and it turned up something worth the wait: the IBM version was
 **mechanically translated from the Apple II original**, and the binary still
 carries the evidence.
+
+Karateka and The Oregon Trail are set up and triaged but not started. Each
+carries a folder of work from a session that predates the toolkit, kept as
+hypotheses rather than as results — the reasoning is in each one's
+`prior-attempt/README.md`. They were added because they break the pattern the
+first three share: Karateka keeps its artwork in ninety separate data files
+rather than inside the executable, and The Oregon Trail is **Turbo Pascal**,
+which nothing here has handled before.
 
 Zaxxon is the same: decompiled, documented, not ported. It is the best example
 here of the difference between a rebuild that is exact and a program that is

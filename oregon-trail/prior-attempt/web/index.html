@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Oregon Trail &mdash; JS Rebuild (Study Project)</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!--
+        Game container. The canvas runs at the original DOS resolution
+        of 320x200 px, which is then scaled up via CSS for modern displays.
+        We keep the internal coordinate system small so the sprite math
+        from the binary reverse-engineering work translates 1:1.
+    -->
+    <div id="game-container">
+        <canvas id="game-canvas" width="320" height="200"></canvas>
+
+        <!--
+            UI panel below the canvas. The original DOS game ran the menus
+            inside the same framebuffer, but for a learning project it is
+            much clearer to keep DOM-based menus and the canvas separate.
+        -->
+        <div id="ui-panel">
+            <div id="message-log" aria-live="polite"></div>
+            <div id="input-area"></div>
+        </div>
+    </div>
+
+    <!--
+        Single ES module entry. main.js wires the rest together so we
+        avoid declaring 12+ script tags and dependency ordering issues.
+    -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

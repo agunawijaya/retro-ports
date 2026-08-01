@@ -1,0 +1,124 @@
+script_names_data_6e00 at load offset 6E00:
+ASCII preview:
+......................set_tune.set_bg.set_fig.chg_fig.do_scr.del_fig.set_wipe.set_nowipe.wait.init_sal.set_pos.inc_x.loop.end_animation.v...........................bal00.bal01.bal02.bal03.........ks0.ks1.ks2.ks3.ks4.ksc.ksi0.ksi1.ksi2.ksj2.ksi3.ksi4.ksj4.ksi..$.(.,.0.4.8.<.A.F.K.P.U.Z._.km0.km1.km2.km3.km4.kmc.kmi0.kmi1.kmi2.kmj2.kmi3.kmi4.kmj4.kmi..............................@.....0...\.(.,.P. .X. . . . .....x.P.............`.@.@.@...`.$. .....qazwsx46 b0.ind..dat..........................................
+Disassembly preview (may be data):
+6E00: 00 00              add byte ptr [bx + si], al
+6E02: 00 00              add byte ptr [bx + si], al
+6E04: 00 00              add byte ptr [bx + si], al
+6E06: 00 00              add byte ptr [bx + si], al
+6E08: 00 00              add byte ptr [bx + si], al
+6E0A: 00 00              add byte ptr [bx + si], al
+6E0C: 00 00              add byte ptr [bx + si], al
+6E0E: 00 00              add byte ptr [bx + si], al
+6E10: 00 00              add byte ptr [bx + si], al
+6E12: 00 00              add byte ptr [bx + si], al
+6E14: 00 00              add byte ptr [bx + si], al
+6E16: 73 65              jae 0x6e7d
+6E18: 74 5F              je 0x6e79
+6E1A: 74 75              je 0x6e91
+6E1C: 6E                 outsb dx, byte ptr [si]
+6E1D: 65 00 73 65        add byte ptr gs:[bp + di + 0x65], dh
+6E21: 74 5F              je 0x6e82
+6E23: 62 67 00           bound sp, dword ptr [bx]
+6E26: 73 65              jae 0x6e8d
+6E28: 74 5F              je 0x6e89
+6E2A: 66 69 67 00 63 68 67 5F imul esp, dword ptr [bx], 0x5f676863
+6E32: 66 69 67 00 64 6F 5F 73 imul esp, dword ptr [bx], 0x735f6f64
+6E3A: 63 72 00           arpl word ptr [bp + si], si
+6E3D: 64 65 6C           insb byte ptr es:[di], dx
+6E40: 5F                 pop di
+6E41: 66 69 67 00 73 65 74 5F imul esp, dword ptr [bx], 0x5f746573
+6E49: 77 69              ja 0x6eb4
+6E4B: 70 65              jo 0x6eb2
+6E4D: 00 73 65           add byte ptr [bp + di + 0x65], dh
+6E50: 74 5F              je 0x6eb1
+6E52: 6E                 outsb dx, byte ptr [si]
+6E53: 6F                 outsw dx, word ptr [si]
+6E54: 77 69              ja 0x6ebf
+6E56: 70 65              jo 0x6ebd
+6E58: 00 77 61           add byte ptr [bx + 0x61], dh
+6E5B: 69 74 00 69 6E     imul si, word ptr [si], 0x6e69
+6E60: 69 74 5F 73 61     imul si, word ptr [si + 0x5f], 0x6173
+6E65: 6C                 insb byte ptr es:[di], dx
+6E66: 00 73 65           add byte ptr [bp + di + 0x65], dh
+6E69: 74 5F              je 0x6eca
+6E6B: 70 6F              jo 0x6edc
+6E6D: 73 00              jae 0x6e6f
+6E6F: 69 6E 63 5F 78     imul bp, word ptr [bp + 0x63], 0x785f
+6E74: 00 6C 6F           add byte ptr [si + 0x6f], ch
+6E77: 6F                 outsw dx, word ptr [si]
+6E78: 70 00              jo 0x6e7a
+6E7A: 65 6E              outsb dx, byte ptr gs:[si]
+6E7C: 64 5F              pop di
+6E7E: 61                 popaw
+6E7F: 6E                 outsb dx, byte ptr [si]
+6E80: 69 6D 61 74 69     imul bp, word ptr [di + 0x61], 0x6974
+6E85: 6F                 outsw dx, word ptr [si]
+6E86: 6E                 outsb dx, byte ptr [si]
+6E87: 00 76 01           add byte ptr [bp + 1], dh
+6E8A: 7F 01              jg 0x6e8d
+6E8C: 86 01              xchg byte ptr [bx + di], al
+6E8E: 8E 01              mov es, word ptr [bx + di]
+6E90: 96                 xchg si, ax
+6E91: 01 9D 01 A5        add word ptr [di - 0x5aff], bx
+6E95: 01 AE 01 B9        add word ptr [bp - 0x46ff], bp
+6E99: 01 BE 01 C7        add word ptr [bp - 0x38ff], di
+6E9D: 01 CF              add di, cx
+6E9F: 01 D5              add bp, dx
+6EA1: 01 DA              add dx, bx
+6EA3: 01 62 61           add word ptr [bp + si + 0x61], sp
+6EA6: 6C                 insb byte ptr es:[di], dx
+6EA7: 30 30              xor byte ptr [bx + si], dh
+6EA9: 00 62 61           add byte ptr [bp + si + 0x61], ah
+6EAC: 6C                 insb byte ptr es:[di], dx
+6EAD: 30 31              xor byte ptr [bx + di], dh
+6EAF: 00 62 61           add byte ptr [bp + si + 0x61], ah
+6EB2: 6C                 insb byte ptr es:[di], dx
+6EB3: 30 32              xor byte ptr [bp + si], dh
+6EB5: 00 62 61           add byte ptr [bp + si + 0x61], ah
+6EB8: 6C                 insb byte ptr es:[di], dx
+6EB9: 30 33              xor byte ptr [bp + di], dh
+6EBB: 00 04              add byte ptr [si], al
+6EBD: 02 0A              add cl, byte ptr [bp + si]
+6EBF: 02 10              add dl, byte ptr [bx + si]
+6EC1: 02 16 02 6B        add dl, byte ptr [0x6b02]
+6EC5: 73 30              jae 0x6ef7
+6EC7: 00 6B 73           add byte ptr [bp + di + 0x73], ch
+6ECA: 31 00              xor word ptr [bx + si], ax
+6ECC: 6B 73 32 00        imul si, word ptr [bp + di + 0x32], 0
+6ED0: 6B 73 33 00        imul si, word ptr [bp + di + 0x33], 0
+6ED4: 6B 73 34 00        imul si, word ptr [bp + di + 0x34], 0
+6ED8: 6B 73 63 00        imul si, word ptr [bp + di + 0x63], 0
+6EDC: 6B 73 69 30        imul si, word ptr [bp + di + 0x69], 0x30
+6EE0: 00 6B 73           add byte ptr [bp + di + 0x73], ch
+6EE3: 69 31 00 6B        imul si, word ptr [bx + di], 0x6b00
+6EE7: 73 69              jae 0x6f52
+6EE9: 32 00              xor al, byte ptr [bx + si]
+6EEB: 6B 73 6A 32        imul si, word ptr [bp + di + 0x6a], 0x32
+6EEF: 00 6B 73           add byte ptr [bp + di + 0x73], ch
+6EF2: 69 33 00 6B        imul si, word ptr [bp + di], 0x6b00
+6EF6: 73 69              jae 0x6f61
+6EF8: 34 00              xor al, 0
+6EFA: 6B 73 6A 34        imul si, word ptr [bp + di + 0x6a], 0x34
+6EFE: 00 6B 73           add byte ptr [bp + di + 0x73], ch
+6F01: 69 00 00 24        imul ax, word ptr [bx + si], 0x2400
+6F05: 02 28              add ch, byte ptr [bx + si]
+6F07: 02 2C              add ch, byte ptr [si]
+6F09: 02 30              add dh, byte ptr [bx + si]
+6F0B: 02 34              add dh, byte ptr [si]
+6F0D: 02 38              add bh, byte ptr [bx + si]
+6F0F: 02 3C              add bh, byte ptr [si]
+6F11: 02 41 02           add al, byte ptr [bx + di + 2]
+6F14: 46                 inc si
+6F15: 02 4B 02           add cl, byte ptr [bp + di + 2]
+6F18: 50                 push ax
+6F19: 02 55 02           add dl, byte ptr [di + 2]
+6F1C: 5A                 pop dx
+6F1D: 02 5F 02           add bl, byte ptr [bx + 2]
+6F20: 6B 6D 30 00        imul bp, word ptr [di + 0x30], 0
+6F24: 6B 6D 31 00        imul bp, word ptr [di + 0x31], 0
+6F28: 6B 6D 32 00        imul bp, word ptr [di + 0x32], 0
+6F2C: 6B 6D 33 00        imul bp, word ptr [di + 0x33], 0
+6F30: 6B 6D 34 00        imul bp, word ptr [di + 0x34], 0
+6F34: 6B 6D 63 00        imul bp, word ptr [di + 0x63], 0
+6F38: 6B 6D 69 30        imul bp, word ptr [di + 0x69], 0x30

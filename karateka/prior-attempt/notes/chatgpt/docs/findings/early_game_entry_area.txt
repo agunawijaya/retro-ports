@@ -1,0 +1,181 @@
+early_game_entry_area 02F0
+02F0: A3 F8 00           mov word ptr [0xf8], ax
+02F3: A3 FA 00           mov word ptr [0xfa], ax
+02F6: A3 2C 01           mov word ptr [0x12c], ax
+02F9: A3 30 01           mov word ptr [0x130], ax
+02FC: A3 66 01           mov word ptr [0x166], ax
+02FF: A3 AA D5           mov word ptr [0xd5aa], ax
+0302: E8 C2 00           call 0x3c7
+0305: 33 C0              xor ax, ax
+0307: A3 FC 00           mov word ptr [0xfc], ax
+030A: A3 30 01           mov word ptr [0x130], ax
+030D: E8 DF 15           call 0x18ef
+0310: C7 06 6A 01 00 00  mov word ptr [0x16a], 0
+0316: 83 3E 6A 01 01     cmp word ptr [0x16a], 1
+031B: 74 9B              je 0x2b8
+031D: 83 3E 44 DF 00     cmp word ptr [0xdf44], 0
+0322: 7F 94              jg 0x2b8
+0324: B8 01 00           mov ax, 1
+0327: 50                 push ax
+0328: E8 1E 3E           call 0x4149
+032B: 8B E5              mov sp, bp
+032D: E8 C8 15           call 0x18f8
+0330: E8 AE 1F           call 0x22e1
+0333: E8 A7 28           call 0x2bdd
+0336: E8 90 08           call 0xbc9
+0339: A1 54 01           mov ax, word ptr [0x154]
+033C: 85 C0              test ax, ax
+033E: 7E 43              jle 0x383
+0340: 3D 02 00           cmp ax, 2
+0343: 75 0B              jne 0x350
+0345: B8 08 00           mov ax, 8
+0348: 50                 push ax
+0349: E8 62 38           call 0x3bae
+034C: 8B E5              mov sp, bp
+034E: EB 2D              jmp 0x37d
+0350: 83 3E 54 01 03     cmp word ptr [0x154], 3
+0355: 75 0B              jne 0x362
+0357: B8 18 00           mov ax, 0x18
+035A: 50                 push ax
+035B: E8 50 38           call 0x3bae
+035E: 8B E5              mov sp, bp
+0360: EB 1B              jmp 0x37d
+0362: 83 3E 54 01 04     cmp word ptr [0x154], 4
+0367: 75 0B              jne 0x374
+0369: B8 16 00           mov ax, 0x16
+036C: 50                 push ax
+036D: E8 3E 38           call 0x3bae
+0370: 8B E5              mov sp, bp
+0372: EB 09              jmp 0x37d
+0374: B8 01 00           mov ax, 1
+0377: 50                 push ax
+0378: E8 33 38           call 0x3bae
+037B: 8B E5              mov sp, bp
+037D: C7 06 54 01 00 00  mov word ptr [0x154], 0
+0383: 33 C0              xor ax, ax
+0385: 83 3E 6A 01 00     cmp word ptr [0x16a], 0
+038A: A3 EE 00           mov word ptr [0xee], ax
+038D: 75 06              jne 0x395
+038F: E8 18 2E           call 0x31aa
+0392: A3 6A 01           mov word ptr [0x16a], ax
+0395: 83 3E 2A 01 02     cmp word ptr [0x12a], 2
+039A: 75 0F              jne 0x3ab
+039C: C7 06 2A 01 00 00  mov word ptr [0x12a], 0
+03A2: B8 01 00           mov ax, 1
+03A5: 50                 push ax
+03A6: E8 05 38           call 0x3bae
+03A9: 8B E5              mov sp, bp
+03AB: 83 3E 2A 01 01     cmp word ptr [0x12a], 1
+03B0: 75 0F              jne 0x3c1
+03B2: C7 06 2A 01 02 00  mov word ptr [0x12a], 2
+03B8: C7 06 A6 C3 01 00  mov word ptr [0xc3a6], 1
+03BE: E8 C9 36           call 0x3a8a
+03C1: E8 58 2C           call 0x301c
+03C4: E9 4F FF           jmp 0x316
+03C7: 55                 push bp
+03C8: 83 EC 04           sub sp, 4
+03CB: 72 06              jb 0x3d3
+03CD: 3B 26 17 00        cmp sp, word ptr [0x17]
+03D1: 77 03              ja 0x3d6
+03D3: E9 4A FE           jmp 0x220
+03D6: 8B EC              mov bp, sp
+03D8: E8 58 3E           call 0x4233
+03DB: 33 C0              xor ax, ax
+03DD: BB 3E CE           mov bx, 0xce3e
+03E0: 53                 push bx
+03E1: BB F4 41           mov bx, 0x41f4
+03E4: 53                 push bx
+03E5: A3 F6 00           mov word ptr [0xf6], ax
+03E8: A3 5C 01           mov word ptr [0x15c], ax
+03EB: A3 5A 01           mov word ptr [0x15a], ax
+03EE: E8 86 0E           call 0x1277
+03F1: 8B E5              mov sp, bp
+03F3: E8 AC 15           call 0x19a2
+03F6: B8 DC 05           mov ax, 0x5dc
+03F9: 50                 push ax
+03FA: B8 FB 41           mov ax, 0x41fb
+03FD: 50                 push ax
+03FE: E8 51 0B           call 0xf52
+0401: 8B E5              mov sp, bp
+0403: C7 06 EA 00 00 00  mov word ptr [0xea], 0
+0409: FF 36 EA 00        push word ptr [0xea]
+040D: E8 B2 16           call 0x1ac2
+0410: 8B E5              mov sp, bp
+0412: C7 06 44 DF 00 00  mov word ptr [0xdf44], 0
+0418: B8 0D 00           mov ax, 0xd
+041B: 50                 push ax
+041C: E8 08 0C           call 0x1027
+041F: 8B E5              mov sp, bp
+0421: E8 03 0B           call 0xf27
+0424: 85 C0              test ax, ax
+0426: 74 06              je 0x42e
+0428: E8 82 01           call 0x5ad
+042B: E9 14 01           jmp 0x542
+042E: 33 C0              xor ax, ax
+0430: 50                 push ax
+0431: B8 04 42           mov ax, 0x4204
+0434: 50                 push ax
+0435: E8 1A 0B           call 0xf52
+0438: 8B E5              mov sp, bp
+043A: E8 7A 3B           call 0x3fb7
+043D: 85 C0              test ax, ax
+043F: 74 06              je 0x447
+0441: E8 69 01           call 0x5ad
+0444: E9 FB 00           jmp 0x542
+0447: E8 90 3B           call 0x3fda
+044A: 85 C0              test ax, ax
+044C: 74 06              je 0x454
+044E: E8 5C 01           call 0x5ad
+0451: E9 EE 00           jmp 0x542
+0454: E8 97 0A           call 0xeee
+0457: 85 C0              test ax, ax
+0459: 74 06              je 0x461
+045B: E8 4F 01           call 0x5ad
+045E: E9 E1 00           jmp 0x542
+0461: E8 DB 3A           call 0x3f3f
+0464: 85 C0              test ax, ax
+0466: 74 06              je 0x46e
+0468: E8 42 01           call 0x5ad
+046B: E9 D4 00           jmp 0x542
+046E: C7 06 E4 00 00 00  mov word ptr [0xe4], 0
+0474: E8 D7 06           call 0xb4e
+0477: C7 06 EE 00 01 00  mov word ptr [0xee], 1
+047D: C7 06 EA 00 04 00  mov word ptr [0xea], 4
+0483: B8 04 BD           mov ax, 0xbd04
+0486: 50                 push ax
+0487: B8 0E 42           mov ax, 0x420e
+048A: 50                 push ax
+048B: E8 E9 0D           call 0x1277
+048E: 8B E5              mov sp, bp
+0490: B8 06 00           mov ax, 6
+0493: 50                 push ax
+0494: E8 90 0B           call 0x1027
+0497: 8B E5              mov sp, bp
+0499: E8 98 12           call 0x1734
+049C: 85 C0              test ax, ax
+049E: 74 06              je 0x4a6
+04A0: E8 0A 01           call 0x5ad
+04A3: E9 9C 00           jmp 0x542
+04A6: C7 06 EA 00 00 00  mov word ptr [0xea], 0
+04AC: B8 04 BD           mov ax, 0xbd04
+04AF: 50                 push ax
+04B0: B8 14 42           mov ax, 0x4214
+04B3: 50                 push ax
+04B4: E8 C0 0D           call 0x1277
+04B7: 8B E5              mov sp, bp
+04B9: B8 DC 05           mov ax, 0x5dc
+04BC: 50                 push ax
+04BD: B8 FB 41           mov ax, 0x41fb
+04C0: 50                 push ax
+04C1: E8 8E 0A           call 0xf52
+04C4: 8B E5              mov sp, bp
+04C6: 33 C0              xor ax, ax
+04C8: 50                 push ax
+04C9: E8 F6 15           call 0x1ac2
+04CC: 8B E5              mov sp, bp
+04CE: E8 63 12           call 0x1734
+04D1: 85 C0              test ax, ax
+04D3: 74 05              je 0x4da
+04D5: E8 0D 01           call 0x5e5
+04D8: EB 68              jmp 0x542
+04DA: C7 06 EA 00 00 00  mov word ptr [0xea], 0

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Measure-Object)",
+      "Bash(Select-Object Count)",
+      "PowerShell(py *)",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" info \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\KM0\")",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" info \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\KMC\")",
+      "PowerShell(\"\")",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" all \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\" \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extracted\" 2>&1 | Select-Object -First 80)",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" all \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\" \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extracted\" 2>&1 | Select-Object -Last 40)",
+      "PowerShell(\"Sprite-pack subdirs:\")",
+      "PowerShell(\"Background files:\")",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" bcg \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\CASTLE.BCG\" \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extracted\\\\backgrounds\\\\CASTLE.png\")",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" bcg \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\FUJI.BCG\" \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extracted\\\\backgrounds\\\\FUJI.png\")",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" raw \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\KM0\" \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extracted\\\\sprites\\\\KM0\\\\renders\")",
+      "PowerShell(python \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extract_karateka.py\" pair \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\KM0\" \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\KMI0\" \"E:\\\\Projects\\\\DOS Games\\\\Karateka\\\\karateka\\\\extracted\\\\sprites\\\\KM0_paired_KMI0\")"
+    ]
+  }
+}

@@ -1,0 +1,290 @@
+==============================================================================
+  Deep static analysis pass -- which "approximated" items got closed
+==============================================================================
+
+This document records the deep-static-analysis pass done after the
+DOSBox-X live trace closed Gap #3.  It revisits every item I flagged
+as APPROXIMATED or NOT CHECKED, and reports outcome.
+
+----------------------------------------------------------------------
+A.  TOMB.REC format  -- CLOSED  (structural)
+----------------------------------------------------------------------
+
+File size: 110 bytes.  Shipped contents include 3 records (one is the
+ZOP12.GAM-linked developer entry; another is a player entry with name
+"Anthony"; the third begins but the file ends partway through).
+
+Outer layout:
+    byte  0      : record count (= 0x03 in shipped file)
+    bytes 1..6   : ~6-byte header (purpose unclear; values 04 44 01 61 00)
+    bytes 7..end : variable-length tombstone records
+
+Per-record fields observed (order within a record):
+    save_name_len  : 1 byte        (e.g. 0x09 for "ZOP12.G\0M")
+    save_name      : N bytes       (8.3 name of the save the dead player came from)
+    metadata block : ~14-20 bytes  (unclear, includes coords or timestamps)
+    player_name_len: 1 byte
+    player_name    : M bytes       (e.g. "Anthony", len 7)
+    save_ref_again : 4 bytes       (e.g. "2.G\x18" -- save ref tail + epitaph_len?)
+    epitaph_len    : 1 byte        (e.g. 0x18 = 24)
+    epitaph        : K bytes       (user-typed epitaph text)
+    record trailer : a few zero bytes
+
+The 0x4D byte pattern that appears in both DIALOGS.REC and as part of
+TOMB.REC's leading bytes hints at a shared MECC "REC" container format
+marker -- but no per-record meaning was identified.
+
+SAVELOAD.PAS in src/ writes tombstones using a compatible Pascal-string
+layout for name + cause.  Exact field offsets used by the original are
+documented above but not bit-perfect in the rebuild's writer.
+
+----------------------------------------------------------------------
+B.  Music tempo handling  -- CLOSED (verified, no change needed)
+----------------------------------------------------------------------
+
+SONGS.TXT line samples show explicit per-song tempo tokens:
+
+    t100 o5l8cccccdl4fl8gl4fdc.l8fgggfal4>cl8dl4c<ag....
+    t120 o5l4a.a.l8af#>d<af#dl4g.g.l8gef#gf#el4a.a.l8af#...
+    t150 o5l8cegagecl4el8el4el8cegagecl4dl8dl4dl8cegagec...
+    ...
+
+Tempos used: 80, 90, 100, 120, 140, 150, 170, 180.
+
+MUSIC.PAS in src/ parses 't<n>' tokens and rescales the per-note delay
+as `MsPerWhole := 240000 div Tempo`.  This matches GW-BASIC PLAY-syntax
+semantics and produces tempos in the same range.  Tempo handling is
+correct.  No change required.
+
+----------------------------------------------------------------------
+C.  Ration consumption per day  -- CLOSED  (high confidence)
+----------------------------------------------------------------------
+
+Static disasm of the function at file offset 0x13D26 (previously
+mis-classified as the score function in Phase 4):
+
+    push bp; mov bp, sp; sub sp, 2
+    push cs
+    call CountAlivePty                  ; ax = alive
+    xor ah, ah; mov cx, ax              ; cx = alive
+    mov al, byte ptr [0x185E]           ; load a state byte
+    cwde; mov dx, ax                    ; dx = state byte (zero-extended)
+    mov ax, 3; sub ax, dx               ; ax = 3 - state
+    imul cx                             ; dx:ax = (3 - state) * alive
+    mov [bp-2], ax; mov ax, [bp-2]
+    mov sp, bp; pop bp; ret 2
+
+Both callers at 0x14172 and 0x1417C use this return value as a
+"consumption" amount that is subtracted from [0x183F] each day:
+
+    call (3-X)*alive_fn
+    if ax >= [0x183F]:                  ; would underflow
+        [0x183F] := 0                   ; STARVATION
+    else:
+        [0x183F] -= ax                  ; food -= consumption
+
+State byte [0x185E] interpretation as RATION INDEX:
+    Filling   (idx 0)  -> 3 lbs/person/day
+    Meager    (idx 1)  -> 2 lbs/person/day
+    Bare bones(idx 2)  -> 1 lb/person/day
+
+Confidence: was HIGH from static evidence; DOWNGRADED TO MEDIUM after
+DOSBox-X round 2 (2026-06-11).
+
+Static evidence: the "compute, check underflow, decrement" idiom
+called twice in close succession IS canonical for food-consumption,
+and (3-X)*alive cleanly matches the documented 3/2/1 lbs ration
+mechanic.
+
+DYNAMIC EVIDENCE CONTRADICTING THIS: a memory-write breakpoint on
+[0x2348:0x183F] during gameplay fired only ONCE -- at the initial
+load, with value transition 0 -> 0xC7 (199).  Subsequent gameplay
+(591M cycles elapsed) produced ZERO further BPM hits.  If [0x183F]
+were food, we would have seen the value decrement every simulated
+day.
+
+So either:
+  (a) [0x183F] is NOT food; the function at 0x13D26 manipulates a
+      different state slot (maybe water, fatigue, or a per-event
+      counter that happened to be untouched in our brief test)
+  (b) Food lives at a different runtime segment than 0x2348 (the
+      Gap #3 closure confirmed 0x2348 for the RNG counter, but
+      other state may use a different DS)
+  (c) The food-consumption code path was not triggered in our
+      test (maybe because the developer save loaded with a state
+      that skipped consumption)
+
+Implications for the rebuild:
+  - GAMESTAT.ConsumeFood's (3-X)*alive formula matches the static
+    pattern but its mapping to game state needs re-verification
+  - The pattern itself is well-formed for ration mechanics, so
+    the BEHAVIOUR of the rebuild is reasonable
+  - Bit-perfect fidelity to the original is now uncertain
+
+To fully resolve: need to find the correct runtime address of the
+food state, or set BP-instruction breakpoints on the disasm sites
+inside function 0x13D26 itself to see if it's even being called
+during normal gameplay.
+
+----------------------------------------------------------------------
+D.  Score formula base weights  -- still PARTIAL (structural only)
+----------------------------------------------------------------------
+
+Strings near the "Congratulations" output @ file 0x07CA6 reveal that
+the score is built from per-resource component awards:
+
+    Points for arriving in Oregon
+    Points for people in <health>
+    Points for wagon
+    Points for oxen
+    Points for spare wagon parts
+    Points for sets of clothing
+    (etc.)
+
+So the score IS a weighted sum, structurally:
+    final_score = base_award
+                + people_count * people_weight
+                + health_weight  (depends on tier)
+                + wagons_weight
+                + oxen * oxen_weight
+                + spares * spare_weight
+                + clothing * clothing_weight
+                ...
+
+Then this whole thing is multiplied by the difficulty / occupation
+multiplier (the (3 - occ_idx) * alive pattern documented in Phase 4
+NOT actually being this function; the real score multiplier is at a
+different call site that I did not locate cleanly).
+
+What is CONFIRMED:
+    * score has component-wise contributions per resource (string
+      evidence)
+    * score includes an occupation-based multiplier (HISCORES.REC
+      pre-seed values match Banker x1 / Carpenter x2 / Farmer x3
+      pattern documented by every historic source on the title)
+
+What remains UNCERTAIN:
+    * exact per-resource weights (10? 50? variable based on health?)
+    * health-tier point values
+    * whether base_award is constant or scales
+
+The rebuild's BaseResources function in TRAVEL.PAS uses reasonable
+defaults.  Score TOTALS won't be bit-identical to the original but
+ORDERING will be (best run still scores highest).
+
+----------------------------------------------------------------------
+E.  Pace hour constants 8 / 12 / 16  -- DISPROVED
+----------------------------------------------------------------------
+
+Brute-force scan of the unpacked binary for clusters of immediate
+loads of (8, 12, 16) within 64 bytes returned ZERO matches.  Other
+candidate triplets tested -- (15,20,25), (10,15,25), (12,18,24),
+(5,10,15), (10,15,20), (20,30,40), (8,15,25) -- all returned ZERO.
+
+Conclusion: the original game does NOT encode pace as a simple hours-
+per-day lookup with the values reported in secondary docs.  The pace
+constants in TRAVEL.PAS (8/12/16 hours-per-day) are an APPROXIMATION
+inherited from the LEARN doc, and the LEARN doc itself appears to be
+a reconstruction guess rather than a binary extraction.
+
+Possible alternative encodings:
+    * miles-per-day looked up by pace_idx
+    * a multiplier applied to ox-team-speed
+    * a divisor of some travel-time constant
+
+Without finding the actual daily-miles function, the rebuild keeps
+the approximation.  This affects gameplay TUNING but not behaviour.
+
+----------------------------------------------------------------------
+F.  Speed per oxen count  -- NOT CLOSED
+----------------------------------------------------------------------
+
+Same problem as E.  No simple constant cluster found for ox-count to
+speed mapping.  TRAVEL.SpeedFactor in src/ uses a step function
+(>=6 oxen -> 3, >=4 -> 2, >=2 -> 1, else 0) as a reasonable default.
+Real formula not recovered from static analysis alone.
+
+----------------------------------------------------------------------
+G.  Hunting animal weights and meat values  -- NOT CLOSED
+----------------------------------------------------------------------
+
+Joystick polling code at 0x11580 was already identified.  The animal-
+spawn and per-species meat tables would be referenced AFTER the hit
+detection, which I did not locate cleanly.  HUNTING.PAS uses
+reasonable defaults (rabbit=2 lbs, buffalo=800 lbs, etc.).
+
+----------------------------------------------------------------------
+H.  JOYCAL.REC layout  -- CLOSED  (already documented)
+----------------------------------------------------------------------
+
+9-byte fixed record: 4 * uint16 (axis min/max for X/Y) + 1 byte enable
+flag.  This was correctly documented in Phase 1 and the rebuild
+matches.  No further action.
+
+==============================================================================
+  Update -- Ghidra Headless Pass (2026-06-11)
+==============================================================================
+
+After this static pass, a Ghidra 12.1.2 headless run was performed.
+Outcome:
+
+UPGRADED (CONFIRMED via Ghidra decompile):
+  - JOYCAL.REC structure: confirmed runtime addresses
+        0x16B6 / 0x16B8 / 0x16BA / 0x16BC = 4 axis WORDs
+        0x16BE = enable flag
+        0x16BF / 0x16C0 = button states (runtime, not in REC)
+        0x16C2 / 0x16C4 = mapped X/Y directions (runtime)
+  - Phase 1's "joystick = hunting" was WRONG.  File offset 0x11580
+    is the GENERIC joystick port reader (FUN_1000_1537), called
+    from joystick mapper (FUN_1000_19c0) and calibration loop
+    (FUN_1000_1632).  The hunting game uses this layer but the
+    actual animal logic is in a separate (un-located) function.
+
+NEW DATA: state slot map at 0x1800-0x18C0
+  Capstone-direct scan of MOV [m16], AX writes in this range yields:
+    0x1837, 0x1839, 0x183F (food), 0x1842, 0x1847, 0x184D, 0x185F,
+    0x1861, 0x1867, 0x1880, 0x1882, 0x1886, 0x18A0
+  Plus from disasm: 0x185E (ration idx, byte), 0x1853+ (party alive
+  flags).
+  These form a contiguous game state table.  Slot-to-field mapping
+  would require dynamic BPM trace per slot.
+
+STILL OPEN after Ghidra pass:
+  - score function not located (TP6 indirect string addressing
+    means no MOV reg, 0x7CA6 hits exist in the binary)
+  - pace dispatch code: 1 MOV ref to pace text 0x9E00 found at
+    file 0x23DEE but the function boundary not auto-detected
+  - hunting game proper: 0 references to "Press SPACE BAR" prompts
+    via direct addressing
+
+See GHIDRA_PASS.md for full details and reproduction instructions.
+
+==============================================================================
+  Summary
+==============================================================================
+
+Items that this deep pass CLOSED:
+    A.  TOMB.REC format                       (structural)
+    B.  Music tempo handling                  (verified)
+    C.  Ration consumption                    (high confidence, was correct)
+    H.  JOYCAL.REC layout                     (re-verified)
+
+Items still PARTIAL after this pass:
+    D.  Score base weights                    (structure confirmed, weights unknown)
+
+Items that remain APPROXIMATED:
+    E.  Pace hour constants                   (not in binary as expected)
+    F.  Speed per oxen count                  (no constant cluster found)
+    G.  Hunting animal tables                 (not located)
+
+To close E, F, G fully would require either:
+    1. A second DOSBox-X session with BPM on suspected daily-loop
+       variables (similar approach to Gap #3 closure)
+    2. Loading the unpacked binary into Ghidra/IDA for full
+       function-graph analysis
+    3. Trial-and-error gameplay-comparison runs to fit constants
+
+For the rebuild's PURPOSE (a functional Pascal recreation), the
+existing approximations are sufficient.  For BIT-PERFECT replication,
+items D/E/F/G are the remaining work.
+==============================================================================
