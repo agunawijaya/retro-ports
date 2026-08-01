@@ -133,10 +133,52 @@ flowchart TB
     J["silence the speaker<br/>in 0x61 / and 0xFE / out 0x61"]
     K["<b>int 10h, mode 4</b><br/>320×200, four colours"]
     L["ES = 0xB800 — the screen"]
-    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L
+    M["<b>add 5 to every entry of<br/>the scanline table</b>"]
+    N["jmp to the game"]
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L --> M --> N
     style F fill:#f8d7da,stroke:#721c24
     style K fill:#d4edda,stroke:#155724
+    style M fill:#fff3cd,stroke:#856404
 ```
+
+### The last step: the file's table is not the table it uses
+
+```nasm
+    mov bx, 0x18e
+.patch:
+    add word [bx + 0x52d], 5    ; 0x52D is the scanline table
+    dec bx
+    dec bx
+    jns .patch
+```
+
+`BX` counts down 398, 396 … 2, 0 — **200 entries, the 200 visible rows** — and
+adds 5 to each. Load address `0x52D` is file `0x042D`, which is exactly where
+the scanline table sits.
+
+So the values verified earlier as *exactly* `(row&1)*0x2000 + (row>>1)*80` are
+the values in the file, and the program never uses them. It runs with all of
+them five bytes larger. The two spare entries at rows 200 and 201, and the 96
+clamp entries after them, are left alone.
+
+Five bytes in CGA mode 4 is **twenty pixels**. Which is a fact, and its
+consequence is an open question rather than a conclusion:
+
+- Applying it shifts every drawn thing twenty pixels right. For everything
+  drawn on the character grid that is comfortable — the rightmost such content
+  ends at pixel 282, so it would end at 302 of 320.
+- But six placements of one wide girder sprite already end at pixel 316, and
+  twenty more puts them at 336, off the right-hand edge.
+
+So either those six are drawn partly off-screen on purpose, or the byte-column
+drawer's coordinate means something other than what is assumed here. **The
+screens in `recovered/` are drawn without the patch**, and are therefore twenty
+pixels to the left of where the game draws — stated here rather than quietly
+applied, because a picture that has been nudged to look right is worth nothing.
+
+This is also a reminder with wider use than this game: **reading a table out of
+a binary tells you what shipped, not what runs.** Start-up code that patches its
+own data is invisible to anyone who only looks at the data.
 
 **Three of these are worth stopping on.**
 
@@ -303,27 +345,168 @@ A translation from 6502 code inherits the original's structure, and the Apple II
 had no equivalent of the PC's BIOS tick to lean on. Counting cycles is what the
 source being translated would have done.
 
-## Sound
+## Sound, and the music
 
-The PC speaker, through the same two ports every program of the era used:
+This section previously ended with a guess — that the sound must be driven from
+somewhere this analysis had not followed, because nine writes to port `0x61`
+seemed too few. The guess was wrong, and worth leaving on the record: nine
+writes were the right number, because **eight of them are one routine, and that
+routine is the whole sound system.**
+
+### The speaker is moved by hand
+
+Bit 0 of port `0x61` gates the timer's output to the speaker; bit 1 connects
+the speaker at all. Hard Hat Mack does not use the timer:
 
 ```nasm
     in  al, 0x61
-    and al, 0xfe        ; clear bit 0 — disconnect the timer, silence
+    xor al, 2           ; flip bit 1 — push the cone the other way
     out 0x61, al
 ```
 
-Bit 0 of port `0x61` gates the timer's output to the speaker; bit 1 connects
-the speaker at all. Toggling them directly, without the timer, produces sound
-by moving the cone by hand — cruder than ParaTrooper's tone generation, and
-capable of noises a square wave cannot make.
+That is a square wave generated **by the program itself**, one edge at a time,
+with a counting loop deciding how long to wait between flips. ParaTrooper did
+the opposite: it programmed timer channel 2 with a divisor and let the hardware
+produce the tone while the game got on with other things.
 
-**[inferred]** Only nine writes to port `0x61` appear, and one to the timer
-control port `0x43`. That is very little for a game with this much going on, so
-the sound is probably driven from a routine reached by a computed path this
-analysis did not follow.
+The consequence is the same one the [timing](#timing) section describes, and it
+is worth stating twice because it is so unusual to modern eyes: **on a faster
+machine the music plays sharp.** Every note is a delay loop, so the pitch is a
+property of the processor, not of the note.
+
+### A tune is a list of notes
+
+The player takes the address of a tune in `AX`. What it reads is
+straightforward once you see the two-byte stride:
+
+```mermaid
+flowchart LR
+    A["<b>pitch</b><br/>an index, 1–24<br/><i>0 ends the tune</i>"]
+    B["<b>duration</b><br/>how many half-cycles<br/>to hold the note"]
+    C["<b>next pair…</b>"]
+    A --> B --> C
+    style A fill:#cfe2ff,stroke:#084298
+    style B fill:#d4edda,stroke:#155724
+```
+
+The pitch is not a frequency. It is an index into a 25-entry table at file
+`0x63F3`, which gives the **half-period as a loop count**:
+
+```
+193 183 172 162 153 144 136 128 121 114 108 101  96
+ 90  86  80  76  72  67  64  60  56  53  50  47
+```
+
+Divide each entry by the next and you get 1.0546, 1.0640, 1.0617, 1.0588 … —
+mean **1.0606**. The twelfth root of two is **1.0595**. Entry 0 divided by entry
+12 is **2.010**; entry 12 divided by entry 24 is **2.043**.
+
+That is a **chromatic scale, two octaves of it**, worked out by hand in 1983 and
+rounded to whole loop counts. The rounding is why the ratios wobble: 47 cannot
+be a twelfth of the way anywhere in particular, it is just the nearest integer.
+
+### Seven tunes, and where they play
+
+All seven sit between the pitch table and the player, `0x640C`–`0x648A`, and
+every one of them is reached from a decoded call site:
+
+| file | notes | played from |
+|---|---|---|
+| `0x640C` | 8 | one site |
+| `0x641D` | 9 | one site |
+| `0x6431` | 15 | one site |
+| `0x6450` | 1 | one site — a single blip |
+| `0x6453` | 10 | **three** sites |
+| `0x6468` | 13 | one site |
+| `0x6483` | 3 | one site |
+
+`0x6453` being played from three places is the shape of a jingle that marks
+some repeated event. `0x6450` is one note, 24 ticks long, which is a sound
+effect rather than music.
+
+**[inferred]** Which tune is which event has not been established. That needs
+the calling routines named, and they are not.
 
 ---
+
+## The game is entered through a pointer
+
+Follow the program from its first instruction, taking every call and every
+branch, and you reach **236 instructions out of 9,094**. Two and a half per
+cent. Then it stops, here:
+
+```nasm
+    jmp word [0xbd9]        ; go wherever that variable points
+```
+
+A jump through a variable. Nothing in the instruction says where it goes, so a
+disassembler that follows control flow can go no further — and everything the
+game does is on the other side.
+
+The way through is not to follow the jump but to find **who loads the
+pointer**, and this program does not compute it. It writes a constant, once,
+during start-up:
+
+```nasm
+    mov word [0xbd9], 0xcb6
+```
+
+```mermaid
+flowchart LR
+    A["start-up"] -->|"writes 0xCB6"| V[("<b>[0x0BD9]</b><br/>the state pointer")]
+    B["<b>jmp word [0x0BD9]</b>"] --> V
+    V -.->|"so the target is"| C["file 0x00BB6<br/><i>the game</i>"]
+    style V fill:#fff3cd,stroke:#856404
+    style C fill:#d4edda,stroke:#155724
+```
+
+One constant, one variable, and the picture changes completely:
+
+| | before | after |
+|---|---|---|
+| instructions reachable from the entry point | 236 (2.6%) | 8,624 (**94.9%**) |
+| sprite placement calls reachable | 37 of 89 | **85 of 89** |
+
+There is a second such variable, `[0x6DAA]`, with three constants written to it
+— three states of something. It is only written by code that the *first*
+dispatch reaches, which is why the search has to be repeated until it stops
+finding things rather than run once.
+
+This is worth more than one game. "Functions reached only through pointers" is
+the gap this project has recorded as unsolved since Sopwith, where 28 of 148
+entry points hide that way, and an unrelated reconstruction of a different game
+reported having no technique for it either. It is still not solved in
+general — a pointer loaded from a table, or arrived at by arithmetic, gives
+nothing to read. But a state machine of this vintage usually stores a constant,
+and when it does, the answer is written down in the program.
+
+The pass is now in the toolkit, and `comrec.py` reports it:
+
+```
+dispatch    : jmp [0x0bd9] -> 0x00BB6; jmp [0x6daa] -> 0x02AFC, 0x02B05, 0x02B0E
+```
+
+### The main loop
+
+What sits at the other end is short enough to read whole:
+
+```nasm
+    mov sp, 0x918           ; reset the stack — every single iteration
+    call 0x0611C
+    call 0x00E90
+    mov al, [0xb62]
+    inc al                  ; a translated 6502 idiom: set the flags
+    dec al
+    jne done
+    jmp $-0x12              ; round again
+```
+
+**It resets the stack pointer on every pass.** Not on entry, not on error — on
+every iteration of the loop. A program that does this is telling you it does
+not trust its own call depth to balance, and it does not need to: nothing is
+kept on the stack between frames, so throwing the whole thing away each time is
+free and cannot go wrong. It is a habit from machines with 256 bytes of stack,
+which is where this code came from.
 
 ## The shape of the code
 
@@ -332,7 +515,7 @@ Here the difference from ParaTrooper is stark:
 | | ParaTrooper (1982) | Hard Hat Mack (1983) |
 |---|---|---|
 | File size | 16,400 bytes | 42,112 bytes |
-| Instructions recovered | 2,017 | **9,086** |
+| Instructions recovered | 2,017 | **9,094** |
 | Subroutines | 19 | **222** |
 | Call sites | 38 | **568** |
 | `ret` instructions | 36 | **404** |
@@ -368,27 +551,85 @@ how this version was made, and it is worth its own section in
 
 ## The data, accounted for
 
-19,628 bytes — 46.7% of the file — did not come back as instructions. That is
-not the same as unexplained. Here is what all of it is:
+19,671 bytes — 46.7% of the file — did not come back as instructions. That is
+not the same as unexplained. Every byte of the file has been put in one of
+these buckets:
 
-| Where | Size | What it is | Confidence |
+| What it is | Size | Share | Confidence |
 |---|---|---|---|
-| `0x6D10` | 836 | pointer table into the sprites | **proven** — its arithmetic matches the sprite headers |
-| `0x766F`–`0xA480` | 14,192 | the sprites themselves | **proven** — they render |
-| `0x042D` | 404 | **CGA scanline address table** | **proven** — 202 entries, exactly `(row&1)*0x2000 + (row>>1)*80` |
-| `0x05C1` | ~800 | further screen tables, bank ends | inferred from the values |
-| `0x251A` | 1,171 | bit masks — 1, 2, 4, 8, 16 dominate | inferred; that is what pixel plotting needs |
-| `0x4795` | 162 | **a trajectory table** | inferred: differences 41, 43, 46, 49, 51, 55…, second differences ≈ 3, which is constant acceleration |
-| `0x1DEE` | 506 | the HUD and credits text | **proven** — you can read it |
-| `0x6376` | 278 | the configuration screen text | **proven** |
-| `0x2F36` | 565 | repeating pattern data | not identified |
-| `0x6C8B` | 133 | the variable block | **proven** — the busiest addresses point here |
-| rest | ~600 | small runs, mixed | not identified |
+| code | 22,441 | 53.3% | **proven** — it reassembles |
+| the sprites | 11,750 | 27.9% | **proven** — they render |
+| the character glyphs | 1,152 | 2.7% | **proven** — they render as text |
+| plain text | 887 | 2.1% | **proven** — you can read it |
+| zero-filled variables | 806 | 1.9% | **proven** — the busiest addresses point here |
+| the sprite pointer table | 790 | 1.9% | **proven** — 395 entries, arithmetic matches the sprite headers |
+| the CGA scanline address table | 404 | 1.0% | **proven** — 202 entries, exactly `(row&1)*0x2000 + (row>>1)*80` |
+| the HUD text records | 370 | 0.9% | **proven** — the routine that walks them is at `0x1D86` |
+| the scanline table's clamp | 192 | 0.5% | **proven** — see below |
+| the font pointer table | 128 | 0.3% | **proven** — 64 entries |
+| **still unidentified** | **3,192** | **7.6%** | — |
 
-The **scanline table** is worth a moment. Rather than compute a row's address
-every time it draws, the game looks it up — 404 bytes spent to avoid a shift,
-an AND and a multiply on every single blit. Trading memory for arithmetic is
-the oldest optimisation there is.
+**A correction about the count.** An earlier attempt at this table put code at
+49.4% and left 12% unexplained, and concluded from the leftovers that there
+were nine runs of unreachable build sequences in the program. There are none.
+The measurement had used the reconstruction tool's *coverage* map, which counts
+bytes carrying an emitted instruction and therefore leaves out all 646 **pinned**
+instructions — ones the tool decoded and then had to write as fixed bytes
+because the assembler would otherwise pick a different encoding for them. They
+are code, and fully understood code. A confident structural finding came out of
+asking the wrong question, and nothing about the program had changed.
+
+### The scanline table has a safety net made of data
+
+Rows 0 to 201 hold exactly what the formula says. From row **202 onwards**,
+every one of the remaining 96 entries is `0x1F40` or `0x3F40` — the addresses of
+the last two lines, repeated.
+
+That is a bounds check with no comparison in it. A sprite whose row falls up to
+96 lines below the bottom of the screen still gets a legal address; it draws
+over the last line instead of over whatever follows video memory. The check
+costs nothing at run time because it is not a check — it is 192 bytes of table.
+
+The table as a whole is the same trade. Rather than compute a row's address on
+every blit, the game looks it up: 596 bytes spent to avoid a shift, an AND and a
+multiply, on every single sprite. Trading memory for arithmetic is the oldest
+optimisation there is, and here it buys a free bounds check as well.
+
+### What the 7.6% is
+
+Twenty runs of 24 bytes or more account for 1,987 of the 3,192; the rest is
+scattered in gaps of a few bytes between routines. Most of the runs are
+identified by what reads them:
+
+| file | size | what the reader does with it |
+|---|---|---|
+| `0x0268C` | 488 | writes it to the column variable — a column table |
+| `0x07026` | 314 | added to the sprite selector, 31 readers — the per-level variant tables |
+| `0x02894` | 272 | writes it to the column variable |
+| `0x04795` | 162 | loaded as a pair into two variables and shifted — the trajectory table |
+| `0x0640C` | 126 | nothing reads it *as a table* — it is the seven tunes |
+| `0x025C2` | 82 | column and row for an object |
+| `0x00F03` | 70 | sprite selector words, high byte only |
+
+**Four blocks are read by nothing the analysis can see**, and their shapes say
+what they are without proving it:
+
+```
+0x02543  128 132 136 140 144 148 150 152 154 156 156 156 …   accelerate, then stop
+0x02579  127 131 … 183 179 … 159 159 … 183 179 … 127         out and back, a patrol
+0x0390F    1   2   2   3   7   7   6   6   5   5   4   4 …   small values, a frame sequence
+```
+
+**[inferred]** motion paths for the moving hazards, read during play.
+
+The reason they look unread is a limit of the method, not a mystery in the
+program. This analysis finds a table's users by searching for its address as an
+immediate — `mov al, [bx + 0x2894]`. There are **420** reads of that shape and
+**145** that go through a register base alone — `mov si, [var]` then
+`mov al, [bx+si]` — where the address is assembled at run time and appears
+nowhere in the instruction. Sixteen variables are used as table pointers that
+way. A table reached only like that is invisible to a search through the text,
+however completely the program is disassembled.
 
 ## The level layout, decoded
 
@@ -542,7 +783,49 @@ the code, and reports what it cannot parse instead of skipping it — a screen
 quietly missing a girder looks perfectly fine and is wrong.
 
 All three screens are in `recovered/screens-game.png`: the playfield of each
-level, with the score line above it in the game's own font.
+level, with the HUD around it in the game's own font.
+
+### The HUD is a chain of records, and reading one is not reading them
+
+The text is not stored as strings at fixed positions. The routine at file
+`0x1D86` takes the address of a list and walks it:
+
+```mermaid
+flowchart LR
+    A["<b>column</b>"] --> B["<b>row</b>"] --> C["<b>characters…</b>"]
+    C --> D{"next byte"}
+    D -->|"0x01"| A
+    D -->|"0x00"| E["end of list"]
+    style E fill:#f8d7da,stroke:#721c24
+```
+
+Three lists exist. The first is one record — the score line across the top. The
+other two are seven and six records of **one character each**, at column 39,
+stepping eight scanlines down:
+
+```
+col 39 row  64 'L'   col 39 row 144 'M'
+col 39 row  72 'E'   col 39 row 152 'A'
+col 39 row  80 'V'   col 39 row 160 'C'
+col 39 row  88 'E'   col 39 row 168 'K'
+col 39 row  96 'L'   col 39 row 176 ' '
+col 39 row 104 ' '   col 39 row 184 '2'
+col 39 row 112 '0'
+```
+
+**"LEVEL 0" and "MACK 2", written vertically down the right-hand edge** — the
+level number and the lives remaining.
+
+The rendering here got this wrong first, and the way it was wrong is worth
+keeping. It read each list's first record and stopped at the terminator, which
+put a lone **"L"** and a lone **"M"** on the right edge of every screen. Both
+looked like plausible little markers. Nobody would have questioned them.
+
+That is the same failure the [CONTRAP reconstruction](https://github.com/agunawijaya/dos-decompiler/blob/main/knowledge/09-lessons-from-contrap.md)
+recorded independently — chained records treated as one, producing output that
+is silently truncated and entirely believable. It survives because the wrong
+answer is *shorter* than the right one, and nothing about a shorter answer looks
+broken.
 
 A picture is weak evidence on its own — "it looks right" proves nothing, and
 looking right is exactly what a screen quietly missing a girder does. So the
@@ -582,20 +865,28 @@ is what turns these into game screens.
 
 ## What is still unknown
 
-Four things, stated plainly:
+Five things, stated plainly:
 
-- **Forty-nine of the eighty-nine placement calls are not reached at all.** The
-  three level builders account for the other forty. The rest run while the game
-  is being played — Mack, the hazards, the animation — and reading them means
-  following the main loop rather than a build sequence. Nothing here has been
-  checked about them, and the 36/36 figures say nothing about them either.
+- **What the +5 patch means for the picture.** The scanline table the program
+  runs with is five bytes — twenty pixels — larger than the one in the file.
+  Applying that shift fits the character-grid content and pushes six placements
+  of one wide sprite off the right edge, so something is still not understood
+  about the byte-column drawer. The screens are drawn *without* it.
+- **The other four placement calls.** Eighty-five of the eighty-nine are now
+  reachable, once the dispatch pointer is followed. Four are not, and they are
+  reached by a route this analysis does not see.
+- **What the in-game drawing draws.** Reachable is not the same as read. The
+  forty-nine calls outside the level builders belong to Mack, the hazards and
+  the animation; they can now be walked to, and have not been.
 - **Whether the placements that were found are in the right places.** The
   fraction cannot answer this; only comparison with the real game can, and the
   only comparison made so far is by eye. One error of exactly this kind was
   found and fixed while the fraction sat at 100%.
-- **The 405 variables.** None are named. Doing that honestly means watching
-  every routine that touches each one, and with 222 subroutines that is a
-  project of its own rather than a gap in this one.
+- **The 405 variables.** Seven are named — the column, row and selector pairs
+  the drawing routines read, plus the level number and the loop counter — and
+  those came from the routines that consume them rather than from guessing.
+  The rest are not. Doing it honestly means watching every routine that touches
+  each one, and with 222 subroutines that is a project of its own.
 - **The two bytes at file `0x0001`.** The program's first instruction jumps
   over `FF FC`, and **nothing in the program ever reads them** — checked, zero
   references to addresses `0x100`–`0x103`. What they meant is not recoverable

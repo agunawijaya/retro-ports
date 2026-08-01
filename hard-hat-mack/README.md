@@ -43,6 +43,14 @@ nothing in the program ever calls, because the hardware calls them. Handlers are
 invisible to a disassembler that follows control flow, which is a hole this game
 exposed in the toolkit and which is now closed.
 
+**And the whole game is entered through a pointer.** Following the program from
+its first instruction reaches 236 of its 9,094 instructions — 2.6% — before
+stopping at `jmp word [0xbd9]`. The way past it is not to follow the jump but to
+find the one instruction that writes the pointer, which stores a constant. That
+takes reachability to 94.9%, and it closed the gap this project had recorded as
+unsolved since Sopwith:
+[functions reached only through pointers](docs/02-architecture.md#the-game-is-entered-through-a-pointer).
+
 ## Reconstructing the source
 
 **`original/` and `recovered/` are not in this repository.** Hard Hat Mack is
@@ -66,10 +74,12 @@ It reports what it found before it starts:
 
 ```
 interrupts  : INT 09h -> file 0x00071
+dispatch    : jmp [0x0bd9] -> 0x00BB6; jmp [0x6daa] -> 0x02AFC, 0x02B05, 0x02B0E
+              indirect jumps resolved from the constants written to the pointer
 provenance  : mechanically translated from 6502
               391 cmc, 99% of them straight after a cmp/sub, covering 91% of
               all compares -- a carry-convention adapter, not hand-written x86
-instructions: 9,086 disassembled (646 pinned to fixed bytes to preserve encoding)
+instructions: 9,094 disassembled (649 pinned to fixed bytes to preserve encoding)
 BYTE-IDENTICAL
 ```
 
@@ -104,6 +114,11 @@ are the placement calls reached from the three build routines, 40 of the 89 in
 the program. The other 49 run while the game is being played. It also counts
 calls that produced *a* position, not the *right* one — see
 [what is still unknown](docs/02-architecture.md#what-is-still-unknown).
+
+The screens are also drawn twenty pixels to the left of where the game draws
+them, because start-up patches the scanline table and this reads the table as
+shipped. That is [stated rather than fixed](docs/02-architecture.md#the-last-step-the-files-table-is-not-the-table-it-uses),
+because the correction does not yet fit every sprite.
 
 Both should read
 `FD70BAB8A1099A01A7696A236957F816CC54DE3F0D28C8707F7CADDF60D22737`, at 42,112

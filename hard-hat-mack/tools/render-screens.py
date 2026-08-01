@@ -49,6 +49,37 @@ CREDITS = {93, 94}
 W, H, SCALE = 320, 200, 3
 
 
+def text_records(data, head):
+    """Walk one chained list of text records: (column, row, characters).
+
+    The format is read off the routine at file 0x1D86, which takes the address
+    of a list and loops:
+
+        col = [p]; row = [p+1]; p += 2      -- into the same two variables the
+        ...draw characters...                  sprite drawer uses
+        if [p] == 0: return                 -- 0x00 ends the whole list
+        if [p] == 1: p += 1; repeat         -- 0x01 starts another record
+
+    A reader who stops at the first terminator gets one character and a
+    plausible-looking screen. That is what happened here: the right edge showed
+    a stray "L" and "M", which are the first letters of "LEVEL 0" and "MACK 2"
+    written one character per record down the screen.
+    """
+    out, p = [], head
+    while p + 2 < len(data):
+        col, row = data[p], data[p + 1]
+        p += 2
+        text = b""
+        while p < len(data) and data[p] not in (0, 1):
+            text += bytes([data[p]])
+            p += 1
+        out.append((col, row, text))
+        if p >= len(data) or data[p] == 0:
+            break
+        p += 1                          # 0x01: another record follows
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -118,18 +149,15 @@ def main():
             canvas.paste(img, (col * scale, row - img.height + 1), img)
             drawn += 1
 
-        for addr in HUD:
-            col, row = data[addr], data[addr + 1]
-            p, text = addr + 2, b""
-            while p < len(data) and data[p] not in (0, 1):
-                text += bytes([data[p]])
-                p += 1
-            for k, ch in enumerate(text):
-                # The glyph index is the character with the top two bits
-                # dropped, which is how the game stores upper-case text.
-                g = blob(FONT_TABLE, ch & 0x3F, bottom_first=False)
-                if g is not None:
-                    canvas.paste(g, ((col + k) * 7, row + 8 - g.height + 1), g)
+        for head in HUD:
+            for col, row, text in text_records(data, head):
+                for k, ch in enumerate(text):
+                    # The glyph index is the character with the top two bits
+                    # dropped, which is how the game stores upper-case text.
+                    g = blob(FONT_TABLE, ch & 0x3F, bottom_first=False)
+                    if g is not None:
+                        canvas.paste(g, ((col + k) * 7,
+                                         row + 8 - g.height + 1), g)
 
         big = canvas.resize((W * SCALE, H * SCALE), Image.NEAREST)
         panel = Image.new("RGB", (big.width, big.height + 44), (10, 10, 14))

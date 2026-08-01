@@ -287,7 +287,7 @@ code — and it is everywhere.
 
 ### Measuring it
 
-Guessing is not enough, so the pattern was counted across all 9,086 recovered
+Guessing is not enough, so the pattern was counted across all 9,094 recovered
 instructions:
 
 | | |
