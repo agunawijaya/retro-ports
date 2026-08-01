@@ -50,6 +50,12 @@ the smallest honest examples of them.
 | Game | Year | Original | The port | Documents |
 |---|---|---|---|---|
 | [**ParaTrooper**](paratrooper/) | 1982 | 8088 assembly, CGA, PC speaker | HTML / CSS / JavaScript | [6 documents](paratrooper/docs/) |
+| [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [3 documents](hard-hat-mack/docs/) |
+
+Hard Hat Mack is decompiled and documented but not yet ported — the analysis
+came first, and it turned up something worth the wait: the IBM version was
+**mechanically translated from the Apple II original**, and the binary still
+carries the evidence.
 
 More will be added. Each is self-contained — nothing depends on anything else,
 so you can start with whichever interests you.
