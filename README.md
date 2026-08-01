@@ -52,7 +52,7 @@ the smallest honest examples of them.
 | [**ParaTrooper**](paratrooper/) | 1982 | 8088 assembly, CGA, PC speaker | HTML / CSS / JavaScript | [6 documents](paratrooper/docs/) |
 | [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [4 documents](hard-hat-mack/docs/) |
 | [**Zaxxon**](zaxxon/) | 1984 | 8088 assembly, CGA, isometric | not yet | [4 documents](zaxxon/docs/) |
-| [**Karateka**](karateka/) | 1984 | 8088 assembly, and ninety data files | not yet | not started |
+| [**Karateka**](karateka/) | 1984 | 8088 assembly, and ninety data files | not yet | [1 document](karateka/docs/) |
 | [**The Oregon Trail**](oregon-trail/) | 1990 | **Turbo Pascal**, LZEXE-packed | not yet | not started |
 
 Hard Hat Mack is decompiled and documented but not yet ported — the analysis

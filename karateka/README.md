@@ -31,16 +31,20 @@ alongside it. Four relocations over 85 KB means almost everything is addressed
 within one segment.
 
 **0.4 prologues per KB is the signature of hand-written assembly**, and the same
-figure [Hard Hat Mack](../hard-hat-mack/) shows. That is worth stating as a
-prediction before any work is done, because it is falsifiable: if this is a
-6502 port like Hard Hat Mack was, `comrec.py` will report it —
+figure [Hard Hat Mack](../hard-hat-mack/) shows. That was stated here as a
+prediction before any work was done, because it was falsifiable: if this is a
+6502 port like Hard Hat Mack was, `comrec.py` would report it —
 
 ```
 provenance  : mechanically translated from 6502
 ```
 
-— and if it does not, the prediction was wrong and that is worth knowing too.
-The Apple II original is right there in `reference/apple-ii/` to compare against.
+**It did not, and the prediction was wrong.** Zero `cmc` instructions in 9,740,
+against 914 compares. Hard Hat Mack has 391, 99% of them straight after a
+compare. There is no carry-flag adapter in Karateka because nothing needed
+adapting: Broderbund's DOS conversion was a rewrite where Electronic Arts' was
+a translation. Written up in
+[docs/02-architecture.md](docs/02-architecture.md#it-was-written-for-the-8088-not-translated-to-it).
 
 ## Why this one is a good test of the toolkit
 
@@ -59,6 +63,24 @@ Karateka is not:
   `reference/apple-ii/`. If the DOS version is a translation, the two can be
   read against each other — which is a luxury Hard Hat Mack did not have.
 
+## What has been done
+
+`KARATEKA.EXE` **rebuilds byte for byte** — 87,990 bytes, SHA-256 checked
+outside the tool that produced it. 9,740 instructions, **85.0% of the code
+region** recovered as real instructions.
+
+That took a change to the toolkit rather than to the game. An MZ with four
+relocations and an entry stub that sets `DS` once is a `.COM` wearing a header,
+and the `.COM` route — which reaches a byte-identical rebuild — applies to it.
+`comrec.py` now strips the header itself and writes it back out beside the
+source. See
+[docs/02-architecture.md](docs/02-architecture.md#it-is-an-mz-but-it-is-really-a-com).
+
+The **container format of the ninety data files is settled**: `(id, offset)`
+pairs terminated by `0xFFFF`, verified against all twenty-eight `.IND`/`.DAT`
+pairs at once. What is *inside* a record is not settled, and is left undecoded
+rather than guessed at.
+
 ## What is here
 
 | | |
@@ -66,7 +88,7 @@ Karateka is not:
 | `original/` | the game as it shipped, plus the archive it came in — **not committed** |
 | `prior-attempt/` | an earlier session's work: notes, extraction scripts, a web remake. Committed, and **unverified** — see its own README |
 | `reference/` | the Apple II disk images, extracted sprites, memory dumps, screenshots, and a patched copy of the executable someone else made — **not committed** |
-| `docs/` | not written yet |
+| `docs/` | [02-architecture.md](docs/02-architecture.md) — what the program is made of. The other three are not written yet |
 
 ## A note on `KARATEKA_NOCHK.EXE`
 
