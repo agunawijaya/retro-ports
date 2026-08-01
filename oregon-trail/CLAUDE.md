@@ -176,6 +176,28 @@ The network version of this program may be licensed from MECC.
 
 MECC's school-lab licensing. Located, not traced.
 
+## The capability you now have that earlier sessions did not
+
+**Turbo Pascal 5.0 — the compiler this game was built with — runs here**, under
+DOSBox-X:
+
+```powershell
+& $env:DOSBOX -silent -nolog -c "mount c <workdir>" -c "c:" -c "TPC X.PAS" -c "exit"
+```
+
+`TPC.EXE` and `TURBO.TPL` come out of the 5.0 floppy images on the Internet
+Archive via `fatextract.py`. That makes **differential compilation** possible:
+write ten lines of Pascal that do the thing you are trying to identify, compile
+it with the same compiler, and compare the code against the game's. It is the
+route to the game logic, and it is the reason the compiler is worth keeping
+around rather than deleting after the version check.
+
+**A recorded negative result, so nobody repeats it.** Searching for code that
+references the `Matt's General Store` banner by its offset — as an immediate,
+anywhere in the image — finds nothing. TP 5.0 is not addressing string
+constants that way here. Differential compilation is how to find out what it
+does instead.
+
 ## What is genuinely open
 
 1. **The game's logic as code** — the illness model, the store's prices, the

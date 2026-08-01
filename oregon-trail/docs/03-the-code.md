@@ -373,6 +373,35 @@ district's licensing model rendered as error messages, and it is a more
 interesting piece of 1990 software history than the date check that was not
 there.
 
+## A negative result, and the tool it points at
+
+Locating the store's *code* was attempted and failed, twice, and the way it
+failed is informative.
+
+The obvious route is to find the code that references the banner string. `Matt's
+General Store` sits at image `0x0E792`, which is offset `0x6C32` inside segment
+`0x007B6`. Searching that segment — and then the whole image — for any
+two-byte occurrence of either the length byte's offset or the text's offset
+returns **nothing at all**.
+
+So Turbo Pascal 5.0 does not address a string constant by loading its offset as
+an immediate, at least not here. It is doing something this search does not
+model: a pointer table, a computed address, or an offset relative to something
+other than the segment base. Recording that saves the next person the same two
+attempts.
+
+**The route that would work is now available and was not before.** Turbo Pascal
+5.0 is the compiler this game was built with, and it now runs under DOSBox-X on
+this machine. That makes *differential compilation* possible: write a ten-line
+Pascal program that does the thing you are trying to identify — write a string
+constant, index an array, call a function with a `var` parameter — compile it
+with the same compiler, and compare the generated code against the game's.
+
+That turns reading compiled Pascal from a matter of inference into a matter of
+comparison, which is the same move `emuverify.py` makes for C and the same move
+that settled the compiler version. It is the obvious next step for anyone
+continuing this, and it is why the compiler is worth keeping.
+
 ## What has not been read
 
 Most of the program: 137,712 bytes across ten segments. Specifically the trail
