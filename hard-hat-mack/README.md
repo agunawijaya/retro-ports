@@ -15,7 +15,7 @@ You are a construction worker filling gaps in girders, collecting lunchboxes and
 feeding iron to a rivet machine, while a vandal and an inspector from OSHA try
 to stop you and a clock runs down.
 
-This folder contains three documents explaining how the IBM PC version works,
+This folder contains four documents explaining how the IBM PC version works,
 and instructions for reconstructing its source yourself.
 
 *Part of [retro-ports](../README.md). There is no browser port yet — the
@@ -28,6 +28,7 @@ decompilation came first.*
 | [**docs/01-the-game.md**](docs/01-the-game.md) | what it is, the three levels, the controls, and the state senator who tried to get it banned |
 | [**docs/02-architecture.md**](docs/02-architecture.md) | how the program is built: the file layout, taking over the keyboard, video, and how it differs from a hand-written game |
 | [**docs/03-the-code.md**](docs/03-the-code.md) | five routines traced line by line — and the 391 instructions that reveal how this version was really made |
+| [**docs/04-porting.md**](docs/04-porting.md) | what it would take to rebuild it: five options with their costs, and the five things that will bite in any of them |
 
 Each marks plainly what was read from the binary and what was inferred;
 [what is still unknown](docs/02-architecture.md#what-is-still-unknown) is listed

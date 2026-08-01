@@ -50,7 +50,7 @@ the smallest honest examples of them.
 | Game | Year | Original | The port | Documents |
 |---|---|---|---|---|
 | [**ParaTrooper**](paratrooper/) | 1982 | 8088 assembly, CGA, PC speaker | HTML / CSS / JavaScript | [6 documents](paratrooper/docs/) |
-| [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [3 documents](hard-hat-mack/docs/) |
+| [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [4 documents](hard-hat-mack/docs/) |
 | [**Zaxxon**](zaxxon/) | 1984 | 8088 assembly, CGA, isometric | not yet | [3 documents](zaxxon/docs/) |
 
 Hard Hat Mack is decompiled and documented but not yet ported — the analysis

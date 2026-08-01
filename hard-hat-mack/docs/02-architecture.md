@@ -1,7 +1,8 @@
 # Hard Hat Mack — architecture
 
-*Document two of three. [01-the-game.md](01-the-game.md) is what the game is;
-[03-the-code.md](03-the-code.md) walks through the routines.*
+*Document two of four. [01-the-game.md](01-the-game.md) is what the game is;
+[03-the-code.md](03-the-code.md) walks through the routines;
+[04-porting.md](04-porting.md) is what it would take to rebuild it.*
 
 **You do not need to know assembly to read this.** If it is new, the
 [five ideas](../../paratrooper/docs/02-architecture.md#five-ideas-if-assembly-is-new-to-you)

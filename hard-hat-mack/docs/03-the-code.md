@@ -1,7 +1,8 @@
 # Hard Hat Mack — the code
 
-*Document three of three. [01-the-game.md](01-the-game.md) is what the game is;
-[02-architecture.md](02-architecture.md) is how the program is shaped.*
+*Document three of four. [01-the-game.md](01-the-game.md) is what the game is;
+[02-architecture.md](02-architecture.md) is how the program is shaped;
+[04-porting.md](04-porting.md) is what it would take to rebuild it.*
 
 Six sections: five routines, one discovery, and one picture. Every listing is copied from
 `recovered/hhm.asm` — the file that reassembles to a byte-identical copy of the

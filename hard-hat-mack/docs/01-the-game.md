@@ -1,7 +1,8 @@
 # Hard Hat Mack — the game
 
-*Document one of three. [02-architecture.md](02-architecture.md) is how the
-program is built; [03-the-code.md](03-the-code.md) is what its routines do.*
+*Document one of four. [02-architecture.md](02-architecture.md) is how the
+program is built; [03-the-code.md](03-the-code.md) is what its routines do;
+[04-porting.md](04-porting.md) is what it would take to rebuild it.*
 
 Two kinds of fact are kept apart here on purpose:
 
@@ -166,6 +167,70 @@ is the tension the game is built on.
 
 ---
 
+## How to win
+
+There is no winning, in the sense of an ending. Finish level three and level one
+comes back, faster and with more enemies. What you are playing for is the score,
+and the score is almost entirely the bonus clock.
+
+### The clock is the game
+
+| | |
+|---|---|
+| Bonus at the start of a level | **5,000** |
+| How it falls | 100 at a time, every few seconds |
+| After each complete round of three levels | the starting maximum drops by 1,000 |
+| Extra life | one, at **7,000 points** — and only ever one |
+| Lives | three |
+
+The binary agrees with the published figures: run the game under emulation and
+the HUD reads `BONUS:05000` on entry, ticking down through `04800`, `04600`
+while you watch. That is the one number in this document you can check yourself
+in thirty seconds.
+
+**Read the second row again.** The starting bonus shrinks each time round. So
+the same level, played identically, is worth less on the second lap and less
+again on the third — the game does not get harder only by adding enemies, it
+gets harder by paying less. A late round is a test of survival, not of scoring,
+and the score you will actually finish on is mostly decided in the first two or
+three rounds.
+
+**And the third row.** One extra life, at 7,000, ever. There is no second. That
+makes the early game the only place where risk is cheap: before 7,000 a death
+may still be recovered, after it every death is permanent progress lost.
+
+### What each level asks
+
+| Level | The task | The part that kills you |
+|---|---|---|
+| **1 — the girders** | fill four gaps in the floors, then catch the moving jackhammer to rivet the plates down | the jackhammer moves; falling bolts drop from above |
+| **2 — the lunchboxes** | collect six across four storeys, then ride the conveyor up so the electromagnet lifts you clear | an enemy blocks the last hurdle and has to be jumped past on timing; below the conveyor is an incinerator |
+| **3 — the iron** | collect six boxes and drop each into the rivet processor | the diagonal conveyor, the springboards, and a fall with no trampoline under it |
+
+### Tips that actually move your score
+
+- **Plan the route before you move, not while you move.** The bonus falls on a
+  clock, not on your input, so standing still to think costs exactly what moving
+  in the wrong direction costs. Thinking first is free by comparison.
+- **On level one, look at where the jackhammer is before you fill the last
+  gap.** Filling gaps is safe and the jackhammer is not; finishing the safe part
+  while the dangerous part is at the far end of its path wastes the clock you
+  will need to chase it.
+- **On level two, collect toward the conveyor, not away from it.** The exit is
+  the electromagnet at the top; a route that ends beside it turns the escape into
+  a step rather than a journey.
+- **Jumps here are pixel-exact and the graphics are not.** Contemporary reviews
+  complained about precisely this, and it is a fair complaint on CGA. Land on
+  the middle of a girder rather than its edge; the sprite is more forgiving than
+  the pixels suggest.
+- **Do not fight the enemies — they cannot be killed.** The vandal undoes your
+  work and the inspector costs a life on contact. Both are obstacles to be timed
+  past, and time spent waiting for a safe gap is often cheaper than the life.
+- **The clock is more dangerous than either of them.** Most runs end with the
+  bonus at zero rather than with a life lost.
+
+---
+
 ## Controls
 
 The game supports a joystick, and the first thing it does after loading is
@@ -270,3 +335,12 @@ redistributes it.
 - [Hard Hat Mack — C64-Wiki](https://www.c64-wiki.com/wiki/Hard_Hat_Mack)
 - [Hard Hat Mack — Apple2Games](https://apple2games.com/wiki/Hard_Hat_Mack)
 - [Hard Hat Mack (woz-a-day collection) — Internet Archive](https://archive.org/details/wozaday_Hard_Hat_Mack)
+- [Hard Hat Mack FAQ, Apple II, by ASchultz — GameFAQs](https://gamefaqs.gamespot.com/appleii/579172-hard-hat-mack/faqs/8818) — the scoring figures
+- [Hard Hat Mack command summary (Commodore 64) — Museum of Computer Adventure Game History](https://www.mocagh.org/ea/hhmack-refcard.pdf)
+
+The scoring figures above come from the published sources and were checked
+against the binary where the binary can answer: the starting bonus of 5,000
+appears on the HUD the moment a level is built, and counts down while the game
+runs under emulation. The point values for individual actions are *not* in this
+document, because no source states them and nothing in the program has been
+traced to them yet.
