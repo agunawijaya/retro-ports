@@ -5,9 +5,28 @@ learned to type "hunt" into. You outfit a wagon in Independence, Missouri, and
 try to reach Oregon's Willamette Valley before winter, your oxen, or dysentery
 stop you.
 
-**Not decompiled yet.** This folder is set up and triaged, and there is
-substantial material from an earlier attempt that predates the toolkit — see
-[`prior-attempt/`](prior-attempt/).
+**Decompiled as far as the toolkit could take it, which is not all the way.**
+The packing, the compiler, the module structure and the artwork are done and
+measured; the game's own logic is barely read. [Four documents](docs/) say
+which is which, and [CLAUDE.md](CLAUDE.md) is the working reference.
+
+The objective here was the toolkit rather than the game, and on that it
+delivered: an LZEXE entry point read instead of guessed, a Turbo Pascal
+structure scanner, and a PCX/pcxLib reader — all now in
+[dos-decompiler](https://github.com/agunawijaya/dos-decompiler).
+
+There is also substantial material from an earlier attempt that predates the
+toolkit — see [`prior-attempt/`](prior-attempt/). The one claim from it that was
+tested had the right address and the wrong meaning.
+
+## Documentation
+
+| | |
+|---|---|
+| [**docs/01-the-game.md**](docs/01-the-game.md) | what it is, and the four earlier programs that carried the name |
+| [**docs/02-architecture.md**](docs/02-architecture.md) | the packing, the compiler, eleven segments, the artwork container, and what changed between 1983 and 1990 |
+| [**docs/03-the-code.md**](docs/03-the-code.md) | four routines, and a deliberately short document because that is the honest length |
+| [**docs/04-porting.md**](docs/04-porting.md) | why the hard part here is not the code, and the one experiment worth running first |
 
 *Part of [retro-ports](../README.md).*
 

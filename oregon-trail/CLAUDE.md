@@ -5,99 +5,166 @@ Context for an agent picking up work in this folder. The
 to Oregon Trail.
 
 **If you are starting this game, read [PROMPT.md](PROMPT.md) first.** It is the
-brief: what the objective is, what has already been checked, and what would
-enrich the toolkit. This file is the shorter working reference you come back to.
+brief: what the objective is and what would enrich the toolkit. This file is the
+shorter working reference you come back to.
+
+**The objective is the toolkit, not the game.** What this program produced for
+`dos-decompiler` matters more than what it produced about wagons.
 
 ## State of the work
 
-**Not started.** The folder is set up and triaged, nothing more.
-
 | | |
 |---|---|
-| triage | packed with LZEXE 0.91 — out of scope until unpacked |
-| unpacking | works: 81,896 → 201,184 bytes, and the result is in scope |
-| entry point | **not recovered**, left at 0 rather than guessed |
-| compiler | **Borland Turbo Pascal**, plus a Genus Microprogramming graphics library |
-| documents | none |
-| prior work | `prior-attempt/`, unverified — see its README |
+| the files | **verified as shipped** — all 19 match the distribution archive byte for byte |
+| unpacking | **done** — LZEXE 0.91, 81,896 → 201,184 bytes |
+| entry point | **done, authoritative** — `0x10A`, from LZEXE's own header, not guessed |
+| compiler | **Turbo Pascal**, established twice over; **version not determined** |
+| module structure | **done** — 11 code segments, runtime separated from program |
+| artwork | **done** — 58 of 58 images decoded and rendered |
+| the prior attempt's protection claim | **tested: address right, meaning wrong** |
+| game logic | **barely started** |
+| documents | [four](docs/), written from the above |
 
-## Why this game is here
+Four things went back into the toolkit: `unpack.py` now reads LZEXE's stated
+entry point, `tpscan.py` is new, `pcxlib.py` is new, and
+`knowledge/00-scope.md` and `02-compiler-fingerprints.md` carry the results.
 
-It is the first **Turbo Pascal** program the toolkit has met. Five games in,
-every tool assumes C or hand-written assembly, and the most valuable thing this
-game can produce is a Pascal equivalent of what already exists for C.
-
-Specifically: `libscan.py` subtracts a C runtime by matching OMF `.LIB` modules
-with their FIXUPP slots wildcarded, and reads the entry point out of the startup
-module's MODEND. **None of that applies here.** Turbo Pascal links `.TPU` units,
-not OMF libraries. `libscan.py` will find nothing, correctly and uselessly.
-
-## Regenerating what exists
+## Regenerating
 
 ```powershell
-python <path-to>\dos-decompiler\tools\unpack.py `
-       original\OREGON.EXE -o work\unpacked.exe
-python <path-to>\dos-decompiler\tools\triage.py work\unpacked.exe
+python <toolkit>\tools\unpack.py original\OREGON.EXE -o work\unpacked.exe
+python <toolkit>\tools\tpscan.py work\unpacked.exe --json work\units.json
+python <toolkit>\tools\pcxlib.py original\OTMCGA.PCL --extract reference\art\mcga --palette original\PAL.256
+python <toolkit>\tools\pcxlib.py original\OTCGA.PCL  --extract reference\art\cga
 ```
+
+What those should print — if any of it moves, the documents are stale:
+
+```
+format                : LZEXE 0.91
+original entry point  : offset 0x10A  [packer header (authoritative)]
+  (the behavioural heuristic would have said 0x10F -- +5 bytes)
+unpacked image        : 201,184 bytes
+
+compiler    : Turbo Pascal  [System unit init at 0x219f0]
+DGROUP      : 0x3348  -> data starts at 0x23480
+code / data : 144,512 bytes of code, 56,672 bytes of data and stack
+units       : 11 code segments carrying 3,080 far calls
+runtime     : segment 0x219f -- 6,800 bytes, 1,500 far calls (48% of all calls)
+
+29 decoded, 0 failed        (once per container)
+```
+
+`original/The-Oregon-Trail_DOS_EN.zip` is the distribution and every loose file
+matches it byte for byte — checked, because this repository has been handed a
+patched binary before. `OREGON.EXE` is
+`4D53ABB5C55661B0E38CE6F1DBAE82B2875F381BB7D81D04B0CF6B98D52AEFED`.
+
+## Four things that will cost you a day
+
+**Segment words in `work/unpacked.exe` are biased by `0x1000`.** `unpack.py`
+dumps memory *after* the decompressor has applied relocations, and it loads at
+segment `0x1000`. A far call reading `lcall 0x319F:…` means image-relative
+segment `0x219F`. Subtract `0x1000` from every segment word you read. The prior
+attempt's notes quote image-relative values, which is why its bytes look one
+segment different from anything you disassemble here.
+
+**The image starts 32 bytes into the file.** `unpacked.exe` carries a synthetic
+32-byte MZ header. Every address in the documents is an *image* offset.
+
+**`0x14BF3` is a memory check, not copy protection.** See below.
+
+**Do not assert a Turbo Pascal version.** The runtime error message format is
+identical across 4.0, 5.0, 5.5 and 6.0.
+
+## Where things are
+
+Image offsets.
 
 | | |
 |---|---|
-| `OREGON.EXE` | 81,896 bytes, LZEXE 0.91 |
-| unpacked | 201,184 bytes, 179 prologues (0.9/KB) |
-| entry point | unknown — use `anchors.py` to find `main` structurally |
+| `0x0010A` | the entry point |
+| `0x0010A`–`0x00128` | six far calls: Turbo Pascal's chain of unit initialisers |
+| `0x00128` | the program's own `begin` block |
+| `0x00000`–`0x07B60` | the program's own code — far-called by nobody |
+| `0x14BF3` | the memory check |
+| `0x14992` | `This product is licensed to:` |
+| `0x1582C` | the network licence refusal text |
+| `0x1DBF4` | the program's only `INT 21h AH=2Ah` (DOS get date) |
+| `0x219F0` | Borland's System unit; its init sets DGROUP, PrefixSeg and the heap |
+| `0x21BFD` | `Runtime error `, ` at `, `.` |
+| `0x21DA5` | `MemAvail` — walks the free list, returns a 32-bit byte count |
+| `0x23480` | DGROUP: code ends, data begins |
 
-## What is already known about the file
+`OTMCGA.PCL` and `OTCGA.PCL` are pcxLib containers, 29 images each — the same
+29 subjects at two colour depths. `PAL.256` is a 9×6 PCX whose image is
+irrelevant and whose 256-colour palette is the point.
 
-Two strings in the unpacked image identify everything:
-
-```
-0x021BFF  'Runtime error '                                  Borland's runtime
-0x0244D3  'Copyright (c) Genus Microprogramming, Inc. 1988-89'
-```
-
-And the artwork needs no reverse engineering at all:
-
-```
-OTCGA.PCL   189,831 bytes   70 63 78 4c 69 62 00   "pcxLib\0"
-OTMCGA.PCL  321,139 bytes   70 63 78 4c 69 62 00   "pcxLib\0"
-LOGO.256      2,117 bytes   0a 05 01 08            a PCX header
-```
-
-`pcxLib` is Genus Microprogramming's container of **ZSoft PCX images**.
-`0A 05 01 08` is the PCX magic — version 5, RLE, 8 bits per plane. The format is
-documented and forty years old; only the container's index has to be worked out.
-
-**321 KB of artwork against an 82 KB executable.** Expect the shape of
-[Hard Hat Mack](../hard-hat-mack/): mostly pictures, with the interesting code a
-small fraction of the whole.
-
-## The prior attempt
+## The prior attempt, and the claim that was tested
 
 `prior-attempt/` holds a 17-unit Turbo Pascal reconstruction, six documents and
 a JavaScript port, from a session that predates the toolkit. Its README explains
 why it is quarantined; the short version is that **nothing in it has been
 through an oracle.**
 
-The claim most worth testing first, because it is precise and falsifiable:
+Its most precise claim was:
 
-> The copy protection is a date check at `0x14BF3` in the unpacked image,
-> calling Borland's `GetDate` and comparing against `0x88B8` = 35,000 days
-> since 1899-12-30 — so the game locks itself after 1995.
+> The copy protection is a date check at `0x14BF3`, calling Borland's
+> `GetDate` and comparing against `0x88B8` = 35,000 days since 1899-12-30 — so
+> the game locks itself after 1995.
 
-`comrun.py` can now test that by running it.
+**The address is exactly right and the meaning is wrong.** There is a far call
+at `0x14BF3` into the runtime segment, and `cmp word [bp-4], 0x88B8` at
+`0x14C06` — the only occurrence of that comparison in the image. But the
+routine called subtracts two far pointers with paragraph normalisation and
+walks the free list: it is `MemAvail`. The constant is 35,000 **bytes**, and
+the branch beneath it points at a string that settles it:
 
-The port's image assets are **not** in `prior-attempt/` — they were extracted
-from the game and therefore live in `reference/`, which is not committed. The
-port will not render until they are put back.
+```
+Your computer must have at least 512K memory to run Oregon Trail.
+```
+
+35,000 days after 1899-12-30 really is late 1995, which is exactly why the
+wrong answer was persuasive. Two readings of one constant; only the string
+separates them.
+
+**There is a real protection and it is a network licence check**, not a date:
+
+```
+This product is licensed for use by a single computer at a time.
+It is currently being used by someone else.
+The network version of this program may be licensed from MECC.
+```
+
+MECC's school-lab licensing. Located, not traced.
+
+## What is genuinely open
+
+1. **The Turbo Pascal version.** Needs `.TPU` files to compare against — the
+   same shape of problem `libscan.py` solves for C. None on this machine.
+2. **What the eleven segments are.** Sizes and call counts are measured; which
+   holds the Genus graphics library and which are MECC's own is not.
+3. **The game's logic** — the trail, the store, the rivers, the hunting, the
+   illnesses. `prior-attempt/src/` has a unit per topic and every one is
+   untested.
+4. **An oracle.** `comrun.py` ran `.COM` files only, so nothing here could run
+   this program and compare against it — which is why the artwork was checked
+   by size-field agreement and by looking, rather than against a running frame.
+   **MZ loading is being added to `comrun.py` by concurrent work in the
+   toolkit** and was not yet working when this was written. Check `git log`
+   there; if it landed, the first thing to test is the memory check at
+   `0x14BF3` — force the free heap below 35,000 bytes and the 512K string
+   should appear.
 
 ## Before you commit
 
-- `original/`, `recovered/` and `reference/` are all gitignored. The third is
-  the one people forget: **thirty of the JavaScript port's images turned out to
-  be the game's own artwork converted from `OTMCGA.PCL`**, and they were staged
-  for commit until a check caught them. Check `git status` — never
-  `git add -A`.
-- `work/` is for unpacked images and Ghidra projects. Nothing there is worth
-  committing; a 105 MB DOSBox trace and a 6.7 MB Ghidra project were deleted
-  from this folder once already.
-- Every figure in any document you write must match what the tools print.
+- `original/`, `recovered/`, `reference/` and `work/` are gitignored.
+  `reference/` is the one people forget: **thirty of the JavaScript port's
+  images turned out to be the game's own artwork converted from
+  `OTMCGA.PCL`**, and they were staged until a check caught them. Check
+  `git status` — never `git add -A`.
+- Nothing in `work/` is worth committing; a 105 MB DOSBox trace and a 6.7 MB
+  Ghidra project were deleted from this folder once already.
+- **Someone else works in `dos-decompiler`.** Read its `git log` before
+  starting and commit only your own files.
+- Every figure in every document must match what the tools print today.

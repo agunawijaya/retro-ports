@@ -53,20 +53,29 @@ the smallest honest examples of them.
 | [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [4 documents](hard-hat-mack/docs/) |
 | [**Zaxxon**](zaxxon/) | 1984 | 8088 assembly, CGA, isometric | not yet | [4 documents](zaxxon/docs/) |
 | [**Karateka**](karateka/) | 1984 | 8088 assembly, and ninety data files | not yet | [1 document](karateka/docs/) |
-| [**The Oregon Trail**](oregon-trail/) | 1990 | **Turbo Pascal**, LZEXE-packed | not yet | not started |
+| [**The Oregon Trail**](oregon-trail/) | 1990 | **Turbo Pascal**, LZEXE-packed | not yet | [4 documents](oregon-trail/docs/) |
 
 Hard Hat Mack is decompiled and documented but not yet ported — the analysis
 came first, and it turned up something worth the wait: the IBM version was
 **mechanically translated from the Apple II original**, and the binary still
 carries the evidence.
 
-Karateka and The Oregon Trail are set up and triaged but not started. Each
-carries a folder of work from a session that predates the toolkit, kept as
-hypotheses rather than as results — the reasoning is in each one's
-`prior-attempt/README.md`. They were added because they break the pattern the
-first three share: Karateka keeps its artwork in ninety separate data files
-rather than inside the executable, and The Oregon Trail is **Turbo Pascal**,
-which nothing here has handled before.
+Karateka is set up and triaged but not started. It carries a folder of work
+from a session that predates the toolkit, kept as hypotheses rather than as
+results — the reasoning is in its `prior-attempt/README.md` — and it was added
+because it keeps its artwork in ninety separate data files rather than inside
+the executable.
+
+The Oregon Trail is a different case again, and it is the first game here that
+was chosen for what it would teach the *toolkit* rather than for the game. It
+is **Turbo Pascal**, which nothing here had handled: no OMF runtime to subtract,
+no C prologues to count. What it produced is a way to read a Pascal program's
+module structure straight out of its far-call graph, an entry point recovered
+from LZEXE's own header instead of guessed, and a reader for the artwork
+format 1990 games actually used. Its own code is barely read, and
+[its documents](oregon-trail/docs/) say so — the interesting result is that by
+1990 **the artwork had become easy and the code had become hard**, which is the
+exact opposite of every game before it here.
 
 Zaxxon is the same: decompiled, documented, not ported. It is the best example
 here of the difference between a rebuild that is exact and a program that is
