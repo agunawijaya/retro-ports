@@ -19,6 +19,7 @@ unknown](#what-is-still-unknown) is listed at the end rather than papered over.
 - [The artwork, which needs no reverse engineering](#the-artwork-which-needs-no-reverse-engineering)
 - [The check that is not copy protection](#the-check-that-is-not-copy-protection)
 - [The protection that is](#the-protection-that-is)
+- [Running it, at last](#running-it-at-last)
 - [What changed between 1983 and 1990](#what-changed-between-1983-and-1990)
 - [What is still unknown](#what-is-still-unknown)
 
@@ -471,6 +472,53 @@ The program does call DOS for the date exactly once, at image `0x1DBF4`
 (`mov ah, 0x2A / int 0x21`). What it does with it is not established; stamping
 a saved game or a tombstone would be the obvious guess and it is only a guess.
 
+## Running it, at last
+
+Everything above was read from the file. While this was being written the
+toolkit's `comrun.py` gained the ability to load an MZ executable, so the
+program could finally be **run** and the reading checked against it.
+
+```
+python <toolkit>/tools/comrun.py original/OREGON.EXE --files original \
+       --watch 0x10A,0x128,0x219F0,0x18DC0,0x151C0
+```
+
+```
+format    : MZ, 32-byte header; entry CS:IP 130F:000E -> image offset 0x130FE
+start-up  : 1,174,785 instructions, stopped: int 0x20
+
+5 watched calls
+  0x0010A     the entry point
+  0x219F0     Borland's System unit
+  0x18DC0     the Genus graphics library
+  0x00128     the program's own begin block
+  0x151C0     the licence check
+```
+
+Three claims made from reading are confirmed by execution, in the order they
+happen:
+
+- **`0x10A` really is the entry point.** It was taken from LZEXE's own header
+  rather than from the behavioural heuristic that said `0x10F`; here the
+  program actually arrives there.
+- **The far calls at the entry really are unit initialisers.** `System` runs
+  first, then the graphics library, and only then does control reach `0x128` —
+  which is exactly where the disassembly said the program's own `begin` block
+  starts.
+- **The segment map is right about which unit is which**, because the addresses
+  watched were derived from it and every one of them was reached.
+
+And one thing that reading had not shown at all: **the program runs its
+initialisers, reaches its own first statement, calls the licence check, and
+terminates.** The memory check at `0x14BF3` is never reached, because the
+licence check gets there first and ends the program.
+
+That is what a copy protection looks like from the outside, and it is why the
+emulator sees `int 0x20` after 1.17 million instructions rather than a title
+screen. **[The reason it fails is not established]** — the emulator has no
+disk, no network and no real DOS, and any of those could be what the check
+wants.
+
 ## What changed between 1983 and 1990
 
 This is the most useful thing this program has to say, because it is a
@@ -516,17 +564,16 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    use and its position in link order, not established. Likewise `0x015BB` as
    the Genus font library.
 5. **Whether any of this behaves as described at run time.** Every claim above
-   comes from reading the file. The ones that were established twice over — the
-   entry point, the segment list, the container layout — say so; the rest have
-   one source each and should be read accordingly.
-
-   This is the largest methodological gap for this game and it is a limitation
-   of the tools, not of the file. `comrun.py` ran `.COM` files only, so an MZ
-   program had no oracle. **That is being fixed as this is written** — MZ
-   loading is in progress in the toolkit by concurrent work and did not yet run
-   — so this item may be closable soon, and when it is, the first thing to
-   check is the memory check above: set the free heap below 35,000 bytes and
-   the string should appear.
+   comes from reading the file, except the entry point, the unit-init order and
+   the segment identities, which [running it](#running-it-at-last) confirmed.
+   The rest have one source each and should be read accordingly.
+6. **Why the licence check refuses.** The program reaches it and terminates,
+   but nothing here says what it wants. The emulator has no disk, no network
+   and no real DOS, and any of those could be the reason.
+7. **The memory check has still never been observed.** It sits behind the
+   licence check, which ends the program first, so the prediction that forcing
+   the free heap below 35,000 bytes produces the 512K message remains
+   untested.
 
 ---
 
