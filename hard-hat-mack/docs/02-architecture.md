@@ -373,7 +373,7 @@ with a counting loop deciding how long to wait between flips. ParaTrooper did
 the opposite: it programmed timer channel 2 with a divisor and let the hardware
 produce the tone while the game got on with other things.
 
-The consequence is the same one the [timing](#timing) section describes, and it
+The consequence is the same one the [timing](#timing-it-counts) section describes, and it
 is worth stating twice because it is so unusual to modern eyes: **on a faster
 machine the music plays sharp.** Every note is a delay loop, so the pitch is a
 property of the processor, not of the note.
@@ -436,7 +436,7 @@ the calling routines named, and they are not.
 ## The game is entered through a pointer
 
 Follow the program from its first instruction, taking every call and every
-branch, and you reach **236 instructions out of 9,094**. Two and a half per
+branch, and you reach **236 instructions out of 9,060**. Two and a half per
 cent. Then it stops, here:
 
 ```nasm
@@ -468,8 +468,13 @@ One constant, one variable, and the picture changes completely:
 
 | | before | after |
 |---|---|---|
-| instructions reachable from the entry point | 236 (2.6%) | 8,624 (**94.9%**) |
+| instructions reachable from the entry point | 236 (2.6%) | 8,624 (**95.2%**) |
 | sprite placement calls reachable | 37 of 89 | **85 of 89** |
+
+*(The percentages are against the 9,060 instructions the toolkit recovers
+today. They were first published against 9,094, before a later change stopped
+the gap sweep from claiming 34 runs of zero padding as instructions. The
+numerators are unaffected — zero fill was never reachable from anywhere.)*
 
 There is a second such variable, `[0x6DAA]`, with three constants written to it
 — three states of something. It is only written by code that the *first*
@@ -519,7 +524,7 @@ Here the difference from ParaTrooper is stark:
 | | ParaTrooper (1982) | Hard Hat Mack (1983) |
 |---|---|---|
 | File size | 16,400 bytes | 42,112 bytes |
-| Instructions recovered | 2,017 | **9,094** |
+| Instructions recovered | 2,017 | **9,060** |
 | Subroutines | 19 | **222** |
 | Call sites | 38 | **568** |
 | `ret` instructions | 36 | **404** |
@@ -572,6 +577,12 @@ these buckets:
 | the scanline table's clamp | 192 | 0.5% | **proven** — see below |
 | the font pointer table | 128 | 0.3% | **proven** — 64 entries |
 | **still unidentified** | **3,192** | **7.6%** | — |
+
+*The `code` row was measured before a later toolkit change stopped the gap
+sweep from claiming runs of zero padding as instructions — 34 runs, 68 bytes,
+which are counted as data rather than code today. The tool now reports 53.2%
+of the file as code where it reported 53.3%. The other rows are unaffected;
+they were derived from the file, not from the sweep.*
 
 **A correction about the count.** An earlier attempt at this table put code at
 49.4% and left 12% unexplained, and concluded from the leftovers that there

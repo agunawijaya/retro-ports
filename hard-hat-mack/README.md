@@ -51,7 +51,7 @@ invisible to a disassembler that follows control flow, which is a hole this game
 exposed in the toolkit and which is now closed.
 
 **And the whole game is entered through a pointer.** Following the program from
-its first instruction reaches 236 of its 9,094 instructions — 2.6% — before
+its first instruction reaches 236 of its 9,060 instructions — 2.6% — before
 stopping at `jmp word [0xbd9]`. The way past it is not to follow the jump but to
 find the one instruction that writes the pointer, which stores a constant. That
 takes reachability to 94.9%, and it closed the gap this project had recorded as
@@ -86,7 +86,10 @@ dispatch    : jmp [0x0bd9] -> 0x00BB6; jmp [0x6daa] -> 0x02AFC, 0x02B05, 0x02B0E
 provenance  : mechanically translated from 6502
               391 cmc, 99% of them straight after a cmp/sub, covering 91% of
               all compares -- a carry-convention adapter, not hand-written x86
-instructions: 9,094 disassembled (649 pinned to fixed bytes to preserve encoding)
+instructions: 9,060 disassembled (320 pinned to fixed bytes to preserve encoding)
+bytes as code: 21,746 / 42,112  (51.6% of file)
+code region : 0x0000..0x6C8B  (27,787 bytes)
+  recovered : 21,738 bytes as instructions (78.2% of the code region)
 BYTE-IDENTICAL
 ```
 

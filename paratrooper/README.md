@@ -91,7 +91,7 @@ Of the 16,400 bytes:
 ```mermaid
 flowchart LR
     A["<b>0x0000 – 0x2B40</b><br/>11,072 bytes<br/>data — tables, sprites,<br/>digit font, text<br/><i>correctly left as data</i>"]
-    B["<b>0x2B40 – 0x4010</b><br/>5,328 bytes<br/>code<br/><b>87.7% recovered<br/>as instructions</b>"]
+    B["<b>0x2B40 – 0x4010</b><br/>5,328 bytes<br/>code<br/><b>90.9% recovered<br/>as instructions</b>"]
     A --- B
     style A fill:#e2e3e5,stroke:#495057
     style B fill:#d4edda,stroke:#155724
@@ -100,7 +100,7 @@ flowchart LR
 The remainder of the code region is a 77-byte zero-filled buffer at the end and
 a few short runs.
 
-2,017 instructions were disassembled. 236 of them are written as fixed bytes
+2,017 instructions were disassembled. 178 of them are written as fixed bytes
 with their disassembly in a comment:
 
 ```nasm

@@ -51,11 +51,20 @@ the smallest honest examples of them.
 |---|---|---|---|---|
 | [**ParaTrooper**](paratrooper/) | 1982 | 8088 assembly, CGA, PC speaker | HTML / CSS / JavaScript | [6 documents](paratrooper/docs/) |
 | [**Hard Hat Mack**](hard-hat-mack/) | 1983 | translated from Apple II 6502 | not yet | [3 documents](hard-hat-mack/docs/) |
+| [**Zaxxon**](zaxxon/) | 1984 | 8088 assembly, CGA, isometric | not yet | [3 documents](zaxxon/docs/) |
 
 Hard Hat Mack is decompiled and documented but not yet ported — the analysis
 came first, and it turned up something worth the wait: the IBM version was
 **mechanically translated from the Apple II original**, and the binary still
 carries the evidence.
+
+Zaxxon is the same: decompiled, documented, not ported. It is the best example
+here of the difference between a rebuild that is exact and a program that is
+understood — the first attempt recovered **nine instructions out of 20,736
+bytes** and still reported byte-identical, because the real entry point was
+hiding behind a crack group's banner. It also holds the neatest piece of
+compression in the repository: seven fortress backgrounds that would be 48 KB
+as bitmaps, stored in **982 bytes**.
 
 More will be added. Each is self-contained — nothing depends on anything else,
 so you can start with whichever interests you.
