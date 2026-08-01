@@ -112,20 +112,20 @@ python tools\render-screens.py --toolkit <path-to>\dos-decompiler
 ```
 3 placement routines found in the binary
 Level 1: 53 sprites drawn, 36/36 calls explained
-Level 2: 48 sprites drawn, 30/30 calls explained
+Level 2: 104 sprites drawn, 30/30 calls explained
 Level 3: 36 sprites drawn, 39/39 calls explained
 ```
 
-The second number is the honest one, and it is narrower than it looks: those
-are the placement calls reached from the three build routines, 40 of the 89 in
-the program. The other 49 run while the game is being played. It also counts
-calls that produced *a* position, not the *right* one — see
-[what is still unknown](docs/02-architecture.md#what-is-still-unknown).
+Neither number means the screen is right. They count placement calls that
+produced *a* position, not the *right* one, and only the calls reached from the
+three build routines — 40 of the 89 in the program.
 
-The screens are also drawn twenty pixels to the left of where the game draws
-them, because start-up patches the scanline table and this reads the table as
-shipped. That is [stated rather than fixed](docs/02-architecture.md#the-last-step-the-files-table-is-not-the-table-it-uses),
-because the correction does not yet fit every sprite.
+For the number that does mean something, run the game and compare. `comrun.py`
+in the toolkit executes the binary and dumps the framebuffer, and against that
+reference the static reading recovers **38%, 83% and 58%** of the blits the
+game actually performs. That is the honest figure, and
+[why it is not higher](docs/02-architecture.md#and-a-harder-number-which-is-the-true-one)
+is a limit of reading without executing rather than a bug to be tuned out.
 
 Both should read
 `FD70BAB8A1099A01A7696A236957F816CC54DE3F0D28C8707F7CADDF60D22737`, at 42,112
