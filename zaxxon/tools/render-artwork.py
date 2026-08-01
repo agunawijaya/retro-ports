@@ -43,7 +43,11 @@ WAVE_TABLE = 0x1518         # 8 wave scripts: (sprite type, lane) pairs
 LANE_TABLE = 0x150E         # 5 entry positions, as (x, y) byte pairs
 ALT_TABLE = 0x14FE          # per-type starting altitude, indexed from type 4
 SECTION_TABLE = 0x3AAF      # four of the compressed sections
-SECTIONS = [0x399B, 0x3A07, 0x3A5F, 0x3AB7, 0x3BA3, 0x3C50, 0x3D22]
+# Seven fortress sections and the boss, which is the same format: the routine
+# at file 0x1B03 sets it up with `mov bx, 0x3d80 / call 0x0B8D`, so the robot
+# is a compressed 192x144 picture like any wall. Each address here is either
+# named by an instruction or is where the previous stream stopped.
+SECTIONS = [0x399B, 0x3A07, 0x3A5F, 0x3AB7, 0x3BA3, 0x3C50, 0x3D22, 0x3D80]
 
 # Each drawing routine fixes the shape of the sprites that select it. Read off
 # the routines at file 0x0CF0 .. 0x0DE3: the row count is its loop counter, the

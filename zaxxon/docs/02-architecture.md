@@ -20,6 +20,7 @@ is still unknown at the end.
 - [The screen, and the buffer in front of it](#the-screen-and-the-buffer-in-front-of-it)
 - [One coordinate system for the whole game](#one-coordinate-system-for-the-whole-game)
 - [The backgrounds: tiles, and a run-length encoder](#the-backgrounds-tiles-and-a-run-length-encoder)
+- [How the screen gets erased](#how-the-screen-gets-erased)
 - [The objects: 34 sprites and eight ways to store one](#the-objects-34-sprites-and-eight-ways-to-store-one)
 - [The object table](#the-object-table)
 - [The level script](#the-level-script)
@@ -219,7 +220,7 @@ flowchart LR
         C["<b>variables</b><br/>DS:0x0000 - 0x0910<br/><i>2,320 bytes</i>"]
         D["<b>frame buffer</b><br/>DS:0x0910 - 0x3E10<br/><i>68 x 176 pixels, off-screen</i>"]
         E["<b>section bitmap</b><br/>DS:0x478A - 0x628A<br/><i>the decompressed wall</i>"]
-        F["<b>collision grid</b><br/>DS:0x62B2 - 0x669A<br/><i>40 x 25 cells</i>"]
+        F["<b>background tile map</b><br/>DS:0x62B2 - 0x669A<br/><i>40 x 25 cells, one byte each</i>"]
         G["<b>stack</b><br/>down from DS:0x6942"]
         A --> B --> C --> D --> E --> F --> G
     end
@@ -387,6 +388,14 @@ almost entirely down to choosing the right unit — the run-length encoder is
 ordinary, but it is run-length encoding *tiles*, and one command covers 64
 pixels rather than 4.
 
+There is an eighth stream, at `cs:0x3D80`, 132 bytes, and it is the **boss**.
+Nothing marks it as special: the routine that sets up the boss fight calls the
+same decompressor with a different address. The twelve destructible pieces of
+the robot are windows into the bitmap it expands to, which is why a boss with
+twelve separately shootable parts costs no artwork at all —
+[document three](03-the-code.md#twelve-pieces-cut-out-of-one-picture) traces
+it.
+
 Decompression happens once per section, into a 6,912-byte bitmap at `DS:0x478A`
 that is **48 bytes per row**, not 80. It is not a screen; it is a picture the
 game will later cut rectangles out of.
@@ -432,6 +441,98 @@ half-rows above the field, and each frame the code at file `0x08FC` does:
 One diagonal step per frame, 122 frames from entering to leaving. That is the
 scrolling: there is no hardware to help, and none is needed, because the whole
 background is one object.
+
+## How the screen gets erased
+
+Nothing above ever clears the off-screen buffer. Sprites are `or`ed into it,
+the wall is copied over it, and the whole thing is pushed to the card — and yet
+the picture does not accumulate a smear of every frame the game has ever drawn.
+Something erases, and finding it turned out to be the most interesting thing in
+the program.
+
+**This section replaces a wrong answer.** The 1,000 bytes at `DS:0x62B2` were
+described here as a coarse occupancy map used for collision against the
+background, marked **[inferred]**, with a note that the code reading it had not
+been found. The inference was wrong. There is no such collision. It is a
+**background tile map with a dirty bit**, and the routine that reads it was in
+the main loop the whole time, one line below the flush.
+
+The map is 40 columns × 25 rows, one byte per cell, and each cell is a **tile
+number in the low seven bits and a "needs redrawing" flag in the top bit**. The
+reader is at file `0x0E31`:
+
+```nasm
+    mov bx, 0x632d                  ; the first cell that is on screen
+    mov di, 0x910                   ; the first byte of the buffer that is
+    mov cx, 0x16                    ;   on screen -- 22 rows
+row:
+    push cx
+    mov cl, 0x22                    ; 34 columns
+cell:
+    mov al, byte [bx]
+    test al, 0x80                   ; is this cell dirty?
+    je clean
+    push cx / push di / push bx
+    and al, 0x7f                    ; clear the flag ...
+    mov byte [bx], al               ;   ... and write it back
+    call draw_tile                  ; file 0x0E60: tile AL, into the buffer
+    pop bx / pop di / pop cx
+clean:
+    inc di / inc di                 ; a tile is two bytes wide
+    inc bx
+    loop cell
+    pop cx
+    add di, 0x23c                   ; 34 tiles is 68 bytes; a tile is 8 rows
+    add bx, 6                       ;   of 80, so 640 - 68 = 0x23C
+    loop row
+```
+
+Three things confirm what it is, and none of them is a judgement call.
+
+**The arithmetic closes.** The object drawing routine stamps the map at
+`0x62B2 + (y & ~3) × 10 + x / 2`. For the top-left corner of the play field —
+`x = 6`, `y = 12`, the clipping limits from
+[the coordinate system](#one-coordinate-system-for-the-whole-game) — that is
+`0x62B2 + 120 + 3 = 0x632D`, which is exactly where this routine starts
+reading. The map's origin is object coordinate (0, 0); the visible part starts
+three rows and three columns in.
+
+**The geometry closes.** 34 columns × 22 rows of 8 × 8 tiles is 272 × 176
+pixels, which is the play field to the pixel.
+
+**Two callers write it and this one reads it.** The object drawer sets bit 7 on
+the nine cells under every sprite it draws; the scene setup either fills the
+whole map with `0x80` (mark everything dirty, tile 0) or loads it with terrain
+tile numbers; and nothing else touches it.
+
+So the erase works like this, and the order in the main loop is the point:
+
+```mermaid
+flowchart LR
+    A["<b>draw objects</b><br/>into the buffer<br/><i>and set bit 7 on the<br/>9 cells under each</i>"]
+    B["<b>flush</b><br/>buffer to the screen<br/><i>the player sees this</i>"]
+    C["<b>repaint dirty tiles</b><br/>over the sprites just drawn<br/><i>and clear the bits</i>"]
+    A --> B --> C
+    C -->|"next frame"| A
+    style B fill:#cfe2ff,stroke:#084298
+    style C fill:#d4edda,stroke:#155724
+```
+
+*What to notice: the erase happens **after** the picture has been shown, not
+before it is drawn. The sprites mark their own damage on the way in, and the
+background pass repairs exactly that damage on the way out — so the cost of
+erasing is proportional to what moved, not to the size of the screen. A full
+repaint would be 748 tiles; a busy frame marks perhaps 60.*
+
+This is dirty-rectangle rendering, which is what every windowing system did for
+the next twenty years and what React's reconciler does to a DOM today. The idea
+is the same in all three cases: **do not redraw what did not change, and let
+whatever changed it say so.**
+
+It also explains the one thing about the main loop that looked wrong. `call
+0x0E31` sits after the flush rather than before the draw, which reads like a
+mistake until you know that it is cleaning up the frame the player has already
+seen.
 
 ## The objects: 34 sprites and eight ways to store one
 
@@ -844,29 +945,44 @@ Listed plainly, because a gap stated is worth more than a gap papered over.
 1. **24.7% of the code region is not recovered as instructions.** Most of it is
    demonstrably data — the wave scripts, the velocity tables, the sound tables,
    the text — but not all of it has been individually accounted for.
-2. **The scoring rules.** The routine at file `0x018C` adds a value to a
-   packed-decimal score using `aaa`, and the strings `200 Point BONUS`,
-   `1000 Point BONUS` and `2000 Point BONUS` are in the file, but which object
-   is worth what has not been traced end to end.
-3. **The boss sequence.** Scene entries 9 and 20 lead to routines around file
-   `0x1B03` that have been recovered as instructions but not read closely. The
-   robot sprite and its missile are in the sprite sheet; the fight is not
-   documented here.
-4. **The altitude/collision grid at `DS:0x62B2`.** 40 × 25 bytes, filled with
-   `0x80`, written by the object drawing routine and read by something else.
-   The reading is that it is a coarse occupancy map used for collision against
-   the *background* rather than against objects **[inferred]** — it is written
-   in exactly the pattern a 3×3 stamp around each object would produce — but
-   the consumer has not been identified.
-5. **The two-player logic.** There are clearly two of everything (the routine
-   at file `0x05D9` returns one of two pointer blocks depending on a flag bit),
-   but the second player's state block has not been mapped.
-6. **What the 94 tiles are used for individually.** The set has been rendered
-   and the fuel-gauge cells identified (`0x55`–`0x5D`), but most of the rest
-   are only "isometric edge pieces".
-7. **Whether this file matches the Sega/Datasoft release byte for byte.** It
+2. **What the 94 tiles are used for individually.** The set has been rendered
+   and two groups identified — the fuel-gauge cells (`0x55`–`0x5D`) and the
+   altitude bar — but most of the rest are only "isometric edge pieces".
+3. **The terrain strip at `cs:0x046B`.** 79 bytes, read as a sliding window two
+   bytes further along for each of 22 rows, which is what builds the diagonal
+   floor edge in the tile map. The mechanism is clear; what each of the values
+   `0x80`–`0x87` draws has not been matched up against the tile sheet.
+4. **The nine per-scene collision routines.** Each scene stores a function
+   pointer in `[0x0009]`, called as `call word [9]` when the player might have
+   hit the *background* rather than an object. Seven of the nine live between
+   file `0x1F15` and `0x1F84`, all recovered as instructions, none read
+   closely. This is where "you flew into a wall" is decided, and it is the
+   largest single thing still unexamined.
+5. **What sets `[0x6E]` bit 1.** It gates whether the six objects at `DS:0x136`
+   are drawn, and the boss sets it, but the ordinary scenes' use of it is not
+   traced.
+6. **Whether this file matches the Sega/Datasoft release byte for byte.** It
    carries a crack-group banner, so at minimum the first 128 bytes are not
    original. Whether anything else was patched is not knowable from one copy.
+
+Three items that were on this list have been settled since it was first
+written, and each is worth noting for what it says about the method:
+
+- **The scoring rules** are now traced end to end —
+  [document three](03-the-code.md#the-score) has the table. The route in was
+  not the score routine but the three `Point BONUS` strings, which state the
+  answer in English and let the arithmetic be checked against it.
+- **The boss sequence** is
+  [documented](03-the-code.md#the-boss), including how a 132-byte compressed
+  picture becomes twelve separately destructible pieces.
+- **The grid at `DS:0x62B2`** was described here as a collision map, marked
+  `[inferred]`, with its consumer unidentified. That was wrong, and the
+  correction is [above](#how-the-screen-gets-erased): it is the background tile
+  map, and its consumer was in the main loop the whole time. The lesson is not
+  subtle — the inference was built from the *writers* alone, which is precisely
+  the failure this repository's method warns about, and it survived because
+  "the reader has not been found" felt like an acceptable gap rather than the
+  refutation it actually was.
 
 ---
 

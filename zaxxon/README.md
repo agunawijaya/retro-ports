@@ -41,7 +41,16 @@ are two different claims.
 pixels.** Seven fortress sections of 192 × 144 pixels — 48,384 bytes as
 bitmaps — occupy **982 bytes**, because they are run-length encoded grids of
 8 × 8 tiles rather than run-length encoded pixels. One command covers 64
-pixels.
+pixels. The boss is a 132-byte eighth picture in the same format, and its
+twelve separately destructible pieces are twelve masked windows into it.
+
+**Nothing ever clears the screen.** Each sprite marks the nine background tiles
+underneath it as it is drawn, and a pass *after* the frame has been shown
+repaints exactly those and clears the marks. Dirty-rectangle rendering, in
+1984, in about forty instructions. This document set
+[got that wrong first](docs/02-architecture.md#how-the-screen-gets-erased) —
+the map was described as a collision grid whose reader had not been found, an
+inference drawn from its writers alone. The correction is kept in place.
 
 **Zaxxon broke three things in the toolkit, and all three are now fixed with
 regression tests.** The layout detector gave up at the banner jump; the
@@ -110,9 +119,14 @@ python tools\render-artwork.py --com original\ZAXXON.COM --out recovered
 ```
 sprites.png   34 sprites, 8 storage formats
 tiles.png     94 tiles of 8x8
-sections.png  7 compressed fortress sections
+sections.png  8 compressed fortress sections
 screen.png    11/11 objects placed from wave script 0
 ```
+
+The eighth section is the boss. Nothing in the file marks it as different from
+a wall — it is the same compressed format, decompressed by the same routine,
+and the robot's twelve destructible pieces are windows into the bitmap it
+expands to.
 
 `screen.png` is the one that can be wrong in an interesting way, and the other
 three are what make it checkable: a sprite decoded with the wrong width shears

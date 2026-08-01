@@ -27,6 +27,7 @@ explained in
 - [Spawning](#spawning)
 - [Drawing, and the order things are drawn in](#drawing-and-the-order-things-are-drawn-in)
 - [Hitting things](#hitting-things)
+- [The boss](#the-boss)
 - [Fuel](#fuel)
 - [The score](#the-score)
 - [What transfers](#what-transfers)
@@ -304,7 +305,7 @@ frame:
     call sound_tick
     call flush_to_screen            ; 0x05BA
     call sound_tick
-    call draw_status_line           ; 0x0E31
+    call repaint_dirty_tiles        ; 0x0E31  -- this is the erase
     call sound_tick
     call burn_fuel                  ; 0x13FF
     jb  player_died
@@ -316,7 +317,14 @@ frame:
     jmp frame
 ```
 
-Two things are worth noticing about the shape of it.
+Three things are worth noticing about the shape of it.
+
+**`repaint_dirty_tiles` is after the flush, not before the draw.** That looks
+like a mistake and is not: it is the *erase*, and it repairs the frame the
+player has already been shown. `draw_objects` marks the nine background tiles
+under each sprite as it draws; this pass repaints exactly those and clears the
+marks. [Document two](02-architecture.md#how-the-screen-gets-erased) has the
+mechanism. Nothing else ever clears the buffer.
 
 **`sound_tick` is called six times per frame, between everything.** The sound
 hardware has no queue: a tone plays until you change it. If the program only
@@ -730,6 +738,168 @@ The `cmp al, 3` figures also tell you the tuning. Three byte columns is 12
 pixels; three half-rows is 6 scanlines. The boxes are wider than they are tall,
 which in this projection is what "the same size in world space" looks like.
 
+## The boss
+
+Two of the twenty-two scene entries — 9 and 20 — lead somewhere different. The
+setup is at `file 0x1B03`:
+
+```nasm
+    or  byte [0x6e], 0x82
+    mov word [9], 0x1a75            ; this scene's collision routine
+    mov byte [0xb], 0
+    mov si, 0x1a43
+    mov di, 0x70
+    mov cx, 8
+    call copy_from_code             ; an 8-byte blit record -> [0x70]
+    mov si, 0x1a4b
+    mov di, 0xf4
+    mov cx, 6
+    call copy_from_code             ; one object      -> [0xF4]
+    mov byte [di], 0xff
+    mov cx, 0x24
+    mov di, 0x136
+    mov si, 0x1a51
+    call copy_from_code             ; six objects     -> [0x136]
+    mov bx, 0x3d80
+    call decompress                 ; file 0x0B8D -- the same routine the
+    jmp  next_step                  ;   fortress walls use
+```
+
+The last two lines are the interesting ones. **The boss is a compressed
+picture, in exactly the format the walls are in** — 132 bytes at `cs:0x3D80`,
+expanding to a 192 × 144 bitmap. `tools/render-artwork.py` draws it as the
+eighth panel of `sections.png`, and it is a squat structure with two rows of
+magenta panels: the robot, seen from the same angle as everything else.
+
+The eight-byte record copied to `[0x70]` is `57 00 F3 FF 14 00 30 00` —
+column 87, thirteen half-rows above the field, 20 bytes wide, 48 half-rows
+tall. It is scrolled by the same two instructions the walls use.
+
+### Twelve pieces cut out of one picture
+
+The six objects copied to `[0x136]` have kinds `0xF6` to `0xFB`, and that is
+above every sprite in the table. The drawing dispatcher checks for it:
+
+```nasm
+    mov al, byte [bx]
+    cmp al, 0xf0
+    jb  ordinary_sprite
+    jmp file_0x0DE3                 ; kinds 0xF0 and up go somewhere else
+```
+
+and the routine it goes to (`file 0x0DE3`) does something no other drawing
+routine does — it takes its pixels out of **RAM**:
+
+```nasm
+    and ax, strict word 0xf
+    mov si, 0xe4d
+    shl ax, 1 / shl ax, 1
+    add si, ax
+    mov bx, word [cs:si]            ; a mask, in the file
+    mov si, word [cs:si + 2]        ; the pixels, in memory
+    mov cx, 0x18                    ; 24 rows
+row:
+    mov ax, word [cs:bx]
+    mov dx, ax
+    not ax
+    and ax, word [si]               ; the picture, through the mask
+    and dx, word [di]               ; what is already on screen, through it
+    or  ax, dx
+    mov word [di], ax
+```
+
+The table at `cs:0x0E4D` has twelve entries of *(mask in the file, pixels in
+memory)*, and every one of the pixel pointers lands inside the decompressed
+picture at `DS:0x478A` — `0x478A`, `0x4910`, `0x4C0A`, `0x4D90`, `0x4F2C`,
+`0x508A`, `0x50B2`, `0x5210`, `0x53AC`, `0x5532`, `0x582C`, `0x59B2`.
+
+So the boss is **one picture, cut into twelve overlapping 24 × 24 windows,
+each with its own mask**. Each window is an object with a kind, a position and
+a life of its own, so pieces can be shot off individually — and none of them
+costs any artwork, because they are all views of the same 132 compressed bytes.
+This is the only place in the program where a sprite's pixels are not in the
+file.
+
+### The fight, as a state machine
+
+The per-frame half of the scene is another six-entry jump table, at
+`cs:0x1821`:
+
+| state | what it does |
+|---|---|
+| 0 | wait until the boss has descended to `[0x72] == 0x18` |
+| 1 | hold for `[0x40]` frames |
+| 2 | wait for the object at `[0xF4]` to disappear |
+| 3 | retreat: back up and out until the column reaches `0x57` |
+| 4 | the finale |
+| 5 | award the points |
+
+States 0 and 1 share a test, and it is the whole fight:
+
+```nasm
+    mov al, byte [0xf4]
+    cmp al, 7
+    jl  not_hit
+    cmp al, 0xa
+    jg  not_hit
+    mov byte [0x16], 1              ; the boss has been destroyed
+    add byte [bx + 2], 2            ; skip two states
+```
+
+`[0xF4]` is the object copied in at setup with kind `0x0E` — **the weak point.**
+Kinds 7 to 10 are the explosion sprites, so "is `[0xF4]` currently an
+explosion" is the same question as "did the player hit it", and it needs no
+flag, no callback and no collision code of its own: the ordinary shot-versus-
+object loop already turned the kind into `8` when it connected.
+
+The finale (state 4) is worth quoting because of one instruction:
+
+```nasm
+    mov di, 0x478a
+    mov cx, 0xd80
+    mov ax, 0x5555
+    rep stosw                       ; the whole picture, solid colour 1
+    ...
+    mov cx, 0x14
+frame:
+    push cx
+    ... move, draw, flush, repaint ...
+    mov bx, 0x70
+    mov si, 0x478a
+    call blit_section
+    pop cx
+    loop frame
+```
+
+It overwrites the decompressed picture with a solid colour and then runs twenty
+frames of a miniature game loop. Because the twelve pieces are windows *into
+that buffer*, they all turn solid at once — the boss flashes white as it comes
+apart, and it costs one `rep stosw`. Six explosion objects are copied in over
+the top from `cs:0x194A`.
+
+Then state 5 pays out:
+
+```nasm
+    test byte [0x16], 0xff
+    je  survived_only
+    mov bx, 0x19f2                  ; '2000 Point BONUS'
+    ...
+    mov al, 4 / call add_score      ; 500
+    mov al, 4 / call add_score      ; 500
+    mov al, 4 / call add_score      ; 500
+    mov al, 4 / call add_score      ; 500
+    jmp reset
+survived_only:
+    mov bx, 0x19e2                  ; '200 Point BONUS'
+    ...
+    mov al, 2 / call add_score      ; 200
+```
+
+**Destroy the robot: 2,000 points, plus the 200 the weak point itself scored as
+an ordinary target. Survive it without destroying it: 200.** The strings are in
+the file in English, which is what makes the arithmetic checkable rather than
+merely plausible.
+
 ## Fuel
 
 `file 0x13FF`, called once per frame, and its return value ends the turn:
@@ -858,6 +1028,68 @@ means repeated division, which is slow and needs a routine. Keeping the digits
 means displaying the score is a copy, and adding to it is this routine. The
 game never needs the numeric value for anything, so it never computes it.
 
+### What everything is worth
+
+`AL` on the way in is not an amount, it is an index into a five-entry table at
+`cs:0x00D3`. The routine adds two digits: the byte at `0xD4 + 2i` to digit 6
+and the byte at `0xD3 + 2i` to digit 5. With eight digits and digit 7 as the
+units, those are the tens and the hundreds — which is why every score in Zaxxon
+is a multiple of ten.
+
+| index | bytes | value |
+|---|---|---|
+| 0 | `01 00` | 100 |
+| 1 | `01 05` | 150 |
+| 2 | `02 00` | 200 |
+| 3 | `03 00` | 300 |
+| 4 | `05 00` | 500 |
+
+**That reading is checked rather than assumed**, and the file states the answer
+itself in three places. `file 0x0C31` calls with index 4 twice and prints
+`1000 Point BONUS`. The boss finale calls with index 4 four times and prints
+`2000 Point BONUS`. The boss consolation calls with index 2 once and prints
+`200 Point BONUS`. Two 500s, four 500s and one 200. All three agree.
+
+What each object is worth is a second table, at `cs:0x144F`, reached by
+`xlatb` with the object's kind — and the routine that uses it (`file 0x14ED`)
+runs when one of your shots connects:
+
+| kind | index | points | notes |
+|---|---|---|---|
+| 4 | — | **300** | handled before the table; also refills two fuel cells |
+| 5 | 2 | 200 | |
+| 6 | `0xFF` | none | |
+| 7 | 5 | **1000** | index 5 is not in the table above — it means "500 twice" |
+| 0x0A | 3 | 300 | |
+| 0x0C, 0x0D | 4 | 500 | |
+| 0x0E | 2 | 200 | the boss's weak point |
+| 0x0F | 0 | 100 | and decrements the `ENEMY PLANES` counter |
+| 0x17–0x1A | 0 | 100 | and decrements the counter |
+
+Kinds 0 to 3 are the player's own aircraft, so the four table entries in front
+of them are never read — and they are not table entries at all. `cs:0x144F` is
+four bytes *inside the preceding routine*, exactly like the altitude table in
+[document two](02-architecture.md#where-the-enemies-come-from). Two tables in
+one program indexed from a base that points into code, to save four bytes each.
+
+There is one more scoring rule, and it is three instructions (`file 0x045E`):
+
+```nasm
+    mov si, word [cs:bx + 8]        ; -> the life count
+    mov di, word [cs:bx + 0xa]      ; -> a one-byte "already given" flag
+    mov bx, word [cs:bx]            ; -> the score digits
+    test byte [di], 0xff
+    jne done                        ; only ever once
+    cmp byte [bx + 3], 2            ; digit 3 is the ten-thousands
+    jl done
+    inc byte [si]                   ; an extra life
+    inc byte [di]
+```
+
+Digit 3 of eight is the ten-thousands column, so the test is *score ≥ 20,000*,
+and the flag beside it means you get exactly one. Checked once per frame, which
+costs five instructions and needs no event system.
+
 That is the general lesson, and it is the one most worth carrying away from
 this whole document: **choose the representation that makes the common
 operation free.** Everything in Zaxxon is an example — the score is digits
@@ -873,6 +1105,13 @@ Nearly all of it, and mostly not as assembly technique.
 - **Draw off-screen, copy once.** Double buffering. Every graphics API you will
   ever use does this; here you can see the eleven instructions it costs and
   exactly what it buys.
+- **Erase only what you dirtied, and let the drawing say what that was.** Nine
+  tiles marked per sprite, repaired after the frame is shown. This is dirty-
+  rectangle rendering, and it is still what a windowing system and a virtual
+  DOM both do — do not redraw what did not change.
+- **One picture, many windows.** The boss's twelve destructible pieces are
+  twelve views of one 132-byte compressed bitmap. Wherever you are about to
+  store the same pixels twice, a pointer and a rectangle will usually do.
 - **A dispatch table instead of a switch.** The sprite table, the scene table,
   the direction table, the effect table. A pointer to a function stored in
   data, so behaviour is data. This is a virtual method table, hand-built.
