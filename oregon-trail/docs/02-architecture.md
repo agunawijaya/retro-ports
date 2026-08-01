@@ -536,8 +536,14 @@ seven predictions, seven matches, including flipping it to a demo copy with five
 runs left and watching the program write **four** back to the file.
 
 The program does call DOS for the date exactly once, at image `0x1DBF4`
-(`mov ah, 0x2A / int 0x21`). What it does with it is not established; stamping
-a saved game or a tombstone would be the obvious guess and it is only a guess.
+(`mov ah, 0x2A / int 0x21`). This document used to add that what it did with it
+was not established, and that stamping a saved game or a tombstone was the
+obvious guess. **The guess was wrong: the answer is nothing.**
+
+`0x1DBF4` is inside Borland's `GetDate`, and every caller of `GetDate` and
+`GetTime` — two of each — is inside the licence unit. The game never learns what
+day it is. The clock exists solely to decide whether another machine still holds
+the lab licence, and the tombstones carry no date at all.
 
 ## Running it, at last
 
@@ -680,19 +686,12 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    crossing, how pace and rations combine — have not been traced. That is the
    66,592 bytes in segments `0x00000` and `0x007B6`.
    `prior-attempt/src/` has a unit per topic and not one has been checked.
-2. **What the program does with the date it reads** at image `0x1DBF4`. It
-   calls `GetDate` twice and `GetTime` twice; one pair belongs to the licence
-   lease and is accounted for. The other pair is not.
-3. **The ten `SetIntVec` calls.** The program hooks ten interrupt vectors and
-   restores them with `SwapVectors`. Which ten, and what the handlers do, has
-   not been looked at — it is the obvious place to find the keyboard, the timer
-   and the joystick.
-4. **That `0x015BB` is specifically *Genus's*.** It is established as not
+2. **That `0x015BB` is specifically *Genus's*.** It is established as not
    Borland's — 0.0% against both of Borland's libraries — and the program links
    exactly two third-party libraries, so this is the other one by elimination.
    Settling it properly would need Genus's own library to compare against, and
    the PCX Programmer's Toolkit does not appear to be archived anywhere.
-5. **Whether any of this behaves as described at run time.** Rather less is
+3. **Whether any of this behaves as described at run time.** Rather less is
    assumed here than when this list was first written. The entry point, the
    unit-init order and the segment identities were confirmed by
    [running it](#running-it-at-last); the licence record, all five of its

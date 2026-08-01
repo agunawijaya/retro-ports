@@ -636,6 +636,105 @@ the prefix up to the first omitted routine is stable. `Halt` at `System+0x00D8`,
 were identical in every probe and in the game, and are safe anchors; anything
 higher must be re-derived per program.
 
+## The clock, which is nine lines long
+
+The Dos-unit inventory above showed ten `SetIntVec` calls, one `GetIntVec` and
+two `SwapVectors`, and said none of it had been looked at. It has now, and it is
+smaller than it sounds: **every one of the ten hooks the same vector, `INT 1Ch`
+— the BIOS timer tick, 18.2 times a second.**
+
+The tail of the start-up gate installs it:
+
+```nasm
+0014CD2  mov al, 0x1C              ; the timer tick
+0014CD4  push ax
+0014CD5  mov di, 0x16AA            ; somewhere to keep the old one
+0014CDA  lcall 0x2DB8:0x0275       ; GetIntVec(0x1C, saved)
+0014CDF  mov ax, 0x0021            ; and ours: ui:0x0021,
+0014CE2  mov dx, 0x2042            ;   which is image 0x10441
+0014CE5  mov [0x16AE], ax
+0014CE8  mov [0x16B0], dx
+0014CEC  mov al, 0
+0014CEF  lcall 0x2DB8:0x00F5       ; SetCBreak(False) -- no Ctrl-Break
+```
+
+Two far pointers, kept a few bytes apart: `0x16AA` is DOS's handler and `0x16AE`
+is the game's. The ten `SetIntVec` calls are **five install-and-restore pairs**,
+each one pushing whichever of the two the moment calls for. The program runs its
+own clock only while it needs it, and hands the tick back the rest of the time.
+
+The handler itself, at `0x10441`:
+
+```nasm
+0010441  push ax / bx / cx / dx / si / di / ds / es / bp
+001044A  mov bp, sp
+001044C  mov ax, 0x3348            ; DGROUP
+001044F  mov ds, ax                ;   -- because an interrupt cannot assume DS
+0010451  les ax, [0x16B2]          ; a 32-bit counter
+0010457  add ax, 1
+001045A  adc dx, 0                 ;   incremented with carry into the high word
+001045D  mov [0x16B2], ax
+0010460  mov [0x16B4], dx
+0010464  ... pop everything ...
+001046F  iret
+```
+
+That is the whole thing. **A `LongInt` at `DS:0x16B2` that counts ticks**, and
+no other effect — no music, no scrolling, no input polling.
+
+Three things in it are worth naming, because they are what an interrupt handler
+always has to do and what a compiler does for you:
+
+- **It saves every register**, including the segment registers. An interrupt
+  arrives between two arbitrary instructions of whatever was running, and a
+  handler that changes any register has corrupted a program it has never heard
+  of.
+- **It loads `DS` itself.** This is the one beginners get wrong. Your data
+  segment is not set up for you — the interrupted program's `DS` is still
+  loaded, so a handler that touches a global without doing this reads and writes
+  someone else's memory. `mov ax, 0x3348 / mov ds, ax` is that fix, and its
+  presence is a reliable sign you are looking at an interrupt handler rather
+  than a procedure.
+- **It ends in `iret`, not `ret`.** An interrupt pushed the flags as well as the
+  return address, so returning the ordinary way leaves the stack one word out.
+
+In Turbo Pascal this is a one-word declaration — `procedure Tick; interrupt;` —
+and the compiler emits all of it. The generated shape is so distinctive that it
+is worth learning as a signature: a run of nine `push`es followed by a literal
+loaded into `DS` is an interrupt handler, in any compiled DOS program.
+
+It also **does not chain** to the handler it replaced. `INT 1Ch` is the vector
+the BIOS provides precisely for programs to take over, so this is legal rather
+than rude — but it does mean anything else counting ticks stops counting while
+the game is running, which is why the restores exist.
+
+**What transfers.** A fixed-frequency counter incremented by hardware and read
+by the main loop is how you get time in an environment with no clock function
+worth calling. Nothing here waits on the timer; the loop reads the counter and
+decides how much has passed. That is the same separation a modern game makes
+between a fixed-timestep simulation and a display that renders whenever it can,
+and it is the reason such a game keeps correct speed on a faster machine.
+
+The two `SwapVectors` calls sit either side of the code that prints
+*Please insert The Oregon Trail Disk 2* — putting DOS's own handlers back while
+the machine is waiting for a human to swap a floppy, which is the moment you
+most want Ctrl-Break and the DOS critical-error handler to behave normally.
+
+## What the program does with the date
+
+[Document two](02-architecture.md#what-is-still-unknown) listed this as unknown
+and guessed at stamping a saved game or a tombstone. **The guess was wrong and
+the answer is nothing.**
+
+The program calls `GetDate` twice and `GetTime` twice, and all four calls are
+inside the licence unit — at `0x15409`/`0x15422` in the lease check and
+`0x15B1F`/`0x15B38` in the claim. The single `INT 21h AH=2Ah` at `0x1DBF4` is
+inside Borland's `GetDate`, and the lease is its only caller.
+
+So the game never learns what day it is. The tombstones and the saved games
+carry no date, and the only thing the clock is used for is deciding whether
+another machine in the lab still holds the licence.
+
 ## Where the artwork is loaded from
 
 Not traced in the code — but the file format is fully read, and
