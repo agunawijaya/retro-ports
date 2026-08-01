@@ -18,6 +18,41 @@ Two kinds of fact are kept apart here on purpose:
 published by **Electronic Arts** in October 1983. Electronic Arts calls it
 "truly EA's first game" — it was in the company's opening batch of five.
 
+### The IBM version had different authors, and the program says so
+
+The title screen was recovered by running the program under emulation, and it
+credits people the histories of this game rarely mention:
+
+```
+              HARD HAT MACK
+
+  IBM VERSION BY DANA HOW & KEVIN GILMORE,
+       THROUGH TMQ SOFTWARE, INC.
+
+      AN ORIGINAL GAME DESIGN BY
+  MICHAEL ABBOT & MATTHEW ALEXANDER.
+
+     VANDAL        MACK        OSHA
+
+  ElectronicArts   (C)1984 THE DUPLICATORS
+```
+
+Abbot and Alexander designed the game, on the Apple II, in 1983. The IBM PC
+version is **Dana How and Kevin Gilmore's**, through **TMQ Software**, and it is
+dated **1984**.
+
+That is worth more than a credit line. This document's companion shows that the
+IBM code was
+[mechanically translated from 6502](03-the-code.md#5-the-instruction-that-should-not-be-there) —
+391 `cmc` instructions that exist only to reconcile two processors that
+disagree about the carry flag. A separate contract house converting someone
+else's Apple II game is exactly the situation in which a translator gets
+written rather than a rewrite attempted. The screen and the instruction counts
+tell the same story from different ends.
+
+The screen also names the three characters — **VANDAL, MACK, OSHA** — and shows
+each one's sprite beside its name.
+
 You are a construction worker on an unfinished building. You run along girders,
 climb ladders, ride conveyor belts and elevators, bounce off springboards, and
 try to finish the job before the clock runs out. Two things want to stop you: a

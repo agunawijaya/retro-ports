@@ -1,8 +1,15 @@
 # Hard Hat Mack (1983)
 
-A platform game by **Michael Abbot** and **Matthew Alexander**, published by
-**Electronic Arts** in October 1983 — one of EA's opening five titles, and the
-one the company calls "truly EA's first game."
+A platform game designed by **Michael Abbot** and **Matthew Alexander**,
+published by **Electronic Arts** in October 1983 — one of EA's opening five
+titles, and the one the company calls "truly EA's first game."
+
+The IBM PC version is somebody else's work again: its own title screen credits
+**Dana How & Kevin Gilmore, through TMQ Software, Inc.**, dated 1984. That
+credit was recovered by running the program, and it corroborates what the code
+already showed — this version was
+[mechanically translated from the Apple II's 6502](docs/03-the-code.md#5-the-instruction-that-should-not-be-there),
+which is what a conversion house does and not what an author does.
 
 You are a construction worker filling gaps in girders, collecting lunchboxes and
 feeding iron to a rivet machine, while a vandal and an inspector from OSHA try

@@ -615,8 +615,8 @@ identified by what reads them:
 | `0x025C2` | 82 | column and row for an object |
 | `0x00F03` | 70 | sprite selector words, high byte only |
 
-**Four blocks are read by nothing the analysis can see**, and their shapes say
-what they are without proving it:
+**Four blocks are read by nothing the static analysis can see**, and their
+shapes say what they are without proving it:
 
 ```
 0x02543  128 132 136 140 144 148 150 152 154 156 156 156 …   accelerate, then stop
@@ -634,6 +634,35 @@ immediate — `mov al, [bx + 0x2894]`. There are **420** reads of that shape and
 nowhere in the instruction. Sixteen variables are used as table pointers that
 way. A table reached only like that is invisible to a search through the text,
 however completely the program is disassembled.
+
+### Asking the program instead
+
+That limit is only a limit of *reading*. Running the game and recording every
+address it fetches from settles the question for good — twenty frames of play
+under `comrun.py`, with a hook on memory reads:
+
+| block | bytes | read while running |
+|---|---|---|
+| `0x0390F` | 45 | **100%** |
+| `0x037A0` | 31 | **100%** |
+| `0x014B3` | 37 | 91% |
+| `0x03020` | 45 | 91% |
+| `0x07026` | 314 | 81% |
+| `0x03DAF` | 29 | 55% |
+| `0x008AB` | 25 | 56% |
+| `0x04795` | 162 | 14% |
+| `0x02543`, `0x02579`, `0x025C2`, `0x02F80`, `0x05FE2` | 255 | **0%** |
+| `0x0640C` | 126 | 0% |
+
+Two of the four blocks nothing appeared to read are read **completely**, on
+every frame. They are live data reached through a pointer, exactly as
+suspected, and now that is measured rather than suspected.
+
+`0x0640C` reading zero is the reassuring kind of zero: it is the seven tunes,
+and no tune plays in a run that never triggers a sound. The remaining 255 bytes
+across five blocks are untouched in twenty frames of one level — **[inferred]**
+they belong to hazards or levels this run did not reach, which is a much
+narrower claim than "unidentified" and one a longer run can test.
 
 ## The level layout, decoded
 
