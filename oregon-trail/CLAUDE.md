@@ -231,12 +231,20 @@ stable. `Halt` at `System+0x00D8`, `IOResult` at `System+0x0207` and the
 automatic I/O check at `System+0x020E` held in every probe and in the game;
 nothing higher did.
 
-**A recorded negative result, so nobody repeats it.** Searching for code that
-references the `Matt's General Store` banner by its offset — as an immediate,
-anywhere in the image — finds nothing. TP 5.0 is not addressing string
-constants that way here. It uses `BF <off16> / 0E 57` — `mov di, offset` then
-`push cs / push di` — which is what `strefs.py` in the scratchpad looks for, and
-which finds 266 string references.
+**A recorded negative result, so nobody repeats it — and it has now been
+searched for twice.** The first search looked for the `Matt's General Store`
+banner's offset as an immediate anywhere in the image and found nothing. The
+second knew what to look for: TP 5.0 addresses a string constant as
+`BF <off16> / 0E 57` — `mov di, offset` then `push cs / push di` — which
+`strefs.py` in the scratchpad matches, and which finds **266** string references
+elsewhere in the program.
+
+It still finds nothing for the store. The banner is a Pascal string of length
+`0x2C` at image `0x0E79F`, and neither `0x6C3F` (its segment-relative offset)
+nor `0xE79F` appears as a data word anywhere. So the store screen is **not
+reached the way the other 266 strings are** — it is built from a table or an
+overlay, and that indirection is the thing to find. Note the string
+`supplies.pcc` at `0x008D35`, which names a file that is not in `original/`.
 
 **Redirection does not work on this program.** `OREGON.EXE > OUT.TXT` produces
 an empty file every time, because `uses Crt` replaces the driver behind `Output`
