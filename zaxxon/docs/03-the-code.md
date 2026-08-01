@@ -27,6 +27,7 @@ explained in
 - [Spawning](#spawning)
 - [Drawing, and the order things are drawn in](#drawing-and-the-order-things-are-drawn-in)
 - [Hitting things](#hitting-things)
+- [Flying into a wall](#flying-into-a-wall)
 - [The boss](#the-boss)
 - [Fuel](#fuel)
 - [The score](#the-score)
@@ -737,6 +738,93 @@ since.
 The `cmp al, 3` figures also tell you the tuning. Three byte columns is 12
 pixels; three half-rows is 6 scanlines. The boxes are wider than they are tall,
 which in this projection is what "the same size in world space" looks like.
+
+## Flying into a wall
+
+Everything above collides object against object. Hitting the *wall* is a
+different problem, because the wall is a decompressed bitmap and there is
+nothing in it to collide with. Zaxxon's answer is worth the whole section: it
+does not look at the picture at all.
+
+The test happens in `file 0x1DF5`, immediately after the object loop:
+
+```nasm
+    cmp byte [si + 2], 0x1a         ; where is the player, left or right?
+    jge right
+    mov ax, 0xfffe                  ; -2
+    jmp check
+right:
+    mov ax, 0xfff9                  ; -7
+check:
+    add ax, word [0x70]             ; + the wall's column
+    jne no_wall                     ; not zero? nothing happens at all
+    call word [9]                   ; this scene's wall test
+    jae no_wall
+    ret                             ; carry set: you hit it
+```
+
+**`jne no_wall` is the whole design.** The wall test runs on exactly one frame
+per wall — the frame on which the wall's column reaches 2, or 7 if the player
+is over on the right. Every other frame it costs four instructions and a
+branch. There is no swept collision, no continuous test, no "am I inside the
+wall" query: there is a single instant at which the wall is level with you, and
+the only question asked is whether you are in the gap *at that instant*.
+
+The trigger column depends on where the player is — 2 on the left, 7 on the
+right — which is the isometric projection showing through. Something drawn
+further right is nearer the front, so it reaches you sooner.
+
+`[0x0009]` holds the test for the current scene, stored there by the scene's
+setup routine. There are seven of them and they are all built from two
+helpers:
+
+```nasm
+distance:                           ; file 0x1F96
+    mov al, byte [si + 2]           ; the player's column
+    cbw
+    sub ax, word [0x70]             ; minus the wall's
+    ret
+
+band:                               ; file 0x1F38 -- the common gap
+    call distance
+    cmp ax, 0x0e
+    jl  dead
+    cmp ax, 0x1e
+    jg  dead
+    jmp alive
+```
+
+and each scene's routine is that band plus an altitude condition:
+
+| stored in `[9]` | horizontal | altitude | the wall it describes |
+|---|---|---|---|
+| `0x1E15` | 20 … 30 | ≤ 4 | a low gap, in a narrow band |
+| `0x1E2A` | 14 … 30 | ≥ 5 | a high gap — you must climb |
+| `0x1E47` | 14 … 30 | ≤ 12 | a gap you must not fly over |
+| `0x1E55` | > 24 **or** | < 12 | a wall that only blocks one side |
+| `0x1E69` | 14 … 30 | 5 … 14 | a gap in the middle |
+| `0x1E77` | 14 … 30 | ≥ 14 | a gap near the top |
+| `0x1E84` | 14 … 30 | 5 … 12 | a narrower middle gap |
+
+Read the table again with the pictures in mind, because the point is what is
+*not* connected to what. `sections.png` shows the walls as they are drawn:
+brickwork with holes in it, in eight compressed pictures. This table is the
+walls as they are *collided with*: seven inequalities on two numbers. **The two
+have no common source.** The hole you can see and the hole you can fly through
+are separate pieces of data that a person had to keep in agreement by hand.
+
+That is not a criticism — it is the only affordable answer. Testing the
+player's aircraft against the wall bitmap would mean reading pixels back out of
+the buffer, sixty times a second, on a processor that takes four microseconds
+to do a multiply. Seven predicates cost nothing and are exact. But it does mean
+the game *can* be unfair in a way that leaves no trace in the artwork, and if
+you ever felt you flew cleanly through a gap and died anyway, this is the code
+that decided it.
+
+The transferable form of this: **when the thing you are drawing and the thing
+you are testing against are expensive to reconcile, keep two representations
+and accept that you own the job of keeping them in step.** Modern engines do
+exactly this with a visual mesh and a separate, much simpler collision mesh.
 
 ## The boss
 

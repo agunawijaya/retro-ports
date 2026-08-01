@@ -44,6 +44,13 @@ bitmaps — occupy **982 bytes**, because they are run-length encoded grids of
 pixels. The boss is a 132-byte eighth picture in the same format, and its
 twelve separately destructible pieces are twelve masked windows into it.
 
+**The hole you can see and the hole you can fly through are different data.**
+The walls are compressed bitmaps. Hitting one is decided by seven hand-written
+inequalities on your column and your altitude, evaluated on the single frame
+the wall draws level with you, with no reference to the picture at all. Nothing
+connects the two but the programmer —
+[the table is here](docs/03-the-code.md#flying-into-a-wall).
+
 **Nothing ever clears the screen.** Each sprite marks the nine background tiles
 underneath it as it is drawn, and a pass *after* the frame has been shown
 repaints exactly those and clears the marks. Dirty-rectangle rendering, in

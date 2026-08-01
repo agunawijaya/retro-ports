@@ -952,21 +952,30 @@ Listed plainly, because a gap stated is worth more than a gap papered over.
    bytes further along for each of 22 rows, which is what builds the diagonal
    floor edge in the tile map. The mechanism is clear; what each of the values
    `0x80`–`0x87` draws has not been matched up against the tile sheet.
-4. **The nine per-scene collision routines.** Each scene stores a function
-   pointer in `[0x0009]`, called as `call word [9]` when the player might have
-   hit the *background* rather than an object. Seven of the nine live between
-   file `0x1F15` and `0x1F84`, all recovered as instructions, none read
-   closely. This is where "you flew into a wall" is decided, and it is the
-   largest single thing still unexamined.
+4. **Two of the nine per-scene routines called through `[0x0009]`.** Seven are
+   the wall tests, now [traced](03-the-code.md#flying-into-a-wall). The two at
+   file `0x187A` and `0x1B75` belong to the cut scene and the boss and have not
+   been read.
 5. **What sets `[0x6E]` bit 1.** It gates whether the six objects at `DS:0x136`
    are drawn, and the boss sets it, but the ordinary scenes' use of it is not
    traced.
-6. **Whether this file matches the Sega/Datasoft release byte for byte.** It
+6. **`[si + 0x5C]` in the shot-versus-wall test** (file `0x1EE9`). It reads a
+   byte 92 into the object array from the shot being tested, which is a copy of
+   the player's column made when the shot was fired. Why the offset is 92 and
+   not something derived from the array layout has not been established.
+7. **Whether this file matches the Sega/Datasoft release byte for byte.** It
    carries a crack-group banner, so at minimum the first 128 bytes are not
    original. Whether anything else was patched is not knowable from one copy.
 
-Three items that were on this list have been settled since it was first
+Four items that were on this list have been settled since it was first
 written, and each is worth noting for what it says about the method:
+
+- **The wall collision.** Seven predicates on the player's column and altitude,
+  evaluated on the single frame the wall draws level with them, with no
+  reference to the wall's picture at all —
+  [document three](03-the-code.md#flying-into-a-wall) has the table. It is the
+  most surprising thing in the program: the hole you can see and the hole you
+  can fly through are separate data with no common source.
 
 - **The scoring rules** are now traced end to end —
   [document three](03-the-code.md#the-score) has the table. The route in was
