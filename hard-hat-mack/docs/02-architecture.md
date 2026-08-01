@@ -66,6 +66,46 @@ code. Measuring it says otherwise: 42.5% zeros, 8,236 non-zero bytes. *Not
 being code* and *being empty* are different claims, and only one of them had
 been checked.
 
+### The sprite format, decoded
+
+The pointer table's stride of 66 was the way in. Sixty-six is an awkward number
+until you look at the bytes it points at:
+
+```
+0x766F:  04 10 | 00 00 00 00  00 00 00 00  00 00 00 00 ...
+         ^^ ^^
+         |  height: 16 rows
+         width: 4 bytes = 16 pixels
+```
+
+4 × 16 = 64 pixels bytes, plus the two header bytes, is exactly 66. The stride
+is not a fixed record size at all — **each sprite carries its own dimensions**,
+and the pointer table's steps vary because the sprites do. The 34-byte steps
+seen elsewhere are 4 × 8 sprites.
+
+So the format is:
+
+```mermaid
+flowchart LR
+    H1["<b>byte 0</b><br/>width, in bytes<br/><i>× 4 = pixels</i>"]
+    H2["<b>byte 1</b><br/>height, in rows"]
+    P["<b>bytes 2 …</b><br/>width × height bytes<br/>CGA 2 bits per pixel"]
+    H1 --> H2 --> P
+    style P fill:#cfe2ff,stroke:#084298
+```
+
+**And they are stored mirrored.** Decoded with the standard CGA pixel order,
+every sprite comes out as a horizontal mirror of itself. That is not a guess:
+the file contains a 96×33 sprite of the **Electronic Arts logo**, which is
+unreadable until flipped and unmistakable afterwards. **[inferred]** The likely
+reason is a blitter that walks the data backwards, the same `std` idiom
+ParaTrooper uses to draw its score right-to-left — but the drawing routine was
+not traced to confirm it.
+
+`tools/gfxdump.py` in the toolkit renders any of this to a PNG without running
+the program, which is how the format was confirmed: decode, look, and see
+whether shapes or noise come out.
+
 ---
 
 ## Start-up, in order
@@ -298,9 +338,8 @@ Stated plainly, so this is not mistaken for a complete map:
   runs of 16 bytes or more, 4,660 bytes in total, sit inside the code region
   and are unaccounted for. Some of those are certainly code the walk never
   reached.
-- **The sprite format.** The graphics region is identified but not decoded: the
-  pointer table's stride is 66 bytes, and what those 66 bytes describe — width,
-  height, mask, frames — is unknown.
+- **The level layouts.** Three levels of girders, ladders and conveyors are
+  described somewhere in the middle region; that encoding is not decoded.
 
 None of this affects the reconstruction. `recovered/hhm.asm` rebuilds the file
 byte for byte regardless of how much of it is *understood* — the correctness of
