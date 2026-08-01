@@ -472,10 +472,12 @@ program's code is a compiler's output that no tool here can reconstruct at all.
 ## What is still unknown
 
 1. **The Turbo Pascal version.** 5.0, 5.5 or 6.0. Needs `.TPU` files.
-2. **The game's own logic** — the trail simulation, the store, the river
-   crossings, the hunting screen, the illness model, the event tables. This is
-   the big one. The two segments that hold it are now known — `0x00000` and
-   `0x007B6`, 66,592 bytes between them — but they have not been read.
+2. **The game's own logic as *code*.** The trail table is recovered
+   ([document three](03-the-code.md#the-trail-itself-which-is-a-table)) and the
+   simulation's shape is readable from its strings, but the routines that
+   consume them — the illness model, the store's prices, the odds on a river
+   crossing, how pace and rations combine — have not been traced. That is the
+   66,592 bytes in segments `0x00000` and `0x007B6`.
    `prior-attempt/src/` has a unit per topic and not one has been checked.
 3. **The network licence check.** Its segment is identified exactly
    (`0x0151C`, 2,544 bytes) and every one of its strings is recovered. The

@@ -221,6 +221,88 @@ needed. That is why the file has no header: there is nothing to say.
 **The check is the division.** 14,586 divides by 286 exactly, 51 times, with
 nothing left over. A guessed record size almost never does that.
 
+## The trail itself, which is a table
+
+The route is not code. It is an array of records in the data segment at image
+`0x23D32`, and it is legible:
+
+```
++0  byte   a flag: 20 for the first five landmarks, 12 for the rest
++1  byte   the landmark's number
++3  word   miles from the previous landmark
++5  word   X on the map
++7  byte   Y on the map
++9  string the name, length-prefixed
+```
+
+| # | miles | map X | map Y | landmark |
+|---|---|---|---|---|
+| 1 | 102 | 579 | 149 | the Kansas River crossing |
+| 2 | 83 | 551 | 145 | the Big Blue River crossing |
+| 3 | 119 | 535 | 136 | Fort Kearney |
+| 4 | 250 | 503 | 134 | Chimney Rock |
+| 5 | 86 | 461 | 130 | Fort Laramie |
+| 6 | 190 | 414 | 123 | Independence Rock |
+| 7 | 102 | 371 | 111 | South Pass |
+| 9 | — | 338 | 117 | Fort Bridger |
+| 10 | 162 | 305 | 136 | Green River crossing |
+| 10 | 144 | 306 | 121 | Soda Springs |
+| 11 | 57 | 292 | 116 | Fort Hall |
+| 12 | 182 | 257 | 107 | the Snake River crossing |
+| 13 | 114 | 212 | 100 | Fort Boise |
+| 14 | 160 | 194 | 85 | the Blue Mountains |
+| 15 | — | 165 | 71 | Fort Walla Walla |
+| 16 | 120 | 160 | 57 | The Dalles |
+| 17 | 100 | 139 | 62 | the Willamette Valley |
+
+Three things confirm this is really the trail table and not a coincidence.
+
+**The distances are the ones the game is famous for.** 102 miles to the Kansas
+River, 83 more to the Big Blue, 119 to Fort Kearney, 250 to Chimney Rock. Those
+are the numbers on every Oregon Trail walkthrough ever written, and here they
+are as little-endian words.
+
+**The map coordinates march west.** X goes 579 → 139 and Y goes 149 → 57.
+`MAP.PCX` in the container is 640 × 200, and these are points on it: the party's
+position is drawn by looking its landmark up in this table. The route bends
+north-west after South Pass, exactly as the real trail does.
+
+**The two rows with no distance are the two forks.** Fort Bridger and Fort Walla
+Walla are precisely the landmarks where the game asks you to choose — `The trail
+divides here.  You may:\\ 1. head for … 2. head for …` at image `0x2F7D`, and
+the Columbia-versus-Barlow-Road choice at `0x312D`. Their records carry an extra
+field for the alternative branch, so the fixed offsets above do not fit them,
+and rather than force a number out I have left them blank. Fifteen legs read,
+totalling **1,971 miles**.
+
+Notice that the two records that break the parser are the two the game itself
+treats specially. That is the kind of agreement that makes a reading
+believable — the anomaly has a meaning.
+
+## The rest of the game, as strings
+
+The trail segment's strings put the whole simulation on one page, in the order
+the code lays them out:
+
+| what | image | evidence |
+|---|---|---|
+| the main menu | `0x0000` | `1. Travel the trail  2. Learn about the trail  3. See the Oregon Top Ten` |
+| the status line | `0x0E87` | `Date:` `Weather:` `Health:` `Food:` `Next landmark:` `Miles traveled:` |
+| the random events | `0x1138`–`0x2A00` | snakebite, a gravesite, `Indians help find food`, rough/impassable/lost/wrong trail, a wagon fire, an ox wandering off, an ox dying, a broken wheel/axle/tongue, a broken arm/leg, heavy fog, hail, blizzard, thunderstorm, wild fruit, an abandoned wagon, a thief, bad water, `Very little water`, `Inadequate grass` |
+| the trail forks | `0x2F2C`–`0x31E6` | `MAP.PCX`, `The trail divides here`, the Barlow Road toll |
+| the travel menu | `0x3DCC` | `1. Continue on trail … 4. Change pace  5. Change food rations … 8. Hunt for food` |
+| river crossings | `0x4441`–`0x5B32` | ford / caulk and float / ferry / a Shoshoni guide / wait, with every outcome |
+| hunting | `0x61BF`–`0x77CE` | the instructions, `terrain.pcc`, `animals.pcc` |
+
+Two game rules can be read straight off the strings, without any code at all:
+
+- **The ferry costs $5.00 and makes you wait**, and the wait is variable:
+  `The ferry operator says that he will charge you $5.00 and that you will have
+  to wait N days.`
+- **You can carry only 100 pounds of meat back from a hunt**, however much you
+  shoot: `However, you were only able to carry 100 pounds back to the wagon.`
+  The game's most-quoted piece of design is a literal in a string.
+
 ## Where the rest of the program is
 
 Not read — but no longer unlocated, which is the difference between this

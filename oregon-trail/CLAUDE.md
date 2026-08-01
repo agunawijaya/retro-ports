@@ -22,8 +22,9 @@ shorter working reference you come back to.
 | module structure | **done** — 11 segments, all named, third-party split measured |
 | artwork | **done** — 58 of 58 images decoded and rendered |
 | data files | **done** — `DIALOGS.REC` is 51 records of 286 bytes, exactly |
+| the trail | **done** — 17 landmarks, distances and map coordinates, at `0x23D32` |
 | the prior attempt's protection claim | **tested: address right, meaning wrong** |
-| game logic | **located, not read** — segments `0x00000` and `0x007B6` |
+| game logic as code | **not read** — the routines in `0x00000` and `0x007B6` |
 | documents | [four](docs/), written from the above |
 
 Four things went back into the toolkit: `unpack.py` now reads LZEXE's stated
@@ -96,6 +97,7 @@ Image offsets.
 | `0x21BFD` | `Runtime error `, ` at `, `.` |
 | `0x21DA5` | `MemAvail` — walks the free list, returns a 32-bit byte count |
 | `0x23480` | DGROUP: code ends, data begins |
+| `0x23D32` | the trail table — 17 records: miles, map X, map Y, name |
 
 ### The eleven segments, named
 
