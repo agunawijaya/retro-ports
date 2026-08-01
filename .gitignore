@@ -48,3 +48,7 @@ desktop.ini
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Scratch space for unpacked images, Ghidra projects, emulator dumps.
+# Nothing here is worth committing, and some of it is the game.
+*/work/

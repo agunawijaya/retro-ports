@@ -30,6 +30,7 @@ Concretely, it means:
 
 ```
 <game>/
+├── CLAUDE.md      context for an agent working in THIS folder
 ├── README.md      what it is, how to play the port, how to rebuild it
 ├── docs/
 │   ├── 01-the-game.md          history, gameplay, tips, reception
@@ -40,11 +41,42 @@ Concretely, it means:
 │   └── 06-web-code.md          the port's code, walked through
 ├── web/           the playable port
 ├── original/      the game as it shipped        — GITIGNORED
+└── reference/     anything derived from it      — GITIGNORED
 └── recovered/     the reconstructed source      — GITIGNORED
 ```
 
 Follow it for new games. Cross-link the documents in a header line at the top of
 each: *"Document three of six. See … "*.
+
+### Every game carries its own CLAUDE.md
+
+This file is the repository's conventions. A game's own `CLAUDE.md` is the
+working reference for that game, and it exists so **an agent can be dropped into
+one folder and be productive without the conversation that produced it.**
+
+It should hold, and nothing else:
+
+| | |
+|---|---|
+| **state of the work** | what is finished, what is measured, what is not |
+| **how to regenerate** | the exact command, and the numbers it should print |
+| **the traps** | the two or three things that will cost a day if not known — address bases, storage orders, anything the file says that the program then changes |
+| **where things are** | a table of offsets worth having in front of you |
+| **what is genuinely open** | and what would settle it |
+
+Two rules about it:
+
+- **The numbers must be what the tools print today, not what they printed when
+  the documents were written.** The toolkit improves and figures move: after
+  ParaTrooper's documents were published its code region went from 87.7% to
+  90.9% and its pinned instructions from 236 to 178, and Hard Hat Mack's from
+  649 to 320. A game's `CLAUDE.md` is where that drift gets caught, because it
+  is the file you read before touching anything.
+- **Record predictions that failed, and leave them where they were made.**
+  Karateka's README predicted a 6502 translation and was wrong; the prediction
+  stays with the result beside it. A falsified prediction on the record is worth
+  more than a quiet deletion, because the next person would have made the same
+  one.
 
 **Do not create a shared/ or common/ folder** until two games genuinely need the
 same thing. Structure invented before it is needed is nearly always the wrong
