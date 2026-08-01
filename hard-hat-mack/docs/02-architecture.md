@@ -541,13 +541,24 @@ without executing anything. It recognises the idioms rather than interpreting
 the code, and reports what it cannot parse instead of skipping it — a screen
 quietly missing a girder looks perfectly fine and is wrong.
 
-Current coverage, and it is uneven:
+All three screens are in `recovered/screens-game.png`: the playfield of each
+level, with the score line above it in the game's own font.
 
-| | sprites placed | sites not parsed |
-|---|---|---|
-| Level 1 | 228 | 9 |
-| **Level 2** | **291 — complete** | 8 |
-| Level 3 | 220 | 7 |
+| | scenery sprites |
+|---|---|
+| Level 1 | 76 |
+| Level 2 | 134 |
+| Level 3 | 65 |
+
+**Level 1's floors have holes in them, and that is correct.** Its task is to
+fill the gaps in the girders, so it starts incomplete — a sparse screen that
+looks like a failed extraction is the level design. Level 3 has the diagonal
+conveyor and the boxes to feed the rivet machine. Level 2 is the tall building
+with ladders.
+
+The credits are drawn over the playfield by a separate overlay, which is why
+the earlier reconstruction looked like a title screen. Leaving that overlay out
+is what turns these into game screens.
 
 ## What is still unknown
 
