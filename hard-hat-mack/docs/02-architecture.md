@@ -470,22 +470,54 @@ then steps upward (`dec bp / dec bp`) as it draws. Getting that backwards puts
 the whole building upside down and pushes the footings off the top of the
 screen, which is how it was caught.
 
-The remaining steps use sprite 21 (a machine), 50 (an elevator door), 19 (a
-ramp), 12 (a hoist) and 93 (the Electronic Arts logo) — so this sequence builds
-the title screen, with the playfield behind the credits. Their positions are set
-inline rather than from tables and have not been traced.
+The rest are now traced too. Five place a single sprite at a constant
+position, written straight into the code:
+
+| Step | Sprite | Column | Row |
+|---|---|---|---|
+| `0x177E` | 70 | 8 | 0x12 |
+| `0x178D` | 3 — ladder pieces | `0x2B05`, 0xFF-terminated | `0x2B0A` |
+| `0x17B4` | 21 — machine | 0x26 | 0x2A |
+| `0x17BA` | 19 — ramp | 1 | 0xBC |
+| `0x17BD` | 12 — hoist | 0x23 | 0xBC |
+
+and one draws the Electronic Arts logo, sprite 93. So what this sequence
+builds is the **title screen** — the credits, over the playfield.
+
+### The font
+
+Text is drawn by a routine of its own at file `0x013E`, and it does not use the
+sprite table:
+
+```nasm
+    and ax, 0x3f              ; the character, masked to six bits
+    mov si, ax
+    shl si, 1
+    mov si, word [si + 0x726f] ; a font pointer table, 64 entries
+```
+
+So the glyph index is `character AND 0x3F` — `A` is 1, `Z` is 26, `0` is 48 —
+into a **separate** pointer table at file `0x716F`. Looking for the letters in
+the sprite table was the obvious guess and it is why they were not found
+earlier.
+
+The font is stored **top row first**, the ordinary way round, unlike the
+sprites. That is not an inconsistency: the character drawer is a different
+routine with its own loop, so it has its own convention. Rendering the text
+with the sprites' convention turns every letter upside down, which is how it
+was caught.
+
+`recovered/screen-title.png` is the whole screen: 285 sprites, every identity
+and position read from the file.
 
 ## What is still unknown
 
 Three things, stated plainly:
 
-- **Five of the eighteen build steps.** The machine, elevator door, ramp and
-  hoist are placed by code rather than by tables, and those placements were not
-  traced. Everything else on the screen is accounted for.
-- **The glyph table.** Text is drawn by the routine at `0x1D86` from records of
-  the form `[column, row, characters…, 0x01]`, at seven pixels per cell — but
-  the character shapes are not indexed by ASCII into the sprite table, which
-  was the obvious guess and is wrong.
+- **The three playfield screens.** The title screen is fully reconstructed;
+  the sequences that build levels one, two and three were not traced, and the
+  elevator door's row comes from a variable set at run time rather than from a
+  table.
 - **The 405 variables.** None are named. Doing that honestly means watching
   every routine that touches each one, and with 222 subroutines that is a
   project of its own rather than a gap in this one.
