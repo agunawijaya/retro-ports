@@ -419,10 +419,11 @@ be argued with; somebody can always say a blob happens to resemble a spanner.
 Legible text cannot be argued with. If a single bit of the format were wrong,
 what came out would be noise.
 
-It arrives mirrored, and is unreadable until flipped. **[inferred]** The likely
-cause is a blitter that walks the data backwards — the same `std` idiom
-ParaTrooper uses to draw its score right to left — but the drawing routine was
-not traced to confirm it.
+It arrives upside down, because sprites are stored **bottom row first**. The
+blitter reads a sprite forwards while stepping *down* the scanline address
+table (`dec bp / dec bp`), so the first bytes belong to the lowest row. There
+is not a single `std` instruction in the program — an earlier reading here
+called the data horizontally mirrored, and that was wrong.
 
 `tools/gfxdump.py` in the toolkit does this for any binary.
 

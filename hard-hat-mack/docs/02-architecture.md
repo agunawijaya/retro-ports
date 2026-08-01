@@ -94,13 +94,20 @@ flowchart LR
     style P fill:#cfe2ff,stroke:#084298
 ```
 
-**And they are stored mirrored.** Decoded with the standard CGA pixel order,
-every sprite comes out as a horizontal mirror of itself. That is not a guess:
-the file contains a 96×33 sprite of the **Electronic Arts logo**, which is
-unreadable until flipped and unmistakable afterwards. **[inferred]** The likely
-reason is a blitter that walks the data backwards, the same `std` idiom
-ParaTrooper uses to draw its score right-to-left — but the drawing routine was
-not traced to confirm it.
+**And they are stored bottom row first.** Not mirrored — that was this
+document's first answer and it was wrong. The blitter says so plainly: it walks
+*down* the scanline address table (`dec bp / dec bp`) while reading the sprite
+*forwards*, so the first bytes of a sprite land on its lowest row. Reading it
+top-first therefore turns every sprite upside down.
+
+The Electronic Arts logo settled it. Rendered as stored it is unreadable;
+flipped **vertically** it reads correctly. It was first called *horizontally
+mirrored* here because at that size a vertically flipped E-L-C-T-O-I-A-R-S is
+symmetric enough to seem to read backwards — a guess that four renders would
+have caught and one did not.
+
+**If a sprite sheet contains text anywhere, orient it by the text.** Text has
+exactly one correct orientation; shapes have four that all look plausible.
 
 `tools/gfxdump.py` in the toolkit renders any of this to a PNG without running
 the program, which is how the format was confirmed: decode, look, and see
