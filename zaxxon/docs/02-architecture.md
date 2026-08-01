@@ -28,6 +28,7 @@ is still unknown at the end.
 - [Sound](#sound)
 - [Randomness](#randomness)
 - [Collision](#collision)
+- [The text, and the font it does not have](#the-text-and-the-font-it-does-not-have)
 - [What this program is not](#what-this-program-is-not)
 - [What is still unknown](#what-is-still-unknown)
 
@@ -770,6 +771,43 @@ the game cheating, and a rectangle slightly smaller than the sprite produces
 forgiving collisions that feel fair. Almost every game since has done the same
 thing for the same reason.
 
+## The text, and the font it does not have
+
+Hard Hat Mack carries 1,152 bytes of character glyphs and a 64-entry pointer
+table to reach them. Zaxxon carries none, and the reason is one routine (file
+`0x0233`):
+
+```nasm
+    push ax
+    mov cx, 1
+    mov bh, 0
+    mov ah, 2
+    int 0x10                        ; BIOS: move the cursor
+    pop ax
+    mov ah, 9
+    mov bl, byte [2]                ; the colour
+    int 0x10                        ; BIOS: write this character, CX times
+```
+
+Every character the game ever displays goes through those two BIOS calls —
+the title, the credits, the prompts, `GAME OVER`, and the score, which is
+turned into characters by adding `0x30` to each digit. In CGA mode 4 the BIOS
+draws text by looking the character up in the ROM font and plotting it, which
+is slow, and Zaxxon does not care because it only does this between rounds and
+on the score line.
+
+That is worth stating because it is one of the questions this kind of work is
+supposed to answer, and the answer is "there is nothing there". Counted across
+the whole file there are exactly **five `int 0x10` calls**: set mode 4, set the
+background colour, select palette 1, position the cursor, write a character.
+The 94 tiles are the only glyph-shaped data the program owns, and they are
+scenery and the fuel gauge, not letters.
+
+The one place text-like drawing happens without the BIOS is the status line
+(file `0x0E82`), which writes tiles straight into video memory with the bank
+interleave done by hand — `xor di, 0x2000` between rows. That is the fuel gauge
+and the altitude bar, and neither of them is text.
+
 ## What this program is not
 
 Two negatives, both established rather than assumed.
@@ -792,6 +830,12 @@ anywhere in the recovered code. Video is set through the BIOS, the keyboard is
 read through the BIOS, the clock is read through the BIOS, and everything else
 is done by writing to hardware directly. The program has no files to open, so
 it has no use for an operating system.
+
+**And it never exits.** This is stronger than "no exit was found in the code
+that was recovered": the byte sequences `CD 20` (`int 0x20`), `CD 21`
+(`int 0x21`) and `B8 00 4C` (`mov ax, 0x4C00`) do not occur **anywhere in the
+20,736 bytes**, in code or data or artwork. There is no way back to DOS. You
+turned the machine off.
 
 ## What is still unknown
 
