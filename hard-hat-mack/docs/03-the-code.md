@@ -429,6 +429,45 @@ called the data horizontally mirrored, and that was wrong.
 
 ---
 
+## 7. What the game draws while you play
+
+Everything above is the program before it starts, and the screens as they are
+built. The other half — Mack walking, the vandal, the hammers falling — sits
+behind the dispatch pointer, and reading it statically runs into the wall
+described in [02-architecture.md](02-architecture.md#the-number-that-has-a-reference):
+a reader that follows every call has no idea which branch the program takes.
+
+So it was measured by running it. `comrun.py` builds a level, drives the two
+routines the main loop calls, and records every sprite the program blits:
+
+| sprite | blits in twelve frames | positions |
+|---|---|---|
+| 115 | 232 | 115 |
+| 117 | 232 | 115 |
+| 123 | 251 | 99 |
+| 125 | 210 | 82 |
+| 21 | 71 | one |
+| 27 | 70 | 70 |
+
+**Two pairs, moving constantly, drawn in equal numbers.** 115 with 117, and
+123 with 125. A sprite drawn exactly as often as another, always in the same
+frame, is one of two things: a figure made of two pieces, or a figure drawn and
+then erased. Both pairs move across almost the whole playfield — 115 ranges
+from column 30 to 206 — which is what a character does and what scenery does
+not.
+
+Sprite 27 is the girder tile, redrawn seventy times in seventy places: the
+floors are not static scenery, they are repainted. That is how the gaps Mack
+fills appear and disappear.
+
+**A correction this produced.** The static reading of the level builders was
+accused, in an earlier version of these documents, of inventing placements —
+sprite 40 at column 14 and column 24, row 144, drawn on no level screen. They
+are not invented. The running game draws them, at exactly those coordinates,
+**during play rather than during the build**. The extraction had found real
+placements and attributed them to the wrong phase, which is a different fault
+from making things up and has a different fix.
+
 ## Reading the rest
 
 `recovered/hhm.asm` covers all 42,112 bytes and reassembles to the original
@@ -438,6 +477,7 @@ exactly. It is navigable:
 - **`db` lines with a comment** are instructions pinned to a fixed encoding —
   they execute, they are just spelled in bytes.
 - The honest limits are at the end of
-  [02-architecture.md](02-architecture.md#what-is-still-unknown). Three remain:
-  the level layouts, the 405 unnamed variables, and two bytes at the very start
-  of the file that nothing in the program ever reads.
+  [02-architecture.md](02-architecture.md#what-is-still-unknown), and they have
+  changed as the measurements got sharper. What remains is the 398 unnamed
+  variables, 7.6% of the file with no bucket, and the gap between what the
+  static reading of a level produces and what the game actually blits.

@@ -867,13 +867,36 @@ dumps the framebuffer, and the two pictures are compared pixel by pixel:
 | Level 3 | 8,685 | **82.6%** | 34.7% |
 
 Both columns are needed. A renderer that draws nothing scores 0% and 0%; one
-that fills the screen scores 100% and enormously. What is missing is mostly
-things the *game* adds and a level layout does not contain — Mack himself, the
-hanging chains, the vandal — and the surplus is under investigation.
+that fills the screen scores 100% and enormously.
 
 The static render is still what is produced without running anything. The
 emulator is only the referee, and it is the referee that found the Level 2
 collapse: 54.1% covered before, 87.1% after.
+
+### And a harder number, which is the true one
+
+Comparing pixels flatters. Floors overlap, so drawing roughly the right thing
+in roughly the right place covers a great many pixels while getting the
+placement wrong. Comparing the **placements themselves** — every blit the game
+performs, against every placement the static reading produces — does not:
+
+| | blits the game makes | placements read from the file | recall | precision |
+|---|---|---|---|---|
+| Level 1 | 47 | 68 | **38.3%** | 26.5% |
+| Level 2 | 102 | 117 | **83.3%** | 72.6% |
+| Level 3 | 33 | 49 | **57.6%** | 38.8% |
+
+That is the honest state of the level extraction, and it is a long way from the
+100% that counting explained call sites reported.
+
+**Why, and it is not the tables.** The static walk follows every call and has no
+idea which branch the program takes. Worse, some drawing routines set no
+position of their own — `0x2A03` reads the column and row variables and draws
+at whatever is already there — so the walk hands them whatever position it last
+computed, on a path the program takes in a different order or not at all.
+
+That is a limit of reading without executing, not a defect to be tuned out. It
+can be narrowed, and it cannot be closed by better pattern-matching.
 
 **Level 1's floors have holes in them, and that is correct.** Its task is to
 fill the gaps in the girders, so it starts incomplete — a sparse screen that
