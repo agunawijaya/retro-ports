@@ -136,30 +136,84 @@ A record's length is the next record's offset minus its own — the standard way
 to store variable-length records with a sorted lookup table, and the same idea
 as the sprite pointer table inside Hard Hat Mack, moved out of the executable.
 
-### The records themselves are not decoded
+### The records, read off the code that reads them
 
-Each record opens with three bytes that read like a header, and the data that
-follows is compressed:
+The first attempt at this guessed. Each record opens with three bytes that look
+like a header and continues with something that looked compressed, `0x7B`
+appeared often enough to be an escape byte, and *escape, value, count* decoded
+282 of 284 records without running off the end.
+
+**All of that was wrong, and the way it was wrong is the point.** 282 of 284 is
+the kind of number that ends an investigation. The rule decoded almost
+everything and produced almost-plausible sizes, and the only reason it did not
+survive was a second test — decoded length against `width × height` — which it
+failed 274 times out of 284.
+
+So the format was settled the other way: by running the game and finding the
+code that reads a record. `comrun.py` loads the executable, answers enough DOS
+for it to open its ninety files, and a hook on the buffer `KS0.DAT` was read
+into names the instructions that touch it. Fourteen of them, and two account
+for 385,000 of the 397,000 reads:
+
+```nasm
+L_00AE7:
+    mov  dl, [si + 0x443c]      ; one byte of the record
+    inc  si
+    mov  ax, [bx + 0x4234]      ; a mask, chosen by the pixel offset
+    and  ax, [di + 0x337]       ; what is already on screen
+    mov  cl, [0x4227]           ; how far into a byte this column starts
+    xor  dh, dh
+    ror  dx, cl                 ; shift the byte into place
+    or   ax, dx
+    mov  [di + 0x337], ax
+    add  di, 0x50               ; 80 bytes -- the next scanline
+    dec  byte [0x422a]
+    jne  L_00AE7
+```
+
+`add di, 0x50` is a CGA row. The loop walks **down a column**, one byte per
+scanline, then the outer loop moves one column right. There is no decompression
+anywhere in it: the bytes go from the record to the screen through a rotate and
+a mask.
+
+So the header means what it looked like, and the body is raw:
 
 ```
-id  363   04 09 01 | 7b ff 08 | 00 | 7b ff 05 | f3 00 ff f0 | …
-          ^^ ^^ ^^   ^^^^^^^^
-          w  h  ?    0x7B looks like an escape: value, then a count
+byte 0   width, in bytes
+byte 1   height, in scanlines
+byte 2   a flag -- 0x01 in every record examined
+byte 3+  width x height raw bytes, column-major
 ```
 
-`0x7B` as `escape, value, count` decodes 282 of 284 records without running off
-the end, which is encouraging and proves very little — almost any rule decodes
-*something*.
+Four records were checked against what the blitter actually consumed, and all
+four agree exactly:
 
-The test that matters is whether the decoded length equals `width × height`, and
-**it does so for only 10 of 284 records**. So the rule is close and wrong, and
-the difference is not a detail: a compression rule that is nearly right produces
-pictures that are nearly right, which is exactly the failure this repository has
-been caught by before.
+| record | header | `w × h` | bytes consumed |
+|---|---|---|---|
+| 456 | `0C 48 01` | 12 × 72 = 864 | **864** |
+| 457 | `18 08 01` | 24 × 8 = 192 | **192** |
+| 462 | `0C 48 01` | 12 × 72 = 864 | **864** |
+| 464 | `01 0C 01` | 1 × 12 = 12 | **12** |
 
-It is left undecoded rather than guessed at. The way to settle it is the way the
-scanline table in Hard Hat Mack was settled — run the program and look at what
-it actually put on the screen.
+Each consumed run begins exactly three bytes into its record.
+
+### What is still not settled, and it is most of them
+
+That rule is verified for the records the game drew and **does not generalise**.
+Across all 666 records in the twenty-eight pairs, only **70** have a span of
+`3 + w×h + 1`. The rest are shorter or longer, in no ratio that one rule
+explains — 0.51, 0.55, 1.00, 1.06, 1.17 of `w×h`.
+
+The split is not random, though. Every `KM*` file has **zero** records matching;
+the matches are all in `KS*` files. Two parallel series, and the blitter reads a
+mask from one table and pixels from another, so **[inferred]** `KS` is the shape
+and `KM` the mask. That is a hypothesis with an obvious test — find the code
+that reads a `KM` buffer, the same way this one was found — and it has not been
+run.
+
+**[inferred]** the records that are shorter than `w × h` are compressed and the
+ones that match are not, so the file may hold both kinds. Nothing has been
+checked.
 
 ## The copy protection
 
@@ -173,12 +227,14 @@ the check is still present.
 
 ## What is still unknown
 
-- **The record compression.** The container is settled; what is inside a record
-  is not. `width × height` fails for 274 of 284 records under the obvious
-  reading of the escape byte.
-- **What the twenty-eight pairs are for.** `KM*` and `KS*` are two parallel
-  series with matching numbers — **[inferred]** two of something, perhaps two
-  characters or two graphics modes, but nothing has been checked.
+- **Why most records are not `3 + w×h + 1` bytes long.** The rule is verified
+  for the records the game actually drew and holds for only 70 of 666 overall.
+  The split is clean — every `KM*` file has zero matches — so the next step is
+  named rather than vague: find the code that reads a `KM` buffer, the same way
+  the `KS` blitter was found.
+- **What the twenty-eight pairs are for.** **[inferred]** `KS` is the shape and
+  `KM` the mask — the blitter reads pixels from one place and a mask from
+  another, and the size evidence fits. Not checked.
 - **The loose files.** `ALLPAL`, `ALLBAL`, `ALLCAL`, `ALLGAL`, `ALLVAL` look
   like combined versions of the `PAL*`, `BAL*`, `CAL*`, `VAL*` series;
   `CASTLE.BCG` and `FUJI.BCG` are backdrops by their names alone.

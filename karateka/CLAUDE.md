@@ -79,19 +79,30 @@ verified against all twenty-eight at once:
 
 A record's length is the next record's offset minus its own.
 
-**What is inside a record is not settled.** Three bytes that read like
-`(width, height, ?)`, then something compressed. `0x7B` as *escape, value,
-count* decodes 282 of 284 records without running off the end — which proves
-very little, since almost any rule decodes something — and the decoded length
-equals `width × height` for **only 10 of 284**.
+**The record format is settled for the records the game draws**, and it was
+settled by running the game rather than by inspection. The blitter at image
+`0x00AE7` reads one byte per scanline and steps `add di, 0x50`, so:
 
-So the rule is close and wrong. It is left undecoded rather than guessed,
-because a compression rule that is nearly right produces pictures that are
-nearly right, and this repository has been caught by that before.
+```
+byte 0   width, in bytes
+byte 1   height, in scanlines
+byte 2   a flag -- 0x01 everywhere seen
+byte 3+  width x height raw bytes, column-major -- no compression
+```
 
-**The way to settle it is not to guess harder.** Run the game under `comrun.py`,
-capture what it draws, and work backwards — which is how Hard Hat Mack's
-scanline table was settled after static reasoning had stalled.
+Four records checked against what the blitter consumed: 864, 192, 864, 12
+bytes, all exact, each starting three bytes into its record.
+
+**It holds for 70 of 666 records overall**, and the split is clean: every `KM*`
+file has zero matches. **[inferred]** `KS` is the shape and `KM` the mask. The
+next step is named — find the code that reads a `KM` buffer, the same way this
+one was found.
+
+**An earlier reading of this was wrong and is worth remembering.** `0x7B` as
+*escape, value, count* decoded 282 of 284 records without running off the end.
+That is the kind of number that ends an investigation. It failed the second
+test — decoded length against `width x height` — 274 times out of 284, and
+`0x7B` turned out to be an ordinary pixel value.
 
 ## A prediction that was made and failed
 
