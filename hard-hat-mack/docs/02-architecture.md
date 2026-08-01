@@ -26,14 +26,16 @@ flowchart TB
         direction TB
         A["<b>0x0000 – 0x0071</b>&nbsp;&nbsp;113 bytes<br/>start-up: install the keyboard handler,<br/>force the video mode"]
         B["<b>0x0071 – 0x00A8</b>&nbsp;&nbsp;55 bytes<br/><b>the INT 9 keyboard handler</b><br/><i>the hardware calls this, nothing else does</i>"]
-        C["<b>0x00A8 – 0x6C8B</b>&nbsp;&nbsp;27,619 bytes<br/>the game: code, sprites, level data,<br/>text, lookup tables"]
-        D["<b>0x6C8B – 0xA480</b>&nbsp;&nbsp;14,325 bytes<br/>zero-filled — the working memory"]
-        A --> B --> C --> D
+        C["<b>0x00A8 – 0x6C8B</b>&nbsp;&nbsp;27,619 bytes<br/>the game: code, level data,<br/>text, lookup tables"]
+        V["<b>0x6C8B – 0x6D10</b>&nbsp;&nbsp;133 bytes<br/>zero — the busiest variables"]
+        D["<b>0x6D10 – 0xA480</b>&nbsp;&nbsp;14,192 bytes<br/>graphics: a pointer table,<br/>then the sprites"]
+        A --> B --> C --> V --> D
     end
     style A fill:#fff3cd,stroke:#856404
     style B fill:#f8d7da,stroke:#721c24
     style C fill:#d4edda,stroke:#155724
-    style D fill:#e2e3e5,stroke:#495057
+    style V fill:#e2e3e5,stroke:#495057
+    style D fill:#cfe2ff,stroke:#084298
 ```
 
 **How to read it.** The red band is the surprise. It is 55 bytes of code that
@@ -41,15 +43,28 @@ flowchart TB
 because the keyboard hardware jumps to it directly. More on that
 [below](#it-takes-over-the-keyboard).
 
-The grey band at the bottom is a third of the file and contains nothing but
-zeros. That is not waste: it is the program's **variable space**, and it has to
-be in the file because a `.COM` is loaded as one contiguous block. Of the 405
-distinct variables the code uses, the busiest all live in there — `[0x6D9B]`
-alone is touched 144 times.
+The grey sliver is small but busy: 133 bytes of zeros holding the variables the
+code touches most. `[0x6D9B]` alone appears 144 times, `[0x6D9C]` 140 times.
+Zeros in a file mean "not initialised yet", which is exactly what a variable
+looks like before the program runs.
 
-**A useful habit:** when a file ends in a large block of zeros, that is almost
-always where the program keeps its state, and the addresses the code touches
-most often will point into it.
+The blue band is a third of the whole file and it is **artwork**. Two things
+identify it without decoding anything:
+
+- It opens with a table of 16-bit values climbing by a constant 66 —
+  `0x776F, 0x77B1, 0x77F3, 0x7835…` — the shape of a pointer table into
+  fixed-size records.
+- Its commonest byte values are `0xAA`, `0x55`, `0xFF`, `0xF0`, `0xC0`. In CGA's
+  two-bits-per-pixel format those are *four pixels of colour 2*, *four of colour
+  1*, *four of colour 3*, and *two-and-two*. Solid runs of one colour are what
+  sprite data is mostly made of.
+
+**A caution, because this document got it wrong first.** The region was
+originally described here as zero-filled working memory, on the strength of the
+first sixteen bytes being zeros and the disassembler declining to read it as
+code. Measuring it says otherwise: 42.5% zeros, 8,236 non-zero bytes. *Not
+being code* and *being empty* are different claims, and only one of them had
+been checked.
 
 ---
 
@@ -278,9 +293,14 @@ Stated plainly, so this is not mistaken for a complete map:
   described somewhere in the 27 KB middle region; the encoding is not decoded.
 - **Most of the 405 variables.** Naming one honestly means watching every
   routine that touches it. That was done for none of them here.
-- **21,292 bytes** of the file did not come back as instructions. Much is
-  genuinely data — the 14 KB of zeros alone is a third of the file — but some
-  is certainly code the walk never reached.
+- **19,628 bytes — 46.7% — did not come back as instructions.** Most of that is
+  the 14 KB of graphics, which is data and should stay data. But 27 separate
+  runs of 16 bytes or more, 4,660 bytes in total, sit inside the code region
+  and are unaccounted for. Some of those are certainly code the walk never
+  reached.
+- **The sprite format.** The graphics region is identified but not decoded: the
+  pointer table's stride is 66 bytes, and what those 66 bytes describe — width,
+  height, mask, frames — is unknown.
 
 None of this affects the reconstruction. `recovered/hhm.asm` rebuilds the file
 byte for byte regardless of how much of it is *understood* — the correctness of

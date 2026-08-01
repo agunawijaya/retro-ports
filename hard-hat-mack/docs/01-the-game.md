@@ -203,7 +203,7 @@ Read from the hardware the program touches:
 |---|---|
 | CPU | 8088, real mode |
 | Video | CGA, mode 4 — 320×200, four colours |
-| Memory | ~42 KB of program plus a 14 KB working area it carries with it |
+| Memory | ~42 KB, of which a third is sprite artwork carried inside the file |
 | Sound | PC speaker, one square wave |
 | Input | **its own keyboard interrupt handler**, and an analogue joystick on port `0x201` |
 | Storage | none — it never opens a file |
