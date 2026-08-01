@@ -735,6 +735,90 @@ So the game never learns what day it is. The tombstones and the saved games
 carry no date, and the only thing the clock is used for is deciding whether
 another machine in the lab still holds the licence.
 
+## The first numbers out of the simulation
+
+The game's own logic is the large thing still unread, and this is a start on it
+rather than a finish — but it comes with the technique, which is the part that
+generalises.
+
+**The game does its arithmetic in floating point.** Not integers. The scoring
+routine is a chain of calls into Borland's runtime with operands in registers,
+and the constants are six bytes wide:
+
+```nasm
+0008128  mov cx, 0x0086
+000812B  xor si, si
+000812D  mov di, 0x4800
+0008130  lcall 0x319F:0x0C60       ; divide
+0008135  lcall 0x319F:0x0C72       ; and truncate to an integer
+```
+
+Turbo Pascal's `Real` is a **six-byte type of Borland's own design**, not the
+IEEE format you know:
+
+```
+byte 0     exponent, biased by 0x81; zero means the value is zero
+bytes 1-5  mantissa, least significant byte first, with an implied leading 1
+bit 7 of byte 5   the sign
+```
+
+An operand travels in `AX:BX:DX` and a literal in `CX:SI:DI`, two bytes each,
+in that order. So `CX=0x0086, SI=0, DI=0x4800` is the byte string
+`86 00 00 00 00 48`, and that decodes to **50.0**.
+
+Why six bytes and not eight: in 1990 a floating-point coprocessor was an
+optional chip most machines did not have, so Turbo Pascal shipped its own
+software format sized for what its own library could multiply quickly. Programs
+compiled this way run on any machine and use no 8087 at all. The cost is that
+the format is Borland's, so nothing else reads it — which is exactly why a
+reverse engineer has to decode it by hand.
+
+Decoding every such constant in the scoring routine gives eight numbers:
+
+| where | value | what it is |
+|---|---|---|
+| `0x07F5E` | 2 | |
+| `0x07FF5` | 35 | |
+| `0x08045` | 0.5 | added before truncating — this is how you round |
+| `0x08076` | 0.5 | the same, again |
+| `0x08128` | **50** | bullets per point |
+| `0x08160` | **25** | pounds of food per point |
+| `0x08181` | **5** | dollars per point |
+| `0x08224` | 1 | |
+
+The three in bold are the scoring rates, and one of them is nailed down rather
+than merely lined up: the value at `DS:0x183F` is divided by 25, and the same
+variable is formatted into a buffer at `[bp-0x229]` that is later printed
+immediately before the string `' pound'`. **Food scores one point per 25
+pounds.** The other two are read the same way and in the same order as the
+lines they print — bullets at one point per 50, cash at one point per $5 — and
+are **[inferred]** to that extent, because the buffer was not traced end to end.
+
+The two 0.5 constants are worth a sentence on their own. There is no rounding
+instruction; adding a half and truncating *is* the rounding, and seeing that
+idiom tells you the program is being careful about a value that is not a whole
+number — money, in this case.
+
+And the profession multiplier is right there in the strings, needing no
+arithmetic at all:
+
+```
+0x07DAF  carpenter      0x07DB9  doubled
+0x07DC1  farmer         0x07DC8  tripled
+0x07DD0  For going as a ...  , your ...  points are ...
+```
+
+A banker gets no multiplier and no sentence. That is the whole difficulty
+setting: choosing the profession that starts with the least money multiplies
+your score the most.
+
+**What is still open, and how to attack it.** The illness model, the store's
+prices, the odds on a river crossing and the way pace combines with rations are
+still unread, in 66,592 bytes across two segments. But the route in is now
+short: find the strings a subsystem prints, look at the code immediately before
+them, and decode the `Real` constants. Every rule in this game is a number that
+gets printed near the text that explains it.
+
 ## Where the artwork is loaded from
 
 Not traced in the code — but the file format is fully read, and

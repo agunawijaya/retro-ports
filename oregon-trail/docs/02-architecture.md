@@ -679,7 +679,14 @@ program's code is a compiler's output that no tool here can reconstruct at all.
 
 ## What is still unknown
 
-1. **The game's own logic as *code*.** The trail table is recovered
+1. **Most of the game's own logic as *code*.** The scoring is partly read —
+   the rates are one point per 50 bullets, per 25 pounds of food and per $5,
+   and the profession multiplier is in the strings
+   ([document three](03-the-code.md#the-first-numbers-out-of-the-simulation)).
+   That also established *how* to read the rest: the arithmetic is in Turbo
+   Pascal's six-byte `Real`, and the constants decode by hand. What remains is
+   the illness model, the store's prices, the odds on a river crossing and the
+   way pace combines with rations. The trail table is recovered
    ([document three](03-the-code.md#the-trail-itself-which-is-a-table)) and the
    simulation's shape is readable from its strings, but the routines that
    consume them — the illness model, the store's prices, the odds on a river
