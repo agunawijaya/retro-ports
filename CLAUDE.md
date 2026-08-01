@@ -1,0 +1,181 @@
+# Working in this repository
+
+Context for any coding agent picking up work here, so the user does not have to
+explain it again.
+
+## What this repository is for
+
+**Teaching programming to people who do not program yet, by taking apart old
+games and rebuilding them.**
+
+That sentence decides almost everything else. It is not an archive, not a
+preservation project, and not a showcase. If a choice makes the work more
+impressive but less teachable, choose teachable.
+
+Concretely, it means:
+
+- **Explain from the beginning.** The reader may not know what a register is,
+  what a game loop does, or why a canvas has two sizes. Explain it the first
+  time it appears, in the place it appears.
+- **Explain the reasoning, not just the mechanism.** "This is an axis-aligned
+  bounding box test" teaches nothing. "A rectangle is cheaper than the real
+  outline *and plays better, because players read a near miss as the game
+  cheating*" teaches something.
+- **End each idea with what transfers.** Almost everything in these games is a
+  pattern that reappears elsewhere. Say so, and say where.
+- **Length is fine. Padding is not.** The user has asked for thorough
+  explanation. That means more paragraphs, not more adjectives.
+
+## The standard shape of a game
+
+```
+<game>/
+├── README.md      what it is, how to play the port, how to rebuild it
+├── docs/
+│   ├── 01-the-game.md          history, gameplay, tips, reception
+│   ├── 02-architecture.md      how the ORIGINAL program was built
+│   ├── 03-the-code.md          the original's routines, annotated
+│   ├── 04-porting.md           choosing a target language, trade-offs
+│   ├── 05-web-architecture.md  how the PORT is built
+│   └── 06-web-code.md          the port's code, walked through
+├── web/           the playable port
+├── original/      the game as it shipped        — GITIGNORED
+└── recovered/     the reconstructed source      — GITIGNORED
+```
+
+Follow it for new games. Cross-link the documents in a header line at the top of
+each: *"Document three of six. See … "*.
+
+**Do not create a shared/ or common/ folder** until two games genuinely need the
+same thing. Structure invented before it is needed is nearly always the wrong
+structure.
+
+## The copyright rule — never break this
+
+Two folders are gitignored in every game, and the reason is worth remembering
+because the second one is easy to miss:
+
+- **`original/`** — the game as it shipped. Obviously not ours.
+- **`recovered/`** — a reconstruction that assembles or compiles to a
+  **byte-identical copy**. Legally this is the same as shipping the binary, just
+  in source form.
+
+`.gitignore` also blocks `*.com` and `*.exe` anywhere in the tree as a backstop.
+
+Before any commit that adds files, check that nothing from those folders is
+staged. If a user asks to include them, say why it is a problem and offer a
+private repository instead — do not just comply, and do not just refuse.
+
+Excerpts of recovered source **inside documentation** are fine and expected:
+short routines quoted for commentary, with explanation around them. A whole file
+is not.
+
+## Using dos-decompiler
+
+The reverse engineering toolkit lives in a **separate repository**:
+<https://github.com/agunawijaya/dos-decompiler>, cloned locally at
+`C:\Projects\dos-decompiler`.
+
+Read `AGENTS.md` in that repository before using it — it is the canonical
+method and it explains what the tools can and cannot establish.
+
+Typical sequence for a new game:
+
+```powershell
+# 0. what is in this folder? Which file is actually the game?
+python C:\Projects\dos-decompiler\tools\survey.py <game-folder>
+
+# 0a. is that executable in scope? Report the verdict before promising anything.
+python C:\Projects\dos-decompiler\tools\triage.py <game>.EXE
+
+# 0b. if packed, unpack first
+python C:\Projects\dos-decompiler\tools\unpack.py <game>.EXE -o unpacked.exe
+
+# --- .COM files take a separate, stronger route ---
+python C:\Projects\dos-decompiler\tools\comrec.py <game>.COM --out recovered\<game>.asm
+nasm -f bin -o recovered\rebuilt.com recovered\<game>.asm     # then compare SHA-256
+
+# --- MZ executables go through the full pipeline ---
+. C:\Projects\dos-decompiler\env.ps1
+C:\Projects\dos-decompiler\tools\pipeline.ps1 -Exe <game>.EXE -OutDir out
+```
+
+`comrec.py` prints `BYTE-IDENTICAL` or says why not. **Verify it independently**
+— reassemble and compare hashes yourself rather than taking the tool's word.
+
+Two things to report accurately every time:
+
+- **A `.COM` route produces assembly, not C.** Check prologue density first
+  (`triage.py` reports it). A program with no stack frames was written in
+  assembly and has no C to recover.
+- **Quote the code-region figure, not the whole-file one.** These games are
+  mostly artwork and tables.
+
+## Standards of evidence
+
+The user cares about this more than about polish. It is the difference between
+documentation that is useful and documentation that is confident.
+
+- **Verify, do not assume.** Run the command, read the bytes, check the hash. If
+  you have not checked something, do not write it as fact.
+- **Mark inference.** Use **[inferred]** inline for anything reasoned rather
+  than observed, and say what evidence is missing.
+- **Keep a list of what is unknown.** Every game's document 02 ends with one.
+  Gaps stated plainly are worth more than gaps papered over.
+- **The binary outranks the internet.** Secondary sources disagree with each
+  other and with the code — ParaTrooper's point values are documented three
+  different ways online and none matched the program. Say so when it happens.
+- **Report failures.** If a metric got worse, write that down. Negative results
+  are kept deliberately.
+
+## Diagrams
+
+**Use Mermaid**, in fenced ```mermaid blocks, so GitHub renders them inline.
+
+- **Explain every diagram.** A line before it saying what it shows, and a line
+  after saying what to notice. A diagram nobody can read is decoration.
+- Prefer `flowchart` — it is the most reliably rendered. `stateDiagram-v2` is
+  fine for genuine state machines.
+- Quote every label containing punctuation, `<`, `>` or HTML: `A["like this"]`.
+- Check them before committing. There is no renderer available locally, so
+  verify structurally: balanced brackets and quotes, matched `subgraph`/`end`,
+  no edge pointing at an undeclared node.
+
+## Verifying the port
+
+Each port should be runnable with no build step — open `index.html`.
+
+- Expose a `selfTest()` on `window` that runs in the browser console. It should
+  check whatever has broken before.
+- **Make the simulation seedable.** `resetGame(seed)` for a reproducible game,
+  no argument for a clock seed. A bug you cannot replay is a bug you cannot fix
+  — this was learned the hard way on ParaTrooper.
+- **Keep logic separate from rendering** so tests can run headless, thousands of
+  ticks in milliseconds.
+- Check the browser console for errors. A page that loads is not a page that
+  works: one syntax error kills an entire classic script while the page still
+  renders normally.
+
+Note for agents driving a browser: `requestAnimationFrame` may be suspended in
+an automated tab, so the game will not run in real time. Drive `update()`
+directly in a loop and call `render()` to inspect frames. **Say clearly that the
+feel was not play-tested** if it was not.
+
+## Before committing
+
+- Nothing from `original/` or `recovered/` staged.
+- Every internal Markdown link and anchor resolves — including anchors, which
+  break silently when a heading is renumbered.
+- Every Mermaid block is structurally sound.
+- Figures in the documents match what the tools currently print. They drift
+  whenever a tool improves.
+
+## Tone
+
+Write plainly. No marketing, no exclamation marks, no "amazing" or "powerful".
+The material is interesting on its own; saying so out loud makes it less
+convincing, not more.
+
+Be honest about what is unremarkable. ParaTrooper writes directly to video
+memory — every fast game did, and the documents say so explicitly, precisely so
+that the genuinely unusual things stand out.

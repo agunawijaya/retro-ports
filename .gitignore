@@ -1,0 +1,33 @@
+# Nothing in this repository redistributes a game that is still under copyright.
+#
+# Two kinds of file are therefore never committed:
+#
+#   original/    the game exactly as it shipped
+#   recovered/   a reconstruction that assembles or compiles to a byte-identical
+#                copy of it — legally the same thing as the binary, just in
+#                source form, and easy to forget for exactly that reason
+#
+# Every game folder follows this convention, so the rule is one pattern each.
+# Everything else — the documentation, the port, the artwork — is our own work
+# and is committed normally.
+#
+# Each game's README explains how to regenerate its recovered/ folder from a
+# copy of the game you already own.
+
+*/original/
+*/recovered/
+
+# Belt and braces: never commit a DOS executable from anywhere in the tree.
+*.com
+*.exe
+*.COM
+*.EXE
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/

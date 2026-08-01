@@ -1,0 +1,162 @@
+/* ParaTrooper — browser port
+ *
+ * The canvas has a fixed internal resolution of 960x600 and is scaled by CSS,
+ * so the game logic never has to know what size the window is. Everything here
+ * is presentation: framing, the shell around the screen, and the small print.
+ */
+
+:root {
+  --bg: #05060d;
+  --panel: #0d1020;
+  --edge: #1e2440;
+  --ink: #d8def0;
+  --dim: #7b85a8;
+  --accent: #ffc266;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px 16px 40px;
+  background:
+    radial-gradient(1100px 620px at 50% -10%, #141a35 0%, transparent 70%),
+    var(--bg);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffe9a8, #ff9d3f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sub {
+  margin: -10px 0 0;
+  font-size: 14px;
+  color: var(--dim);
+  text-align: center;
+  max-width: 62ch;
+  line-height: 1.5;
+}
+
+.frame {
+  position: relative;
+  width: min(96vw, 1080px);
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #171d33, #0a0d18);
+  border: 1px solid var(--edge);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 960 / 600;
+  border-radius: 8px;
+  background: #05070f;
+  /* The artwork is drawn with curves and gradients, not pixels, so it should
+     be smoothed on the way up rather than blocked into squares. */
+  image-rendering: auto;
+  cursor: crosshair;
+}
+
+/* A faint scanline wash. Not authentic — a CGA monitor did not look like this
+   at 960x600 — but it ties the modern artwork to the era it came from. */
+.frame::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 8px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.035) 0px,
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+/* Sits along the bottom edge of the screen rather than across the middle of
+   it. Browsers refuse to start audio until the page has been clicked, so this
+   has to be said — but it should not cover the title art while saying it. */
+#start-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(0deg, rgba(4, 6, 16, 0.92), rgba(4, 6, 16, 0.55));
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 13.5px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.35s;
+}
+#start-hint:hover { color: #fff; }
+#start-hint.gone { opacity: 0; pointer-events: none; }
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  justify-content: center;
+  font-size: 13.5px;
+  color: var(--dim);
+}
+.keys b {
+  display: inline-block;
+  min-width: 22px;
+  padding: 2px 7px;
+  margin-right: 6px;
+  border-radius: 5px;
+  background: #1a2038;
+  border: 1px solid #2a3255;
+  border-bottom-width: 2px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+footer {
+  max-width: 74ch;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--dim);
+  text-align: center;
+}
+footer a { color: #8fb6ff; }
+footer strong { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .frame { padding: 8px; }
+  .frame::after, #start-hint { inset: 8px; }
+  .keys { font-size: 12px; }
+}

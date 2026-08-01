@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ParaTrooper (1982) — browser port</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>ParaTrooper</h1>
+<p class="sub">
+  A port of the 1982 Orion Software game by Greg Kuperberg.
+  The rules, the 18.2&nbsp;Hz clock, the random number generator and the title
+  melody are the original's, read out of the binary. The artwork is new.
+</p>
+
+<div class="frame">
+  <canvas id="screen" width="960" height="600"></canvas>
+  <button id="start-hint">click here, then press SPACE — the browser needs a click before it will make sound</button>
+</div>
+
+<div class="keys">
+  <span><b>←</b><b>→</b> rotate the gun</span>
+  <span><b>A</b><b>D</b> also rotate</span>
+  <span><b>Space</b> fire</span>
+  <span><b>C</b> 1982 controls</span>
+  <span><b>M</b> mute</span>
+</div>
+
+<footer>
+  <p>
+    <strong>Shoot the parachute, not the man.</strong> He drops like a stone and
+    kills anyone he lands on — and since <strong>every shell you fire costs you a
+    point</strong>, chaining kills is most of the difference between a mediocre
+    score and a good one.
+  </p>
+  <p>
+    Three things end the game: <strong>four paratroopers massing on one
+    side</strong> — they run in, climb on each other and reach over the
+    sandbags; <strong>one landing on the gun base itself</strong>, which is
+    fatal at once; and <strong>a bomb striking the emplacement</strong>. A bomb
+    that lands on open ground is only an explosion — though it will kill a
+    paratrooper standing there, and that man stops counting against you.
+  </p>
+  <p>
+    The original's controls were stranger than they look: one key <em>started</em>
+    the gun swinging and it kept swinging, and another key stopped it and fired.
+    You did not aim, you timed a stop. Press <b>C</b> on the title screen to play
+    it that way.
+  </p>
+  <p>
+    Written from a byte-identical reconstruction of the original executable.
+    How the game works, and how it was recovered, is written up in
+    <code>../docs/</code>. Original game © 1982 Orion Software, Inc.;
+    this port ships none of it.
+  </p>
+</footer>
+
+<script src="game.js"></script>
+<script>
+  // Fade the click prompt once the page has had a real interaction.
+  const hint = document.getElementById('start-hint');
+  const dismiss = () => hint.classList.add('gone');
+  hint.addEventListener('click', dismiss);
+  addEventListener('keydown', dismiss, { once: true });
+</script>
+</body>
+</html>
