@@ -169,13 +169,75 @@ segment    starts    bytes   calls  entries
  0x0219f 0x00219f0    6,800   1,500       60   Borland's System unit
 ```
 
-Two independent confirmations that this list is right:
+### Naming them, which turned out to be nearly free
+
+A Pascal string is a length byte followed by exactly that many characters, so
+scanning a segment for them is *exact* — no minimum-run guessing, no false hits
+inside code. And a unit's strings say what the unit is:
+
+| segment | its first strings | so it is |
+|---|---|---|
+| `0x00000` | `You may:\\  1. Travel the trail\\  2. Learn about the trail`, `Miles traveled:`, `Weather:`, `Snow bound` | **the main program and the trail** |
+| `0x007b6` | `Congratulations!  You have made it to Oregon!`, `Points for arriving in Oregon`, `carpenter`, `The Oregon Top Ten` | **scoring and the ending** |
+| `0x01042` | `Disk error:`, `Please insert the disk.`, `hiscores.rec`, `TOMB.REC`, `Here lies`, `Greenhorn` | **UI, files, saves, tombstones** |
+| `0x014d0` | `VGA256`, `OTMCGA.PCL`, `LOGO.256`, `OTCGA.PCL`, `PAL.256` | **the artwork loader** |
+| `0x0151c` | `This disk appears to be damaged`, `PROGRAM IS NOT AVAILABLE`, `licensed for use by a single computer` | **the licence check** |
+| `0x01de9` | `BGI Error: Graphics not initialized (use InitGraph)` | **Borland's `Graph` unit**, naming itself |
+| `0x015bb`, `0x018dc`, `0x01db8`, `0x0213d` | *none at all* | libraries — see below |
+| `0x0219f` | `Runtime error `, ` at ` | **Borland's `System` unit** |
+
+**Having no strings is evidence too.** A library is code without messages;
+application code is not. The four silent segments are exactly the four
+third-party or runtime units that are not `System` or `Graph`, and they were
+identified by what they *do* instead:
+
+- **`0x01db8`, 784 bytes — Borland's `Dos` unit.** Eighteen `INT 21h` calls and
+  nothing else in the whole segment. It contains the program's only
+  `mov ah, 0x2A / int 0x21` — DOS get-date.
+- **`0x0213d`, 1,568 bytes — Borland's `Crt` unit [inferred].** Four `INT 16h`
+  (keyboard) and one `INT 10h`, called from everywhere, sitting immediately
+  before `System` in link order.
+- **`0x018dc`, 19,904 bytes — the Genus graphics library.** Three independent
+  reasons: it is the only segment in the program containing a test of
+  `AL & 0xC0` against `0xC0`, which is the PCX run-length check; it makes 79
+  `INT 21h` and 20 `INT 10h` calls, which is file reading and video mode
+  setting; and it is called by the artwork loader, the segment holding
+  `OTMCGA.PCL`.
+- **`0x015bb`, 12,816 bytes — the Genus text/font library [inferred].** Same
+  shape — file and video calls, no strings — driven by the UI segment, which
+  is also where `BIT8X8.GFT` and `Problem unloading font.` live.
+
+### Separating the runtime from the program
+
+The question the brief asks — how much of this is Borland's and Genus's rather
+than MECC's — now has an answer:
+
+| | bytes | share of the code |
+|---|---|---|
+| **MECC's own code** | 89,008 | **61.6%** |
+| Borland's runtime (`System`, `Graph`, `Dos`, `Crt`) | 22,784 | 15.8% |
+| Genus's libraries | 32,720 | 22.6% |
+| | **144,512** | |
+
+So **38.4% of this program was written by somebody other than the people who
+made the game.** The brief's comparison point is Sopwith, where the equivalent
+figure is 9%. That is the difference a graphics library makes.
+
+And the byte count still understates the runtime's importance. **1,500 of the
+program's 3,080 far calls — 48% — go into `System`'s 6,800 bytes.** A runtime
+is small and hot; measuring it by size alone would have called it negligible.
+
+Three independent confirmations that this list is right:
 
 - **the sizes sum to exactly 144,512 bytes**, which is the code/data boundary
   found separately from DGROUP — no gaps, no overlaps;
 - **the six unit initialisers at the entry point** — `0x219F`, `0x213D`,
   `0x1DE9`, `0x18DC`, `0x15BB`, `0x151C` — are all in the list, and the scan
-  found them without ever looking at the entry point.
+  found them without ever looking at the entry point;
+- **every segment's strings are consistent with its size and call count.** The
+  1,216-byte segment that holds five filenames is called 101 times and calls
+  the graphics library; the 35,008-byte segment full of scoring text is called
+  nine times, at the end. Nothing had to be adjusted to make that fit.
 
 The first row is the one to notice. **The program's own code is invisible to the
 call graph**, because nothing calls it: it is entered from the executable's
@@ -269,6 +331,41 @@ Two details worth carrying away:
 - **The 8-bit members carry no palette.** The size field stops at the last
   pixel. `PAL.256` holds it instead — a tiny PCX whose image is meaningless and
   whose 768-byte palette is the whole point of the file.
+
+## The text file, which is a Pascal array on disk
+
+`DIALOGS.REC`, 14,586 bytes, holds what the people you meet on the trail say to
+you. Its format is not a format at all — it is a Pascal `array of record`
+written straight to disk with `BlockWrite`, which is what a 1990 Pascal
+program does when it wants a data file:
+
+```
+record                     286 bytes
+   speaker : string[29]     30 bytes -- a length byte and 29 of text
+   advice  : string[255]   256 bytes -- a length byte and 255 of text
+```
+
+**14,586 ÷ 286 = 51 exactly, with no remainder**, which is the check that turns
+the reading into a fact. Fifty-one speakers, fifty-one pieces of advice:
+
+```
+'A trader named Jim'
+    "Better take extra sets of clothing.  Trade 'em to Indians for fresh
+     vegetables, fish, or meat. ..."
+'A traveler, Miles Hendricks,'
+    'Did you read the Missouri Republican today? --Says some folk start for
+     Oregon without carrying s...'
+'A town resident'
+    'Some folks seem to think that two oxen are enough to get them to Oregon!
+     Two oxen can barely mo...'
+```
+
+Two things a beginner should take from that. **A fixed-size record wastes
+space on purpose**: the average speaker name is fifteen characters and the
+field is twenty-nine, because a fixed stride means record *n* is at offset
+`n × 286` and needs no index at all. And **the length-prefixed string is why it
+works** — with C-style terminated strings you could not tell the padding from
+the text.
 
 ## The check that is not copy protection
 
@@ -375,17 +472,19 @@ program's code is a compiler's output that no tool here can reconstruct at all.
 ## What is still unknown
 
 1. **The Turbo Pascal version.** 5.0, 5.5 or 6.0. Needs `.TPU` files.
-2. **Which segment is the Genus graphics library.** It is linked in — the
-   copyright string proves that — but no evidence identifies the segment.
-3. **What nine of the eleven segments are.** Sizes and call counts are
-   measured; names and contents are not.
-4. **The game's own logic** — the trail, the store, the rivers, the hunting,
-   the illnesses. Barely started. `prior-attempt/src/` has a unit per topic and
-   not one of them has been checked.
-5. **The network licence check.** Located by its strings; the code has not been
-   followed.
-6. **What the program does with the date it reads.**
-7. **Whether any of this behaves as described at run time.** Every claim above
+2. **The game's own logic** — the trail simulation, the store, the river
+   crossings, the hunting screen, the illness model, the event tables. This is
+   the big one. The two segments that hold it are now known — `0x00000` and
+   `0x007B6`, 66,592 bytes between them — but they have not been read.
+   `prior-attempt/src/` has a unit per topic and not one has been checked.
+3. **The network licence check.** Its segment is identified exactly
+   (`0x0151C`, 2,544 bytes) and every one of its strings is recovered. The
+   *code* has not been followed, so what triggers it is unknown.
+4. **What the program does with the date it reads** at image `0x1DBF4`.
+5. **`0x0213D` as Borland's `Crt` unit** is **[inferred]** from its interrupt
+   use and its position in link order, not established. Likewise `0x015BB` as
+   the Genus font library.
+6. **Whether any of this behaves as described at run time.** Every claim above
    comes from reading the file. The ones that were established twice over — the
    entry point, the segment list, the container layout — say so; the rest have
    one source each and should be read accordingly.

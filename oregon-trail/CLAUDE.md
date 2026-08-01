@@ -19,10 +19,11 @@ shorter working reference you come back to.
 | unpacking | **done** — LZEXE 0.91, 81,896 → 201,184 bytes |
 | entry point | **done, authoritative** — `0x10A`, from LZEXE's own header, not guessed |
 | compiler | **Turbo Pascal**, established twice over; **version not determined** |
-| module structure | **done** — 11 code segments, runtime separated from program |
+| module structure | **done** — 11 segments, all named, third-party split measured |
 | artwork | **done** — 58 of 58 images decoded and rendered |
+| data files | **done** — `DIALOGS.REC` is 51 records of 286 bytes, exactly |
 | the prior attempt's protection claim | **tested: address right, meaning wrong** |
-| game logic | **barely started** |
+| game logic | **located, not read** — segments `0x00000` and `0x007B6` |
 | documents | [four](docs/), written from the above |
 
 Four things went back into the toolkit: `unpack.py` now reads LZEXE's stated
@@ -96,9 +97,37 @@ Image offsets.
 | `0x21DA5` | `MemAvail` — walks the free list, returns a 32-bit byte count |
 | `0x23480` | DGROUP: code ends, data begins |
 
+### The eleven segments, named
+
+| segment | bytes | whose | what |
+|---|---|---|---|
+| `0x00000` | 31,584 | MECC | the program, the menu, the trail |
+| `0x007B6` | 35,008 | MECC | scoring, the ending, the top ten |
+| `0x01042` | 18,656 | MECC | UI, files, saved games, tombstones |
+| `0x014D0` | 1,216 | MECC | the artwork loader |
+| `0x0151C` | 2,544 | MECC | the licence check |
+| `0x015BB` | 12,816 | Genus **[inferred]** | text and fonts |
+| `0x018DC` | 19,904 | Genus | the PCX / graphics library |
+| `0x01DB8` | 784 | Borland | `Dos` — 18 `INT 21h` and nothing else |
+| `0x01DE9` | 13,632 | Borland | `Graph` — names itself in a BGI error string |
+| `0x0213D` | 1,568 | Borland **[inferred]** | `Crt` |
+| `0x0219F` | 6,800 | Borland | `System` — 48% of all far calls |
+
+**MECC 89,008 (61.6%) · Borland 22,784 (15.8%) · Genus 32,720 (22.6%).** So
+38.4% of this program was written by someone other than the people who made the
+game; the brief's comparison point, Sopwith, is 9%.
+
+`tpscan.py --strings 2` reproduces the naming in one pass.
+
+### Data files
+
 `OTMCGA.PCL` and `OTCGA.PCL` are pcxLib containers, 29 images each — the same
 29 subjects at two colour depths. `PAL.256` is a 9×6 PCX whose image is
 irrelevant and whose 256-colour palette is the point.
+
+`DIALOGS.REC` is 51 records of 286 bytes: `string[29]` speaker, `string[255]`
+advice. 14,586 ÷ 286 = 51 exactly, which is what makes that a fact rather than
+a guess.
 
 ## The prior attempt, and the claim that was tested
 
@@ -142,11 +171,12 @@ MECC's school-lab licensing. Located, not traced.
 
 1. **The Turbo Pascal version.** Needs `.TPU` files to compare against — the
    same shape of problem `libscan.py` solves for C. None on this machine.
-2. **What the eleven segments are.** Sizes and call counts are measured; which
-   holds the Genus graphics library and which are MECC's own is not.
-3. **The game's logic** — the trail, the store, the rivers, the hunting, the
-   illnesses. `prior-attempt/src/` has a unit per topic and every one is
-   untested.
+2. **The game's logic** — the trail, the store, the rivers, the hunting, the
+   illnesses. Now *located*: 66,592 bytes in segments `0x00000` and `0x007B6`.
+   `prior-attempt/src/` has a unit per topic and every one is untested.
+3. **The licence check's code.** Segment `0x0151C`, 2,544 bytes, all strings
+   recovered, code not followed. The most self-contained thing left and
+   probably an afternoon's work.
 4. **An oracle.** `comrun.py` ran `.COM` files only, so nothing here could run
    this program and compare against it — which is why the artwork was checked
    by size-field agreement and by looking, rather than against a running frame.

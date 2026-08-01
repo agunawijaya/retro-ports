@@ -5,9 +5,10 @@
 [04 — porting](04-porting.md).*
 
 This is a walk through what has actually been read, and it is a **short**
-document, because that is the honest length. Four routines are traced here. The
-game's own logic — the trail, the store, the rivers, the hunting, the illnesses
-— is not, and [document two](02-architecture.md#what-is-still-unknown) says so.
+document, because that is the honest length. Four routines and two file formats
+are traced here. The game's own logic — the trail, the store, the rivers, the
+hunting, the illnesses — is not, though it is now *located*, and
+[document two](02-architecture.md#what-is-still-unknown) says so.
 
 Addresses are offsets into the unpacked image. The image begins 32 bytes into
 `work/unpacked.exe`, and **segment words in it are 0x1000 higher than the
@@ -191,12 +192,75 @@ then, repeating:
 an independent decode of the run-length encoding agree to within one byte on
 every one of them.
 
+## The data file, which is a Pascal record written to disk
+
+`DIALOGS.REC` needed no reverse engineering either, once you know the language.
+It is 51 records of 286 bytes:
+
+```pascal
+type
+  Dialog = record
+    speaker : string[29];     { 30 bytes: a length byte and 29 characters }
+    advice  : string[255];    { 256 bytes }
+  end;                        { 286 bytes, and 51 x 286 = 14,586 exactly }
+```
+
+A Pascal `string[N]` occupies `N+1` bytes always, whatever it holds, so a file
+of them has a fixed stride and record *n* sits at `n × 286` with no index
+needed. That is why the file has no header: there is nothing to say.
+
+```
+'A trader named Jim'
+    "Better take extra sets of clothing.  Trade 'em to Indians for fresh
+     vegetables, fish, or meat. ..."
+'A town resident'
+    'Some folks seem to think that two oxen are enough to get them to
+     Oregon!  Two oxen can barely mo...'
+```
+
+**The check is the division.** 14,586 divides by 286 exactly, 51 times, with
+nothing left over. A guessed record size almost never does that.
+
+## Where the rest of the program is
+
+Not read — but no longer unlocated, which is the difference between this
+document and where it started. The strings in each segment say what each unit
+is, and [document two](02-architecture.md#naming-them-which-turned-out-to-be-nearly-free)
+has the table. For anyone continuing:
+
+| what you want | where it is | size |
+|---|---|---|
+| the trail, the menu, weather, landmarks | segment `0x00000` | 31,584 bytes |
+| scoring, the ending, the top ten | segment `0x007B6` | 35,008 bytes |
+| menus, files, saved games, tombstones | segment `0x01042` | 18,656 bytes |
+| loading the artwork | segment `0x014D0` | 1,216 bytes |
+| the licence check | segment `0x0151C` | 2,544 bytes |
+
+The licence check is small enough to read in an afternoon and is the most
+self-contained thing left. Its strings are all recovered:
+
+```
+This disk appears to be damaged or some...
+This is a MECC Membership product copy that has not been properly duplicated.
+This is a MECC Demo product whose time...
+PROGRAM IS NOT AVAILABLE
+This product is licensed for use by a single computer at a time.
+It is currently being used by someone else on the network.
+The network version of this program may be licensed from MECC.
+```
+
+Four different refusals — a damaged disk, an improperly duplicated membership
+copy, an expired demo, and a network seat already in use. That is a school
+district's licensing model rendered as error messages, and it is a more
+interesting piece of 1990 software history than the date check that was not
+there.
+
 ## What has not been read
 
-Everything else, and it is most of the program: 137,712 bytes of code across ten
-segments. Specifically the trail simulation, the store, the river crossings, the
-hunting screen, the illness model, the event tables, `DIALOGS.REC`, and the
-network licence check whose strings are at `0x14992` and `0x1582C`.
+Most of the program: 137,712 bytes across ten segments. Specifically the trail
+simulation, the store, the river crossings, the hunting screen, the illness
+model and the event tables — the 66,592 bytes in segments `0x00000` and
+`0x007B6`.
 
 `prior-attempt/src/` contains a 17-unit Pascal reconstruction covering exactly
 those topics. On the evidence of this document it should be read as a set of
