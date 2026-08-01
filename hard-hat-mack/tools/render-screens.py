@@ -41,6 +41,18 @@ SPRITE_TABLE = 0x6D10       # pointers to the sprite bitmaps
 FONT_TABLE = 0x716F         # pointers to the character glyphs
 HUD = [0x1DEE, 0x1E19, 0x1E35]      # the score line and the two edge markers
 
+# Start-up adds 5 to every entry of the scanline address table before anything
+# is drawn, so the playfield begins five bytes -- twenty pixels -- into each
+# line. The table in the file is not the table the program uses, and reading
+# the file alone cannot tell you that.
+#
+# This was argued about statically and could not be settled: applying the shift
+# fitted most of the screen and pushed one wide sprite off the right edge. It
+# was settled by running the program under `comrun.py` and reading the table
+# out of memory afterwards -- 0x0005, 0x2005, 0x0055 … against the file's
+# 0x0000, 0x2000, 0x0050. Measured, not inferred.
+ORIGIN_X = 20
+
 # The logo and the title banner. They are drawn over the playfield by a
 # separate overlay, and leaving them out is what turns a title screen into a
 # game screen.
@@ -146,7 +158,8 @@ def main():
             # *bottom* edge sits on it. The horizontal scale comes from the
             # drawing routine: 7 pixels per character cell, or 1 for the
             # routine that works in byte columns.
-            canvas.paste(img, (col * scale, row - img.height + 1), img)
+            canvas.paste(img, (col * scale + ORIGIN_X,
+                               row - img.height + 1), img)
             drawn += 1
 
         for head in HUD:
@@ -156,7 +169,7 @@ def main():
                     # dropped, which is how the game stores upper-case text.
                     g = blob(FONT_TABLE, ch & 0x3F, bottom_first=False)
                     if g is not None:
-                        canvas.paste(g, ((col + k) * 7,
+                        canvas.paste(g, ((col + k) * 7 + ORIGIN_X,
                                          row + 8 - g.height + 1), g)
 
         big = canvas.resize((W * SCALE, H * SCALE), Image.NEAREST)

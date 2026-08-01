@@ -161,24 +161,28 @@ the values in the file, and the program never uses them. It runs with all of
 them five bytes larger. The two spare entries at rows 200 and 201, and the 96
 clamp entries after them, are left alone.
 
-Five bytes in CGA mode 4 is **twenty pixels**. Which is a fact, and its
-consequence is an open question rather than a conclusion:
+Five bytes in CGA mode 4 is **twenty pixels**: the playfield begins one fifth
+of an inch in from the left edge of the screen.
 
-- Applying it shifts every drawn thing twenty pixels right. For everything
-  drawn on the character grid that is comfortable — the rightmost such content
-  ends at pixel 282, so it would end at 302 of 320.
-- But six placements of one wide girder sprite already end at pixel 316, and
-  twenty more puts them at 336, off the right-hand edge.
+This could not be settled by reading. Applying the shift fitted the whole
+character-grid part of the screen and pushed one wide girder sprite off the
+right-hand edge, and there was no way to tell from the file which of those was
+the mistake. It took **running the program** — `comrun.py` executes the
+start-up and reads the table back out of memory:
 
-So either those six are drawn partly off-screen on purpose, or the byte-column
-drawer's coordinate means something other than what is assumed here. **The
-screens in `recovered/` are drawn without the patch**, and are therefore twenty
-pixels to the left of where the game draws — stated here rather than quietly
-applied, because a picture that has been nudged to look right is worth nothing.
+```
+memory at 0x42d, 24 bytes:
+  05 00 05 20 55 00 55 20 a5 00 a5 20 f5 00 f5 20 …
+```
 
-This is also a reminder with wider use than this game: **reading a table out of
-a binary tells you what shipped, not what runs.** Start-up code that patches its
-own data is invisible to anyone who only looks at the data.
+`0x0005, 0x2005, 0x0055, 0x2055 …` against the file's `0x0000, 0x2000, 0x0050,
+0x2050`. Every entry five larger, measured rather than argued.
+
+The wider lesson costs nothing to remember and would have cost a lot to learn
+twice: **reading a table out of a binary tells you what shipped, not what
+runs.** Start-up code that patches its own data is invisible to anyone who only
+looks at the data — and it is invisible in a way that produces a plausible
+answer rather than an obviously broken one.
 
 **Three of these are worth stopping on.**
 
@@ -835,7 +839,7 @@ the builder's call tree, how many it could turn into an actual placement.
 | | sprites drawn | placement calls explained |
 |---|---|---|
 | Level 1 | 53 | 36 / 36 |
-| Level 2 | 48 | 30 / 30 |
+| Level 2 | 104 | 30 / 30 |
 | Level 3 | 36 | 39 / 39 |
 
 Read the denominator carefully, because it is doing a lot of work. It counts
@@ -843,15 +847,33 @@ calls **reached from the three level builders** — 40 of the 89 placement call
 sites in the program. The other 49 belong to the game running: Mack walking,
 the hazards, the animation. Nothing here says anything about those.
 
-And the number has a second limit, which is worth more than the number itself.
-It counts calls that produced *a* placement, not calls that produced the
-*right* one. It read 100% on all three levels while one routine was laying a
-fourteen-girder floor out as a diagonal staircase across the score line — the
-extractor was resolving two different index registers as though they were one.
-The figure was identical before and after that was fixed. The picture was not.
+### The number that has a reference
 
-So the two checks catch different things and neither replaces the other: the
-fraction finds what is **missing**, and drawing it finds what is **wrong**.
+That figure has a limit worth more than the figure itself: it counts calls that
+produced *a* placement, not calls that produced the *right* one. It read 100%
+on all three levels while a fourteen-girder floor was being laid out as a
+diagonal staircase across the score line, and again — later, and worse — while
+Level 2's four floors were collapsed onto a single row. **Both times the number
+was identical before and after the fix.** An oracle with no reference can only
+detect absence.
+
+So there is now a reference. `comrun.py` runs the game under emulation and
+dumps the framebuffer, and the two pictures are compared pixel by pixel:
+
+| | pixels the game draws | covered by the static render | drawn but not in the game |
+|---|---|---|---|
+| Level 1 | 10,104 | **85.6%** | 28.7% |
+| Level 2 | 12,550 | **87.1%** | 24.5% |
+| Level 3 | 8,685 | **82.6%** | 34.7% |
+
+Both columns are needed. A renderer that draws nothing scores 0% and 0%; one
+that fills the screen scores 100% and enormously. What is missing is mostly
+things the *game* adds and a level layout does not contain — Mack himself, the
+hanging chains, the vandal — and the surplus is under investigation.
+
+The static render is still what is produced without running anything. The
+emulator is only the referee, and it is the referee that found the Level 2
+collapse: 54.1% covered before, 87.1% after.
 
 **Level 1's floors have holes in them, and that is correct.** Its task is to
 fill the gaps in the girders, so it starts incomplete — a sparse screen that
@@ -867,11 +889,10 @@ is what turns these into game screens.
 
 Five things, stated plainly:
 
-- **What the +5 patch means for the picture.** The scanline table the program
-  runs with is five bytes — twenty pixels — larger than the one in the file.
-  Applying that shift fits the character-grid content and pushes six placements
-  of one wide sprite off the right edge, so something is still not understood
-  about the byte-column drawer. The screens are drawn *without* it.
+- **A quarter to a third of what the static render draws is not on the game's
+  screen.** 28.7%, 24.5% and 34.7% by level. Some of it is the HUD, which the
+  game fills in at run time — it prints `LEVEL 01`, the file says `LEVEL 0` —
+  but not all of it, and the rest is not yet explained.
 - **The other four placement calls.** Eighty-five of the eighty-nine are now
   reachable, once the dispatch pointer is followed. Four are not, and they are
   reached by a route this analysis does not see.
