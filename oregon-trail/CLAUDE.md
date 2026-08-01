@@ -98,6 +98,9 @@ Image offsets.
 | `0x21DA5` | `MemAvail` — walks the free list, returns a 32-bit byte count |
 | `0x23480` | DGROUP: code ends, data begins |
 | `0x23D32` | the trail table — 17 records: miles, map X, map Y, name |
+| `0x24156` | the six illnesses: exhaustion, typhoid, cholera, measles, dysentery, a fever |
+| `0x0C0A7` | the health scale: `good\fair\poor\very poor` |
+| `0x0E793` | Matt's General Store and its five departments |
 
 ### The eleven segments, named
 

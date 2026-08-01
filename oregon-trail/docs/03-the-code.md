@@ -294,7 +294,43 @@ the code lays them out:
 | river crossings | `0x4441`–`0x5B32` | ford / caulk and float / ferry / a Shoshoni guide / wait, with every outcome |
 | hunting | `0x61BF`–`0x77CE` | the instructions, `terrain.pcc`, `animals.pcc` |
 
-Two game rules can be read straight off the strings, without any code at all:
+### The store, and the party
+
+`Matt's General Store\\Independence, Missouri` sits at image `0x0E793`, with its
+five departments right after it — `1. Oxen  2. Food  3. Clothing
+4. Ammunition  5. Spare parts` — and two hard limits stated in full sentences:
+
+```
+You may only take 20 oxen.
+Your wagon may only carry 2000 pounds of food.
+```
+
+The spare parts are enumerated as `wagon wheel`, `wagon axle`, `wagon tongue`,
+which is exactly the set of things the breakdown events can destroy. And the
+party is five people: `What are the first names of the four other members in
+your party?`
+
+### The illnesses, which are a list of six
+
+In the data segment at image `0x024156`, consecutively:
+
+```
+exhaustion   typhoid   cholera   measles   dysentery   a fever
+```
+
+and the health scale a few hundred bytes earlier, at `0x00C0A7`, as one
+backslash-separated string: `good\fair\poor\very poor`.
+
+Six illnesses and four health levels. `a fever` carries its own article, which
+means the code writes `<name> has ` and then the entry — so the list is joined
+into a sentence rather than looked up in a table of sentences. That is a small
+observation with a real consequence for a port: **the strings are fragments,
+not messages**, and translating this game would need more than swapping the
+list.
+
+### And two rules that need no code at all
+
+Two game rules can be read straight off the strings:
 
 - **The ferry costs $5.00 and makes you wait**, and the wait is variable:
   `The ferry operator says that he will charge you $5.00 and that you will have
