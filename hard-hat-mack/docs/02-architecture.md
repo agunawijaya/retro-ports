@@ -390,13 +390,65 @@ every time it draws, the game looks it up — 404 bytes spent to avoid a shift,
 an AND and a multiply on every single blit. Trading memory for arithmetic is
 the oldest optimisation there is.
 
+## The level layout, decoded
+
+The playfield is a grid, and three tables in the file describe it. The loop
+that reads them is at file `0x1951`:
+
+```nasm
+    mov cl, 4
+    mov [0x6dc9], cl        ; outer counter: five floors, counting down
+.floor:
+    mov bl, 0xd
+    mov [0x6dc8], bl        ; inner counter: fourteen columns, counting down
+    mov cl, [0x6dc9]
+    mov si, cx
+    mov al, [si + 0x15b9]   ; <- the scanline of this floor
+    call draw_cell
+```
+
+and the per-cell draw at `0x198F`:
+
+```nasm
+    mov [0x6d9c], al        ; row
+    mov al, [bx + 0x15bf]   ; <- the column of this cell
+    mov [0x6d9b], al
+    mov word [0x6d97], 0x1b00
+    add al, [bx + 0x71ea]   ; <- which girder variant goes here
+    ...
+    call draw
+```
+
+| Table | File | Contents |
+|---|---|---|
+| floor heights | `0x14B9` | 47, 79, 111, 143, 175 — five floors, 32 scanlines apart |
+| column positions | `0x14BF` | 4, 6, 8 … 30 — fourteen cells, and the blitter's `mul 7` turns a cell into pixels |
+| the map itself | `0x70EA` | 70 bytes, one per cell, each 0–4 |
+
+A cell's value picks the sprite: the code builds `0x1B00 + value`, and the
+lookup at `0x30A` does `add bl, bh` before indexing — so **sprite index =
+27 + value**. Indices 27 to 34 in the pointer table are girder segments:
+plain, riveted, holed, and broken-ended.
+
+Reading the 70 bytes as five rows of fourteen produces five distinct floors
+with joins and gaps in different places. Reading them as one row of fourteen
+repeated produces five identical floors. The first is obviously right, and
+that is how the ambiguity in the code — whether `BX` spans the whole table or
+restarts each row — was settled: by drawing it.
+
+`recovered/screen-playfield.png` is the result, with nothing placed by hand.
+
 ## What is still unknown
 
 Three things, stated plainly:
 
-- **The level layouts.** Three levels of girders, ladders, conveyors and
-  elevators are described somewhere, and the encoding was not found. The
-  565-byte block at `0x2F36` is the best candidate.
+- **The rest of the level furniture.** The girder floors are decoded; ladders,
+  conveyors, elevators and springboards are drawn by other routines whose
+  tables have not been found.
+- **The glyph table.** Text is drawn by the routine at `0x1D86` from records of
+  the form `[column, row, characters…, 0x01]`, at seven pixels per cell — but
+  the character shapes are not indexed by ASCII into the sprite table, which
+  was the obvious guess and is wrong.
 - **The 405 variables.** None are named. Doing that honestly means watching
   every routine that touches each one, and with 222 subroutines that is a
   project of its own rather than a gap in this one.
