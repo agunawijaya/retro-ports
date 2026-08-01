@@ -544,11 +544,20 @@ quietly missing a girder looks perfectly fine and is wrong.
 All three screens are in `recovered/screens-game.png`: the playfield of each
 level, with the score line above it in the game's own font.
 
-| | scenery sprites |
-|---|---|
-| Level 1 | 76 |
-| Level 2 | 134 |
-| Level 3 | 65 |
+A picture is weak evidence on its own — "it looks right" proves nothing, and
+looking right is exactly what a screen quietly missing a girder does. So the
+tool reports a number as well: of the drawing calls it reaches while walking the
+builder's call tree, how many it could turn into an actual placement.
+
+| | scenery sprites | drawing calls explained |
+|---|---|---|
+| Level 1 | 76 | 22 / 36 (61%) |
+| Level 2 | 134 | 16 / 30 (53%) |
+| Level 3 | 65 | 28 / 39 (72%) |
+
+Read that as an upper bound on completeness, not a lower one: a drawing call
+inside a routine the walker never enters is not counted at all. What the number
+does do is fall when the extraction is wrong, which no picture ever does.
 
 **Level 1's floors have holes in them, and that is correct.** Its task is to
 fill the gaps in the girders, so it starts incomplete — a sparse screen that
@@ -564,12 +573,12 @@ is what turns these into game screens.
 
 Three things, stated plainly:
 
-- **Levels 1 and 3 are partial.** Their floors are placed by loops whose sprite
-  choice depends on a variable the *builder* writes — and `placements.py` reads
-  that variable's initial value from the file instead, so it picks the wrong
-  variant and misses the rest. Closing it means tracking writes to variables
-  across routine boundaries, which is a step from pattern-matching towards
-  interpretation, and a decision to take deliberately rather than by drift.
+- **A third to a half of the drawing calls are still unexplained** — the table
+  above. Two shapes account for nearly all of them: a column or row that is not
+  a constant and not a table lookup either, and a call where no sprite selector
+  was ever written in the part of the tree the walker saw. Closing them means
+  following values further than pattern-matching goes, which is a step towards
+  interpretation and a decision to take deliberately rather than by drift.
 - **The 405 variables.** None are named. Doing that honestly means watching
   every routine that touches each one, and with 222 subroutines that is a
   project of its own rather than a gap in this one.
