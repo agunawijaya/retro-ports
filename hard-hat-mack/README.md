@@ -81,6 +81,30 @@ nasm -f bin -o recovered\rebuilt.com recovered\hhm.asm
 (Get-FileHash recovered\rebuilt.com   -Algorithm SHA256).Hash
 ```
 
+## Drawing the level screens
+
+The three level screens in `recovered/screens-game.png` are not screenshots.
+Every sprite and every position is read out of the binary — the artwork from
+the sprite region, the positions by walking each level's build routine — and
+the program is never run:
+
+```powershell
+python tools\render-screens.py --toolkit <path-to>\dos-decompiler
+```
+
+```
+3 placement routines found in the binary
+Level 1: 53 sprites drawn, 36/36 calls explained
+Level 2: 48 sprites drawn, 30/30 calls explained
+Level 3: 36 sprites drawn, 39/39 calls explained
+```
+
+The second number is the honest one, and it is narrower than it looks: those
+are the placement calls reached from the three build routines, 40 of the 89 in
+the program. The other 49 run while the game is being played. It also counts
+calls that produced *a* position, not the *right* one — see
+[what is still unknown](docs/02-architecture.md#what-is-still-unknown).
+
 Both should read
 `FD70BAB8A1099A01A7696A236957F816CC54DE3F0D28C8707F7CADDF60D22737`, at 42,112
 bytes.
