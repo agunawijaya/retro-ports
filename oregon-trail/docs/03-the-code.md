@@ -4,11 +4,18 @@
 [02 — architecture](02-architecture.md). After:
 [04 — porting](04-porting.md).*
 
-This is a walk through what has actually been read, and it is a **short**
-document, because that is the honest length. Four routines and two file formats
-are traced here. The game's own logic — the trail, the store, the rivers, the
+This is a walk through what has actually been read. Two file formats, the
+start-up sequence, the memory check and **the whole of the copy protection** are
+traced here. The game's own logic — the trail, the store, the rivers, the
 hunting, the illnesses — is not, though it is now *located*, and
 [document two](02-architecture.md#what-is-still-unknown) says so.
+
+Two of the sections below are corrections. The memory check is real code that
+**cannot fire on any machine that can run the program**, and the licence check
+does not refuse on a home computer at all — an earlier session's claim that it
+did came from running the program in an emulator with no disk. Both are left in
+place with the reasoning that produced the wrong answer, because that reasoning
+is the more useful half.
 
 Addresses are offsets into the unpacked image. The image begins 32 bytes into
 `work/unpacked.exe`, and **segment words in it are 0x1000 higher than the
@@ -171,6 +178,463 @@ the wrong answer genuinely works: 35,000 days after that epoch *is* late 1995.
 What separates the two readings is a string sixty-five bytes away, and nothing
 else. That is worth remembering as a method: **when a constant admits two
 meanings, look for the message the program prints, not for a better argument.**
+
+### And the check can never fire
+
+That is what the code says. What it *does* is a different question, and the two
+turned out not to match.
+
+`MemAvail` returns the free **heap**, and Turbo Pascal decides how big the heap
+is before your program runs, from two numbers in the `.EXE` header. `minalloc`
+is the smallest block DOS is allowed to hand over; if the machine cannot spare
+it, DOS refuses to start the program at all. For `OREGON.EXE`:
+
+```
+packed image      81,864 bytes
+minalloc          10,445 paragraphs = 167,120 bytes
+minimum block     248,984 bytes  (243K)
+```
+
+So DOS will not load this program into less than 243K, and *inside* that
+minimum there is already a heap. The question is whether the heap at its
+smallest is under 35,000 bytes. Measuring it under DOSBox-X, by filling memory
+with resident programs of known size and stepping down one kilobyte at a time:
+
+| free conventional memory | what happens |
+|---|---|
+| 263K | loads; dies later with `Not enough memory.` |
+| 250K | loads; dies later with `Unable to find necessary files.` |
+| 244K | loads; dies later with `Unable to find necessary files.` |
+| 243K | DOS refuses: `Unable to run program (errcode=8)` |
+
+The 243K row agrees with the header's 248,984 bytes to within a rounding, which
+is a pleasant check on the arithmetic. But **the 512K message never appeared at
+any level**. The rows that die are dying of something else, and we can prove the
+memory check passed in each: those two messages are printed by a handler the
+program installs at `0x14C30`, *after* the check. If the check had fired it
+would have printed its own message and stopped before the handler existed.
+
+So the guard is real, correct, and unreachable: by the time DOS agrees to start
+the program at all, the heap is already above 35,000 bytes. It is a seatbelt
+bolted to a seat you cannot sit in.
+
+The honest caveat: the numbers that would settle it *by arithmetic* cannot be
+had, because LZEXE rewrites `minalloc` and `maxalloc` when it packs a file, so
+the values in the header are the packer's, not the compiler's. Backing the
+original heap sizes out of them gives an answer that contradicts the
+measurement, which is how the attempt was known to be wrong. **When a derivation
+disagrees with a measurement, the derivation has a bad assumption in it** — here,
+that LZEXE leaves those two fields alone.
+
+## The protection, traced
+
+[Document two](02-architecture.md#the-protection-that-is) located the licence
+strings and said the code had not been followed. It has now. The whole scheme is
+2,544 bytes in segment `0x0151C`, it is the most self-contained thing in the
+program, and it is worth reading in full because it is a small, complete design
+— not a trick.
+
+**It is called first.** The program's own `begin` block, at `0x128`:
+
+```nasm
+00128  push bp                    ; the program's begin block
+00129  mov bp, sp
+0012B  sub sp, 0x100
+0012F  lcall 0x2042:0x47BA        ; <- the gate. The very first statement.
+00134  lcall 0x2042:0x4108
+```
+
+And the gate itself, at `0x14BDA`:
+
+```nasm
+0014BE1  mov ax, 0x132             ; 306
+0014BE4  xor dx, dx                ;   as a 32-bit value, 0000:0132
+0014BE6  push dx / push ax
+0014BE8  mov al, 1                 ; "yes, you may show messages"
+0014BEA  push ax
+0014BEB  lcall 0x251C:0x0000       ; the licence check
+0014BF0  mov [bp-5], al            ; ... and the answer is thrown away
+0014BF3  lcall 0x319F:0x03B5       ; MemAvail -- the section above
+```
+
+The result is stored into a local that is never read, which looks like a bug and
+is not: **every path that would return `False` calls `Halt` first**, so the
+function only ever returns to say yes.
+
+### What it reads
+
+The check opens a file. Its name is a Pascal string in the data segment at
+`DS:0x0E20`:
+
+```
+product.pf
+```
+
+which ships with the game, and is **350 bytes** — the same number as the record
+size the program asks for:
+
+```nasm
+0015299  mov di, 0x1B16            ; the file variable
+001529C  push ds / push di
+001529E  mov ax, 0x15E             ; 350
+00152A1  push ax
+00152A2  lcall 0x319F:0x1742       ; Reset(f, 350)
+```
+
+An untyped `Reset` with a record size, one `Read` into a 350-byte buffer at
+`DS:0x1B96`, a `Close`, and the three `IOResult` values added together — if the
+sum is non-zero the file is bad. That is the idiom for "did any of this fail",
+and it is why the failure message is about the *disk* rather than the file:
+
+```
+This disk appears to be damaged or some
+files are missing.
+
+Please check your disk, use your backup
+or contact MECC.
+```
+
+### The record, and how its fields were confirmed
+
+The code reads seven fields out of that buffer. Naming them from the branches
+they control gives:
+
+| offset | read as | in the shipped file |
+|---|---|---|
+| `+0x00` | product number, 32-bit | 306 |
+| `+0x04` | membership-copy flag | 0 |
+| `+0x06` | demo flag | 0 |
+| `+0x0A` | network-licence flag | **1** |
+| `+0x0C` | licence slot — overwritten at load, never read from the file | 0 |
+| `+0x0E` | demo uses remaining | 0 |
+| `+0xBA` | membership override | 0 |
+
+The rest of the record is text, and it is not decoration — the refusal message
+prints MECC's telephone number from it:
+
+```
+0x016  Copyright 1988-1991, MECC
+0x03F  3490 Lexington Avenue North
+0x068  St. Paul, Minnesota  55126-8097
+0x091  (612) 481-3549
+0x135  The Oregon Trail
+```
+
+That table is a claim about a file, made by reading code. It can be tested by
+editing the file and watching what the program does, which is worth more than
+any amount of further reading:
+
+| what was changed | predicted | observed |
+|---|---|---|
+| nothing | runs | runs |
+| `PRODUCT.PF` deleted | halt 1 | halt 1 |
+| `+0x00` set to 307 | halt 1 | halt 1 |
+| `+0x04`=1, `+0xBA`=0 | halt 1 | halt 1 |
+| `+0x04`=1, `+0xBA`=1 | runs | runs |
+| `+0x06`=1, `+0x0E`=0 | halt 1 | halt 1 |
+| `+0x06`=1, `+0x0E`=5 | runs, and the file is rewritten to 4 | **runs, file now says 4** |
+
+Seven for seven, and the last row is the one that matters: it is the only
+prediction that could not have been luck. The program decremented a counter,
+wrote 350 bytes back over the file, and carried on — which confirms the field
+*and* the save path *and* that the count is uses rather than days.
+
+### The product number is not a pointer
+
+`0000:0132` looks like a far pointer, and the code compares it like one:
+
+```nasm
+0015203  les ax, [bp+8]
+0015206  mov dx, es
+0015208  cmp dx, [0x1B98]          ; the record's +0x02
+001520C  jne 0015214
+001520E  cmp ax, [0x1B96]          ; the record's +0x00
+0015212  je  0015221
+```
+
+It is not a pointer. It is the number **306**, MECC's catalogue number for The
+Oregon Trail, passed as a `Pointer` because that is the convenient 32-bit type
+in Turbo Pascal 5.0 — there is no `LongInt` in the call. Every MECC title shared
+this licensing unit, so each had to say which product it was, and a licence file
+for one program will not start another.
+
+This is a small lesson in reading compiler output: **the type in the source is
+not recoverable from the instruction.** `les` says "load a far pointer" because
+that is the fastest way to move four bytes, not because anything is being
+dereferenced. Nothing here ever follows it.
+
+### Five gates, in order
+
+```
+CheckLicence(showMessages, productNumber) : Boolean
+
+  1  load PRODUCT.PF                     failed -> "disk appears to be damaged"
+  2  membership flag set, override clear -> "MECC Membership product copy"
+  3  productNumber <> the file's         -> the same message
+  4  demo flag set: uses := uses - 1
+     save the file back                  failed -> "disk appears to be damaged"
+     uses now <= 0                       -> "MECC Demo product whose time..."
+  5  network flag set and no slot        -> "licensed for use by a single
+                                             computer at a time"
+  otherwise                              -> True
+```
+
+Four distinct products, one unit: a full copy, a MECC-membership copy that may
+only be duplicated with MECC's own tool, a demo that expires after a fixed
+number of runs, and a network copy licensed per concurrent user.
+
+### The network licence, which is a lease on a timestamp
+
+Gate 5 is the interesting one, because it has no server.
+
+```
+AcquireSlot : Boolean
+  if not the program is on a network drive then exit(True)
+  FindFirst('product.pf');   if it is not there        then exit(False)
+  if the file is read-only                             then exit(False)
+  if its timestamp is less than 30 minutes old         then exit(False)
+  stamp it with the current time
+```
+
+Every step is a DOS call and there is nothing else to it:
+
+- **"on a network drive"** is `DosVersion` ≥ 3.1, then `INT 21h AX=4409h` —
+  IOCTL "is this drive remote" — and bit 12 of the returned `DX`.
+- **read-only** is the attribute byte in the `SearchRec` that `FindFirst`
+  filled in. A licence file on a write-protected share can never be claimed,
+  which is the correct behaviour: a lock you cannot take is a lock you do not
+  hold.
+- **the lease** is the file's own modification time, unpacked with `UnpackTime`
+  and compared against `GetDate`/`GetTime`. Different day, or either year equal
+  to 1980, and the lease is treated as expired — 1980 is the DOS epoch, so that
+  is the "this machine has no clock" case, and it fails *open*.
+- **the timeout** is a word in the data segment at `DS:0x1020`, and it is
+  **30**, in minutes.
+
+Claiming the licence is `SetFTime` with the current time. And on the way out,
+the program calls a second entry point in the same unit which does `SetFTime`
+with the timestamp it saved at start-up — **putting the old time back**, so the
+lease is released immediately rather than lingering for half an hour.
+
+That is the whole mechanism: *the licence is the file's modification date.* No
+daemon, no lock file, no protocol. It costs one directory entry, works on any
+DOS network redirector without knowing which one, and degrades to "everyone may
+run it" when the clock is unset. If a machine crashes while holding it, the
+lease expires by itself in thirty minutes.
+
+It also fails in a way its authors chose. Thirty minutes is long enough that two
+pupils in a lab cannot both start the program, and short enough that a crashed
+machine frees up within a lesson. The number is a policy, and it is a policy
+stored as a constant in the data segment.
+
+### Why it never refuses on a home machine
+
+Gate 5 begins `if not on a network drive then exit(True)`. On a local disk the
+whole network branch is skipped and the slot is granted unconditionally — which
+is why the shipped `PRODUCT.PF` can carry `+0x0A = 1`, a *network* licence, and
+still run perfectly well on a standalone PC.
+
+This was checked rather than assumed. Compiling a probe with the same Turbo
+Pascal 5.0 and asking DOS the same question under DOSBox-X:
+
+```
+dosversion major=5 minor=0
+ioctl4409 flags=29254 ax=768 dx=2050 remote=0
+findfirst doserror=0 attr=32 size=350 readonly=0
+```
+
+`DX = 2050 = 0x0802`; bit 12 is clear; not remote. The program then runs, and
+does not stop.
+
+### Correcting document two
+
+[Document two](02-architecture.md#running-it-at-last) reported that the program
+"calls the licence check and terminates", and listed *why the licence check
+refuses* as an open question. **The premise was wrong: it does not refuse.**
+
+What happened was that the emulator had no file system, so `Reset` on
+`product.pf` failed and the check took gate 1 — the damaged-disk path — and
+halted. That is now reproducible on purpose: delete `PRODUCT.PF` and run the
+real program under DOSBox-X, and the screen says
+
+```
+This disk appears to be damaged or some
+files are missing.
+
+Please check your disk, use your backup
+or contact MECC.
+
+-- Press any key --
+```
+
+which is exactly what an emulator with no disk would provoke. The observation
+was right; the conclusion drawn from it was not. **A program that stops when you
+remove its world has not told you anything about protection.**
+
+### Reading the screen of a program that ignores redirection
+
+One practical note, because it cost an hour and will cost the next person the
+same.
+
+Redirecting the program's output to a file captures nothing:
+
+```powershell
+OREGON.EXE > OUT.TXT      # produces an empty file, every time
+```
+
+The reason is Turbo Pascal's `Crt` unit. When a program `uses Crt`, the unit's
+initialiser **replaces the device driver behind `Output`** with one that writes
+straight into video memory. That is what makes `Crt` fast, and it means DOS
+never sees the text, so the shell has nothing to redirect. Any TP program with
+`uses Crt` behaves this way; it is not specific to this game.
+
+The way around it is to read the screen back afterwards. The text is still
+sitting in video RAM when the program halts, so a second program can dump it:
+
+```pascal
+var scr : array[0..24, 0..79, 0..1] of Byte absolute $B800:0000;
+```
+
+Twenty lines of Pascal, run straight after the program under test, and the
+messages above are recovered verbatim. It is the cheapest oracle in this
+folder, and it works for anything that dies in text mode.
+
+## What the program's exit codes mean
+
+At `0x14C30`, immediately after the two checks, the program installs its own
+`ExitProc` — Turbo Pascal's shutdown hook — saving the previous one first:
+
+```nasm
+0014C30  les ax, [0x155C]          ; the old ExitProc
+0014C36  mov [0x168E], ax          ;   saved for the chain
+0014C47  mov ax, 0x4272            ; and ours: ui:0x4272 = image 0x14692
+0014C4D  mov [0x155C], ax
+```
+
+The handler at `0x14692` reads `ExitCode` and translates it:
+
+| exit code | message |
+|---|---|
+| 0 | *(nothing)* |
+| 1 | `No graphics hardware was detected. / Your computer must have at least CGA / graphics capability to run Oregon Trail.` |
+| 2 | `Unable to find necessary files. / Please start the program from the / Oregon Trail directory.` |
+| 203 | `Not enough memory.` |
+| 255 | `^C` |
+
+Two of those are Turbo Pascal's own runtime error numbers — 2 is "file not
+found" and 203 is "heap overflow" — and MECC chose its own `Halt` codes to
+collide with them deliberately, so one handler covers both a failure the program
+detects and a failure the runtime detects. It is a neat trick and it is why the
+memory-pressure experiment above produced `Not enough memory.` rather than a raw
+`Runtime error 203`.
+
+The handler also releases the network licence, as its first act, before anything
+else — which is the right order, because a program that crashes while holding a
+lab licence is the failure everyone remembers.
+
+## Naming runtime calls by compiling something else
+
+Every `lcall 0x319F:…` and `lcall 0x2DB8:…` above needed a name, and guessing
+from argument shapes gets you most of the way and no further. There is a better
+method available here, because **the compiler that built this program can be
+run**.
+
+Write a probe that calls each routine once, in a known order:
+
+```pascal
+program Off;
+uses Dos;
+begin
+  Assign(f,'X'); Reset(f,350); Rewrite(f,350); Close(f);
+  n := IOResult;   L := MemAvail;
+  n := DosVersion; MsDos(r);
+  GetDate(a,b,c,d); GetTime(a,b,c,d);
+  FindFirst('X',63,sr); UnpackTime(L,dt); PackTime(dt,L); SetFTime(f,L);
+  ...
+end.
+```
+
+compile it with the game's own Turbo Pascal 5.0, and read the far calls out of
+the result in order. The first four offsets matched the game exactly:
+
+```
+Dos+0x0000  DosVersion      Dos+0x00E3  GetCBreak
+Dos+0x0005  MsDos           Dos+0x00F5  SetCBreak
+Dos+0x0071  GetDate
+Dos+0x00A7  GetTime
+```
+
+and then every later offset was wrong by exactly the same amount:
+
+```
+              probe    game    difference
+FindFirst     0x014A  0x017E      0x34
+SetFTime      0x012B  0x015F      0x34
+UnpackTime    0x01C5  0x01F9      0x34
+PackTime      0x0209  0x023D      0x34
+```
+
+A constant shift is a fact, not a coincidence. Turbo Pascal **smart-links**: a
+routine you never call is not merely unreachable, it is not in the file, and
+everything after it moves up. Fifty-two bytes of routine were in the game and
+not in the probe, somewhere between `SetCBreak` and `SetFTime`.
+
+So add candidates and compile again. `GetVerify` and `SetVerify` moved the
+offsets by `0x1D` — the right *kind* of effect, the wrong size. `DiskFree` and
+`DiskSize` moved them by exactly `0x34`, and every offset in the probe then
+matched the game's, all fourteen of them.
+
+That is a testable prediction, and it costs one search to check: **if those two
+were linked, the game must call one of them.** It does, once, at `Dos+0x0104` —
+and a further probe that calls only `DiskFree` puts `DiskFree` at exactly
+`0x0104`. Checking free disk space before writing a saved game is precisely what
+you would expect, and now it is not a guess.
+
+The same run named the last three unknowns — `Dos+0x0275` is `GetIntVec`,
+`Dos+0x028D` is `SetIntVec`, `Dos+0x02A0` is `SwapVectors` — which gives the
+program's complete use of Borland's `Dos` unit:
+
+| offset | routine | calls |
+|---|---|---|
+| `0x0000` | `DosVersion` | 1 |
+| `0x0005` | `MsDos` | 1 |
+| `0x0071` | `GetDate` | 2 |
+| `0x00A7` | `GetTime` | 2 |
+| `0x00E3` | `GetCBreak` | 1 |
+| `0x00F5` | `SetCBreak` | 2 |
+| `0x0104` | `DiskFree` | 1 |
+| `0x015F` | `SetFTime` | 2 |
+| `0x017E` | `FindFirst` | 5 |
+| `0x01BC` | `FindNext` **[inferred]** | 3 |
+| `0x01F9` | `UnpackTime` | 1 |
+| `0x023D` | `PackTime` | 1 |
+| `0x0275` | `GetIntVec` | 1 |
+| `0x028D` | `SetIntVec` | 10 |
+| `0x02A0` | `SwapVectors` | 2 |
+
+`0x01BC` is marked inferred because no probe put a call there: it sits between
+`FindFirst` and `UnpackTime` in a gap that exists in the probe too, so it is
+linked without being called — `FindNext` shares code with `FindFirst` and comes
+in with it. Everything else in that table is established by construction.
+
+Ten `SetIntVec` calls and two `SwapVectors` say the program hooks interrupts and
+puts them back, which is the shape of a game taking over the keyboard and timer.
+None of that has been traced.
+
+**What transfers.** This is differential compilation, and it is the strongest
+technique available against any compiled program whose compiler you can obtain:
+stop trying to recognise library code and instead *generate* it, then compare.
+It converts a judgement call into an equality test. And the failure — the
+constant `0x34` — was more useful than the successes, because it revealed the
+smart-linker and turned "these offsets look wrong" into "the game links two
+routines I did not".
+
+The negative result worth recording alongside it: **a table of runtime-call
+offsets is not portable between two programs built by the same compiler.** Only
+the prefix up to the first omitted routine is stable. `Halt` at `System+0x00D8`,
+`IOResult` at `System+0x0207` and the automatic I/O check at `System+0x020E`
+were identical in every probe and in the game, and are safe anchors; anything
+higher must be re-derived per program.
 
 ## Where the artwork is loaded from
 

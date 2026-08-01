@@ -509,9 +509,31 @@ Please call MECC at ...
 ```
 
 MECC sold to school districts, and this is school-lab licensing: the program
-checks whether another copy is already running on the network. **Located, not
-traced** — the strings are at image `0x14992` and `0x1582C`; the code that
-reads them has not been followed.
+checks whether another copy is already running on the network. The strings are
+at image `0x14992` and `0x1582C`.
+
+**This has since been traced in full**, and
+[document three](03-the-code.md#the-protection-traced) has it. The short version
+is worth having here because it changes what this section originally claimed:
+
+- The check reads a 350-byte file, `PRODUCT.PF`, that ships with the game. There
+  are **four** licensed products behind one unit — full, MECC-membership, a demo
+  that expires after a counted number of runs, and the network copy — and five
+  gates in order.
+- The network licence has **no server**. The licence *is* the modification
+  timestamp on `PRODUCT.PF`: claiming it means stamping the file with the
+  current time, holding it means the stamp is less than **30 minutes** old, and
+  releasing it means putting the old stamp back on the way out.
+- It only engages on a network drive, detected with `INT 21h AX=4409h`. On a
+  local disk the whole branch is skipped, which is why the shipped file can be
+  marked as a network copy and still run on a standalone PC.
+- The 32-bit value the caller passes, `0000:0132`, is not a pointer. It is
+  **306**, MECC's catalogue number for The Oregon Trail, and the file has to
+  agree.
+
+The record layout was confirmed by editing `PRODUCT.PF` and running the game:
+seven predictions, seven matches, including flipping it to a demo copy with five
+runs left and watching the program write **four** back to the file.
 
 The program does call DOS for the date exactly once, at image `0x1DBF4`
 (`mov ah, 0x2A / int 0x21`). What it does with it is not established; stamping
@@ -555,14 +577,31 @@ happen:
 
 And one thing that reading had not shown at all: **the program runs its
 initialisers, reaches its own first statement, calls the licence check, and
-terminates.** The memory check at `0x14BF3` is never reached, because the
-licence check gets there first and ends the program.
+terminates.** The emulator sees `int 0x20` after 1.17 million instructions
+rather than a title screen.
 
-That is what a copy protection looks like from the outside, and it is why the
-emulator sees `int 0x20` after 1.17 million instructions rather than a title
-screen. **[The reason it fails is not established]** — the emulator has no
-disk, no network and no real DOS, and any of those could be what the check
-wants.
+### What that observation was worth, and what it was not
+
+The paragraph above originally continued: *that is what a copy protection looks
+like from the outside*, and this document listed "why the licence check refuses"
+as an open question. **That was wrong, and the way it was wrong is worth
+keeping.**
+
+The licence check does not refuse. Tracing it
+([document three](03-the-code.md#the-protection-traced)) shows its first act is
+to open a file called `PRODUCT.PF`; the emulator has no file system, so the open
+failed and the check took its first branch — *this disk appears to be damaged* —
+and halted. Running the real program under DOSBox-X with that one file deleted
+reproduces it exactly, message for message.
+
+Every individual observation here still holds: the entry point, the initialiser
+order, the segment identities, and the fact that control reached `0x151C0` and
+the program stopped. Only the interpretation was wrong, and it was wrong in a
+specific, avoidable way. **The emulator was missing something the program needs,
+and a program that stops when you remove its world has told you about the world,
+not about the program.** The caveat in the original text — no disk, no network,
+no real DOS — named the cause correctly and was then written off as a
+possibility rather than followed up.
 
 ## What changed between 1983 and 1990
 
@@ -601,26 +640,36 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    crossing, how pace and rations combine — have not been traced. That is the
    66,592 bytes in segments `0x00000` and `0x007B6`.
    `prior-attempt/src/` has a unit per topic and not one has been checked.
-2. **The network licence check.** Its segment is identified exactly
-   (`0x0151C`, 2,544 bytes) and every one of its strings is recovered. The
-   *code* has not been followed, so what triggers it is unknown.
-3. **What the program does with the date it reads** at image `0x1DBF4`.
+2. **What the program does with the date it reads** at image `0x1DBF4`. It
+   calls `GetDate` twice and `GetTime` twice; one pair belongs to the licence
+   lease and is accounted for. The other pair is not.
+3. **The ten `SetIntVec` calls.** The program hooks ten interrupt vectors and
+   restores them with `SwapVectors`. Which ten, and what the handlers do, has
+   not been looked at — it is the obvious place to find the keyboard, the timer
+   and the joystick.
 4. **That `0x015BB` is specifically *Genus's*.** It is established as not
    Borland's — 0.0% against both of Borland's libraries — and the program links
    exactly two third-party libraries, so this is the other one by elimination.
    Settling it properly would need Genus's own library to compare against, and
    the PCX Programmer's Toolkit does not appear to be archived anywhere.
-5. **Whether any of this behaves as described at run time.** Every claim above
-   comes from reading the file, except the entry point, the unit-init order and
-   the segment identities, which [running it](#running-it-at-last) confirmed.
-   The rest have one source each and should be read accordingly.
-6. **Why the licence check refuses.** The program reaches it and terminates,
-   but nothing here says what it wants. The emulator has no disk, no network
-   and no real DOS, and any of those could be the reason.
-7. **The memory check has still never been observed.** It sits behind the
-   licence check, which ends the program first, so the prediction that forcing
-   the free heap below 35,000 bytes produces the 512K message remains
-   untested.
+5. **Whether any of this behaves as described at run time.** Rather less is
+   assumed here than when this list was first written. The entry point, the
+   unit-init order and the segment identities were confirmed by
+   [running it](#running-it-at-last); the licence record, all five of its
+   gates, the exit-code table and every runtime-call offset were confirmed by
+   running the real program under DOSBox-X and by compiling probes with the
+   game's own Turbo Pascal. What remains single-sourced is the game's own
+   logic, which has not been read at all.
+
+Two entries that used to be on this list are gone, and neither was answered the
+way it was asked:
+
+- *Why the licence check refuses* — **it does not.** The premise was an
+  artefact of the emulator; see [above](#what-that-observation-was-worth-and-what-it-was-not).
+- *The memory check has never been observed* — **it cannot be.** It is
+  correct code guarding a condition that cannot occur, because DOS refuses to
+  load the program before the heap can fall that low. Measured, not argued:
+  [document three](03-the-code.md#and-the-check-can-never-fire) has the ladder.
 
 ---
 

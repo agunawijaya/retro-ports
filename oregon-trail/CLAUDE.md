@@ -25,6 +25,9 @@ shorter working reference you come back to.
 | data files | **done** — `DIALOGS.REC` is 51 records of 286 bytes, exactly |
 | the trail | **done** — 17 landmarks, distances and map coordinates, at `0x23D32` |
 | the prior attempt's protection claim | **tested: address right, meaning wrong** |
+| the real protection | **traced in full** — and it does not refuse; see below |
+| the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
+| runtime call offsets | **established by differential compilation**, not guessed |
 | game logic as code | **not read** — the routines in `0x00000` and `0x007B6` |
 | documents | [four](docs/), written from the above |
 
@@ -115,12 +118,16 @@ Image offsets.
 | `0x01042` | 18,656 | MECC | UI, files, saved games, tombstones |
 | `0x014D0` | 1,216 | MECC | the artwork loader |
 | `0x0151C` | 2,544 | MECC | the licence check |
-| `0x015BB` | 12,816 | Genus **[inferred]** | text and fonts |
-| `0x018DC` | 19,904 | Genus | the PCX / graphics library |
-| `0x01DB8` | 784 | Borland | `Dos` — 18 `INT 21h` and nothing else |
-| `0x01DE9` | 13,632 | Borland | `Graph` — names itself in a BGI error string |
-| `0x0213D` | 1,568 | Borland **[inferred]** | `Crt` |
-| `0x0219F` | 6,800 | Borland | `System` — 48% of all far calls |
+| `0x015BB` | 12,816 | not Borland; Genus **[inferred]** | text and fonts |
+| `0x018DC` | 19,904 | not Borland; Genus | the PCX / graphics library |
+| `0x01DB8` | 784 | Borland | `Dos` — 98% covered by `TURBO.TPL` |
+| `0x01DE9` | 13,632 | Borland | `Graph` — 74% by `GRAPH.TPU`, one 6,636-byte run |
+| `0x0213D` | 1,568 | Borland | `Crt` — 71% covered by `TURBO.TPL` |
+| `0x0219F` | 6,800 | Borland | `System` — 87%, and 48% of all far calls |
+
+Every one of those percentages comes from `tpscan.py`'s `tpl_match` against
+Borland's own libraries. The separation is clean: four segments above 71%,
+everything else at or below 0.1%.
 
 **MECC 89,008 (61.6%) · Borland 22,784 (15.8%) · Genus 32,720 (22.6%).** So
 38.4% of this program was written by someone other than the people who made the
@@ -174,7 +181,23 @@ It is currently being used by someone else.
 The network version of this program may be licensed from MECC.
 ```
 
-MECC's school-lab licensing. Located, not traced.
+MECC's school-lab licensing, and it is now
+[traced in full](docs/03-the-code.md#the-protection-traced). Four things to know
+before touching it again:
+
+- It reads **`PRODUCT.PF`**, 350 bytes, shipped with the game. Delete that file
+  and the program halts with *"This disk appears to be damaged"*.
+- **It does not refuse on a local disk.** The network branch is skipped unless
+  `INT 21h AX=4409h` says the drive is remote. An earlier session recorded the
+  opposite; that was the emulator having no file system.
+- The network licence is a **lease on the file's modification timestamp**,
+  30 minutes, released on exit by restoring the old stamp. No server.
+- `0000:0132` in the call is not a pointer, it is **306** — MECC's catalogue
+  number for this title.
+
+The record layout is confirmed behaviourally: seven edits to `PRODUCT.PF`, seven
+matching predictions, including the demo counter being decremented and written
+back.
 
 ## The capability you now have that earlier sessions did not
 
@@ -192,11 +215,27 @@ it with the same compiler, and compare the code against the game's. It is the
 route to the game logic, and it is the reason the compiler is worth keeping
 around rather than deleting after the version check.
 
+It has since done exactly that, twice. It named every runtime call in the
+licence check, and it produced the more useful of the two results —
+**a table of runtime-call offsets is not portable between two programs built by
+the same compiler**, because Turbo Pascal smart-links and a routine you do not
+call is not in the file. Only the prefix up to the first omitted routine is
+stable. `Halt` at `System+0x00D8`, `IOResult` at `System+0x0207` and the
+automatic I/O check at `System+0x020E` held in every probe and in the game;
+nothing higher did.
+
 **A recorded negative result, so nobody repeats it.** Searching for code that
 references the `Matt's General Store` banner by its offset — as an immediate,
 anywhere in the image — finds nothing. TP 5.0 is not addressing string
-constants that way here. Differential compilation is how to find out what it
-does instead.
+constants that way here. It uses `BF <off16> / 0E 57` — `mov di, offset` then
+`push cs / push di` — which is what `strefs.py` in the scratchpad looks for, and
+which finds 266 string references.
+
+**Redirection does not work on this program.** `OREGON.EXE > OUT.TXT` produces
+an empty file every time, because `uses Crt` replaces the driver behind `Output`
+with one that writes into video memory, so DOS never sees the text. To read what
+it printed, run a second program afterwards that dumps `$B800:0000`; twenty
+lines of Pascal, and it recovered every message quoted in the documents.
 
 ## What is genuinely open
 
@@ -205,17 +244,23 @@ does instead.
    bytes in segments `0x00000` and `0x007B6`. `prior-attempt/src/` has a unit
    per topic, and it is now known **not** to be the original source, so treat
    it as a description rather than a recovery.
-3. **The licence check's code.** Segment `0x0151C`, 2,544 bytes, all strings
-   recovered, code not followed. The most self-contained thing left and
-   probably an afternoon's work.
-4. **An oracle.** `comrun.py` ran `.COM` files only, so nothing here could run
-   this program and compare against it — which is why the artwork was checked
-   by size-field agreement and by looking, rather than against a running frame.
-   **MZ loading is being added to `comrun.py` by concurrent work in the
-   toolkit** and was not yet working when this was written. Check `git log`
-   there; if it landed, the first thing to test is the memory check at
-   `0x14BF3` — force the free heap below 35,000 bytes and the 512K string
-   should appear.
+2. **The ten `SetIntVec` calls.** The program hooks ten interrupt vectors and
+   restores them with `SwapVectors`. That is where the keyboard, the timer and
+   the joystick will be, and none of it has been looked at.
+3. **What the second `GetDate`/`GetTime` pair is for.** One pair belongs to the
+   licence lease; the other does not.
+4. **An oracle for the artwork.** `comrun.py` now loads MZ, but it answers no
+   `4Eh`, `44h`, `2Ch` or `57h`, which are exactly the calls a Turbo Pascal
+   program's `Dos` unit makes — so it cannot get this program past its own
+   first statement. DOSBox-X can, and the screen-readback trick above is how to
+   see what happened. The artwork is still checked by size-field agreement and
+   by looking, not against a running frame.
+
+**Do not repeat these.** The memory check at `0x14BF3` cannot be provoked — the
+ladder is in [document three](docs/03-the-code.md#and-the-check-can-never-fire),
+and the failure levels are 243K (DOS refuses to load) against a heap that is
+already above 35,000 bytes at the minimum block. And the licence check does not
+refuse on a local disk, so there is nothing there to explain.
 
 ## Before you commit
 
