@@ -3,7 +3,7 @@
 *Document three of three. [01-the-game.md](01-the-game.md) is what the game is;
 [02-architecture.md](02-architecture.md) is how the program is shaped.*
 
-Five routines and one discovery. Every listing is copied from
+Six sections: five routines, one discovery, and one picture. Every listing is copied from
 `recovered/hhm.asm` — the file that reassembles to a byte-identical copy of the
 original — with comments added and nothing else changed.
 
@@ -22,7 +22,7 @@ something is reasoned rather than proven, it says so.
 ```nasm
 L_00000:
     jmp 0x104            ; EB 02 — skip the next two bytes
-    db 0xFF, 0xFC        ; not code. Something reads this.
+    db 0xFF, 0xFC        ; not code, and nothing in the program reads it
 L_00004:
     cld
     cli
@@ -36,8 +36,10 @@ the one address every program can rely on. Putting a value there — a version
 number, a signature, a flag — makes it findable by anything that loads the file.
 The jump exists purely to step over it.
 
-**[inferred]** Nothing in the program reads those bytes, so what they mean is
-not recoverable from this file alone.
+**Nothing in the program reads them** — checked: zero instructions reference
+addresses `0x100`–`0x103`. So they were put there for something outside this
+file, and what they meant cannot be recovered from it. That is a closed
+question in the only sense available: the answer is not in here.
 
 **What transfers:** a fixed, known offset at the very start of a format is
 useful precisely because it is fixed. Magic numbers in file headers, the
@@ -390,6 +392,42 @@ which is the point of working through a second game.
 
 ---
 
+## 6. Proof without running anything
+
+The sprites can be read out of the file and drawn, with the program never
+executed. That is worth doing for its own sake, and it is also the only honest
+way to check that a region you have *called* graphics is graphics.
+
+The way in was the pointer table's stride of 66:
+
+```
+0x766F:  04 10 | 00 00 00 00  00 00 00 00 ...
+         ^^ ^^
+         |  height: 16 rows
+         width: 4 bytes = 16 pixels
+```
+
+4 × 16 = 64, plus two header bytes, is 66 exactly. So the stride is not a
+record size — **each sprite states its own dimensions**, and the table's steps
+vary because the sprites do. The 34-byte steps elsewhere are 4 × 8 sprites.
+
+Decoded that way, out come a wrench, lunchboxes, girders with rivets, six
+frames of a walk cycle — and a 96 × 33 sprite of the **Electronic Arts logo**.
+
+**The logo is what makes this proof rather than pattern-matching.** A shape can
+be argued with; somebody can always say a blob happens to resemble a spanner.
+Legible text cannot be argued with. If a single bit of the format were wrong,
+what came out would be noise.
+
+It arrives mirrored, and is unreadable until flipped. **[inferred]** The likely
+cause is a blitter that walks the data backwards — the same `std` idiom
+ParaTrooper uses to draw its score right to left — but the drawing routine was
+not traced to confirm it.
+
+`tools/gfxdump.py` in the toolkit does this for any binary.
+
+---
+
 ## Reading the rest
 
 `recovered/hhm.asm` covers all 42,112 bytes and reassembles to the original
@@ -399,6 +437,6 @@ exactly. It is navigable:
 - **`db` lines with a comment** are instructions pinned to a fixed encoding —
   they execute, they are just spelled in bytes.
 - The honest limits are at the end of
-  [02-architecture.md](02-architecture.md#what-is-still-unknown). The biggest:
-  **nothing in this program appears to control its own speed**, and that has not
-  been explained.
+  [02-architecture.md](02-architecture.md#what-is-still-unknown). Three remain:
+  the level layouts, the 405 unnamed variables, and two bytes at the very start
+  of the file that nothing in the program ever reads.

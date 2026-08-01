@@ -226,9 +226,13 @@ install and reports it:
 interrupts  : INT 09h -> file 0x00071
 ```
 
-**[inferred]** Only INT 9 is installed. No timer handler (INT 8) is written,
-which raises the question of where the game's pacing comes from — see
-[what is still unknown](#what-is-still-unknown).
+**INT 9 is the only vector it touches.** There are exactly four writes into the
+table in the whole program: two to install (`xchg`, at start-up) and two to
+restore (`mov`, on the way out), all to slots `0x24` and `0x26` — vector 9. No
+timer handler, no anything else. That is now checked rather than assumed.
+
+Which leaves the question of what paces the game. It is answered
+[below](#timing-it-counts).
 
 ---
 
@@ -255,6 +259,42 @@ odd ones 8 KB later — is
 and applies identically here.
 
 ---
+
+## Timing: it counts
+
+ParaTrooper waited on the BIOS clock, so it runs at the same speed on any
+machine. Hard Hat Mack does not. It has no timer handler, never reads the BIOS
+tick, and never watches the video retrace. What it has is this, at file
+`0x00DF`:
+
+```nasm
+delay:
+    push ax
+.inner:
+    dec al
+    jne .inner          ; count AL down to zero
+    pop ax
+    dec al
+    jne delay           ; ...and do that AL times over
+    ret
+```
+
+Two nested loops that touch no memory, no port and no clock. They burn
+processor cycles and nothing else. `AL` on entry sets the length, and the 21
+call sites pass 20, 32, 40, 48, 80, 96, 128, 144, 160 and 255 — a menu of
+pauses.
+
+**This is the technique ParaTrooper deliberately avoided**, and it means Hard
+Hat Mack's speed is the *processor's* speed. On the 4.77 MHz 8088 it was
+written for, `dec al / jne` costs about 19 cycles a pass, so `AL = 255` is
+roughly a quarter of a second. On anything faster the whole game speeds up in
+proportion — which is exactly why so many games of this era became unplayable
+within a few years.
+
+**[inferred]** It fits the [provenance](03-the-code.md#5-the-instruction-that-should-not-be-there).
+A translation from 6502 code inherits the original's structure, and the Apple II
+had no equivalent of the PC's BIOS tick to lean on. Counting cycles is what the
+source being translated would have done.
 
 ## Sound
 
@@ -319,27 +359,45 @@ how this version was made, and it is worth its own section in
 
 ---
 
+## The data, accounted for
+
+19,628 bytes — 46.7% of the file — did not come back as instructions. That is
+not the same as unexplained. Here is what all of it is:
+
+| Where | Size | What it is | Confidence |
+|---|---|---|---|
+| `0x6D10` | 836 | pointer table into the sprites | **proven** — its arithmetic matches the sprite headers |
+| `0x766F`–`0xA480` | 14,192 | the sprites themselves | **proven** — they render |
+| `0x042D` | 404 | **CGA scanline address table** | **proven** — 202 entries, exactly `(row&1)*0x2000 + (row>>1)*80` |
+| `0x05C1` | ~800 | further screen tables, bank ends | inferred from the values |
+| `0x251A` | 1,171 | bit masks — 1, 2, 4, 8, 16 dominate | inferred; that is what pixel plotting needs |
+| `0x4795` | 162 | **a trajectory table** | inferred: differences 41, 43, 46, 49, 51, 55…, second differences ≈ 3, which is constant acceleration |
+| `0x1DEE` | 506 | the HUD and credits text | **proven** — you can read it |
+| `0x6376` | 278 | the configuration screen text | **proven** |
+| `0x2F36` | 565 | repeating pattern data | not identified |
+| `0x6C8B` | 133 | the variable block | **proven** — the busiest addresses point here |
+| rest | ~600 | small runs, mixed | not identified |
+
+The **scanline table** is worth a moment. Rather than compute a row's address
+every time it draws, the game looks it up — 404 bytes spent to avoid a shift,
+an AND and a multiply on every single blit. Trading memory for arithmetic is
+the oldest optimisation there is.
+
 ## What is still unknown
 
-Stated plainly, so this is not mistaken for a complete map:
+Three things, stated plainly:
 
-- **Where the timing comes from.** There is no `int 1Ah` (the BIOS clock,
-  which ParaTrooper used), no timer interrupt handler, and no polling of the
-  video retrace register. Only one counted delay loop was found, in the exit
-  path. Something paces this game and this analysis did not find it.
-- **The sprite format.** As with ParaTrooper, the shapes have not been traced
-  back to the routines that draw them.
-- **The level data.** Three levels of girders, ladders and conveyors are
-  described somewhere in the 27 KB middle region; the encoding is not decoded.
-- **Most of the 405 variables.** Naming one honestly means watching every
-  routine that touches it. That was done for none of them here.
-- **19,628 bytes — 46.7% — did not come back as instructions.** Most of that is
-  the 14 KB of graphics, which is data and should stay data. But 27 separate
-  runs of 16 bytes or more, 4,660 bytes in total, sit inside the code region
-  and are unaccounted for. Some of those are certainly code the walk never
-  reached.
-- **The level layouts.** Three levels of girders, ladders and conveyors are
-  described somewhere in the middle region; that encoding is not decoded.
+- **The level layouts.** Three levels of girders, ladders, conveyors and
+  elevators are described somewhere, and the encoding was not found. The
+  565-byte block at `0x2F36` is the best candidate.
+- **The 405 variables.** None are named. Doing that honestly means watching
+  every routine that touches each one, and with 222 subroutines that is a
+  project of its own rather than a gap in this one.
+- **The two bytes at file `0x0001`.** The program's first instruction jumps
+  over `FF FC`, and **nothing in the program ever reads them** — checked, zero
+  references to addresses `0x100`–`0x103`. What they meant is not recoverable
+  from this file; it would take the loader or the build tool that put them
+  there.
 
 None of this affects the reconstruction. `recovered/hhm.asm` rebuilds the file
 byte for byte regardless of how much of it is *understood* — the correctness of
