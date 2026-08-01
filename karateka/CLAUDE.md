@@ -15,7 +15,7 @@ document written so far and it holds everything established.
 |---|---|
 | rebuild | byte-identical, rung 1b — the whole `.EXE`, header and all |
 | code region | **85.0% recovered** |
-| the ninety data files | container format settled, record format **not** |
+| the ninety data files | container **and** record format settled — 666 of 666 |
 | documents | 1 of 4 |
 | port | none, and not in scope yet |
 
@@ -79,30 +79,37 @@ verified against all twenty-eight at once:
 
 A record's length is the next record's offset minus its own.
 
-**The record format is settled for the records the game draws**, and it was
-settled by running the game rather than by inspection. The blitter at image
-`0x00AE7` reads one byte per scanline and steps `add di, 0x50`, so:
+**The record format is settled, and it was settled by running the game.** Two
+routines, found by hooking the buffer a `.DAT` was loaded into and asking which
+instructions read it:
 
 ```
-byte 0   width, in bytes
-byte 1   height, in scanlines
-byte 2   a flag -- 0x01 everywhere seen
-byte 3+  width x height raw bytes, column-major -- no compression
+image 0x00B95   the decoder -- run-length, called once per output byte
+image 0x00AE7   the blitter -- one byte per scanline, add di, 0x50
 ```
 
-Four records checked against what the blitter consumed: 864, 192, 864, 12
-bytes, all exact, each starting three bytes into its record.
+```
+record:  byte 0   width, in bytes
+         byte 1   height, in scanlines
+         byte 2   a flag -- 0x01 in all 666
+         byte 3+  the stream, then one trailing byte
 
-**It holds for 70 of 666 records overall**, and the split is clean: every `KM*`
-file has zero matches. **[inferred]** `KS` is the shape and `KM` the mask. The
-next step is named — find the code that reads a `KM` buffer, the same way this
-one was found.
+stream:  0x7B v c   emits v, then c more of v   (c + 1 in total)
+         any other  emits itself
+```
 
-**An earlier reading of this was wrong and is worth remembering.** `0x7B` as
-*escape, value, count* decoded 282 of 284 records without running off the end.
-That is the kind of number that ends an investigation. It failed the second
-test — decoded length against `width x height` — 274 times out of 284, and
-`0x7B` turned out to be an ordinary pixel value.
+The `+1` matters: the escape path returns the value immediately and the counter
+then supplies `c` more.
+
+**666 of 666 records** decode with no escape running off the end and yield at
+least `width × height` bytes. The check discriminates — count-as-written gives
+318, the neighbouring byte as escape gives 80, no escape gives 88.
+
+**Do not test "decodes to exactly `w×h`".** That reaches 338 and stalls, because
+it was never a property of the format: the decoder is called once per output
+byte and stops when the caller stops asking. The game consumed 21 bytes of one
+90-byte record. Chasing the rest with `(w+1)*h` and friends reaches 491 and is
+curve-fitting.
 
 ## A prediction that was made and failed
 
@@ -122,7 +129,7 @@ a quiet deletion.
 
 ## What to do next
 
-1. **The record format**, via `comrun.py` rather than by inspection.
+1. **The remaining three documents** — `01-the-game.md`, `03-the-code.md`, `04-porting.md`.
 2. **A container reader in the toolkit**, not in this folder — an index-and-heap
    pair is not Broderbund's invention and the next game may use one.
 3. **The remaining three documents.** `01-the-game.md`, `03-the-code.md`,

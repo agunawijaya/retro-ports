@@ -197,23 +197,97 @@ four agree exactly:
 
 Each consumed run begins exactly three bytes into its record.
 
-### What is still not settled, and it is most of them
+### The stream is run-length encoded, and 0x7B is the escape after all
 
-That rule is verified for the records the game drew and **does not generalise**.
-Across all 666 records in the twenty-eight pairs, only **70** have a span of
-`3 + w×h + 1`. The rest are shorter or longer, in no ratio that one rule
-explains — 0.51, 0.55, 1.00, 1.06, 1.17 of `w×h`.
+The blitter above draws from a byte at a time. Where that byte comes from is a
+second routine, and it is the decoder:
 
-The split is not random, though. Every `KM*` file has **zero** records matching;
-the matches are all in `KS*` files. Two parallel series, and the blitter reads a
-mask from one table and pixels from another, so **[inferred]** `KS` is the shape
-and `KM` the mask. That is a hypothesis with an obvious test — find the code
-that reads a `KM` buffer, the same way this one was found — and it has not been
-run.
+```nasm
+L_00B95:
+    cmp  byte [0x422e], 0       ; anything left of the current run?
+    je   fetch
+    mov  al, [0x422f]           ; yes -- emit the run's value
+    dec  byte [0x422e]
+    ret
+fetch:
+    mov  si, [0x4220]
+    mov  al, [si - 0x76c6]      ; the next token
+    inc  si
+    cmp  al, 0x7b
+    jne  done                   ; an ordinary byte: emit it as it is
+    mov  al, [si - 0x76c5]      ; the count
+    mov  byte [0x422e], al
+    mov  al, [si - 0x76c6]      ; the value
+    mov  byte [0x422f], al
+    add  si, 2
+done:
+    mov  [0x4220], si
+    ret
+```
 
-**[inferred]** the records that are shorter than `w × h` are compressed and the
-ones that match are not, so the file may hold both kinds. Nothing has been
-checked.
+So the format is:
+
+```
+0x7B v c   emits v, then c more of v -- c + 1 bytes in total
+any other  emits itself
+```
+
+The `+ 1` is not a detail: the escape path returns the value immediately and
+*then* the counter supplies `c` more. And the header is three bytes, which the
+program says itself — `add word [0x4220], 3` — and which the emulator confirms:
+every run of reads the game made from `KM0.DAT` began exactly three bytes into
+its record.
+
+**Two corrections to earlier readings of this**, and they went in opposite
+directions.
+
+The first attempt guessed `0x7B` as an escape and was right about that, wrong
+about the arithmetic, and tested it against the wrong thing. The second attempt
+looked at the shape blitter, found no decompression in it, and concluded `0x7B`
+was an ordinary pixel value. **That was an over-correction.** The blitter does
+not decompress because decompression happens one call earlier, in a routine
+neither attempt had found.
+
+### 666 of 666
+
+The obvious test — "does a record decode to exactly `width × height`?" — reached
+338 and then stalled, and it stalled because **it was never a property of the
+format.** The decoder is called once per output byte and stops when the caller
+stops asking. A record is a stream, not a picture: the game consumed 21 bytes of
+one 90-byte record and all but four of the next.
+
+Chasing the remaining 328 with `(w+1)*h`, `w*(h+1)` and friends got to 491, and
+that is curve-fitting rather than reading. Five formulas tried until one matched
+is exactly the failure this repository keeps recording.
+
+What the format *does* imply is checkable on every record:
+
+> the stream decodes without an escape running off the end, **and** yields at
+> least `width × height` bytes, because that is what the blitter will ask for.
+
+| | |
+|---|---|
+| records | **666** |
+| decode with no escape running off the end | **666** |
+| yield at least `width × height` | **666** |
+
+### The check can fail, which is why it counts
+
+A test that passes everything tests nothing. Five variants of the rule, against
+the same 666 records:
+
+| rule | decodes | ≥ `w×h` |
+|---|---|---|
+| **`0x7B`, count **+1**, 3-byte header** — read off the code | **666** | **666** |
+| `0x7B`, count as written | 666 | 318 |
+| `0x7C` — the neighbouring byte | 666 | 80 |
+| `0xFF` as the escape | 629 | 599 |
+| no escape; every byte a literal | 666 | 88 |
+
+Four of the five fail. One further variant — the same rule without skipping the
+three header bytes — also passes, and cannot be separated by this test, because
+skipping fewer bytes only adds output. It is separated by the program instead:
+`add word [0x4220], 3`, and every measured read beginning three bytes in.
 
 ## The copy protection
 
@@ -227,14 +301,19 @@ the check is still present.
 
 ## What is still unknown
 
-- **Why most records are not `3 + w×h + 1` bytes long.** The rule is verified
-  for the records the game actually drew and holds for only 70 of 666 overall.
-  The split is clean — every `KM*` file has zero matches — so the next step is
-  named rather than vague: find the code that reads a `KM` buffer, the same way
-  the `KS` blitter was found.
+- **What a record holds beyond the pixels it is asked for.** The stream is
+  settled and every one of the 666 decodes, but a record usually carries more
+  than `width × height` bytes and nothing here explains how much more or why.
+  **[inferred]** the extra is a margin for the shifted-edge column the blitter
+  needs, since `(w+1)×h` accounts for 112 of them — but that is a formula that
+  fits, not a routine that was read, and this document has been burned by the
+  difference already.
 - **What the twenty-eight pairs are for.** **[inferred]** `KS` is the shape and
-  `KM` the mask — the blitter reads pixels from one place and a mask from
-  another, and the size evidence fits. Not checked.
+  `KM` the mask. Both are read through the same decoder but through separate
+  stream pointers and separate run state — `0x421E` with `0x422C`/`0x422D` for
+  one, `0x4220` with `0x422E`/`0x422F` for the other — which is what two
+  independent streams consumed in lockstep looks like. Which is which has not
+  been established.
 - **The loose files.** `ALLPAL`, `ALLBAL`, `ALLCAL`, `ALLGAL`, `ALLVAL` look
   like combined versions of the `PAL*`, `BAL*`, `CAL*`, `VAL*` series;
   `CASTLE.BCG` and `FUJI.BCG` are backdrops by their names alone.
