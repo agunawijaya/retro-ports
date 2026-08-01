@@ -588,20 +588,60 @@ as an open question. **That was wrong, and the way it was wrong is worth
 keeping.**
 
 The licence check does not refuse. Tracing it
-([document three](03-the-code.md#the-protection-traced)) shows its first act is
-to open a file called `PRODUCT.PF`; the emulator has no file system, so the open
-failed and the check took its first branch — *this disk appears to be damaged* —
-and halted. Running the real program under DOSBox-X with that one file deleted
-reproduces it exactly, message for message.
+([document three](03-the-code.md#the-protection-traced)) shows that it opens a
+file called `PRODUCT.PF` — and deleting that one file makes the real program
+under DOSBox-X behave exactly as the emulator did. So the obvious explanation
+was that `comrun.py` had no file system and the check took its damaged-disk
+branch.
 
-Every individual observation here still holds: the entry point, the initialiser
-order, the segment identities, and the fact that control reached `0x151C0` and
-the program stopped. Only the interpretation was wrong, and it was wrong in a
-specific, avoidable way. **The emulator was missing something the program needs,
-and a program that stops when you remove its world has told you about the world,
-not about the program.** The caveat in the original text — no disk, no network,
-no real DOS — named the cause correctly and was then written off as a
-possibility rather than followed up.
+**That was also wrong, and it took a third attempt to find the cause.** Given
+`--files original` the emulator opened `PRODUCT.PF` quite happily and *still*
+stopped in the same place after the same 1,174,785 instructions. The identical
+count is the clue: nothing about the run had changed, so nothing that had been
+changed was being used.
+
+What the check does next is ask DOS whether it is running from a network drive,
+through Turbo Pascal's `MsDos`. And `MsDos` does not execute an `int`
+instruction. It reads the handler's address out of the interrupt vector table
+and **far-calls it**:
+
+```nasm
+001DB9A  xor bx, bx
+001DB9C  mov ds, bx
+001DBA5  lds bx, [bx]              ; the INT 21h vector, from 0000:0084
+001DBA7  push ds / push bx         ; and call it, with the flags already pushed
+```
+
+The emulator trapped the `int` instruction and left the vector table full of
+zeros, so this was a far call to `0000:0000`. The program did not refuse and did
+not visibly crash — it walked out of its own address space, and 1.17 million
+instructions later fell into the `int 20h` that DOS puts at the start of every
+PSP. **An emulator that answers interrupts but does not fill in the table is
+invisible to any program that reaches DOS the other way**, and every Turbo
+Pascal program using `MsDos` or `Intr` does.
+
+With that fixed in the toolkit — every vector pointing at an `int n` / `iret`
+stub, so both routes arrive at the same handler — the same command now gets:
+
+```
+start-up: 1,160,710 instructions, stopped: fault
+  files opened: PRODUCT.PF, CGA.BGI, BIT8X8.GFT
+  ports written: 0x3b4, 0x3b5, 0x3d4, 0x3d5
+```
+
+The licence check passes, the memory check passes, the exit handler is
+installed, and the program is loading its graphics driver and its font and
+programming the CRTC. It still dies later, and that is a limit of the emulator
+rather than a decision by the program.
+
+Every individual observation in the original section still holds: the entry
+point, the initialiser order, the segment identities, and the fact that control
+reached `0x151C0`. Only the interpretation was wrong — three times, each time by
+adopting a plausible cause that fitted the symptom and had not been tested.
+**What broke the run was the emulator on every attempt**, which is the standing
+hazard of using one as evidence, and the reason the original caveat — no disk,
+no network, no real DOS — should have been followed up rather than merely
+noted.
 
 ## What changed between 1983 and 1990
 

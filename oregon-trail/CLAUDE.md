@@ -31,9 +31,16 @@ shorter working reference you come back to.
 | game logic as code | **not read** — the routines in `0x00000` and `0x007B6` |
 | documents | [four](docs/), written from the above |
 
-Four things went back into the toolkit: `unpack.py` now reads LZEXE's stated
-entry point, `tpscan.py` is new, `pcxlib.py` is new, and
+Five things went back into the toolkit: `unpack.py` now reads LZEXE's stated
+entry point, `tpscan.py` is new, `pcxlib.py` is new, `comrun.py` now fills in
+the interrupt vector table and answers what a Pascal runtime asks of DOS, and
 `knowledge/00-scope.md` and `02-compiler-fingerprints.md` carry the results.
+
+The `comrun.py` one is the most transferable, because the bug it fixed was
+invisible. Turbo Pascal's `MsDos` and `Intr` reach DOS by far-calling through
+the vector table rather than by executing `int`, so an emulator with a zeroed
+table sends the program to `0000:0000` without raising anything anyone could
+see. That cost this folder three wrong explanations before it was found.
 
 ## Regenerating
 
@@ -249,12 +256,10 @@ lines of Pascal, and it recovered every message quoted in the documents.
    the joystick will be, and none of it has been looked at.
 3. **What the second `GetDate`/`GetTime` pair is for.** One pair belongs to the
    licence lease; the other does not.
-4. **An oracle for the artwork.** `comrun.py` now loads MZ, but it answers no
-   `4Eh`, `44h`, `2Ch` or `57h`, which are exactly the calls a Turbo Pascal
-   program's `Dos` unit makes — so it cannot get this program past its own
-   first statement. DOSBox-X can, and the screen-readback trick above is how to
-   see what happened. The artwork is still checked by size-field agreement and
-   by looking, not against a running frame.
+4. **An oracle for the artwork.** `comrun.py` now gets this program through
+   both checks and into `CGA.BGI` and `BIT8X8.GFT`, then faults 1.16 million
+   instructions in. Until that is chased down the artwork is still checked by
+   size-field agreement and by looking, not against a running frame.
 
 **Do not repeat these.** The memory check at `0x14BF3` cannot be provoked — the
 ladder is in [document three](docs/03-the-code.md#and-the-check-can-never-fire),
