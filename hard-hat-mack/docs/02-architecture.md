@@ -510,14 +510,55 @@ was caught.
 `recovered/screen-title.png` is the whole screen: 285 sprites, every identity
 and position read from the file.
 
+### Three screens, not one
+
+`[0x594F]` is the screen number, and it is written in exactly three places.
+Each is the head of a build sequence:
+
+| Builder | Sets `[0x594F]` | |
+|---|---|---|
+| file `0x14D8` | 1 | **Level 1** |
+| file `0x1763` | 2 | **Level 2** |
+| file `0x1627` | 3 | **Level 3** |
+
+So the screen reconstructed above is not a title screen at all — it is
+**Level 2**. The credits are drawn over the playfield, which was normal for the
+period, and mistaking one for the other cost a round of analysis.
+
+Levels 1 and 3 build their floors differently. Level 2 uses the grid loop with
+the 70-byte map; the others place girder runs by explicit calls, and choose the
+girder variant per level:
+
+```nasm
+    mov bl, byte [0x2aac]        ; the level number
+    mov al, byte [bx + 0x71e8]   ; a variant per level
+    add ax, 0x2800               ; + the sprite base, 40
+    mov word [0x6d97], ax
+```
+
+`tools/placements.py` in the toolkit recovers placements from these sequences
+without executing anything. It recognises the idioms rather than interpreting
+the code, and reports what it cannot parse instead of skipping it — a screen
+quietly missing a girder looks perfectly fine and is wrong.
+
+Current coverage, and it is uneven:
+
+| | sprites placed | sites not parsed |
+|---|---|---|
+| Level 1 | 228 | 9 |
+| **Level 2** | **291 — complete** | 8 |
+| Level 3 | 220 | 7 |
+
 ## What is still unknown
 
 Three things, stated plainly:
 
-- **The three playfield screens.** The title screen is fully reconstructed;
-  the sequences that build levels one, two and three were not traced, and the
-  elevator door's row comes from a variable set at run time rather than from a
-  table.
+- **Levels 1 and 3 are partial.** Their floors are placed by loops whose sprite
+  choice depends on a variable the *builder* writes — and `placements.py` reads
+  that variable's initial value from the file instead, so it picks the wrong
+  variant and misses the rest. Closing it means tracking writes to variables
+  across routine boundaries, which is a step from pattern-matching towards
+  interpretation, and a decision to take deliberately rather than by drift.
 - **The 405 variables.** None are named. Doing that honestly means watching
   every routine that touches each one, and with 222 subroutines that is a
   project of its own rather than a gap in this one.
