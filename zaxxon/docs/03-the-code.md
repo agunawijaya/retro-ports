@@ -806,6 +806,69 @@ and each scene's routine is that band plus an altitude condition:
 | `0x1E77` | 14 … 30 | ≥ 14 | a gap near the top |
 | `0x1E84` | 14 … 30 | 5 … 12 | a narrower middle gap |
 
+Two of the nine routines reached this way are not walls at all, and both are
+worth a line.
+
+**The cut scene's is two bytes.** `[9]` is set to `cs:0x177A`, and file
+`0x187A` contains:
+
+```nasm
+    clc
+    ret
+```
+
+"Nothing can hit you." Rather than test for a null pointer at the call site —
+which would cost a compare and a branch on every frame of the game — the scene
+points the pointer at a `clc` that happens to be the tail of the routine above
+it. A null object, in 1984, in two bytes that were already there.
+
+**The boss's is the same shape as a wall test with one extra line.** File
+`0x1B75`:
+
+```nasm
+    cmp byte [si + 0x5c], 0x22
+    jl  safe
+    cmp byte [si + 0x5c], 0x2e
+    jg  safe
+    mov dx, 0xffde                  ; -34
+    add dx, word [0x70]
+    mov al, byte [si + 0x5c]        ; where the shot was fired from
+    cbw
+    add dx, ax
+    mov al, byte [si + 2]           ; where it is now
+    cbw
+    sub dx, ax
+    cmp dx, 3
+    jge safe
+    cmp dx, -3
+    jle safe
+    stc
+    mov byte [0x6f], 1              ; ... and remember it was blocked
+```
+
+`[si + 0x5C]` needs explaining, because it looks like a magic number and is
+not. When a shot is created, the routine that fires it writes the player's
+position into the object *and* into a second place 92 bytes further on:
+
+```nasm
+    mov ax, word [0xa2]             ; where the player is
+    mov word [bx + 2], ax           ;   the shot's position, which will move
+    mov word [bx + 0x5c], ax        ;   and a copy that will not
+```
+
+The six shot records live at `DS:0x0100`, and the object array they belong to
+ends at `DS:0x015A`. So `0x0100 + 0x5C` is `0x015C` — **the first byte past the
+array.** A parallel array sits there, one entry per shot, holding the column
+each was fired from. Both arrays step by six, so the same displacement
+addresses both, and no index arithmetic is needed at all.
+
+Why keep the launch column? Because the wall test uses it to give a shot the
+same geometry its owner had. The threshold that decides when a wall is "level
+with you" is 2 on the left of the screen and 7 on the right, so a shot fired
+from the right must be judged the way the player was judged — and by the time
+it reaches the wall it has moved somewhere else. The copy is the shot
+remembering where it came from.
+
 Read the table again with the pictures in mind, because the point is what is
 *not* connected to what. `sections.png` shows the walls as they are drawn:
 brickwork with holes in it, in eight compressed pictures. This table is the
@@ -964,6 +1027,27 @@ frames of a miniature game loop. Because the twelve pieces are windows *into
 that buffer*, they all turn solid at once — the boss flashes white as it comes
 apart, and it costs one `rep stosw`. Six explosion objects are copied in over
 the top from `cs:0x194A`.
+
+One flag byte deserves a mention here because it is only ever set by this
+scene. `[0x6E]` is a small set of switches, and the boss setup's
+`or byte [0x6e], 0x82` is the **only** instruction in the program that sets
+bit 1. It is read in exactly one place (file `0x1D28`):
+
+```nasm
+    mov al, byte [0xa4]
+    test byte [0x6e], 2
+    jne keep
+    cmp al, 0xe
+    jle keep
+    mov al, 0xf
+keep:
+    mov byte [bx + 4], al
+```
+
+Outside the boss fight, a spawned object's altitude is capped at 14. During it,
+the cap is lifted to 15. One bit, one unit of height, so the robot's parts can
+sit above everything else — and, being bit 1 of a byte whose bit 7 the same
+instruction also sets, it costs nothing extra to write.
 
 Then state 5 pays out:
 

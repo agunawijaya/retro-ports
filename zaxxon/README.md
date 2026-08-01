@@ -60,13 +60,23 @@ repaints exactly those and clears the marks. Dirty-rectangle rendering, in
 the map was described as a collision grid whose reader had not been found, an
 inference drawn from its writers alone. The correction is kept in place.
 
-**Zaxxon broke three things in the toolkit, and all three are now fixed with
+**Zaxxon broke four things in the toolkit, and all four are now fixed with
 regression tests.** The layout detector gave up at the banner jump; the
-interrupt-handler detector knew only one of the two ways to write a vector; and
-nothing at all could follow a jump through a table, which is how 2,400 bytes of
-this game's routines are reached. Recovery of the code region went 0.1% →
-57.9% → **75.3%** as each was addressed. The fixes and the fixtures live in
+interrupt-handler detector knew only one of the two ways to write a vector;
+nothing could follow a jump through a table, which is how 2,400 bytes of this
+game's routines are reached; and the pass that resolves a call through a
+pointer variable matched only addresses written `0x…`, while this game keeps
+its pointer at `[9]` — which capstone prints without the prefix, so nine
+routines went missing to one character class in a regular expression. Recovery
+of the code region went 0.1% → 57.9% → 75.3% → **75.8%** as each was addressed.
+The fixes and the fixtures live in
 [dos-decompiler](https://github.com/agunawijaya/dos-decompiler).
+
+**Everything is accounted for.** Not "mostly data" — every byte of the code
+region is in one of five buckets, with **zero unexplained**, and all 94 tiles
+are referenced by something. One question remains and no amount of reading
+closes it: whether this file matches what Sega shipped, which needs a second
+copy to compare against.
 
 ## Reconstructing the source
 
@@ -93,10 +103,10 @@ what it found before it starts:
 segments    : 0x0000+ @ base 0x0100, 0x0100+ @ base 0x0000   (detected from the entry stub)
 interrupts  : INT 1Ch -> file 0x00291
 jump tables : cs:0x075e -> 11 targets, 0x008FC..0x01B03; cs:0x1754 -> 4 targets, ...
-instructions: 2,633 disassembled (114 pinned to fixed bytes to preserve encoding)
-bytes as code: 6,335 / 20,736  (30.6% of file)
+instructions: 2,655 disassembled (116 pinned to fixed bytes to preserve encoding)
+bytes as code: 6,382 / 20,736  (30.8% of file)
 code region : 0x0000..0x20DD  (8,413 bytes)
-  recovered : 6,333 bytes as instructions (75.3% of the code region)
+  recovered : 6,380 bytes as instructions (75.8% of the code region)
   data tail : 0x20DD..0x5100 left as data (12,323 bytes)
 BYTE-IDENTICAL
 ```

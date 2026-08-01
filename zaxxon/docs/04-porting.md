@@ -36,7 +36,7 @@ it.
 | | ParaTrooper (1982) | **Zaxxon (1984)** | Hard Hat Mack (1983) |
 |---|---|---|---|
 | File | 16,400 bytes | **20,736** | 42,112 bytes |
-| Instructions recovered | 2,017 | **2,633** | 9,060 |
+| Instructions recovered | 2,017 | **2,655** | 9,060 |
 | Distinct subroutines | 19 | **74** | 222 |
 | Call sites | 38 | **206** | 568 |
 | Absolute data addresses | 47 | **41** | 405 |

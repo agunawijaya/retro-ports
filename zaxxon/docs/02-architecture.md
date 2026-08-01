@@ -56,10 +56,10 @@ number matters more:
 | | |
 |---|---|
 | rebuild | byte-identical, SHA-256 verified independently |
-| instructions recovered | **2,633** |
-| of which pinned to raw bytes to preserve their encoding | 114 |
-| bytes covered by instructions | 6,335 of 20,736 — **30.6% of the file** |
-| code region `0x0000..0x20DD` | 8,413 bytes, **75.3% recovered as instructions** |
+| instructions recovered | **2,655** |
+| of which pinned to raw bytes to preserve their encoding | 116 |
+| bytes covered by instructions | 6,382 of 20,736 — **30.8% of the file** |
+| code region `0x0000..0x20DD` | 8,413 bytes, **75.8% recovered as instructions** |
 | data tail `0x20DD..0x5100` | 12,323 bytes, correctly left as data |
 
 **Quote the second percentage, not the first.** Sixty per cent of this program
@@ -686,7 +686,7 @@ where `jmp word [cs:bp]` goes. About 2,400 bytes of routines are reachable only
 through this table and its two smaller siblings, and without them the recovery
 was 57.9% of the code region. Teaching the toolkit to read such a table — with
 rules strict enough that it *refuses* to read the sprite table above, whose
-first word is a picture rather than a routine — took it to **75.3%**. The rules
+first word is a picture rather than a routine — took it to **75.8%**. The rules
 and their one false positive are documented in the toolkit's
 `comrec.py`.
 
@@ -914,7 +914,7 @@ and the altitude bar, and neither of them is text.
 Two negatives, both established rather than assumed.
 
 **It is not compiled C.** A C compiler of the period opens nearly every
-function with `push bp / mov bp, sp`. There are **zero** such pairs in 2,633
+function with `push bp / mov bp, sp`. There are **zero** such pairs in 2,655
 instructions. This is hand-written assembly, and no amount of work will produce
 C from it. What the reconstruction gives you is assembly that rebuilds the
 original exactly, which is a stronger guarantee but a different thing.
@@ -942,33 +942,71 @@ turned the machine off.
 
 Listed plainly, because a gap stated is worth more than a gap papered over.
 
-1. **24.7% of the code region is not recovered as instructions.** Most of it is
-   demonstrably data — the wave scripts, the velocity tables, the sound tables,
-   the text — but not all of it has been individually accounted for.
-2. **What the 94 tiles are used for individually.** The set has been rendered
-   and two groups identified — the fuel-gauge cells (`0x55`–`0x5D`) and the
-   altitude bar — but most of the rest are only "isometric edge pieces".
-3. **The terrain strip at `cs:0x046B`.** 79 bytes, read as a sliding window two
-   bytes further along for each of 22 rows, which is what builds the diagonal
-   floor edge in the tile map. The mechanism is clear; what each of the values
-   `0x80`–`0x87` draws has not been matched up against the tile sheet.
-4. **Two of the nine per-scene routines called through `[0x0009]`.** Seven are
-   the wall tests, now [traced](03-the-code.md#flying-into-a-wall). The two at
-   file `0x187A` and `0x1B75` belong to the cut scene and the boss and have not
-   been read.
-5. **What sets `[0x6E]` bit 1.** It gates whether the six objects at `DS:0x136`
-   are drawn, and the boss sets it, but the ordinary scenes' use of it is not
-   traced.
-6. **`[si + 0x5C]` in the shot-versus-wall test** (file `0x1EE9`). It reads a
-   byte 92 into the object array from the shot being tested, which is a copy of
-   the player's column made when the shot was fired. Why the offset is 92 and
-   not something derived from the array layout has not been established.
-7. **Whether this file matches the Sega/Datasoft release byte for byte.** It
-   carries a crack-group banner, so at minimum the first 128 bytes are not
-   original. Whether anything else was patched is not knowable from one copy.
+**One thing, and analysis cannot close it.**
 
-Four items that were on this list have been settled since it was first
-written, and each is worth noting for what it says about the method:
+**Whether this file matches what Sega shipped.** It carries a crack group's
+128-byte banner, so at minimum the first 128 bytes are not original.
+
+That much was always going to be true. What can be added is a bound. The file
+contains **no `INT 13h`, `INT 21h`, `INT 24h`, `INT 25h`, `INT 26h` or
+`INT 27h` anywhere in its 20,736 bytes** — checked as byte patterns across the
+whole image, not only the recovered code. So this program never touches a disk
+and never calls DOS, which means **it cannot itself have held a disk-based
+copy-protection check**: there is nothing in it to check with. Whatever the
+group removed was not in this file, and the banner is the only modification the
+file shows any evidence of.
+
+Settling it properly needs a second copy to compare against. That is a fact
+about having one sample, not about how hard anyone looked.
+
+### The rest of the code region, accounted for
+
+The list that used to be here is gone because its items were answered. The one
+that read *"24.7% of the code region is not recovered as instructions"*
+deserves its replacement in full, because *not recovered as instructions* and
+*not explained* are different claims and only the first was ever true:
+
+| | bytes | share of the code region |
+|---|---|---|
+| instructions | 6,380 | 75.8% |
+| instructions written as `db` to preserve their encoding | 237 | 2.8% |
+| data with an instruction that names its address | 1,549 | 18.4% |
+| the crack banner | 126 | 1.5% |
+| two runs of alignment zeros | 121 | 1.4% |
+| **unexplained** | **0** | **0%** |
+
+Every data run of eight bytes or more was resolved by searching the recovered
+source for an instruction naming an address inside it. Two runs looked
+unreferenced and are not: `0x1553..0x155F` and `0x0C13..0x0C1E` are the *tails*
+of tables whose bases sit a few bytes earlier, inside code, and in both cases
+the arithmetic closes exactly on the run's far end — which is what turns a
+guess into a check. The three runs with genuinely nothing pointing at them are
+the banner and two zero-fill gaps, and none of the three is meant to be
+reached.
+
+The 94 tiles are accounted for the same way, by walking every stream that
+references them:
+
+| tiles | | used by |
+|---|---|---|
+| `0x00`–`0x07` | 8 | the terrain strip, and the open-ground sections |
+| `0x08`–`0x1A` | 19 | the six fortress wall sections |
+| `0x1B`–`0x45` | 43 | the boss picture, and nothing else |
+| `0x46`–`0x54` | 15 | the altitude bar — seven of them shared with a wall section |
+| `0x55`–`0x5D` | 9 | the fuel gauge |
+
+**All 94 are referenced; none is dead.** Nearly half the tile set exists for
+one picture, which is the cost of giving the boss a different visual vocabulary
+from the walls.
+
+And the terrain strip resolves to something simpler than it looked. Its 79
+bytes run `0x80 0x80 … 0x82 0x83 0x81 … 0x84 0x85 0x86 0x87 0x80 …`, which are
+**tile numbers 0 to 7 with bit 7 already set** — that is, tiles with the
+"needs redrawing" flag pre-applied, ready to be copied straight into the map.
+Reading a two-byte-further window of it for each of 22 rows is what lays the
+diagonal floor edge.
+
+### And the answers, for what they say about the method
 
 - **The wall collision.** Seven predicates on the player's column and altitude,
   evaluated on the single frame the wall draws level with them, with no
@@ -976,14 +1014,12 @@ written, and each is worth noting for what it says about the method:
   [document three](03-the-code.md#flying-into-a-wall) has the table. It is the
   most surprising thing in the program: the hole you can see and the hole you
   can fly through are separate data with no common source.
-
-- **The scoring rules** are now traced end to end —
+- **The scoring rules** are traced end to end —
   [document three](03-the-code.md#the-score) has the table. The route in was
   not the score routine but the three `Point BONUS` strings, which state the
-  answer in English and let the arithmetic be checked against it.
-- **The boss sequence** is
-  [documented](03-the-code.md#the-boss), including how a 132-byte compressed
-  picture becomes twelve separately destructible pieces.
+  answer in English and let the arithmetic be checked against them.
+- **The boss sequence** is [documented](03-the-code.md#the-boss), including how
+  a 132-byte compressed picture becomes twelve destructible pieces.
 - **The grid at `DS:0x62B2`** was described here as a collision map, marked
   `[inferred]`, with its consumer unidentified. That was wrong, and the
   correction is [above](#how-the-screen-gets-erased): it is the background tile
@@ -992,6 +1028,16 @@ written, and each is worth noting for what it says about the method:
   the failure this repository's method warns about, and it survived because
   "the reader has not been found" felt like an acceptable gap rather than the
   refutation it actually was.
+
+There is a fifth, and it belongs here because it was a tool failure rather than
+a reading failure. Nine routines — every per-scene wall test — sat in the file
+as data because the pass that resolves `call word [var]` matched only addresses
+written `0x…`, and Zaxxon keeps that pointer at `[9]`, which capstone prints
+without the prefix. One character class in one regular expression. The
+disassembler's own branch walk had already been fixed for exactly this quirk
+somewhere else; this pass had not, and nothing in the output distinguished
+"there is nothing there" from "the pattern did not match".
+`tests/com/fixtures/dispatch.asm` now covers it.
 
 ---
 
