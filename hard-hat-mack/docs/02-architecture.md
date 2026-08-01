@@ -438,13 +438,50 @@ restarts each row — was settled: by drawing it.
 
 `recovered/screen-playfield.png` is the result, with nothing placed by hand.
 
+### The build sequence
+
+The girders are one step of a longer list. The routine at file `0x1763` builds
+a whole screen by calling eighteen others in order, each drawing one kind of
+thing:
+
+```nasm
+    call 0x1a51      ; girders   -- five floors x fourteen columns
+    call 0x1ac9      ; ladders   -- sprite 58
+    call 0x1b23      ; footings  -- sprite 0, along the bottom
+    call 0x5950
+    call 0x36e5
+    ...
+    call 0x20e8      ; the text routine
+    ...
+```
+
+Three of those are now decoded end to end, and every position in
+`recovered/screen-playfield.png` comes from them:
+
+| Step | Draws | Rows | Columns | Sprite |
+|---|---|---|---|---|
+| `0x176F` | girder floors | `0x14B9` — 47, 79, 111, 143, 175 | `0x14BF` — 4, 6 … 30 | 27 + map value from `0x70EA` |
+| `0x1772` | ladders | `0x14CD` — 71, 103, 135, 167 | `0x14D1`, `0x14D2` — 8 and 26 | 58 |
+| `0x1775` | footings | `0x14D3` — 191 | `0x14D4` — 6, 14, 20, 28 | 0 |
+
+**A row is a scanline counted from the top**, and the sprite's *bottom* edge
+sits on it — because the blitter indexes the scanline table with the row and
+then steps upward (`dec bp / dec bp`) as it draws. Getting that backwards puts
+the whole building upside down and pushes the footings off the top of the
+screen, which is how it was caught.
+
+The remaining steps use sprite 21 (a machine), 50 (an elevator door), 19 (a
+ramp), 12 (a hoist) and 93 (the Electronic Arts logo) — so this sequence builds
+the title screen, with the playfield behind the credits. Their positions are set
+inline rather than from tables and have not been traced.
+
 ## What is still unknown
 
 Three things, stated plainly:
 
-- **The rest of the level furniture.** The girder floors are decoded; ladders,
-  conveyors, elevators and springboards are drawn by other routines whose
-  tables have not been found.
+- **Five of the eighteen build steps.** The machine, elevator door, ramp and
+  hoist are placed by code rather than by tables, and those placements were not
+  traced. Everything else on the screen is accounted for.
 - **The glyph table.** Text is drawn by the routine at `0x1D86` from records of
   the form `[column, row, characters…, 0x01]`, at seven pixels per cell — but
   the character shapes are not indexed by ASCII into the sprite table, which
