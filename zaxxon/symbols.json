@@ -1,0 +1,90 @@
+{
+  "_about": [
+    "Names for Zaxxon's routines and globals, with the evidence for each.",
+    "",
+    "Addresses are file offsets; a .COM loads at 0x100, so a listing address is",
+    "this plus 0x100. recovered/ is gitignored -- a byte-identical",
+    "reconstruction is the game -- so what is kept is the reading. build.ps1",
+    "applies it and proves the result still rebuilds.",
+    "",
+    "**Not compiled C.** Zero `push bp` prologues, so routines are enumerated by",
+    "call target and probelib.py finds nothing: there is no C runtime here."
+  ],
+  "routines": {
+    "0x005D9": [
+      "draw_cell",
+      "12 callers, no callees -- the leaf everything drawing goes through"
+    ],
+    "0x00222": [
+      "level_step",
+      "5 callers"
+    ],
+    "0x0015E": [
+      "port_write",
+      "the only routine that talks to a port"
+    ],
+    "0x0027A": [
+      "tile_fetch",
+      "4 callers, no callees"
+    ],
+    "0x00600": [
+      "draw_row",
+      "4 callers"
+    ],
+    "0x0018C": [
+      "scene_update",
+      "3 callers, 2 callees"
+    ],
+    "0x00848": [
+      "dispatcher",
+      "the level-script dispatcher; see docs/02-architecture.md"
+    ],
+    "0x01FAD": [
+      "hud_update",
+      "4 callers"
+    ]
+  },
+  "globals": {
+    "0x000B": [
+      "mode",
+      "0, 1, 3 or 5; read by 0x1BA7, written by 0x946 and 0x173E"
+    ],
+    "0x0068": [
+      "draw_flags",
+      "0, 1, 128 or 129 -- a byte with two bits in use"
+    ],
+    "0x006C": [
+      "draw_flag_b",
+      "0 or 1"
+    ],
+    "0x006E": [
+      "draw_flag_c",
+      "0 or 1"
+    ],
+    "0x0070": [
+      "scroll_offset",
+      "0xFFD0 among its values; three routines read it"
+    ],
+    "0x478A": [
+      "section_bitmap",
+      "to 0x628A -- the decompressed wall; see docs/02-architecture.md"
+    ],
+    "0x62B2": [
+      "tile_map",
+      "to 0x669A -- 40 x 25 cells, one byte each"
+    ]
+  },
+  "_unnamed": [
+    "80 routines are reachable by a direct call and 8 are named; 69 globals are",
+    "referenced and 7 are named. That is thin, and honestly so: only five",
+    "globals are referenced eight times or more, and a global referenced twice",
+    "leaves nothing to reason from.",
+    "",
+    "The two large ones carry the game. The tile map and the section bitmap were",
+    "established by rendering, not by reading -- see docs/02-architecture.md --",
+    "which is why they are the only two here with real extents.",
+    "",
+    "What would move this is watching the values change during a run, the way",
+    "Karateka's were. That has not been done here."
+  ]
+}

@@ -25,6 +25,30 @@ There is no port, and porting was deliberately out of scope.
 If a port starts, it goes in `web/` and gets documents 05 and 06, following
 [ParaTrooper](../paratrooper/).
 
+## Source you can rebuild
+
+`recovered/hhm.asm` is correct and is not source. `symbols.json` holds the
+reading — 18 routines and 32 globals, each with the evidence for
+its name — and the toolkit's `annotate.py` applies it.
+
+```powershell
+.uild.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path	o
+asm.exe
+```
+
+Three steps: reconstruct, name, **rebuild and compare**. Names go in as
+`%define`s and label renames only, so NASM emits the bytes it emitted before
+they existed, and the script refuses to report success on anything short of the
+original's SHA-256.
+
+**This game is not compiled C** — zero `push bp` prologues — so routines are
+enumerated by *call target*, not by prologue, and `probelib.py` finds nothing
+in it. There is no C runtime here to identify.
+
+Nothing the build produces may be committed: `recovered/` is gitignored,
+because a byte-identical reconstruction is the game whether or not it has names
+on it.
+
 ## Regenerating
 
 ```powershell

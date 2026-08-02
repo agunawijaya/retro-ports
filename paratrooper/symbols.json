@@ -1,0 +1,90 @@
+{
+  "_about": [
+    "Names for ParaTrooper's routines and globals, with the evidence for each.",
+    "",
+    "Addresses are file offsets; add 0x100 for a listing address. **This file has",
+    "a two-base layout**: data sits at the front and the code region is",
+    "0x2B40..0x4010, so a global's address is lower than the code that uses it.",
+    "comrec finds the split from the entry stub without being told.",
+    "",
+    "**Not compiled C.** Zero prologues; routines are enumerated by call target."
+  ],
+  "routines": {
+    "0x03235": [
+      "draw_sprite",
+      "5 callers, no callees"
+    ],
+    "0x0365C": [
+      "video_setup",
+      "the only routine using INT 10h and INT 16h"
+    ],
+    "0x03E68": [
+      "score_update",
+      "3 callers"
+    ],
+    "0x039B0": [
+      "move_actor",
+      "2 callers"
+    ],
+    "0x03A6A": [
+      "spawn",
+      "2 callers"
+    ]
+  },
+  "globals": {
+    "0x1AB2": [
+      "game_state",
+      "2, 4 or 5; the entry stub sets it and four routines read it"
+    ],
+    "0x1D8F": [
+      "wave",
+      "2 or 4"
+    ],
+    "0x1D9F": [
+      "active_flag",
+      "1 or 0xFFFF"
+    ],
+    "0x1DAC": [
+      "paused",
+      "0 or 1"
+    ],
+    "0x1F57": [
+      "actor_slot",
+      "read by three routines"
+    ],
+    "0x2130": [
+      "landed_left",
+      "paratroopers landed left of the gun, x < 67; see docs/03-the-code.md"
+    ],
+    "0x2131": [
+      "landed_base",
+      "at the gun base, 67 <= x < 83 -- four of these end the game"
+    ],
+    "0x2132": [
+      "landed_right",
+      "right of the gun, x >= 83"
+    ],
+    "0x2AF0": [
+      "sprite_w",
+      "36"
+    ],
+    "0x2AF7": [
+      "sprite_ptr",
+      "13,988"
+    ],
+    "0x2AF9": [
+      "screen_ptr",
+      "8,186 and 8,189 -- offsets into a CGA bank"
+    ]
+  },
+  "_unnamed": [
+    "28 routines are reachable by a direct call and 5 are named; 103 globals are",
+    "referenced and 11 are named. A 16 KB game from 1982 simply has less to say,",
+    "and most of its globals are touched two or three times.",
+    "",
+    "The three landing counters are the exception and they were worth having:",
+    "they are the game's whole losing condition, and they were read out of the",
+    "code rather than guessed -- 0x2131 counts the ones that reach the gun base,",
+    "and four of those end it."
+  ]
+}

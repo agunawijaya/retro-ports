@@ -21,6 +21,30 @@ decision, the port's architecture, the port's code.
 Treat this folder as the reference implementation. When another game asks "what
 should the finished state look like", the answer is here.
 
+## Source you can rebuild
+
+`recovered/paratrooper.asm` is correct and is not source. `symbols.json` holds the
+reading — 5 routines and 11 globals, each with the evidence for
+its name — and the toolkit's `annotate.py` applies it.
+
+```powershell
+.uild.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path	o
+asm.exe
+```
+
+Three steps: reconstruct, name, **rebuild and compare**. Names go in as
+`%define`s and label renames only, so NASM emits the bytes it emitted before
+they existed, and the script refuses to report success on anything short of the
+original's SHA-256.
+
+**This game is not compiled C** — zero `push bp` prologues — so routines are
+enumerated by *call target*, not by prologue, and `probelib.py` finds nothing
+in it. There is no C runtime here to identify.
+
+Nothing the build produces may be committed: `recovered/` is gitignored,
+because a byte-identical reconstruction is the game whether or not it has names
+on it.
+
 ## Regenerating
 
 ```powershell
