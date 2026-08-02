@@ -30,7 +30,7 @@ shorter working reference you come back to.
 | runtime call offsets | **established by differential compilation**, not guessed |
 | game logic as code | **most of the model is out** — miles, food, the health term, the illness die, every store price, 29 `Random` sites, the casualty routine. The health *update* is **not** traced |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
-| the output | `recovered/oregon.asm` — 28,493 instructions, 90.2% of internal branches self-consistent |
+| the output | `recovered/oregon.asm` — 26,935 instructions, **99.8%** of MECC's code region accounted for, 0 phase conflicts |
 | documents | [four](docs/), written from the above |
 
 Five things went back into the toolkit: `unpack.py` now reads LZEXE's stated
@@ -48,9 +48,10 @@ see. That cost this folder three wrong explanations before it was found.
 
 Two files, and the distinction between them matters.
 
-**`recovered/oregon.asm` — the disassembly.** 906 KB, 28,493 instructions,
-every MECC unit labelled, every exported procedure a label, 412 string
-constants resolved inline against their own unit's base, 2,690 runtime calls
+**`recovered/oregon.asm` — the disassembly.** 26,935 instructions,
+every MECC unit labelled, **164 procedure labels** (86 far-called, 78
+inferred from their prologue and marked as such), 416 string
+constants resolved inline against their own unit's base, 2714 runtime calls
 named (`System.RandomReal`, `Dos.FindFirst`). Regenerate with:
 
 ```powershell
@@ -59,21 +60,40 @@ python tools\listing.py --image work\unpacked.exe --units work\units.json `
 ```
 
 ```
-instructions          28,493
-code decoded          75,553 bytes
-data identified       13,014 bytes
-accounted for         88,567 of 89,008 (99.5%)   -- a linear sweep, see below
-internal branches     2,054 land inside decoded code
-on an instruction     1,852 (90.17%)  <- the figure that can fail
-mid-instruction         202
+instructions            26,935
+procedures seeded by prologue  78
+code reached            72,250 bytes
+string data             16,552 bytes
+not reached                259 bytes
+accounted for           88,802 of 89,008 (99.8%)
+phase conflicts              0   <- two paths disagreeing; must be 0
+branch targets           1,740
+landing in a hole            0   (0.00%)
 ```
 
-**Read the second figure, not the first.** Coverage is near 100% for any linear
-sweep whether it is right or wrong, so it measures nothing. What can fail is
-self-consistency: a correct decode has its internal jumps landing on the first
-byte of an instruction. 90.17% do. The 202 that do not are where data sits
-inside the instruction stream, and the listing names them rather than hiding
-them. Raising that number is the obvious next piece of work.
+**It follows control flow; it does not sweep.** An earlier version swept
+linearly, which decodes every byte it is handed whether or not that byte is an
+instruction — so it walked into the string constants, decoded the text, and came
+out of phase. That showed up as 202 branch targets pointing into the middle of
+an instruction. Recursive descent cannot do that, because nothing jumps into
+data.
+
+All three figures can fail, and that is the point of quoting them. Phase
+conflicts and holes are both zero. The 259 bytes not reached are about half
+inter-unit alignment padding; the rest are short string fragments nothing
+references by the usual idiom.
+
+Three things were needed to get from 69% to 99.8%, and each was found by
+watching those counters rather than by guessing:
+
+- the program's own unit is far-called by nobody, so it has **no entry points**
+  and must be seeded from the MZ entry and its begin block;
+- Turbo Pascal 5.0 emits **both** encodings of `mov bp, sp` — `89 E5` (100
+  times) and `8B EC` (84). Seeding on prologues while looking for one of them
+  finds **0** procedures; looking for both finds 78;
+- a **referenced** string address beats any heuristic. Scanning a gap one byte
+  early reads a length of 10 out of the byte before `Please check your disk…`,
+  emits ten plausible characters, and orphans the other thirty.
 
 Like every other game here, `recovered/` is **gitignored** — the listing is
 derived from a copyrighted binary. The tool is committed; its output is not.

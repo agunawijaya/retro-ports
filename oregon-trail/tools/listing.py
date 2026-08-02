@@ -22,14 +22,32 @@ analysis established, applied to every byte:
     unit-to-unit calls become `call Graph:0x1326`;
   * data regions identified as data rather than disassembled into nonsense.
 
-It reports two figures, and only the second one means anything. Coverage --
-how many bytes were decoded -- is near 100% for any linear sweep, correct or
-not, so it measures nothing. What can fail is *self-consistency*: if the decode
-is right, an internal jump or call lands on the first byte of a decoded
-instruction, and if the sweep has drifted out of phase it lands in the middle
-of one. On this program 90.17% of 2,054 internal branches land on a boundary.
-The 202 that do not are where data sits inside the instruction stream, and they
-are named in the listing rather than hidden.
+It follows control flow rather than sweeping linearly, and that is the whole
+difference. A linear sweep decodes every byte it is handed, walks into a string
+constant, decodes the text as instructions and comes out the far side out of
+phase -- which on this program left 202 branch targets pointing into the middle
+of an instruction. Recursive descent never enters data, because nothing jumps
+into it.
+
+Three numbers are reported and all three can fail:
+
+  * **phase conflicts** -- two paths decoding the same byte at different
+    offsets. Zero, or the reading is wrong somewhere.
+  * **branch targets landing in a hole** -- a jump to a byte nothing decoded.
+    Zero, or something is reachable that the walk did not reach.
+  * **bytes not reached** -- the honest remainder. 259 of 89,008 here (0.3%),
+    about half of it inter-unit alignment padding.
+
+Getting there needed three things beyond the walk itself, and each was found by
+watching those numbers rather than by guessing:
+
+  * the program's own unit is far-called by nobody, so it has no entry points
+    to seed from and needs the MZ entry and its begin block;
+  * Turbo Pascal 5.0 emits *both* encodings of `mov bp, sp`, 0x89E5 and 0x8BEC.
+    Seeding on procedure prologues but looking for only one finds 0 of 78;
+  * a referenced string address beats any heuristic. Scanning a gap one byte
+    early reads a length of 10 out of the byte before "Please check your
+    disk...", emits ten plausible characters, and orphans the other thirty.
 
 Usage:
     python listing.py --image work/unpacked.exe --units work/units.json \\
@@ -70,6 +88,11 @@ NAMES = {
     0x151C: "licence", 0x15BB: "genusfont", 0x18DC: "genuspcx",
     0x1DB8: "Dos", 0x1DE9: "Graph", 0x213D: "Crt", 0x219F: "System",
 }
+# `push bp / mov bp, sp`. Turbo Pascal 5.0 emits both encodings of the
+# second instruction -- 0x89E5 and 0x8BEC are the same thing, and this
+# program's entry points use 89E5 100 times and 8BEC 84 times. Looking
+# for only one finds a little over half the procedures.
+PROLOGUES = (bytes((0x55, 0x89, 0xE5)), bytes((0x55, 0x8B, 0xEC)))
 LOAD_BIAS = 0x1000          # unpack.py applied relocations at segment 0x1000
 
 
@@ -79,7 +102,10 @@ def pascal_string(img, at, hi):
     if not (0 <= at < hi):
         return None
     n = img[at]
-    if not (1 <= n <= 200 and at + 1 + n <= hi):
+    # 255, not 200: `string[255]` is legal Pascal and this program uses it.
+    # Capping lower leaves the tail of every long string looking like an
+    # unreached hole, which is what 815 stray bytes turned out to be.
+    if not (1 <= n <= 255 and at + 1 + n <= hi):
         return None
     body = img[at + 1:at + 1 + n]
     if not all(0x20 <= c < 0x7F for c in body):
@@ -113,6 +139,86 @@ def find_data_runs(img, lo, hi):
     return runs
 
 
+# Instructions after which control does not fall through.
+STOPS = {"ret", "retf", "iret", "iretd", "jmp", "ljmp", "hlt"}
+
+
+def walk(img, lo, hi, seeds, barriers=frozenset()):
+    """Recursive descent: decode only what control flow can reach.
+
+    A linear sweep decodes every byte it is handed, so it walks straight into
+    a string constant, decodes it as instructions, and comes out the far side
+    out of phase -- which is what the 202 misaligned branch targets were. Every
+    one of them sat just past a block of text.
+
+    Following the control flow instead means data is never decoded, because
+    nothing jumps into it. The seeds are the far-called entry points the
+    segment scan already recovered, and each direct call or jump found along
+    the way adds another.
+
+    `barriers` are addresses known to be data because something references them
+    as a string constant. Without them a procedure whose last instruction the
+    walker does not recognise as a terminator runs straight on into the text
+    that follows it, decoding the first few bytes as instructions and leaving
+    the rest looking unreachable. The reference idiom gives those boundaries
+    exactly, so they are worth honouring rather than guessing at.
+
+    Returns (instructions by address, phase conflicts). A conflict is two paths
+    decoding the same byte at different offsets, which is the thing that cannot
+    happen if the reading is right -- so it is the number worth watching.
+    """
+    md = Cs(CS_ARCH_X86, CS_MODE_16)
+    insns, owner, conflicts = {}, {}, []
+    work = [s for s in seeds if lo <= s < hi]
+    seen_seed = set(work)
+    while work:
+        at = work.pop()
+        while lo <= at < hi:
+            if at in barriers:
+                break               # this is a string, not the next instruction
+            if at in insns:
+                break                       # already walked from here
+            if at in owner:                 # lands mid-instruction: a conflict
+                conflicts.append((at, owner[at]))
+                break
+            got = next(md.disasm(img[at:min(at + 16, hi)], at), None)
+            if got is None:
+                break
+            insns[at] = got
+            for b in range(at, at + got.size):
+                owner[b] = at
+            mn, op = got.mnemonic, got.op_str
+            if (mn.startswith("j") or mn == "call") and op.startswith("0x"):
+                try:
+                    tgt = int(op, 0)
+                    if lo <= tgt < hi and tgt not in seen_seed:
+                        seen_seed.add(tgt)
+                        work.append(tgt)
+                except ValueError:
+                    pass
+            if mn in STOPS:
+                break
+            at += got.size
+    return insns, conflicts
+
+
+def string_barriers(img, lo, hi):
+    """Addresses this unit's own code names as string constants.
+
+    `bf <off16> 0e 57` -- mov di, offset / push cs / push di. The offset is
+    relative to the unit's own segment base, which is why the segment map has
+    to be right before any of this means anything.
+    """
+    out = set()
+    for i in range(lo, max(lo, hi - 5)):
+        if img[i] != 0xBF or img[i + 3] != 0x0E or img[i + 4] != 0x57:
+            continue
+        at = lo + int.from_bytes(img[i + 1:i + 3], "little")
+        if pascal_string(img, at, hi):
+            out.add(at)
+    return out
+
+
 def name_far(seg, off):
     """`lcall 0x319F:0x0CAA` -> `RandomReal`."""
     real = seg - LOAD_BIAS
@@ -143,7 +249,8 @@ def main():
     md.detail = True
     out = []
     boundaries, branch_targets, decoded_span = set(), set(), set()
-    covered = data_bytes = insn_count = 0
+    code_reached = data_bytes = insn_count = 0
+    unexplained = all_conflicts = prologue_seeded = 0
     total = 0
 
     out.append("; The Oregon Trail (MECC, 1990) -- annotated disassembly")
@@ -168,38 +275,85 @@ def main():
                    f"image {lo:#08x}..{hi:#08x}  {size:,} bytes")
         out.append(f"; ======================================================")
 
-        entries = sorted(set(u.get("procs", [])))
+        entries = set(u.get("procs", []))
+        # The program's own unit is far-called by nobody -- it is entered from
+        # the MZ header -- so the segment scan gives it no entry points at all
+        # and a walk seeded only from that list never enters it. Seed the entry
+        # point and the begin block it falls into.
+        if lo == 0:
+            entries |= {units.get("entry", 0x10A), 0x128}
+        # A unit with an initialization section is entered at offset 0 -- but
+        # only then. Several units start with a string constant instead, and
+        # seeding those decodes text as instructions: 164 phase conflicts, all
+        # of them mine. Seed offset 0 only when it opens like a procedure.
+        if img[lo:lo + 3] in PROLOGUES:
+            entries.add(lo)
+        entries = sorted(entries)
         runs = find_data_runs(img, lo, hi)
-        in_data = lambda a: any(s <= a < e for s, e in runs)
+
+        barriers = string_barriers(img, lo, hi)
+        insns, conflicts = walk(img, lo, hi, entries, barriers)
+
+        # The program's own unit is far-called by nobody, so the segment scan
+        # gives it no entry points and the walk above reaches only what the
+        # begin block calls directly. Most of a 31 KB unit hangs off menu
+        # dispatches the walker cannot follow.
+        #
+        # A Turbo Pascal procedure that has parameters or locals always opens
+        # `push bp / mov bp, sp`. Looking for that signature in the bytes
+        # nothing reached, seeding it, and walking again recovers the rest --
+        # and it is safe to try precisely because a wrong guess shows up
+        # immediately as a phase conflict, which is counted and printed.
+        found = 0
+        inferred_procs = set()
+        while True:
+            extra = []
+            a = lo
+            while a < hi - 3:
+                if a not in insns and img[a:a + 3] in PROLOGUES:
+                    extra.append(a)
+                    a += 3
+                else:
+                    a += 1
+            if not extra:
+                break
+            inferred_procs.update(extra)
+            more, c2 = walk(img, lo, hi, extra, barriers)
+            conflicts += c2
+            new_bytes = {k: v for k, v in more.items() if k not in insns}
+            if not new_bytes:
+                break
+            insns.update(more)
+            found += len(extra)
+        prologue_seeded += found
+
+        all_conflicts += len(conflicts)
+        reached = sum(i.size for i in insns.values())
+        code_reached += reached
+        insn_count += len(insns)
+        for a, ins in insns.items():
+            boundaries.add(a)
+            if (ins.mnemonic.startswith("j") or ins.mnemonic == "call")                     and ins.op_str.startswith("0x"):
+                try:
+                    tgt = int(ins.op_str, 0)
+                    if lo <= tgt < hi:
+                        branch_targets.add(tgt)
+                except ValueError:
+                    pass
 
         at = lo
         while at < hi:
-            run = next((r for r in runs if r[0] <= at < r[1]), None)
-            if run:
-                out.append(f"\n; ---- data, {run[1] - run[0]} bytes")
-                p = at
-                while p < run[1]:
-                    s = pascal_string(img, p, run[1])
-                    if s is None:
-                        p += 1
-                        continue
-                    shown = s.replace("\\", "\\\\").replace("'", "''")
-                    out.append(f"L_{p:05X}:  db {len(s)}, '{shown}'")
-                    p += 1 + len(s)
-                data_bytes += run[1] - at
-                at = run[1]
-                continue
-
-            nxt = min([e for e in entries if e > at] +
-                      [r[0] for r in runs if r[0] > at] + [hi])
-            chunk = img[at:nxt]
-            if at in entries:
-                out.append(f"\nproc_{at:05X}:            ; far-called entry point")
-            pos = at
-            for ins in md.disasm(chunk, at):
+            if at in insns:
+                ins = insns[at]
+                if at in entries:
+                    out.append("")
+                    out.append(f"proc_{at:05X}:            ; far-called entry point")
+                elif at in inferred_procs:
+                    out.append("")
+                    out.append(f"proc_{at:05X}:            ; [inferred] from its "
+                               f"prologue -- nothing far-calls it")
                 note = ""
                 if ins.mnemonic == "lcall" and "," in ins.op_str:
-                    # capstone prints a far target as `0x319f, 0x0caa`
                     try:
                         s16, o16 = ins.op_str.split(", ")
                         nm = name_far(int(s16, 0), int(o16, 0))
@@ -209,60 +363,79 @@ def main():
                         pass
                 elif ins.mnemonic == "mov" and ins.op_str.startswith("di, 0x"):
                     try:
-                        t = lo + int(ins.op_str[4:], 0)
-                        s = pascal_string(img, t, hi)
-                        if s and img[ins.address + 3:ins.address + 5] == b"\x0e\x57":
-                            note = f"      ; '{s[:60]}'"
+                        tv = lo + int(ins.op_str[4:], 0)
+                        sv = pascal_string(img, tv, hi)
+                        if sv and img[at + 3:at + 5] == b"W":
+                            note = f"      ; '{sv[:60]}'"
                     except ValueError:
                         pass
-                out.append(f"  {ins.address:05X}:  {ins.mnemonic:<7} "
-                           f"{ins.op_str}{note}")
-                insn_count += 1
-                boundaries.add(ins.address)
-                for b in range(ins.address, ins.address + ins.size):
-                    decoded_span.add(b)
-                if ins.mnemonic in ("call", "jmp") or ins.mnemonic.startswith("j"):
-                    op = ins.op_str
-                    if op.startswith("0x"):
-                        try:
-                            branch_targets.add(int(op, 0))
-                        except ValueError:
-                            pass
-                pos = ins.address + ins.size
-            covered += pos - at
-            if pos < nxt:
-                out.append(f"; {nxt - pos} bytes not decoded at {pos:#07x}")
-            at = max(nxt, pos)
+                out.append(f"  {at:05X}:  {ins.mnemonic:<7} {ins.op_str}{note}")
+                at += ins.size
+                continue
 
-    # Coverage is nearly meaningless on its own: a linear sweep decodes every
-    # byte it is handed, correctly or not. What can fail is *self-consistency*.
-    # If the decode is right, an internal jump or call lands on the first byte
-    # of a decoded instruction; if the sweep has drifted out of phase, targets
-    # land in the middle of one. That number is a real measurement.
-    aligned = misaligned = 0
-    for tgt in branch_targets:
-        if tgt in boundaries:
-            aligned += 1
-        elif tgt in decoded_span:
-            misaligned += 1
-    checked = aligned + misaligned
+            # Not reached by control flow. Either a string constant, or code
+            # nothing calls -- and the two are worth telling apart.
+            #
+            # A referenced address is authoritative and beats the heuristic.
+            # Without that, a scan starting one byte early reads a length of 10
+            # out of the byte before "Please check your disk...", emits ten
+            # plausible characters, and leaves the other thirty looking like a
+            # hole. Snapping to the next known start fixes a whole class of it.
+            if at not in barriers:
+                nb = min((b for b in barriers if at < b < at + 64), default=None)
+                if nb is not None:
+                    out.append(f"  {at:05X}:  db " +
+                               ", ".join(str(b) for b in img[at:nb]))
+                    data_bytes += nb - at
+                    at = nb
+                    continue
+            s = pascal_string(img, at, hi)
+            if s is not None and (at in barriers or len(s) >= 4):
+                shown = s.replace("\\", "\\\\").replace("'", "''")
+                out.append(f"L_{at:05X}:  db {len(s)}, '{shown}'")
+                data_bytes += 1 + len(s)
+                at += 1 + len(s)
+                continue
+            run = at
+            while run < hi and run not in insns and                     not (pascal_string(img, run, hi) and
+                         len(pascal_string(img, run, hi)) >= 4):
+                run += 1
+            unexplained += run - at
+            out.append(f"; ---- {run - at} bytes not reached from any entry "
+                       f"point, at {at:#07x}")
+            at = run
 
-    accounted = covered + data_bytes
+    # Three numbers, and every one of them can fail.
+    #
+    # Recursive descent does not let a branch target land mid-instruction, so
+    # the old "90.17% aligned" figure is gone rather than improved -- it was
+    # measuring the linear sweep's phase, and there is no sweep now. What
+    # replaces it is stricter: a target that points at a byte nothing reached
+    # is a hole in the reading, and a phase conflict is two paths disagreeing
+    # about where an instruction starts, which cannot happen if this is right.
+    into_hole = sorted(tgt for tgt in branch_targets if tgt not in boundaries)
+    accounted = code_reached + data_bytes
+
     summary = [
         "",
-        "; " + "=" * 54,
-        f"; instructions          {insn_count:,}",
-        f"; code decoded          {covered:,} bytes",
-        f"; data identified       {data_bytes:,} bytes",
-        f"; accounted for         {accounted:,} of {total:,} "
-        f"({100 * accounted / total:.1f}%)   -- a linear sweep; see below",
-        f"; internal branches     {checked:,} land inside decoded code",
-        f"; on an instruction     {aligned:,} ({100 * aligned / max(checked,1):.2f}%)"
-        f"  <- the figure that can fail",
-        f"; mid-instruction       {misaligned:,}",
-        f"; MECC's code region    {total:,} bytes of the {code_end:,}-byte image",
-        "; " + "=" * 54,
+        "; " + "=" * 58,
+        f"; instructions            {insn_count:,}",
+        f"; procedures seeded by prologue  {prologue_seeded:,}",
+        f"; code reached            {code_reached:,} bytes",
+        f"; string data             {data_bytes:,} bytes",
+        f"; not reached             {unexplained:,} bytes",
+        f"; accounted for           {accounted:,} of {total:,} "
+        f"({100 * accounted / total:.1f}%)",
+        "; " + "-" * 58,
+        f"; phase conflicts         {all_conflicts}   "
+        f"(two paths disagreeing -- must be 0)",
+        f"; branch targets          {len(branch_targets):,}",
+        f"; landing in a hole       {len(into_hole)}   "
+        f"({100 * len(into_hole) / max(len(branch_targets), 1):.2f}%)",
+        "; " + "=" * 58,
     ]
+    for h in into_hole[:40]:
+        summary.append(f";   unreached target {h:#07x}")
     out.extend(summary)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text("\n".join(out) + "\n", encoding="ascii",

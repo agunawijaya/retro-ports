@@ -788,17 +788,35 @@ reconstruct what you were never given.
 ### What it does leave behind
 
 Not source, but not nothing. `tools/listing.py` writes
-`recovered/oregon.asm`: 28,493 instructions across MECC's nine units, every
-exported procedure labelled from the far-call graph, 412 string constants
-resolved against their own unit's base, and 2,690 runtime calls named from the
-differential-compilation table.
+`recovered/oregon.asm` by **following control flow** from every known entry
+point: 26,935 instructions across MECC's nine units, procedures labelled from
+the far-call graph, string constants resolved against their own unit's base,
+and runtime calls named from the differential-compilation table.
 
-The figure worth quoting from it is **not** the 99.5% of bytes decoded — a
-linear sweep decodes everything it is handed, right or wrong, so that number
-measures nothing at all. It is that **1,852 of 2,054 internal branch targets
-(90.17%) land on the first byte of a decoded instruction.** A disassembly that
-had drifted out of phase would not do that, and the 202 that miss are exactly
-where data is embedded in the instruction stream.
+Three figures come with it, and every one can fail:
+
+| | |
+|---|---|
+| accounted for | **88,802 of 89,008 bytes (99.8%)** |
+| phase conflicts | **0** — two paths decoding one byte differently |
+| branch targets landing in a hole | **0** of 1,740 |
+
+The first version swept linearly and reported 99.5% coverage, which sounded
+better and meant nothing: a linear sweep decodes every byte it is handed
+whether or not that byte is an instruction. It had walked into the string
+constants, decoded the text as code, and come out of phase — visible as 202
+branch targets pointing into the middle of an instruction. Recursive descent
+cannot do that, because nothing jumps into data.
+
+Getting from 69% to 99.8% took three fixes, each found by watching the
+counters: the program's own unit is far-called by nobody and so has no entry
+points to seed from; Turbo Pascal emits **both** encodings of `mov bp, sp`, so
+seeding on procedure prologues while looking for one of them finds none of the
+78; and a referenced string address has to beat the heuristic, or a scan
+starting one byte early invents a plausible ten-character string and orphans
+the rest of a real one.
+
+The 259 bytes left are about half inter-unit alignment padding.
 
 That is the honest analogue of Zaxxon's byte-identical rebuild: weaker, because
 nothing here re-assembles, but checkable, which is the property that matters.
