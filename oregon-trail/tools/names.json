@@ -1,5 +1,5 @@
 {
-  "0x0000": "main",
+  "0x0000": "menu",
   "0x07b6": "scoring",
   "0x0bea": "topten",
   "0x0c54": "learn",
@@ -13,5 +13,8 @@
   "0x1db8": "Dos",
   "0x1de9": "Graph",
   "0x213d": "Crt",
-  "0x219f": "System"
+  "0x219f": "System",
+  "0x0033": "travel",
+  "0x042d": "rivers",
+  "0x05ed": "hunt"
 }

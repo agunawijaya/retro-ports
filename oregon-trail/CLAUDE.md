@@ -311,17 +311,26 @@ by compiling probes and matching 24-byte routine bodies, not by a table.
 | `System+0x03B5` | `MemAvail` |
 | `System+0x1714` `0x1742` `0x174B` `0x17C3` `0x17F7` `0x17FE` | `Assign`, `Reset`, `Rewrite`, `Close`, `Read`, `Write` |
 
-### The fifteen segments, named
+### The seventeen segments, named
 
-**Corrected.** This said eleven until `tpscan.py` was taught to keep a unit that
-is far-called exactly once at a non-zero offset. Four such units were being
-folded into their neighbour, which is why the store's strings appeared to be
-addressed by nothing — they resolve fine against the base the tool was not
-reporting.
+**Corrected twice.** This said eleven, then fifteen, and is now seventeen. The
+first correction taught `tpscan.py` to keep a unit far-called exactly once at a
+non-zero offset. The second fixed a worse bug: the rescue skipped every
+candidate *below the first kept segment*, and since the program's own unit is
+far-called by nobody and so never kept, that meant no candidate in the first
+31 KB was ever tested. Three units were lost that way, including the whole of
+hunting and the whole of the river crossings.
+
+**Both bugs presented the same way**, and it is worth knowing the symptom: a
+subsystem whose strings appear to be addressed by nothing. Nothing was wrong
+with the store or with hunting. The map was.
 
 | segment | bytes | whose | what |
 |---|---|---|---|
-| `0x00000` | 31,584 | MECC | the program, the menu, the trail |
+| `0x00000` | 816 | MECC | the main menu |
+| `0x00033` | 16,288 | MECC | the travel loop |
+| `0x0042D` | 7,168 | MECC | **the river crossings** |
+| `0x005ED` | 7,312 | MECC | **hunting** |
 | `0x007B6` | 17,216 | MECC | scoring and the ending |
 | `0x00BEA` | 1,696 | MECC | the Oregon Top Ten |
 | `0x00C54` | 2,656 | MECC | "learn about the trail" |

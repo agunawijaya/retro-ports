@@ -1,26 +1,36 @@
 #!/usr/bin/env python3
-"""animate.py -- put the decoded artwork and the recovered rules together.
+"""animate.py -- a sprite test for the decoded artwork. NOT the game's screens.
 
-This is the end-to-end check on the whole decompilation, and it is the only one
-that exercises every part at once. To draw a wagon whose wheels turn it needs:
+Read this before looking at anything it draws.
 
-  * the container format read (`pcxlib.py` walking OTCGA.PCL);
-  * the PCX decoded, at the right bit depth;
-  * the CGA palette resolved from the header's mode flags rather than from its
-    colour map -- the bug the running game caught;
-  * the sprite strip cut into frames, which is a fact about the file nobody
-    documented and which had to be measured;
-  * and the travel rules, so the wagon moves at the speed the game says it
-    moves rather than at whatever looks nice.
+What is recovered from the binary, and can be relied on:
 
-That last point is what makes it evidence rather than decoration. The distance
-per frame is `legRate x (pace + 2) / 2` from image 0x0003C5, so the three paces
-really do come out as 1 : 1.5 : 2, and the food counter really does fall by
-`people x (3 - rations)` a day, from image 0x013D34.
+  * every sprite, decoded from OTCGA.PCL -- the container walked, the PCX
+    decoded, the CGA palette taken from the header's mode flags;
+  * the frame grids, measured from the blank rows and columns of the decoded
+    images. TRAVELOX.PCC really does hold three travel poses whose wheel spokes
+    alternate X, +, X, and two breakdown frames. FLOAT.PCC really does hold a
+    raft, the same raft turning, head-on, and capsized;
+  * the numbers in the caption, which come from the addresses named beside them.
 
-Output goes to `reference/`, which is **gitignored**: these frames are the
-game's own artwork, and a GIF is still the game. The tool is ours and is
-committed; what it draws is not.
+What is **invented here and is not the game**:
+
+  * the layout. Where the wagon sits, where the scenery stands, the ground
+    line, the parallax, the caption box -- all of it is this file's arrangement
+    of the sprites, not the program's.
+
+The distinction matters and was got wrong once. An earlier version of this file
+also composed a *hunting* screen and it was presented as evidence; it was not,
+it was a guess, and the real hunting screen looks nothing like it. That scene
+has been deleted rather than relabelled, because there is no measurement behind
+its layout at all. Drawing the sprites proves the artwork pipeline works. It
+proves nothing whatever about how the game arranges them.
+
+The only honest picture of a real screen in this folder comes from `comrun.py`
+dumping the framebuffer of the program actually running.
+
+Output goes to `reference/`, which is gitignored: these frames are the game's
+own artwork.
 
     python animate.py --pcl original/OTCGA.PCL --out reference
 """
@@ -259,56 +269,6 @@ def strip(frames, path, scale=3):
     sheet.save(path)
 
 
-def hunt_gif(art, out, scale=3, steps=48):
-    """The hunting screen: the hunter aims, the game walks past him.
-
-    HUNTER.PCC holds twenty-four poses in a 4x6 grid -- standing with the rifle
-    shouldered, then aiming through eight directions, then reloading -- and
-    ANIMALS.PCC holds six eight-frame walk cycles, one per animal. Neither
-    layout is written down anywhere; both were measured from the blank rows and
-    columns of the decoded image, which is only possible once the container,
-    the PCX and the CGA palette are all right.
-    """
-    hunters = []
-    for y0, y1 in HUNTER_ROWS:
-        for x0, x1 in HUNTER_COLS:
-            hunters.append(cut(art["HUNTER"], (x0, y0, x1, y1), transparent=0))
-
-    def animal(kind, frame):
-        y0, y1 = ANIMAL_ROWS[kind]
-        x0 = (frame % ANIMAL_COLS) * ANIMAL_W
-        return cut(art["ANIMALS"], (x0, y0, x0 + ANIMAL_W, y1), transparent=0)
-
-    W, H = 320, 150
-    GROUND = H - 18
-    bullets = 100
-    out_frames = []
-    for i in range(steps):
-        canvas = Image.new("RGB", (W, H), (0, 0, 0))
-        d = ImageDraw.Draw(canvas)
-        d.line([(0, GROUND), (W, GROUND)], fill=PAL[1])
-
-        # Two animals crossing at different speeds and depths.
-        buf, bm = animal("buffalo", i // 2)
-        canvas.paste(buf, (W - 30 - (i * 4) % (W + 60), GROUND - buf.height - 26), bm)
-        deer, dm = animal("deer", i // 2 + 3)
-        canvas.paste(deer, (W - 90 - (i * 6) % (W + 90), GROUND - deer.height), dm)
-
-        # The hunter: standing, then swinging through the aiming poses.
-        pose = 0 if i % 16 < 4 else 1 + ((i // 2) % 10)
-        hn, hm = hunters[min(pose, len(hunters) - 1)]
-        canvas.paste(hn, (28, GROUND - hn.height), hm)
-
-        if i % 16 == 6:
-            bullets -= 1
-        hud(canvas, ["Hunting", f"bullets {bullets}"])
-        out_frames.append(canvas.resize((W * scale, H * scale), Image.NEAREST))
-
-    out_frames[0].save(out, save_all=True, append_images=out_frames[1:],
-                       duration=110, loop=0, optimize=False)
-    return len(out_frames)
-
-
 def contact_sheet(gif, out, picks, cols=2, label=True, crop=None, scale=1):
     """A flip-book: chosen frames of an animation, in reading order.
 
@@ -356,7 +316,7 @@ def main():
     outdir = Path(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    want = {"TRAVELOX", "TERRAIN", "FLOAT", "SCENERY", "HUNTER", "ANIMALS"}
+    want = {"TRAVELOX", "TERRAIN", "FLOAT", "SCENERY"}
     art = load(args.pcl, want)
     missing = want - set(art)
     if missing:
@@ -364,7 +324,6 @@ def main():
 
     n1 = wagon_gif(art, outdir / "wagon.gif")
     n2 = river_gif(art, outdir / "river.gif")
-    n6 = hunt_gif(art, outdir / "hunt.gif")
 
     # Filmstrips of the wheel cycle and the crossing, for viewers that show
     # only a GIF's first frame.
@@ -392,8 +351,6 @@ def main():
                        picks={0, 12, 24, 36, 48, 60}, cols=2, scale=0.62)
     n5 = contact_sheet(outdir / "river.gif", outdir / "sheet_river.png",
                        picks={0, 11, 21, 27, 34, 40, 47, 55}, cols=2, scale=0.55)
-    n7 = contact_sheet(outdir / "hunt.gif", outdir / "sheet_hunt.png",
-                       picks={0, 6, 12, 18, 24, 30}, cols=2, scale=0.62)
 
     print(f"wagon.gif        {n1} frames")
     print(f"river.gif        {n2} frames")
@@ -402,8 +359,6 @@ def main():
     print(f"sheet_wheels.png {n3} consecutive frames, wheels only")
     print(f"sheet_travel.png {n4} frames across the journey")
     print(f"sheet_river.png  {n5} frames across the crossing")
-    print(f"hunt.gif         {n6} frames")
-    print(f"sheet_hunt.png   {n7} frames of the hunt")
     print(f"\nwrote to {outdir}/ -- gitignored, this is the game's own artwork")
 
 
