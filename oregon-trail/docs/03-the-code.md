@@ -1677,6 +1677,51 @@ are larger pieces of work than another guess: reverse-engineering the Genus
 library's initialisation, or tracing `ui:0x0D24` well enough to know exactly
 what it does with a key.
 
+### Reading the input routine, and the bug it exposed
+
+`ui:0x0D24` (image `0x11144`) copies the accepted character set to a local,
+clears the destination, and calls the real reader at `0x10FCC`. That one calls
+`Crt.ReadKey` at **`0x11020`** and compares the character against `DS:0x1A0A`,
+the terminator. There are **nine** `ReadKey` call sites in the whole program —
+six in `ui`, one each in `hunt`, `scoring` and `licence` — and that is the
+complete list of places the game takes a keystroke.
+
+Knowing them was not what unstuck it. Building a gate on them was, and only
+after finding this: **`--gate`, `--at` and `--trace-io` were all configured
+after `m.run()`**, so none of them was ever in effect while the game was
+running. They parsed correctly and reported themselves correctly and did
+nothing. Every earlier drive had been sending keys into a mechanism that was
+switched on after the program had finished.
+
+Two more things were needed. Releasing a key only when the program *reads* one
+deadlocks a `repeat until KeyPressed` loop — the poll never sees a key, so the
+read is never reached — so a key is released on the poll as well. And Turbo
+Pascal's `Crt` does not call `INT 16h` to answer `KeyPressed` at all: it
+compares the head and tail pointers of the **BIOS keyboard buffer** at
+`0040:001A` directly, which a harness that only answers the interrupt is
+invisible to.
+
+With those, the game stops sitting on its title screen and plays:
+
+```
+files opened: PRODUCT.PF, CGA.BGI, BIT8X8.GFT, LOGO.004, OTCGA.PCL,
+              HISCORES.REC, JOYCAL.REC, ZOP12.GAM, TOMB.REC, SONGS.TXT
+```
+
+— a saved game, the tombstones and the music — and it arrives at **South Pass,
+13 May 1848**, with the landmark illustration drawn out of `OTCGA.PCL` by the
+program itself.
+
+That last part settles the Genus question from the other side. The container
+lookup works perfectly on the game's own path, so the `--call` failure was
+missing state and nothing else, exactly as the buffer full of instructions
+said.
+
+**And it is still not the hunting screen.** The landmark screens will not take
+a space bar by any of these routes, so hunting remains unreached by driving.
+Eleven attempts now, each recorded. The mechanism is sound and the sequence is
+not found.
+
 So the hunting screen is described here from its code and not shown. That is a
 worse outcome than a picture and a better one than a picture that was invented,
 which is what this folder had before.
