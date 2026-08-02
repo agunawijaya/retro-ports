@@ -333,21 +333,32 @@ its own data segment. **Not a translation and not hand-written: a C program.**
 
 ## What to do next
 
-1. **From the joystick to the reaction flags.** `0x425E` reads the hardware —
-   two `in al, dx` around a counted `loop` — and *nothing calls it directly*.
-   Until that path is traced, how a keypress becomes a move is unread.
-2. **The arms of the pose switch at `0x228B`**, which is where the player's
-   chooser turns input into a move number. A sparse `(case, target)` table at
-   `0x2247` names them; they have not been read.
-3. **What the hit test's stance classes mean.** The tables are dumped and class
-   3 and class 4 return "no hit" from every one of them. That is a fact without
-   an explanation yet.
+**Three items that stood here are closed**, and were left standing after they
+were — read [05-the-fighting.md](docs/05-the-fighting.md) rather than this list
+if the two ever disagree again. The input chain *is* traced, `0x205E` through
+the pose switch to `in al, 0x201`; the pose switch's seventeen cases *are*
+mapped onto eight arms; and the stance classes *do* have an explanation — reach
+16 standing, 12 crouched, and classes 3 and 4 are the recovery frames of `pal05`
+and `pal06`, which nothing can hit. `0x425E` is not the joystick either. It is
+Hercules detection.
+
+What is actually left:
+
+1. **113 globals, of which 94 are referenced twice or fewer.** Two uses cannot
+   tell a flag from a counter. Running the game further than the attract
+   sequence — into a fight a human is losing — would move some of them and is
+   the only thing that would.
+2. **The eight arms of the pose switch, individually.** They are identified and
+   grouped; none has been read line by line.
+3. **The calibration routine** that fills `[0xE197]`–`[0xE19B]`, the stick's
+   bounds. Not traced.
 4. **A container reader in the toolkit**, not in this folder — an index-and-heap
    pair is not Broderbund's invention and the next game may use one.
 5. **The Apple II original** is in `reference/apple-ii/`, six disk images. Now
    that the DOS version is known *not* to be a translation, the comparison is
    more interesting rather than less: two independent implementations of one
    design.
+6. **A port.** Nothing blocks one now; see [04-porting.md](docs/04-porting.md).
 
 ## Before you commit
 
