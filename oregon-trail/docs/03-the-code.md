@@ -1917,6 +1917,71 @@ the field wants none of those. It wants what its own instructions screen says:
 a keypad digit to point, `Enter` to start walking, `Space` to fire, `Escape` to
 stop. `tools/drive-to-hunt.py --play` appends exactly that.
 
+### The field, drawn from the file — which is what should have been done first
+
+Everything above chases a photograph of the program running, and the
+photograph was the wrong deliverable. This repository's own rule is that a
+screen drawn from the file is the claim and the emulator is the referee; the
+hunting screen was pursued the other way round for hours.
+
+It can be drawn from the file, and here is why. **The field is a generator, not
+a picture.** `hunt:0x646A`:
+
+```nasm
+0006470  push 4 / lcall ui:0x007D        ; Random(4)
+0006479  add ax, 5                       ;   + 5   -> five to eight objects
+0006496  mov byte ss:[di-0xFA], 0        ; clear all seventeen slots
+00064B1  add di, 0x364                   ; the region's six permitted kinds
+0006540  push 6 / lcall ui:0x007D        ; Random(6) -- pick one of them
+0006574  call 0x6310                     ; and place it
+```
+
+and `hunt:0x6310` places one by **rejection sampling**:
+
+```nasm
+0006381  mov ax, 0x13E / sub ax, es:[di+5]   ; 318 - width
+000638B  lcall ui:0x007D                     ; x = Random(that)
+00063A9  add ax, x & 1                       ;   nudged even ...
+00063C3  idiv 4 / add x, x mod 4             ;   ... and toward a CGA byte
+00063D4  mov ax, 0xC7 / sub ax, es:[di+7]    ; 199 - height
+00063DF  lcall ui:0x007D                     ; y = Random(that)
+00063FA  call 0x5FF9                         ; overlaps anything placed?
+00063FF  jne 0x6381                          ;   yes -- draw both again
+```
+
+then blits from one of two sheets depending on the slot:
+
+```nasm
+0006407  push [0x1572] / add di, 0x00DA / lcall artwork:0x451   ; hunter.pcc
+0006431  push [0x1576] / add di, 0x013A / lcall artwork:0x451   ; terrain.pcc
+```
+
+Both descriptor tables are `(srcX, srcY, w, h)` with a stride of 8, and both
+are **static in the image** — nothing computes them at run time:
+
+| | | |
+|---|---|---|
+| `DS:0x00DA` | 8 entries | the hunter, 24×26, one per direction — the same eight the keypad names |
+| `DS:0x013A` | 16 entries | the scenery, 24×19 to 40×42, all inside a 320×200 sheet |
+| `DS:0x0364` | 5 × 6 bytes | which kinds each region permits: region 0 is `0 1 2 6 7 8`, region 2 is `3 4 5 12 13 14` |
+
+`tools/render-hunting.py` reads those three tables, walks the same placement
+code, and composes the field out of `terrain.pcc` and `hunter.pcc`. Region 0
+comes out as broadleaf trees and scrub; region 2 as conifers and boulders,
+which is the table doing its job rather than a coincidence.
+
+**What is exact and what is not.** Exact: the tables, the object count 5..8,
+the ranges 318 and 199 and the width subtraction, the even-and-toward-a-byte
+nudge, the rejection test — which uses the same axis-aligned box as
+`hunt:0x5ED0`. Not exact: *which* draw you get. The program seeds Turbo
+Pascal's generator from the clock, so the stream cannot be reproduced without
+the clock it ran under; the LCG is implemented so the distribution and the call
+order are the program's, and only the seed is ours. `--seed` selects a draw.
+
+Not drawn at all: the animals. The mini-game at `hunt:0x72DD` adds them from
+`animals.pcc` into slots 7 and above while it runs, so this is the field as it
+stands the moment hunting begins.
+
 ### Inside the mini-game, as far as it has been read
 
 `0x72DD` is a **nested procedure**: its `[bp+4]` is Turbo Pascal's static link
