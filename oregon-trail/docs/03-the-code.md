@@ -1500,6 +1500,87 @@ and rations decide *how often* something goes wrong, and a flat die decides
 
 
 
+## Hunting, and the river, once their units were found
+
+Both had been listed as unread for a long time, and both turned out to be
+unreadable for the same reason: they are their own units, and the segment scan
+had folded them into their neighbour, so every string they use resolved against
+the wrong base. With the map corrected they read straight off.
+
+### Hunting
+
+`0x005ED0`, 7,312 bytes, one far call from the travel menu at `0x04117` —
+which is the branch taken when you press **8** and are *not* at a landmark. It
+takes no arguments.
+
+```nasm
+0077FF  cmp word [0x1842], 0      ; the bullet count -- no bullets, no hunting
+07859  lcall Graph:0x0B40
+0785E  ... 'terrain.pcc' ...      ; the hunting background
+07868  lcall artwork:0x0390       ;   loaded from the container
+0786E  call 0x628A                ; drawn
+07889  call 0x646A                ; the rest of the setup
+0788C  mov [0x16B2], 0            ; zero the tick counter
+07894  ... 'animals.pcc' ...      ; the animals
+078AE  lcall Dos.SetIntVec        ; install the game's own INT 1Ch handler
+078B4  call 0x72DD                ; ---- the mini-game ----
+078C2  lcall Dos.SetIntVec        ; put DOS's timer back
+078CF  lcall artwork:0x049B       ; free both sheets
+078EB  cmp [bp-0xA], 3
+078F1  ... / 2.0 ... Trunc        ; meat := raw div 2, if raw >= 3
+```
+
+Two things worth pulling out.
+
+**`terrain.pcc` is the hunting background**, not travel scenery — this document
+assumed otherwise while drawing pictures with it, and the load at `0x785E` is
+the correction. And **`[0x16B2]` is the tick counter** that the `INT 1Ch`
+handler increments, zeroed immediately before the mini-game and with the game's
+handler installed only for its duration. The timer traced
+[earlier](#the-clock-which-is-nine-lines-long) exists for this.
+
+The mini-game at `0x72DD` is a **nested procedure**: it takes `[bp+4]`, Turbo
+Pascal's static link, and works on the enclosing routine's locals through
+`ss:[di-0x30]`, `ss:[di-0x56]` and so on. It sets a counter to 5, decrements it
+each pass, and tracks two entities in parallel arrays.
+
+### The river
+
+`0x0042D0`, 7,168 bytes, and it holds all three ways across with five `Random`
+calls between them:
+
+| where | what it decides |
+|---|---|
+| `0x0461F` | fording: stuck in the mud, muddy but not stuck, or rough but not overturned |
+| `0x046AE` | the wagon tips over — and whether anything is lost |
+| `0x046DD` | `Random x 0.3` — how much is lost when it is |
+| `0x04A3F` | floating: *"The wagon tipped over while floating."* |
+| `0x04F18` | the ferry: safely across, *"broke loose from moorings"*, or trouble without loss |
+
+with the refusals stated plainly — *"The river is too deep to ford"*, *"The
+river is too shallow to float across"* — and the ferry's own price, $5.00,
+quoted [earlier](#and-then-the-shopkeeper-simply-tells-you).
+
+### What could not be done
+
+**A photograph of the hunting screen, from the running program.** Four attempts,
+all recorded rather than replaced with a drawing:
+
+- `--call` at a flat offset ran the routine with the wrong `CS`; comrun now
+  takes `SEG:OFF` and pushes a far return frame.
+- With that fixed the routine ran four instructions and returned, correctly:
+  `cmp word [0x1842], 0` with no bullets. comrun now has `--poke`.
+- With 100 bullets poked it runs 200,064 instructions and reaches `0x786E` —
+  the call that draws the terrain — then leaves the image into heap-resident
+  code and faults. Calling into the middle of a program skips state its own
+  path would have set up.
+- Driving the game to the hunting screen by injected keystrokes did not
+  converge in four runs; it gets as far as buying oxen and stops at the store.
+
+So the hunting screen is described here from its code and not shown. That is a
+worse outcome than a picture and a better one than a picture that was invented,
+which is what this folder had before.
+
 ## Where the artwork is loaded from
 
 Not traced in the code — but the file format is fully read, and

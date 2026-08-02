@@ -28,6 +28,8 @@ shorter working reference you come back to.
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
+| hunting | **traced** — `0x005ED0`; `terrain.pcc` is its background, mini-game at `0x72DD`, meat = raw div 2 |
+| river crossings | **traced** — `0x0042D0`; ford, float and ferry, five `Random` sites mapped |
 | game logic as code | **most of the model is out** — miles, food, the health term, the illness die, every store price, 29 `Random` sites, the casualty routine. The health *update* is **not** traced |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | the output | `recovered/oregon.asm` — 26,935 instructions, **99.8%** of MECC's code region accounted for, 0 phase conflicts |
@@ -220,6 +222,9 @@ Image offsets.
 | `0x24156` | the six illnesses: exhaustion, typhoid, cholera, measles, dysentery, a fever |
 | `0x0DE5C` | the store script — every price, in the shopkeeper's dialogue |
 | `0x09DE0` | the pace screen: 8, 12 and 16 hours a day |
+| `0x077F8` | hunting — checks `DS:0x1842` (bullets) first and returns if zero |
+| `0x0628A` | draws the hunting terrain; `0x72DD` is the mini-game (a nested procedure) |
+| `0x04117` | the travel menu's branch to hunting, taken on `8` away from a landmark |
 | `0x0A2BE` | the rations screen |
 | `0x0C0A7` | the health scale: `good\fair\poor\very poor` |
 | `0x0E793` | Matt's General Store and its five departments |
