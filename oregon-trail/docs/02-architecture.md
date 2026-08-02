@@ -761,10 +761,28 @@ the same kind as the next one.
 
 **And here is what fails.** 32,720 bytes — **22.6% of the code** — is the Genus
 Microprogramming library: the PCX loader and the font engine. It is not
-Borland's, it is not MECC's, and it is a commercial product from 1990 that does
-not appear to be archived anywhere. Without `GENUS.TPU` there is no way to
-produce those bytes. You cannot write Pascal that compiles to them, because the
-source was never yours; you cannot link them, because you do not have the unit.
+Borland's, it is not MECC's, and it is a commercial product from 1990. Without
+the units there is no way to produce those bytes. You cannot write Pascal that
+compiles to them, because the source was never yours; you cannot link them,
+because you do not have the unit.
+
+**But the blocker has a name and a version number, and they are in the file.**
+The library signs itself twice, in DGROUP:
+
+```
+0024543  PCX Programmer's Toolkit 3.55 · Christopher A. Howard
+         Copyright (c) Genus Microprogramming, Inc. 1988-89
+00244C1  PCX Text 1.00
+         Copyright (c) Genus Microprogramming, Inc. 1988-89
+```
+
+That converts an open-ended problem into a search with a target: **PCX
+Programmer's Toolkit 3.55** and **PCX Text 1.00**, both Genus Microprogramming,
+both 1988–89. A rebuild needs their Turbo Pascal 5.0 units, and the version
+numbers matter — 3.55 will not be 3.5 or 3.6 byte for byte. Whether a copy
+survives anywhere is a question for a search rather than for the disassembler,
+and it is the *only* thing standing between this reconstruction and a
+byte-identical one.
 
 So the verdict is precise rather than gloomy:
 

@@ -2093,13 +2093,53 @@ cheapest overlap there is, and the one that plays best, because a player reads
 a near miss as the game cheating and a rectangle is generous at the corners.
 
 There are **seventeen** slots, from the bound in the scanner at `0x5FF9`
-(`cmp word [bp-4], 0x10`, and the caller passes `0x11`). Allocation for one
-class starts at slot 7, so 0…6 and 7…16 are two populations sharing one array.
+(`cmp word [bp-4], 0x10`, and the caller passes `0x11`), and they are shared by
+four populations rather than the two an earlier draft claimed. That claim came
+from reading the shot allocator's *starting index* as a boundary, which it is
+not:
+
+| slot | | |
+|---|---|---|
+| `0` | the hunter | `hunt:0x6608` places it, direction `Random(8) − 4` |
+| `1`, `2` | the two animal channels | the spawn loop at `0x7585` runs `1, 2` and stops (`cmp word [bp-2], 2`) |
+| `3` … `10` | the scenery | `hunt:0x6574` places `Random(4) + 5` of them, at `i + 2` |
+| `7` … `16` | the shots | `hunt:0x742E` scans **from** 7 for the first free slot, so in practice 11 and up |
+
+The channel index *is* the object slot: the spawner multiplies `[bp+6]` by 9 at
+`0x70E7` to reach the record, and by 11 at `0x70CE` to reach a parallel
+per-channel structure. So "two channels" and "two animals on screen at once"
+are the same statement.
 
 Drawing is `Line(x, y, x, y + h)` through `Graph:0x1670` — a vertical stroke —
 guarded by `shr al, 1` on the low byte of `+1`, so only every other x draws.
 **[inferred]** that this is a dither rather than an animation phase, on the
 grounds that it keys off the coordinate and not off time.
+
+**How a hunt ends, and what you carry home.** There is exactly one way out.
+The quit flag `ss:[di-0x2FE]` is written twice in the whole unit — cleared at
+`0x668D` on the way in, set at `0x6DEB` — and `0x6DEB` is the `Escape` arm of
+the input handler. One jump leaves the tick loop, at `0x7362`, and it tests
+that flag. **No timer ends a hunt and running out of bullets does not either**,
+which is worth saying because the game is often remembered otherwise.
+
+The meat is then three clamps in a row, at `0x78EB` onward:
+
+```nasm
+00078EB  cmp word [bp-0xA], 3 / jl        ; under three pounds is carried whole
+00078FA  mov cx, 0x82 / System:0x0C60     ; otherwise divide by 2 ...
+0007906  System:0x0C72                    ;   ... and round
+00079AD  cmp word [0x183F], 0x7D0         ; the wagon already holds 2000 lb?
+00079C6  ... 'However, your wagon is full.'
+00079E7  ax = [0x183F] + meat / cmp 0x7D0 ; otherwise clamp to the space left
+0007A2B  ... 'However, your wagon will only hold another '
+0007A59  cmp word [bp-0xA], 0x64 / jle
+0007A5F  mov word [bp-0xA], 0x64          ; and never more than 100 lb
+0007A64  ... 'However, you were only able to carry 100 '
+```
+
+So the famous halving is real but conditional — under three pounds is carried
+whole — and it is bounded twice more, by the hundred-pound carry and by the
+wagon's two thousand, the same 2000 the store quotes.
 
 **How it reads the keypad, which is not where it looks.** The hunt unit's only
 `Crt.ReadKey` is at `0x666C`, and it is another **flush** — `while KeyPressed do
@@ -2597,16 +2637,10 @@ that saves a starving party is gated on a counter that has to be small.
 
 The list is now short, and each item says what would close it.
 
-- **What the two populations in the object array are** — slots 0…6 against
-  7…16. The split is established from the allocator's starting index; what
-  lives in the lower seven is not. Partly answered since: slot 0 is the hunter
-  and the scenery goes into 3 and up, both placed by `hunt:0x6310`, which has
-  exactly two callers. Animals are *not* placed by it.
-- **What ends a hunt besides the Escape key**, and how the meat is carried
-  back. The spawn rate, the species gate and the entry rule are all read; the
-  exit condition is not.
-- **A byte-identical rebuild**, which is blocked for a measured reason rather
-  than an unknown one: 22.6% of the image is a Genus library nobody archived.
+- **A byte-identical rebuild.** Still blocked, but the blocker is now *named*
+  rather than merely measured — see below. 32,720 bytes, 22.6% of the code.
+- **Whether this copy matches what MECC shipped.** The file carries no crack
+  banner and the artwork verifies, but no second copy has been compared.
 
 `prior-attempt/src/` contains a 17-unit Pascal reconstruction covering these
 topics. On the evidence of this document it should be read as a set of
