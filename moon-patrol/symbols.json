@@ -1,0 +1,11 @@
+{
+  "_about": [
+    "Names for Moon Patrol's routines and globals, with the evidence for each.",
+    "",
+    "Empty: nothing has been read yet. See BRIEF.md for what triage found and the order the work is worth doing in.",
+    "",
+    "Routine keys are image offsets, the coordinate comrec's labels use. Global keys are the addresses the program sees. Getting those the wrong way round is the mistake that costs a session, and the only symptom is silence."
+  ],
+  "routines": {},
+  "globals": {}
+}

@@ -27,6 +27,29 @@ paragraphs on, and every name written before that is fixed would be in the
 wrong coordinate — the mistake this project has already paid for twice, whose
 only symptom is silence. Its `CLAUDE.md` has the evidence and the order.
 
+### Seven more, triaged and waiting
+
+Set up on 2026-08-02 with the binary in place, a `build.ps1`, an empty
+`symbols.json`, and a `BRIEF.md` whose numbers were **measured, not guessed**.
+Each brief names the one thing to do first.
+
+| | rebuilds | decoded | the thing to know |
+|---|---|---|---|
+| [championship-boxing](championship-boxing/) | `4A64A595…` | **93.7%** | a 2.5 KB loader plus `BOXING.OVR` and five overlays — a class none of the six belong to |
+| [rampage](rampage/) | `8925744E…` | 34.7% | entry twenty bytes from the end of the image |
+| [dam-busters](dam-busters/) | `D3657960…` | 12.3% | 124 bytes past the load image; the build drops them unless it is told not to |
+| [jungle-hunt](jungle-hunt/) | `ECF3BD75…` | 8.8% | `hunt.com` is a PTL Club **crack loader**; the game is `hunt.ptl` |
+| [moon-patrol](moon-patrol/) | `FF12627C…` | **0.5%** | control leaves the entry almost at once and the walk cannot follow |
+| [alley-cat](alley-cat/) | **no** | — | 9 relocations |
+| [ancient-art-of-war](ancient-art-of-war/) | **no** | 61% flat | 67 relocations, and a declared load image of 12 KB in a 100 KB file |
+
+**The line is relocations.** comrec takes the `.COM` route through an MZ only
+when there are none — one segment, so the image is a flat `.COM` and the header
+goes back on at the end. The two MZ files with zero relocations rebuild exactly;
+the two with relocations do not, and nothing here has ever been reconstructed
+through a relocation-aware path. That is the most valuable missing capability
+in the toolkit, and `knowledge/07-extended-reconstruction.md` has the ladder.
+
 For the other five: every call target, every tail-call entry and every
 bracketed constant in the listing is named or explicitly accounted for, and
 every name carries the evidence for itself. `annotate.py` checks all of that on
