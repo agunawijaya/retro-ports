@@ -1216,9 +1216,31 @@ two on meager, one on bare bones. No table, no fractions — one subtraction.
 0014093  ... + 0.2 when [0x183F] = 0    ; ... and again if the food ran out
 ```
 
-`DS:0x1886` is the party's health, and it is a **badness** score: everything
-above *adds* to it. Travelling harder adds more, eating less adds more, bad
-weather adds more, and running out of food adds a fixed 0.2 a day.
+`DS:0x1886` is the party's health, and it is a **badness** score: the terms
+above push it up. Travelling harder pushes harder, eating less pushes harder,
+bad weather pushes harder.
+
+**And that is as far as this goes — a correction, because the first version of
+this section claimed more.** It said the health update *was*
+
+```
+health += (pace + 1) × 2 × k + rations × 2 + weatherBits + 0.2 a day
+```
+
+and listed it as one of four formulas the simulation runs on. The integer term
+is real and is exactly as shown; what is wrong is the `+=`. That term is stored
+to a local and then becomes **one argument among six** to a longer computation
+at `0x140C2`, which also takes two byte variables at `DS:0x199E` and
+`DS:0x199F`, a second local, and `Real` constants near 0.9 and 0.5. Health is
+multiplied by 0.5 somewhere in there, so it decays as well as accumulates.
+**That computation has not been traced.**
+
+The overclaim was caught by writing the rules out as a program
+([`tools/model.pas`](../tools/model.pas)) and running it: with the simple
+formula, every configuration killed the whole party and *grueling / bare bones
+scored highest*, which is backwards. Prose absorbed the error silently; nine
+lines of Pascal did not. **If a claimed rule can be executed, execute it —
+that is the cheapest review there is.**
 
 That closes the last link. The
 [casualty routine](#one-routine-kills-people-and-it-takes-the-odds-as-an-argument)
@@ -1228,20 +1250,21 @@ runs end to end:
 
 ```mermaid
 flowchart LR
-    P["pace<br/>DS:0x185D"] --> H["health<br/>DS:0x1886"]
-    R["rations<br/>DS:0x185E"] --> H
-    W["weather"] --> H
-    F["food ran out"] --> H
+    P["pace<br/>DS:0x185D"] --> T["health term<br/>(pace+1)x2 + rations x2"]
+    R["rations<br/>DS:0x185E"] --> T
+    W["weather bits"] --> T
+    T --> H["health DS:0x1886<br/><i>update not traced</i>"]
     R --> E["food eaten<br/>people x (3 - rations)"]
-    E --> F
     P --> M["miles today<br/>rate x (pace+2) / 2"]
     H --> D["odds of dying<br/>(health - 2.5) / y"]
     D --> K["the casualty routine<br/>one per party member"]
+    style H fill:#f8d7da,stroke:#842029
 ```
 
 Read it left to right: the two things the player chooses are the only inputs the
-player controls, they meet in a single number, and that number is the argument
-to the routine that kills people. Notice that pace reaches the outcome by **two
+player controls, they meet in a single term, and the number that term feeds is
+the argument to the routine that kills people. **The red box is the one link
+that is not established** — everything either side of it is. Notice that pace reaches the outcome by **two
 separate paths** — it makes you travel further *and* it makes you sicker — which
 is the whole tension of the game expressed in about twenty instructions.
 

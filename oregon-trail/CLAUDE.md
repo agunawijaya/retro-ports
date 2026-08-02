@@ -43,6 +43,29 @@ the vector table rather than by executing `int`, so an emulator with a zeroed
 table sends the program to `0000:0000` without raising anything anyone could
 see. That cost this folder three wrong explanations before it was found.
 
+## The model, which is the closest thing to an output
+
+There is **no `recovered/` folder for this game and there never will be** — no
+`.pas`, no `.asm`. `comrec.py` reconstructs `.COM` files to assembly and this is
+an MZ; no tool here recovers Pascal from object code; and a byte-identical
+rebuild is blocked anyway by 22.6% of the image being a library nobody archived.
+[Document two](docs/02-architecture.md#could-this-be-rebuilt-byte-identically)
+has the measured verdict.
+
+What stands in its place is [`tools/model.pas`](tools/model.pas): every rule
+recovered from the binary, written as Turbo Pascal 5.0 and compiled with the
+game's own compiler. It is **our** code, not MECC's — nothing in it came from
+decompiling anything — and it is committed rather than gitignored for exactly
+that reason.
+
+```powershell
+copy tools\model.pas <workdir>\MODEL.PAS
+& $env:DOSBOX -c "mount c <workdir>" -c "c:" -c "TPC MODEL.PAS" -c "MODEL" -c "exit"
+```
+
+Its value is that it can fail, and it has: see the health formula above. Every
+constant in it is marked `ESTABLISHED` with an address, or `NOT RECOVERED`.
+
 ## Regenerating
 
 ```powershell
@@ -167,13 +190,27 @@ All four established from the code, and each byte is touched only seven times in
 the whole program:
 
 ```
-miles today      = legRate x (pace + 2) / 2        ; 1 : 1.5 : 2
-food eaten       = people x (3 - rations)          ; 3, 2 or 1 lb each
-health          += (pace + 1) x 2 x k + rations x 2 + weatherBits
-                   + 0.2 a day once the food runs out
-odds of dying    = (health - 2.5) / y              ; per party member
-which illness    = Random(6) + 3                   ; flat, no weighting
+miles today      = legRate x (pace + 2) / 2        ; 1 : 1.5 : 2   ESTABLISHED
+food eaten       = people x (3 - rations)          ; 3, 2 or 1 lb  ESTABLISHED
+health term      = (pace + 1) x 2 + rations x 2 + weatherBits      ESTABLISHED
+health           = ??? (that term is one of six inputs)            NOT TRACED
+odds of dying    = (health - 2.5) / y                              2.5 is real
+which illness    = Random(6) + 3                   ; flat          ESTABLISHED
 ```
+
+**Read the right-hand column.** An earlier version of this file wrote the third
+and fourth lines as a single `health += ...` and called it established. It is
+not: the integer term is real, but it is stored to a local and becomes one
+argument among six to a computation at image `0x140C2` that also takes
+`DS:0x199E`, `DS:0x199F`, a second local and `Real` constants near 0.9 and 0.5,
+and multiplies health by 0.5 somewhere in there. Health decays as well as
+accumulates.
+
+That was caught by [`tools/model.pas`](tools/model.pas) — the rules written out
+as Turbo Pascal and run. With the simple formula every configuration wiped out
+the party and grueling/bare-bones scored *highest*. **Run the model before
+trusting a rule in these documents;** it is thirty seconds and it has already
+found one wrong claim.
 
 **The illness table is indexed from a base that points 33 bytes before it.**
 Searching for `DS:0x0CD6` finds nothing, and that is not a hiding place — it is
