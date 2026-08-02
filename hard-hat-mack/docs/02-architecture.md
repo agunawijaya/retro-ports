@@ -979,19 +979,33 @@ is what turns these into game screens.
 
 Two things, and both are smaller than the five that used to be here.
 
-- **Precision, not recall.** The static reading predicts 71 drawing calls on
-  Level 1 where the program makes 49; it lights 20% more pixels than the game
-  does. The walk follows every call and cannot know which branch the program
-  takes, and some drawing routines set no position of their own — `0x2A03`
-  reads the column and row variables and draws at whatever is already there —
-  so the walk hands them whatever it last computed. This is the part that is a
-  limit of reading without executing.
+- **Precision, not recall.** Recall is 90%, 83% and 76% by level; precision
+  is 63%, 77% and 53%. The reading finds placements the program does not make,
+  because the walk follows every call and cannot know which branch is taken,
+  and because some drawing routines set no position of their own — `0x2A03`
+  reads the column and row variables and draws at whatever is already there,
+  so the walk hands them whatever it last computed on a path the program may
+  never follow.
 
-- **The two bytes at file `0x0001`.** The program's first instruction jumps
-  over `FF FC`, and **nothing in the program ever reads them** — checked, zero
-  references to addresses `0x100`–`0x103`. What they meant is not recoverable
-  from this file; it would take the loader or the build tool that put them
-  there.
+  This is the one thing here that is a limit of reading without executing
+  rather than a defect. It is bounded and it is measured: `verify-screens.py`
+  lists every invented placement by value, and twelve of Level 1's twenty-six
+  come from one call site the program does not reach while building a level.
+
+- ~~**The two bytes at file `0x0001`.**~~ **Settled, and the entry that used
+  to be here was wrong three times over.** The bytes an `EB 02` jumps over are
+  at offsets `0x0002` and `0x0003`, not `0x0001` and `0x0002`; they are
+  `90 FF`, not `FF FC` (`FC FA` is the `cld / cli` the entry proper begins
+  with); and address `0x0103` — which is file offset `0x0003` — is
+  `exit_allowed`. The keyboard interrupt tests it on every keypress, `test
+  byte [cs:0x103], 0xff`, before it will let Ctrl-Q return to DOS.
+
+  So the `90` is the padding an assembler leaves after a short jump, and the
+  `FF` beside it is a variable the program put in that padding. The claim that
+  "nothing in the program ever reads them" was checked against addresses
+  `0x100`–`0x103` in the *bare* form, and this one is only ever read through
+  `CS` — the interrupt cannot trust `DS`. A search that does not model the
+  segment prefix finds nothing and reports it as an absence.
 
 ### What used to be here, and what closed it
 

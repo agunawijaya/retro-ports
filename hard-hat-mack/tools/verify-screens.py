@@ -7,17 +7,23 @@ produced the *right* one. It once read 100% while a fourteen-girder floor came
 out as a diagonal staircase.
 
 This is the referee. It runs the game under the toolkit's `comrun.py`, hooks
-the four routines that put anything on screen, and records what each call was
-actually given:
+the routines that put anything on screen, and records what each was actually
+given:
 
     place_sprite   0x0217   one shape at (place_col x 7, place_row)
-    place_pair     0x0268   erase the old cell, draw the new
+    place_pair     0x0268   two: the cell being erased, then the new one
     place_pair_x7  0x02B1   the same at the seven-pixel column scale
     fill_line      0x01C8   a run of pixels, no sprite
 
 Then it asks the static extractor for the same list and reports the difference
-by value: which placements the reading missed, and which it invented. A pixel
-diff says a screen is 92% right; this says which three calls are wrong.
+by value. A pixel diff says a screen is 93% right; this says which calls are
+wrong, and that is what makes them fixable.
+
+**On units.** A `place_pair` call is two placements, not one -- it erases the
+previous cell and draws the new one, from two separate variable triples, and
+the extractor emits both. Counting the call as one placement made the reading
+look like it had invented twenty sprites per screen that it had not. When two
+measurements disagree, suspect the measurements first.
 
     python tools/verify-screens.py --toolkit ../../dos-decompiler \\
         --nasm C:/path/to/nasm.exe
@@ -36,18 +42,22 @@ HERE = Path(__file__).resolve().parent.parent
 BUILDERS = [("Level 1", 0x14D8), ("Level 2", 0x1763), ("Level 3", 0x1627)]
 MAIN = 0x0A81                    # where start-up hands over; the state is ready
 PLACE_SPRITE, PLACE_PAIR, PLACE_PAIR7, FILL_LINE = 0x0217, 0x0268, 0x02B1, 0x01C8
-PLACE_COL, PLACE_ROW, SHAPE_SEL = 0x6D9B, 0x6D9C, 0x6D97
+
+# The two triples place_pair reads, in the order it reads them: the cell it is
+# about to erase, then the cell it is about to draw.
+PAIR_TRIPLES = [(0x6D9D, 0x6D9E, 0x6D99), (0x6D9B, 0x6D9C, 0x6D97)]
+SPRITE_TRIPLE = (0x6D9B, 0x6D9C, 0x6D97)
 FILL_BLOCK = (0x15A0, 0x15A1, 0x15A2, 0x15A3, 0x15B1)
 FILLERS = {FILL_LINE: FILL_BLOCK}
 
 
 def entry(sel):
-    """shape_lookup's index: 2 * ((sel & 0xFF) + (sel >> 8)), halved to a slot."""
+    """shape_lookup's slot: the two bytes of the selector added together."""
     return (sel & 0xFF) + (sel >> 8)
 
 
 def observe(comrun, image, builder):
-    """Every drawing call the program makes while it builds one screen."""
+    """Every placement the program makes while it builds one screen."""
     from unicorn import UC_HOOK_CODE
     m = comrun.Machine(image)
     m.stop_off, m.stop_after = MAIN, 1
@@ -69,9 +79,10 @@ def observe(comrun, image, builder):
             return
         if kind == "fill":
             seen.append(("fill",) + tuple(rd(a) for a in FILL_BLOCK))
-        else:
-            seen.append((kind, rd(PLACE_COL), rd(PLACE_ROW),
-                         entry(rd(SHAPE_SEL, 2))))
+            return
+        triples = PAIR_TRIPLES if kind in ("pair", "pair7") else [SPRITE_TRIPLE]
+        for col, row, sel in triples:
+            seen.append(("place", rd(col), rd(row), entry(rd(sel, 2))))
 
     h = m.uc.hook_add(UC_HOOK_CODE, hook)
     m.call(builder)
@@ -83,7 +94,10 @@ def predicted(placements, rec, drawers, builder):
     ex = placements.Extractor(rec, drawers, fillers=FILLERS)
     out = []
     for sel, col, row, scale in ex.walk(builder):
-        out.append(("sprite" if scale == 7 else "pair", col, row, entry(sel)))
+        # Which routine drew it says nothing about the picture, and two of the
+        # three use the same column scale anyway -- so the kind is not part of
+        # the comparison. Position and shape are.
+        out.append(("place", col, row, entry(sel)))
     for r in ex.runs:
         out.append(("fill", r.col0, r.col1, r.row0, r.row1,
                     1 if r.step == 2 else 0))
@@ -110,24 +124,24 @@ def main():
     rec = placements.load(a.com, a.nasm)
     drawers = placements.find_drawers(rec)
 
-    total_hit = total_real = 0
+    total_hit = total_real = total_pred = 0
     for name, builder in BUILDERS:
         real = observe(comrun, image, builder)
         pred, (got, reached, _) = predicted(placements, rec, drawers, builder)
 
-        # Compare as multisets: a screen is a bag of drawing calls, and the
-        # order they happen in is the program's business, not the reading's.
+        # Multisets: a screen is a bag of placements, and the order the program
+        # makes them in is its business, not the reading's.
         cr, cp = Counter(real), Counter(pred)
         hit = sum((cr & cp).values())
         missed, extra = cr - cp, cp - cr
         total_hit += hit
         total_real += sum(cr.values())
+        total_pred += sum(cp.values())
         print(f"\n{name}")
-        print(f"  the program makes {sum(cr.values()):>4} drawing calls "
-              f"({len(cr)} distinct)")
-        print(f"  the reading finds {sum(cp.values()):>4}, of which "
-              f"{hit} match  --  {hit*100//max(1,sum(cr.values()))}%")
-        print(f"  static coverage metric says {got}/{reached}")
+        print(f"  the program makes {sum(cr.values()):>4} placements")
+        print(f"  the reading finds {sum(cp.values()):>4}, of which {hit} match")
+        print(f"    recall    {hit*100//max(1,sum(cr.values())):>3}%"
+              f"   precision {hit*100//max(1,sum(cp.values())):>3}%")
         if missed:
             print(f"  missed ({sum(missed.values())}):")
             for k, n in list(missed.items())[:a.show]:
@@ -136,8 +150,9 @@ def main():
             print(f"  invented ({sum(extra.values())}):")
             for k, n in list(extra.items())[:a.show]:
                 print(f"     x{n}  {k}")
-    print(f"\noverall: {total_hit} of {total_real} drawing calls reproduced "
-          f"from the file alone -- {total_hit*100//max(1,total_real)}%")
+    print(f"\noverall: {total_hit} of {total_real} placements reproduced from "
+          f"the file alone -- recall {total_hit*100//max(1,total_real)}%, "
+          f"precision {total_hit*100//max(1,total_pred)}%")
 
 
 main()

@@ -1146,7 +1146,7 @@
   "globals": {
     "0x0103": [
       "exit_allowed",
-      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
+      "the byte at file offset 3, in the space an `EB 02` jump left over. The keyboard interrupt tests it -- `test byte [cs:0x103], 0xff` -- before it will let Ctrl-Q return to DOS. Reached only through CS, which is why the bare form has no named reader"
     ],
     "0x0171": [
       "keyboard_isr_offset",
