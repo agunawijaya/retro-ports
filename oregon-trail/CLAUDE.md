@@ -21,7 +21,7 @@ shorter working reference you come back to.
 | compiler | **Turbo Pascal 5.0** — matched against Borland's own `TURBO.TPL` |
 | `prior-attempt/src/` | **tested: it is not the original source** — needs TP 6.0/7.0 syntax |
 | module structure | **done** — 11 segments, all named, third-party split measured |
-| artwork | **done** — 58 of 58 images decoded and rendered |
+| artwork | **done and verified against the running game** — LOGO.004 matches the drawn frame 17,600/17,600 pixels |
 | data files | **done** — `DIALOGS.REC` is 51 records of 286 bytes, exactly |
 | the trail | **done** — 17 landmarks, distances and map coordinates, at `0x23D32` |
 | the prior attempt's protection claim | **tested: address right, meaning wrong** |
@@ -29,6 +29,7 @@ shorter working reference you come back to.
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
 | game logic as code | **not read** — the routines in `0x00000` and `0x007B6` |
+| byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | documents | [four](docs/), written from the above |
 
 Five things went back into the toolkit: `unpack.py` now reads LZEXE's stated
@@ -264,10 +265,10 @@ lines of Pascal, and it recovered every message quoted in the documents.
    the joystick will be, and none of it has been looked at.
 3. **What the second `GetDate`/`GetTime` pair is for.** One pair belongs to the
    licence lease; the other does not.
-4. **An oracle for the artwork.** `comrun.py` now gets this program through
-   both checks and into `CGA.BGI` and `BIT8X8.GFT`, then faults 1.16 million
-   instructions in. Until that is chased down the artwork is still checked by
-   size-field agreement and by looking, not against a running frame.
+4. **Nothing, on the artwork.** `comrun.py` now runs this program to its
+   title screen, and `LOGO.004` decodes to exactly what the game draws — all
+   17,600 pixels. Later screens have not been compared; the way to do it is
+   `--keys` to get past the title and `--png` again.
 
 **Do not repeat these.** The memory check at `0x14BF3` cannot be provoked — the
 ladder is in [document three](docs/03-the-code.md#and-the-check-can-never-fire),

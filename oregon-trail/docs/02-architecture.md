@@ -20,6 +20,7 @@ unknown](#what-is-still-unknown) is listed at the end rather than papered over.
 - [The check that is not copy protection](#the-check-that-is-not-copy-protection)
 - [The protection that is](#the-protection-that-is)
 - [Running it, at last](#running-it-at-last)
+- [Could this be rebuilt byte-identically?](#could-this-be-rebuilt-byte-identically)
 - [What changed between 1983 and 1990](#what-changed-between-1983-and-1990)
 - [What is still unknown](#what-is-still-unknown)
 
@@ -637,8 +638,83 @@ start-up: 1,160,710 instructions, stopped: fault
 
 The licence check passes, the memory check passes, the exit handler is
 installed, and the program is loading its graphics driver and its font and
-programming the CRTC. It still dies later, and that is a limit of the emulator
-rather than a decision by the program.
+programming the CRTC. It still died later — and that turned out to be the
+emulator for a **fourth** time.
+
+### The fourth cause, and the screen at the end of it
+
+"Invalid instruction" with no address is not a diagnosis, so the first fix was
+to make the emulator say where: the faulting `CS:IP`, the bytes there, and a
+ring of recent addresses reported as *the last instructions still inside the
+image*. That printed one useful line:
+
+```
+left the image after 0x16d02
+```
+
+`0x16D02` is a `retf 8` in the Genus font unit, at the end of the routine that
+loads `BIT8X8.GFT` and closes the file. A `retf` returning to nowhere means the
+stack was overwritten, and the culprit was the harness again: `comrun.py` handed
+out DOS memory starting at paragraph `0x4000`. That is fine for a `.COM` under
+64 KB, which is all it had ever been asked for. This program unpacks to 201 KB,
+so **DOS was giving the font library a buffer inside the program's own memory**,
+and the damage only surfaced 1.16 million instructions later.
+
+Allocating above the image instead, the program runs to its title screen:
+
+```
+start-up: 20,000,000 instructions, stopped: budget exhausted
+  interrupts requested: 10h, 16h, 21h
+  files opened: PRODUCT.PF, CGA.BGI, BIT8X8.GFT, LOGO.004,
+                OTCGA.PCL, HISCORES.REC, JOYCAL.REC
+```
+
+It opens the logo, the CGA artwork container, the high scores and the joystick
+calibration, then waits on `INT 16h` for a key. And the frame it drew says:
+
+```
+                      The Oregon Trail
+                        Version 2.1
+
+                      [ the MECC logo ]
+
+              Copyright 1988-1991, MECC
+```
+
+That last line is worth pausing on. **It is not in the program.** `Copyright
+1988-1991, MECC` sits at offset `0x016` of `PRODUCT.PF`, and the game prints it
+out of the licence file — which independently confirms the record decoding in
+[document three](03-the-code.md#the-record-and-how-its-fields-were-confirmed)
+from an entirely different direction.
+
+### The artwork, checked against the game rather than against itself
+
+This is what running it was for. Decoding a picture and looking at it tells you
+the decode is *plausible*. Comparing it against the frame the program drew turns
+that into a number.
+
+`LOGO.004` is a bare PCX, 320×55, two bits per pixel. Laid over the framebuffer
+at offset `(0, 75)`:
+
+**17,600 of 17,600 pixels identical.** Every one.
+
+It did not start there. The first comparison scored 40%, and the reason was a
+bug — in the toolkit, not in the game. A PCX header has room for sixteen RGB
+triples, so reading the first four as a palette looks obviously right. For a
+CGA image it is wrong: ZSoft reused those bytes, and only the *first* entry is a
+colour — the background — while the second entry's red byte carries mode flags,
+bit 6 selecting which of the two CGA palettes applies. `LOGO.004`'s map reads
+black, dark red, black, black, so three of the four indices rendered
+identically and the MECC wordmark vanished into its own background.
+
+The *indices* had been right the whole time. Rendered as CGA palette 1 the
+extraction matches the screen in RGB, exactly, with no adjustment — and all 29
+images in `OTCGA.PCL` gain their fourth colour, not just the logo.
+
+**That is the whole argument for having an emulator.** A static decoder can
+count what it failed to explain; it cannot tell you that what it *did* explain
+is wrong. Twenty-nine pictures looked fine for weeks with a quarter of their
+palette collapsed, and nothing but the running game was going to say so.
 
 Every individual observation in the original section still holds: the entry
 point, the initialiser order, the segment identities, and the fact that control
@@ -648,6 +724,62 @@ adopting a plausible cause that fitted the symptom and had not been tested.
 hazard of using one as evidence, and the reason the original caveat — no disk,
 no network, no real DOS — should have been followed up rather than merely
 noted.
+
+## Could this be rebuilt byte-identically?
+
+The brief asked for a verdict either way, so here it is: **no — and the reason
+is not the compiler.**
+
+Every other game in this repository was reconstructed to a byte-identical copy,
+which is the strongest possible proof that the reading is right: if your source
+assembles to the same bytes, you did not misunderstand anything. It is worth
+knowing exactly which link in that chain fails here, because three of the four
+hold.
+
+**The compiler is deterministic.** Compiling the same source twice with Turbo
+Pascal 5.0 under DOSBox-X gives the same SHA-256 — no timestamp, no build
+counter, nothing embedded that varies:
+
+```
+D1.EXE  e34e6e1413b32a3adacffffb8ef911d520d20ad1341e0495d7e6ae228e7412a9
+D2.EXE  e34e6e1413b32a3adacffffb8ef911d520d20ad1341e0495d7e6ae228e7412a9
+```
+
+**Borland's part can be reproduced exactly.** The
+[differential compilation](03-the-code.md#naming-runtime-calls-by-compiling-something-else)
+that named the runtime calls did more than label them: adding `DiskFree` and
+`DiskSize` to a probe reproduced the game's `Dos` segment layout *exactly*, all
+fourteen offsets. That is byte-level agreement with 22,784 bytes of the program.
+
+**The packing is reproducible in principle.** LZEXE 0.91 is a program, and a
+findable one. Untested here, and it would have to be, but it is not a barrier of
+the same kind as the next one.
+
+**And here is what fails.** 32,720 bytes — **22.6% of the code** — is the Genus
+Microprogramming library: the PCX loader and the font engine. It is not
+Borland's, it is not MECC's, and it is a commercial product from 1990 that does
+not appear to be archived anywhere. Without `GENUS.TPU` there is no way to
+produce those bytes. You cannot write Pascal that compiles to them, because the
+source was never yours; you cannot link them, because you do not have the unit.
+
+So the verdict is precise rather than gloomy:
+
+| | bytes | reproducible? |
+|---|---|---|
+| MECC's own code | 89,008 | in principle, given correct source |
+| Borland's units | 22,784 | **yes, demonstrated** |
+| Genus's library | 32,720 | **no — the library is not archived** |
+
+**A byte-identical rebuild is blocked by a missing third-party library, not by
+anything about Pascal.** That is a different answer from "compiled code cannot
+be reconstructed", and a more useful one: it says the technique works and the
+inputs are incomplete. If a copy of the Genus PCX Programmer's Toolkit ever
+surfaces, this becomes a large but ordinary job.
+
+It also explains why this game was never going to end like Zaxxon. Zaxxon is
+20,736 bytes of one person's assembly, and every byte of it was theirs to
+account for. This program is 38.4% other people's code, and you cannot
+reconstruct what you were never given.
 
 ## What changed between 1983 and 1990
 
