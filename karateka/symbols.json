@@ -335,6 +335,42 @@
     "0x4A91": [
       "stdio_flush",
       "the only unnamed routine that touches the FILE table fopen walks"
+    ],
+    "0x56DE": [
+      "strcpy",
+      "copies until NUL, n ignored; called with strcat from load_sprite_set to build \"ks0\"+\".dat\""
+    ],
+    "0x5B9C": [
+      "strcat",
+      "the four call sites pair with strcpy's, one per name built"
+    ],
+    "0x66B9": [
+      "strlen",
+      "5 for \"hello\", 3 for \"abc\", 0 for \"\"; strcat's helper"
+    ],
+    "0x6AF4": [
+      "strcmp",
+      "sign correct on four pairs; a third argument changes nothing"
+    ],
+    "0x5B2E": [
+      "strncmp",
+      "respects n and stops at NUL; called from compile_line to match the command names"
+    ],
+    "0x5706": [
+      "bounded_strcpy",
+      "copies until NUL but no further than n, and NUL-terminates; not quite the strncpy contract, which pads to n. Nothing calls it."
+    ],
+    "0x6810": [
+      "malloc",
+      "non-overlapping blocks, refuses 0xF000, grows downward"
+    ],
+    "0x4C73": [
+      "alloc_up",
+      "the same contract growing upward; linked but never called"
+    ],
+    "0x6766": [
+      "strncmp_unused",
+      "respects n and stops at NUL, as 0x5B2E does; nothing calls it"
     ]
   },
   "globals": {
@@ -552,22 +588,21 @@
     ]
   },
   "_unnamed": [
-    "80 of Karateka's 120 routines are named above. Every routine that touches a",
-    "game global is one of them; the game side is finished.",
+    "90 of Karateka's 120 routines are named above. Every game routine is one of",
+    "them, and so is every library routine whose behaviour a probe could pin down.",
     "",
-    "The remaining 40 are Lattice C's library -- formatted output, memory, maths.",
-    "They were separated from game code mechanically, not by address range: a",
-    "routine is library here if it touches no global this project named from the",
-    "fight, the drawing or the scripts, and reaches DOS only through the twelve",
-    "primitives above or through other routines that do.",
+    "The library ones were not read -- they were *called*. tools/probe-library.py",
+    "pushes what strlen would take and checks that 5 comes back for \"hello\", 3",
+    "for \"abc\" and 0 for \"\". A probe can fail, which a resemblance cannot, and",
+    "two of the first round's answers were wrong until the probes were tightened:",
+    "six routines passed a malloc test that any counter passes, and a stricmp",
+    "reading was an artefact of leaving the third argument as stack garbage.",
     "",
-    "They are deliberately not named. Their shapes do not discriminate -- no FILE",
-    "pointers, no format-string walks, no divides -- so any name would be a guess,",
-    "and a guess with no evidence beside it is exactly what this project has had",
-    "to withdraw three times. libscan.py would name them in minutes given a copy",
-    "of Lattice C 2.1, and there is none on this machine.",
-    "",
-    "That is the honest end of the reading: the game is read, the library is",
-    "identified as library, and the boundary between them was drawn by evidence."
+    "The remaining 30 are Lattice C's formatted output and its internal helpers.",
+    "They have no standard signature to probe against -- printf's inner formatter",
+    "takes a state block, not arguments a specification names -- so they stay",
+    "unnamed. That is a different statement from the earlier one: it is not that",
+    "the library cannot be identified without a copy of it, but that these",
+    "particular thirty have no contract to test."
   ]
 }
