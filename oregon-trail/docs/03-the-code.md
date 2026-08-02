@@ -1220,8 +1220,51 @@ two on meager, one on bare bones. No table, no fractions — one subtraction.
 above push it up. Travelling harder pushes harder, eating less pushes harder,
 bad weather pushes harder.
 
-**And that is as far as this goes — a correction, because the first version of
-this section claimed more.** It said the health update *was*
+**The update itself, which took two attempts to read.** It is at `0x14055`,
+and it is smaller than expected:
+
+```nasm
+0014055  mov ax, [0x1886]          ; health, a 6-byte Real
+0014060  mov cx, 0x0080            ;   0.5
+0014067  lcall System.RealMul      ; temp := health x 0.5
+0014075  mov ax, [bp-0xE]          ; a Real computed earlier this day
+001407E  mov cx, 0x0080            ;   0.5
+0014085  lcall System.RealCmp
+001408A  ja  0014093               ;   > 0.5 -> the bad branch
+001408C  cmp word [0x183F], 0      ; or the food ran out
+0014091  jne 00140B5
+0014093  mov ax, [0x1886]
+001409E  mov cx, 0xCD80 / si, 0xCCCC / di, 0x4CCC    ; 0.2
+00140A7  lcall System.RealAdd      ; temp := health + 0.2
+00140B5  mov [0x1886], temp        ; and write it back
+```
+
+So:
+
+```
+if <today's strain> > 0.5 or food = 0 then health := health + 0.2
+                                      else health := health x 0.5
+```
+
+**Health halves when the day goes well and creeps up by a fifth when it does
+not.** That is an exponential decay toward zero with a linear penalty, which is
+why a party that has been ill recovers quickly once conditions improve, and why
+one bad week does not kill you but three do.
+
+A second accumulator follows it, at `DS:0x184D`, built from seven terms:
+
+```
+[0x184D] := 0.9 x [0x184D] + <the pace/rations/weather integer> + [0x199E]
+            + [0x199F] + two more locals + health
+```
+
+— another exponential average, decaying at 0.9 rather than 0.5, and the same
+routine then subtracts the day's food. So this is *the* daily update: distance,
+food, health, and a slower-moving companion to health whose exact role is not
+established.
+
+**And here is what the first version of this section got wrong.** It said the
+health update *was*
 
 ```
 health += (pace + 1) × 2 × k + rations × 2 + weatherBits + 0.2 a day
@@ -1232,8 +1275,8 @@ is real and is exactly as shown; what is wrong is the `+=`. That term is stored
 to a local and then becomes **one argument among six** to a longer computation
 at `0x140C2`, which also takes two byte variables at `DS:0x199E` and
 `DS:0x199F`, a second local, and `Real` constants near 0.9 and 0.5. Health is
-multiplied by 0.5 somewhere in there, so it decays as well as accumulates.
-**That computation has not been traced.**
+multiplied by 0.5, which is the decay shown above. The `+=` was the error; the
+integer term is real but it feeds `DS:0x184D`, not health.
 
 The overclaim was caught by writing the rules out as a program
 ([`tools/model.pas`](../tools/model.pas)) and running it: with the simple

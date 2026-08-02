@@ -65,8 +65,8 @@ const
 
   { ---- NOT recovered: named so they cannot be mistaken for facts ------- }
 
-  { The health update is NOT reproduced here, and writing this file is how that
-    was discovered. The documents used to say
+  { Writing this file is how the health formula's first version was caught.
+    The documents used to say
 
         health := health + (pace+1)*2*k + rations*2 + weatherBits
 
@@ -77,8 +77,10 @@ const
     second local, and Real constants near 0.9 and 0.5. That computation has not
     been traced.
 
-    So this model runs the parts that are established and refuses to invent the
-    part that is not. It is better to print "not reproduced" than a number. }
+    The update itself has since been read -- health halves on a good day and
+    rises by 0.2 on a bad one, image 0x14055 -- and is implemented below. What
+    is still missing is the threshold that decides "bad", and the divisor in the
+    casualty probability. Both are marked where they are stood in for. }
 
   DeathOffset    = 2.5;      { image 0x04871: the literal 2.5 -- established }
 
@@ -105,6 +107,7 @@ var
   Pace, Rations : Integer;   { DS:0x185D and DS:0x185E -- 0, 1, 2 }
   Food          : LongInt;   { DS:0x183F -- pounds }
   Cash          : Real;
+  Health        : Real;      { DS:0x1886 -- a badness score: it goes up }
   Oxen, Clothes, Bullets, Parts : Integer;
   Miles, Day    : LongInt;
   Profession    : Integer;
@@ -128,11 +131,21 @@ begin
   FoodEatenToday := alive * (3 - Rations);
 end;
 
-{ image 0x013FF9 and 0x014045 -- the integer term, which IS established.
-  It is one of six inputs to the health update, not the whole of it. }
+{ image 0x013FF9 and 0x014045 -- the strain the day put on the party. }
 function HealthTermToday : Integer;
 begin
   HealthTermToday := (Pace + 1) * 2 + Rations * 2;
+end;
+
+{ image 0x014055. Health halves when the day goes well and rises by a fifth
+  when it does not -- an exponential decay with a linear penalty, which is why
+  a party recovers quickly but three bad weeks running are fatal. }
+procedure UpdateHealth(strainedDay : Boolean);
+begin
+  if strainedDay or (Food <= 0) then
+    Health := Health + 0.2
+  else
+    Health := Health * 0.5;
 end;
 
 { ---- the store, which states its own prices ---------------------------- }
@@ -211,13 +224,17 @@ begin
   Inc(Day);
   Miles := Miles + Trunc(MilesToday);
   Food := Food - FoodEatenToday;
-  { No deaths and no illness: the health update that drives both is not
-    reproduced, and inventing it would make this file lie. }
+  { The strain threshold is a Real the game computes earlier in the day and
+    which is not traced; the pace-and-rations term stands in for it here, so
+    the shape is right and the exact day a party turns is not. }
+  UpdateHealth(HealthTermToday > 6);
+  { Still no deaths: the casualty probability is (health - 2.5) / y, and y is
+    computed from state that has not been traced. }
 end;
 
 procedure Journey;
 begin
-  Miles := 0; Day := 0;
+  Miles := 0; Day := 0; Health := 1.0;
   while (Miles < TrailMiles) and (Day < 400) and (Food > 0) do
     OneDay;
 end;
@@ -248,7 +265,7 @@ begin
   Journey;
   WriteLn(PaceWord[Pace]:10, RationWord[Rations]:12,
           Trunc(MilesToday):8, FoodEatenToday:8,
-          Day:8, Food:9, HealthTermToday:9);
+          Day:8, Food:9, HealthTermToday:6, Health:9:2);
 end;
 
 var band, i : Integer;
@@ -257,8 +274,7 @@ begin
   WriteLn('The Oregon Trail -- the recovered rules, run.');
   WriteLn('This is not MECC''s source. It is what the binary was found to say.');
   WriteLn;
-  WriteLn('     pace     rations   miles/d  food/d    days  food left  health');
-  WriteLn('                                                             term');
+  WriteLn('     pace     rations   miles/d  food/d    days  food left  term   health');
   WriteLn('  ------------------------------------------------------------------');
   for i := 0 to 2 do
     RunOne(i, i);
@@ -270,9 +286,11 @@ begin
   WriteLn('  health term = (pace+1) x 2 + rations x 2  image 0x014045');
   WriteLn('  legRate is NOT recovered; ', LegRate, ' stands in for it.');
   WriteLn;
-  WriteLn('The health value itself is not reproduced: that integer term is one');
-  WriteLn('of six inputs to a computation at 0x140C2 that has not been traced,');
-  WriteLn('so no deaths and no illnesses are simulated here.');
+  WriteLn('Health halves on a good day and rises 0.2 on a bad one (0x14055).');
+  WriteLn('The threshold for "bad" is a Real the game computes earlier and');
+  WriteLn('which is not traced, so the shape is right and the exact day a');
+  WriteLn('party turns is not. No deaths: the casualty odds are');
+  WriteLn('(health - 2.5) / y, and y is still unrecovered.');
   WriteLn;
   WriteLn('Outfitted as a banker at Matt''s stated prices, the score would be:');
   for band := 0 to 3 do

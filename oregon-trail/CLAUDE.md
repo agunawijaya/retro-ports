@@ -55,8 +55,10 @@ constants resolved inline against their own unit's base, 2714 runtime calls
 named (`System.RandomReal`, `Dos.FindFirst`). Regenerate with:
 
 ```powershell
-python tools\listing.py --image work\unpacked.exe --units work\units.json `
-                        --out recovered\oregon.asm
+python <toolkit>\tools\tplist.py work\unpacked.exe --units work\units.json `
+      --out recovered\oregon.asm --entry 0x10a,0x128 `
+      --names tools\names.json --runtime tools\runtime.json `
+      --skip 0x15bb,0x18dc,0x1db8,0x1de9,0x213d,0x219f
 ```
 
 ```
@@ -249,7 +251,10 @@ the whole program:
 miles today      = legRate x (pace + 2) / 2        ; 1 : 1.5 : 2   ESTABLISHED
 food eaten       = people x (3 - rations)          ; 3, 2 or 1 lb  ESTABLISHED
 health term      = (pace + 1) x 2 + rations x 2 + weatherBits      ESTABLISHED
-health           = ??? (that term is one of six inputs)            NOT TRACED
+health           = health x 0.5,  or health + 0.2 when the day        ESTABLISHED
+                   went badly or the food ran out  (0x14055)
+DS:0x184D        = 0.9 x itself + the term + 0x199E + 0x199F         ESTABLISHED
+                   + two locals + health   -- role not established
 odds of dying    = (health - 2.5) / y                              2.5 is real
 which illness    = Random(6) + 3                   ; flat          ESTABLISHED
 ```
