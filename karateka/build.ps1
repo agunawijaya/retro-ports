@@ -4,6 +4,7 @@
 #
 #   1. comrec.py     original/KARATEKA.EXE -> recovered/karateka.asm
 #   2. annotate.py   apply symbols.json    -> recovered/karateka-named.asm
+#                    (the toolkit's copy -- the tool is general, the names are not)
 #   3. nasm          reassemble and compare against the file we started from
 #
 # If step 3 does not produce the original's SHA-256, the source is wrong and
@@ -37,8 +38,9 @@ python (Join-Path $Toolkit "tools\comrec.py") $Original `
 if ($LASTEXITCODE -ne 0) { throw "comrec.py failed" }
 
 Write-Host "2/3  applying names" -ForegroundColor Cyan
-python tools\annotate.py --asm recovered\karateka.asm `
-    --out recovered\karateka-named.asm --original $Original
+python (Join-Path $Toolkit "tools\annotate.py") `
+    --asm recovered\karateka.asm --out recovered\karateka-named.asm `
+    --symbols symbols.json
 if ($LASTEXITCODE -ne 0) { throw "annotate.py failed" }
 
 Write-Host "3/3  rebuilding from the named source" -ForegroundColor Cyan
