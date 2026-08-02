@@ -31,6 +31,7 @@ measurements disagree, suspect the measurements first.
 Needs Unicorn (for comrun) and NASM (for the static side).
 """
 import argparse
+import json
 import os
 import struct
 import sys
@@ -63,7 +64,7 @@ def observe(comrun, image, builder):
     m.stop_off, m.stop_after = MAIN, 1
     m.run()
 
-    seen = []
+    seen, where = [], {}
     watched = {PLACE_SPRITE: "sprite", PLACE_PAIR: "pair",
                PLACE_PAIR7: "pair7", FILL_LINE: "fill"}
     flat = {comrun.BASE + comrun.LOAD + a: k for a, k in watched.items()}
@@ -73,21 +74,37 @@ def observe(comrun, image, builder):
         b = m.uc.mem_read(off, n)
         return b[0] if n == 1 else struct.unpack("<H", b)[0]
 
+    def caller():
+        """Who called the drawer, from the return address on the stack.
+
+        "Twenty-one placements are missing" is not actionable; "these six
+        come from draw_pit_row" is. The call site is one word down SS:SP at
+        the drawer's first instruction, before anything has been pushed.
+        """
+        from unicorn.x86_const import UC_X86_REG_SS, UC_X86_REG_SP
+        ss = m.uc.reg_read(UC_X86_REG_SS)
+        sp = m.uc.reg_read(UC_X86_REG_SP)
+        w = m.uc.mem_read((ss << 4) + sp, 2)
+        return struct.unpack("<H", w)[0] - 0x100
+
     def hook(uc, addr, size, _):
         kind = flat.get(addr)
         if kind is None:
             return
+        site = caller()
         if kind == "fill":
             seen.append(("fill",) + tuple(rd(a) for a in FILL_BLOCK))
+            where[seen[-1]] = site
             return
         triples = PAIR_TRIPLES if kind in ("pair", "pair7") else [SPRITE_TRIPLE]
         for col, row, sel in triples:
             seen.append(("place", rd(col), rd(row), entry(rd(sel, 2))))
+            where.setdefault(seen[-1], site)
 
     h = m.uc.hook_add(UC_HOOK_CODE, hook)
     m.call(builder)
     m.uc.hook_del(h)
-    return seen
+    return seen, where
 
 
 def predicted(placements, rec, drawers, builder):
@@ -125,8 +142,20 @@ def main():
     drawers = placements.find_drawers(rec)
 
     total_hit = total_real = total_pred = 0
+    syms = json.loads((HERE / "symbols.json").read_text(encoding="utf-8"))
+    starts = sorted((int(k, 16), v[0]) for k, v in syms["routines"].items())
+
+    def owner(off):
+        lo = None
+        for s, n in starts:
+            if s <= off:
+                lo = n
+            else:
+                break
+        return lo or f"0x{off:05X}"
+
     for name, builder in BUILDERS:
-        real = observe(comrun, image, builder)
+        real, where = observe(comrun, image, builder)
         pred, (got, reached, _) = predicted(placements, rec, drawers, builder)
 
         # Multisets: a screen is a bag of placements, and the order the program
@@ -143,9 +172,15 @@ def main():
         print(f"    recall    {hit*100//max(1,sum(cr.values())):>3}%"
               f"   precision {hit*100//max(1,sum(cp.values())):>3}%")
         if missed:
-            print(f"  missed ({sum(missed.values())}):")
+            by = Counter()
+            for k, n in missed.items():
+                by[owner(where[k])] += n
+            print(f"  missed ({sum(missed.values())}), by the routine that "
+                  f"made them:")
+            for who, n in by.most_common():
+                print(f"     x{n}  {who}")
             for k, n in list(missed.items())[:a.show]:
-                print(f"     x{n}  {k}")
+                print(f"          {k}  <- {owner(where[k])}")
         if extra:
             print(f"  invented ({sum(extra.values())}):")
             for k, n in list(extra.items())[:a.show]:
