@@ -160,10 +160,6 @@
       "read_stick",
       "buttons plus both axes against the calibration bounds"
     ],
-    "0x4840": [
-      "fopen",
-      "Lattice C: walks FILE slots from 0xE1B0 to 0xE2C8, stride 14"
-    ],
     "0x5741": [
       "sscanf",
       "the compiler's argument parser"
@@ -371,6 +367,206 @@
     "0x6766": [
       "strncmp_unused",
       "respects n and stops at NUL, as 0x5B2E does; nothing calls it"
+    ],
+    "0x483C": [
+      "fopen",
+      "walks the FILE table at 0xE1B0..0xE2C8, stride 14, for a free slot"
+    ],
+    "0x4883": [
+      "fopen_body",
+      "seen with (name, \"r\" at DS:0xBC83, FILE) -- does the opening"
+    ],
+    "0x4DB9": [
+      "open_file",
+      "handed a filename, returns handle 3; the layer under fopen_body"
+    ],
+    "0x4FDD": [
+      "fread",
+      "(handle 3, ...); 136 calls from load_backdrop, show_castle and load_sprite_set, ~1,133 writes each"
+    ],
+    "0x4B0A": [
+      "fgets",
+      "(buffer, 80, FILE); 2,602 calls from compile_script -- one per script line"
+    ],
+    "0x4D77": [
+      "stdio_getbuf",
+      "(handle) -> the same buffer address every time"
+    ],
+    "0x6342": [
+      "fflush",
+      "(FILE); 92 calls, ~1,686 writes each"
+    ],
+    "0x5E33": [
+      "doscan",
+      "sscanf's engine; its second argument is 0x5879, a character-source callback"
+    ],
+    "0x5879": [
+      "scan_getc",
+      "that callback: 16,496 calls, one per character scanned"
+    ],
+    "0x6B84": [
+      "bdos",
+      "AH from [bp+4], DX from [bp+6], AL from [bp+8], int 0x21 -- Lattice's bdos()"
+    ],
+    "0x5DBB": [
+      "getch",
+      "bdos(AH=0x08), console input without echo"
+    ],
+    "0x5DCF": [
+      "getche",
+      "bdos(AH=0x01), console input with echo"
+    ],
+    "0x5DE3": [
+      "putch",
+      "bdos(AH=0x02), console output"
+    ],
+    "0x5DF7": [
+      "aux_getc",
+      "bdos(AH=0x03), auxiliary input"
+    ],
+    "0x5E0B": [
+      "aux_putc",
+      "bdos(AH=0x04), auxiliary output"
+    ],
+    "0x5E1F": [
+      "prn_putc",
+      "bdos(AH=0x05), printer output"
+    ],
+    "0x682D": [
+      "alloc_block",
+      "asked for 0x200 and returns 0xEB20 -- the stdio buffer's block"
+    ],
+    "0x22A4": [
+      "copy_range",
+      "rep movsb from [bp+6] to [bp+4], count = [bp+8]-[bp+6]; 164 calls per run from fight_frame"
+    ],
+    "0x5501": [
+      "fail_einval",
+      "sets errno to 22 and returns -1"
+    ],
+    "0x55F9": [
+      "handle_check",
+      "(handle 3, ...); returns 0 on all 48 calls"
+    ],
+    "0x6954": [
+      "heap_link",
+      "(0xEB20, 0x200, ...) -- block bookkeeping beside alloc_block"
+    ],
+    "0x6974": [
+      "heap_insert",
+      "the same pair of arguments, called by heap_link"
+    ],
+    "0x6BF5": [
+      "heap_walk",
+      "called by alloc_block and heap_insert"
+    ],
+    "0x4123": [
+      "rand_state",
+      "called by rand with (seed, 0xEACE, 0)"
+    ],
+    "0x05E5": [
+      "show_fuji",
+      "load_backdrop(\"fuji.bcg\", 1500) and nothing else"
+    ],
+    "0x0608": [
+      "set_video_mode",
+      "int 0x10 with AH=0 and AL from its argument"
+    ],
+    "0x0614": [
+      "set_cursor",
+      "int 0x10 AH=2, DL and DH from its two arguments, BH=0"
+    ],
+    "0x2A0A": [
+      "noop",
+      "push bp / mov bp, sp / pop bp / ret -- five bytes that do nothing"
+    ],
+    "0x4111": [
+      "srand",
+      "calls rand_state with (1, &local)"
+    ],
+    "0x4A37": [
+      "file_flush_if_dirty",
+      "tests bit 1 of the FILE flag byte at [si+8] before flushing"
+    ],
+    "0x4B7F": [
+      "close_all_files",
+      "loops 0..19 at stride 14 -- every slot of the FILE table"
+    ],
+    "0x4BCE": [
+      "heap_extend",
+      "reads the 32-bit break at [0x65]:[0x67] and asks DOS for more"
+    ],
+    "0x4C99": [
+      "heap_init",
+      "checks the DOS version at [0x0F], then sets the break from [0x5D] and [0x61]"
+    ],
+    "0x4FB8": [
+      "open_mode_bits",
+      "or 0x301 into the mode word, mask 0x8000 off the handle"
+    ],
+    "0x52D8": [
+      "fwrite",
+      "the mirror of fread: takes a handle, calls stdio_getbuf"
+    ],
+    "0x5659": [
+      "remove_body",
+      "version check, then dos_unlink"
+    ],
+    "0x5692": [
+      "remove",
+      "the one-argument wrapper over it"
+    ],
+    "0x56A5": [
+      "rename",
+      "version check, then two path arguments"
+    ],
+    "0x589A": [
+      "scan_token",
+      "walks a string one byte at a time; startup calls it"
+    ],
+    "0x5907": [
+      "scan_cmdline",
+      "the same shape, called once from crt0_main"
+    ],
+    "0x5BCE": [
+      "strend",
+      "calls strlen and adds the result to the pointer"
+    ],
+    "0x5DAB": [
+      "exit",
+      "hands two words to 0x023C, the runtime's terminator"
+    ],
+    "0x644E": [
+      "putc_buffered",
+      "tests bits 4 and 5 of the FILE flag byte; recursive; the write engine"
+    ],
+    "0x6655": [
+      "flush_buffer",
+      "tests the FILE's count at [si+0x0A] and bit 3 of its flags"
+    ],
+    "0x66DF": [
+      "fclose",
+      "calls fclose_body, then clears the slot"
+    ],
+    "0x6731": [
+      "seek_pos_copy",
+      "copies the 32-bit [0xE4B6]:[0xE4B8] into [0xE4BA]:[0xE4BC]"
+    ],
+    "0x6779": [
+      "lseek",
+      "refuses a negative offset with -1, else moves the position"
+    ],
+    "0x67F5": [
+      "tell_scaled",
+      "[0xE4BC] shifted left twice -- a position in 4-byte units"
+    ],
+    "0x6A6D": [
+      "heap_find",
+      "walks blocks comparing a request against each block's size"
+    ],
+    "0x6B96": [
+      "fclose_body",
+      "tests bit 2 of the FILE flag byte and releases the slot"
     ]
   },
   "globals": {
@@ -585,24 +781,41 @@
     "0xE1A6": [
       "input_button_b",
       ""
+    ],
+    "0xE4BE": [
+      "errno",
+      "set at 21 sites to 2, 5, 9, 12, 17, 19, 22, 24, 28 -- ENOENT, EIO, EBADF, ENOMEM, EEXIST, ENODEV, EINVAL, EMFILE, ENOSPC"
+    ],
+    "0xE1B0": [
+      "file_table",
+      "FILE slots to 0xE2C8, stride 14; 0xE1DA is slot 3"
     ]
   },
   "_unnamed": [
-    "90 of Karateka's 120 routines are named above. Every game routine is one of",
-    "them, and so is every library routine whose behaviour a probe could pin down.",
+    "Every one of the 120 routine prologues in the image is named, plus 18",
+    "interior labels -- the arms of the compiler's jump table, the blitter, the",
+    "decoder, and the two halves of the fight step.",
     "",
-    "The library ones were not read -- they were *called*. tools/probe-library.py",
-    "pushes what strlen would take and checks that 5 comes back for \"hello\", 3",
-    "for \"abc\" and 0 for \"\". A probe can fail, which a resemblance cannot, and",
-    "two of the first round's answers were wrong until the probes were tightened:",
-    "six routines passed a malloc test that any counter passes, and a stricmp",
-    "reading was an artefact of leaving the third argument as stack garbage.",
+    "The game side was read. The library side was identified by three kinds of",
+    "evidence, and the `why` against each name says which was used:",
     "",
-    "The remaining 30 are Lattice C's formatted output and its internal helpers.",
-    "They have no standard signature to probe against -- printf's inner formatter",
-    "takes a state block, not arguments a specification names -- so they stay",
-    "unnamed. That is a different statement from the earlier one: it is not that",
-    "the library cannot be identified without a copy of it, but that these",
-    "particular thirty have no contract to test."
+    "  probed     called with the arguments a specification takes and checked",
+    "             against what should come back -- strlen, strcpy, strcat,",
+    "             strcmp, strncmp, malloc. The toolkit's probelib.py.",
+    "  watched    hooked during a real run, recording the arguments the program",
+    "             actually passes. doscan was found that way: its second",
+    "             argument is 0x5879, a callback invoked once per character. So",
+    "             was fgets -- (buffer, 80, FILE), 2,602 times, one per line of",
+    "             script the compiler read.",
+    "  read       the ones whose bodies state it. bdos takes AH from [bp+4] and",
+    "             issues int 0x21; the six wrappers above it hard-code 8, 1, 2,",
+    "             3, 4 and 5, which is getch, getche, putch and the three",
+    "             character devices.",
+    "",
+    "The names are not equally strong and pretending otherwise would undo the",
+    "point of keeping the evidence. A routine four probe cases agreed on is a",
+    "firmer claim than one called close_all_files because it loops twenty times",
+    "at stride fourteen over a table whose stride is fourteen. Both are evidence.",
+    "They are not the same evidence."
   ]
 }

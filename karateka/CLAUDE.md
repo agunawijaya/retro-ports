@@ -26,7 +26,7 @@ from the joystick hardware to the player's reaction flags.
 | the animation system | a 14-command **compiler**, opcode = 2 × command index |
 | the fighting | choreography read — 150 moves in three plain-text libraries |
 | the fight AI | **found and read** — `0x2605`, a tree over pose, pose and distance |
-| the reading | **80 of 120 routines named**; every game routine, none of the library |
+| the reading | **120 of 120 routines named**, by probe, by observation, or by reading |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |
@@ -109,15 +109,15 @@ of 40 moves changed x by exactly the frame's `inc_x`.
 
 `recovered/karateka.asm` is correct and is not source: ten thousand
 instructions under labels named after their own addresses. `symbols.json` holds
-the reading — **80 of the 120 routines and 53 globals**, each with the evidence
+the reading — **all 120 routines and 55 globals**, each with the evidence
 for its name — and the toolkit's `annotate.py` applies them.
 
-**The game side is finished.** Every routine that touches a game global is
-named. The 40 that are not are Lattice C's library, separated mechanically
-rather than by address range: no game global, and DOS reached only through the
-twelve primitives. They are left unnamed on purpose — their shapes do not
-discriminate, so a name would be a guess, and `libscan.py` would settle them in
-minutes given a copy of Lattice C 2.1, which this machine does not have.
+**Nothing is left unnamed.** The game side was read. The library side was
+settled three ways — *probed* with the arguments a specification takes,
+*watched* during a real run to see what the program actually passes, and *read*
+where the body says it outright. Which one applies is in each `why`, because
+the names are not equally strong and pretending otherwise would undo the point
+of keeping the evidence at all.
 
 ```powershell
 .uild.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path	o
