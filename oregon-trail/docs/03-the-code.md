@@ -1348,6 +1348,37 @@ that is not established** — everything either side of it is. Notice that pace 
 separate paths** — it makes you travel further *and* it makes you sicker — which
 is the whole tension of the game expressed in about twenty instructions.
 
+**The trail's rates, and why the mountains feel long.** `legRate` is a byte at
+`+0x1C` of a 37-byte record, eighteen of them at `DS:0x0896`, each with its
+landmark's name as a Pascal string at `+0`:
+
+| leg | | rate |
+|---|---|---|
+| 0–4 | Independence, the Kansas and Big Blue crossings, Fort Kearney, Chimney Rock | **20** |
+| 5–17 | Fort Laramie, Independence Rock, South Pass, … The Dalles, the Willamette Valley | **12** |
+
+The plains are done at 20 and everything from Fort Laramie west at 12 — three
+fifths the speed. Combined with `rate x (pace + 2) / 2` that is 20 miles a day
+at a steady pace on the plains and 12 in the mountains, or 40 and 24 at a
+grueling one. **The second half of the trail is not longer; it is slower**, and
+that is one byte per landmark.
+
+**The scoring table is on the game's own explanation screen**, at `0x00C166`,
+as two backslash-separated lists side by side — the same idiom as the health
+words:
+
+```
+0x00C166  wagon\ox\spare wagon part\set of clothingullets (each 50)          food (each 25 pounds)\cash (each 5 dollars)
+0x00C1D2  50\ 4\ 2\ 2\ 1\ 1\ 1
+```
+
+Seven items, seven numbers, read off in pairs. Everything the earlier sections
+worked out from the arithmetic — one point per 50 bullets, per 25 pounds, per
+$5 — is stated here in words, and the four that had been *assumed* from the
+game's reputation rather than read (wagon 50, ox 4, part 2, clothing 2) are now
+established. The prose beside it confirms the multipliers too: *"double points
+… as a carpenter, and triple points … as a farmer."*
+
 **And the health words are scored right beside their own values:**
 
 ```

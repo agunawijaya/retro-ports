@@ -86,10 +86,12 @@ const
   DeathScale     = 10;       { image 0x04854: the divisor is severity x 10 }
   StrainLimit    = 0.5;      { image 0x13FE1 and 0x14075 -- the same 0.5 }
 
-  { The per-leg rate byte lives in a 37-byte record at DS:0x08B2. Its values
-    have not been extracted, so a flat rate stands in. }
-  LegRate        = 18;       { NOT RECOVERED -- a placeholder }
-
+  { The per-leg rate is a byte at +0x1C of a 37-byte record, 18 of them at
+    DS:0x0896 with the landmark's name at +0. Read out, it is 20 for the five
+    legs across the plains and 12 from Fort Laramie westward -- so the second
+    half of the trail is done at three fifths the speed of the first, which is
+    the whole reason the mountains feel long. }
+  Legs           = 18;
   TrailMiles     = 2040;     { "2000 miles of plains, rivers, and mountains" }
   PartySize      = 5;        { "I see that you have 5 people in all" }
 
@@ -112,6 +114,7 @@ var
   Health        : Real;      { DS:0x1886 -- a badness score: it goes up }
   Oxen, Clothes, Bullets, Parts : Integer;
   Conditions    : Integer;   { DS:0x19A4 -- the going; larger is worse }
+  Leg           : Integer;   { DS:0x185F -- which of the 18 legs }
   Miles, Day    : LongInt;
   Profession    : Integer;
   Buried        : Integer;
@@ -119,6 +122,12 @@ var
 { ---- the four formulas ------------------------------------------------- }
 
 { image 0x0003C5:  legRate * (pace + 2) / 2 }
+function LegRate : Integer;
+begin
+  if Leg <= 4 then LegRate := 20      { the plains  }
+  else LegRate := 12;                 { the mountains }
+end;
+
 function MilesToday : Real;
 begin
   MilesToday := LegRate * (Pace + 2) / 2.0;
@@ -231,6 +240,10 @@ function Score(band : Integer) : LongInt;
 var total : LongInt; mult : Integer;
 begin
   total := PartySize * BandPoints(band);
+  { All four established, from the game's own scoring screen at 0x00C166 --
+    two backslash-separated lists side by side, the items and their values:
+    wagon 50, ox 4, spare part 2, set of clothing 2, then one point per 50
+    bullets, per 25 pounds of food and per 5 dollars. }
   total := total + 50;                          { the wagon }
   total := total + Oxen * 4;
   total := total + Parts * 2 + Clothes * 2;
@@ -252,6 +265,8 @@ var p : Real; i : Integer;
 begin
   Inc(Day);
   Miles := Miles + Trunc(MilesToday);
+  Leg := Miles * Legs div TrailMiles;   { far enough west for the next landmark }
+  if Leg > Legs - 1 then Leg := Legs - 1;
   Food := Food - FoodEatenToday;
   UpdateHealth;
   { The casualty routine walks the party from the last member down to the
@@ -269,7 +284,7 @@ end;
 
 procedure Journey;
 begin
-  Miles := 0; Day := 0; Health := 1.0; Buried := 0;
+  Miles := 0; Day := 0; Health := 1.0; Buried := 0; Leg := 0;
   while (Miles < TrailMiles) and (Day < 400) and (Food > 0) do
     OneDay;
 end;
@@ -326,7 +341,7 @@ begin
   WriteLn('  miles/d = legRate x (pace + 2) / 2      image 0x0003C5');
   WriteLn('  food/d  = people x (3 - rations)        image 0x013D34');
   WriteLn('  health term = (pace+1) x 2 + rations x 2  image 0x014045');
-  WriteLn('  legRate is NOT recovered; ', LegRate, ' stands in for it.');
+  WriteLn('  legRate     = 20 on the plains, 12 from Fort Laramie west  0x23D4E');
   WriteLn;
   WriteLn('  strain      = max(0, alive/oxen - (5 - 2 x conditions))  0x13F63');
   WriteLn('  health      = x0.5 on a good day, +0.2 when strain > 0.5  0x14055');

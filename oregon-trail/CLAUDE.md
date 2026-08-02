@@ -215,7 +215,7 @@ Image offsets.
 | `0x21BFD` | `Runtime error `, ` at `, `.` |
 | `0x21DA5` | `MemAvail` — walks the free list, returns a 32-bit byte count |
 | `0x23480` | DGROUP: code ends, data begins |
-| `0x23D32` | the trail table — 17 records: miles, map X, map Y, name |
+| `0x23D16` | the trail table — **18** records of 37 bytes: name at `+0`, the leg's rate at `+0x1C` |
 | `0x24112` | pace and ration words: steady, strenuous, grueling, filling, meager, bare bones |
 | `0x24156` | the six illnesses: exhaustion, typhoid, cholera, measles, dysentery, a fever |
 | `0x0DE5C` | the store script — every price, in the shopkeeper's dialogue |
@@ -248,6 +248,7 @@ All four established from the code, and each byte is touched only seven times in
 the whole program:
 
 ```
+legRate          = 20 on the plains, 12 from Fort Laramie west     ESTABLISHED
 miles today      = legRate x (pace + 2) / 2        ; 1 : 1.5 : 2   ESTABLISHED
 food eaten       = people x (3 - rations)          ; 3, 2 or 1 lb  ESTABLISHED
 health term      = (pace + 1) x 2 + rations x 2 + weatherBits      ESTABLISHED
@@ -283,7 +284,11 @@ is plainly there and nothing references it, look for a subscript range that does
 not start at zero**, and enumerate the accesses by their stride instead of
 searching for the address.
 
-Scoring: a person is worth **500 / 400 / 300 / 200** by health (`0x0C0A7` holds
+Scoring, all of it read from the game's own explanation screen at `0x00C166` —
+seven items and seven values as two backslash-separated lists: wagon **50**,
+ox **4**, spare part **2**, set of clothing **2**, one point per **50** bullets,
+per **25** lb of food, per **$5**. A person is worth **500 / 400 / 300 / 200**
+by health (`0x0C0A7` holds
 the words and `0x0C0C0` the numbers, adjacent), plus one point per 50 bullets,
 per 25 lb of food and per $5; then x1 banker, x2 carpenter, x3 farmer.
 
