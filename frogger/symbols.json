@@ -1,0 +1,22 @@
+{
+  "_about": [
+    "Names for Frogger's routines and globals, with the evidence for each.",
+    "",
+    "This file exists because `recovered/frogger.asm` is gitignored and must",
+    "stay so -- a byte-identical reconstruction is the game. What can be kept",
+    "is the *reading*: addresses, names, and why. Run tools/annotate.py to",
+    "apply these to a freshly generated listing and get source that still",
+    "reassembles to the original, byte for byte.",
+    "",
+    "Routine keys are file offsets, which is the coordinate comrec's labels",
+    "use. Global keys are the addresses the program sees -- add 0x100.",
+    "Getting those two the wrong way round is the mistake that costs a",
+    "session, and the only symptom is silence: a key in the wrong coordinate",
+    "substitutes nowhere and nothing complains. annotate.py now reports it.",
+    "",
+    "`why` is not decoration. A name with no evidence behind it is a guess",
+    "that will be believed by the next reader."
+  ],
+  "routines": {},
+  "globals": {}
+}

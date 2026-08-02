@@ -9,8 +9,8 @@ explain it again.
 the counts below drift the moment a tool improves, and eleven of them had gone
 stale within a single session before `tools/docaudit.py` existed.*
 
-Five games are reconstructed and read. All five rebuild **byte-identically**,
-which `build.ps1` checks and refuses to report success without.
+Six games are reconstructed. All six rebuild **byte-identically**, which
+`build.ps1` checks and refuses to report success without.
 
 | | routines | globals | rebuild |
 |---|---|---|---|
@@ -19,14 +19,21 @@ which `build.ps1` checks and refuses to report success without.
 | [paratrooper](paratrooper/) | 31 | 134 | `D709DDEC…` |
 | [zaxxon](zaxxon/) | 134 | 105 | `A9214CCE…` |
 | [tapper](tapper/) | 583 | 336 | `EC85DB55…` |
+| [frogger](frogger/) | 0 | 0 | `D6437F96…` |
 
-For every one of them: every call target, every tail-call entry and every
+**Frogger arrived on 2026-08-02 and nothing in it is named yet.** That is
+deliberate: the release is patched, the patch runs the game in a segment ten
+paragraphs on, and every name written before that is fixed would be in the
+wrong coordinate — the mistake this project has already paid for twice, whose
+only symptom is silence. Its `CLAUDE.md` has the evidence and the order.
+
+For the other five: every call target, every tail-call entry and every
 bracketed constant in the listing is named or explicitly accounted for, and
 every name carries the evidence for itself. `annotate.py` checks all of that on
 each build and prints it — **read that output, not the symbol file's own prose
 about itself.**
 
-All five also have every byte inside a named span -- `_data_spans`, a
+Those five also have every byte inside a named span -- `_data_spans`, a
 contiguous partition of the image with a reason against each extent. That is
 the second denominator, and it is the one that catches a symbol file which
 names every reference and has still never looked at half the file.
