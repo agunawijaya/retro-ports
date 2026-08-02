@@ -815,31 +815,28 @@ program's code is a compiler's output that no tool here can reconstruct at all.
 
 ## What is still unknown
 
-1. **Most of the game's own logic as *code*.** The chance model is now open:
-   every one of the 29 `Random` calls is located, the probabilities that are
-   constants are read off, and the routine that decides who dies —
-   `ui+0x30B6`, one procedure taking the odds as an argument, five callers — is
-   traced ([document three](03-the-code.md#one-routine-kills-people-and-it-takes-the-odds-as-an-argument)).
-   The party is an array of eleven-byte records at `DS:0x17FE`. **The store is
-   fully priced** — oxen $40 a yoke, food 20¢ a pound, clothing $10 a set,
-   ammunition $2 a box of 20, spare parts $10 each — because the game states
-   every price in its own dialogue. **And the simulation itself is out**: miles
-   today is `legRate × (pace + 2) / 2`, food is `people × (3 − rations)`, both
-   settings feed one health accumulator at `DS:0x1886`, and the casualty
-   routine's probability is computed from it. The scoring is partly read —
-   the rates are one point per 50 bullets, per 25 pounds of food and per $5,
-   and the profession multiplier is in the strings
-   ([document three](03-the-code.md#the-first-numbers-out-of-the-simulation)).
-   That also established *how* to read the rest: the arithmetic is in Turbo
-   Pascal's six-byte `Real`, and the constants decode by hand. What remains is
-   the illness model, the store's prices, the odds on a river crossing and the
-   way pace combines with rations. The trail table is recovered
-   ([document three](03-the-code.md#the-trail-itself-which-is-a-table)) and the
-   simulation's shape is readable from its strings, but the routines that
-   consume them — the illness model, the store's prices, the odds on a river
-   crossing, how pace and rations combine — have not been traced. That is the
-   66,592 bytes in segments `0x00000` and `0x007B6`.
-   `prior-attempt/src/` has a unit per topic and not one has been checked.
+1. **The game's logic, in the parts that were never traced.** This entry has
+   shrunk a long way and is worth stating precisely rather than by exception.
+
+   *Established:* the whole chance model — all 29 `Random` calls located, the
+   constant probabilities read off, and the
+   [casualty routine](03-the-code.md#one-routine-kills-people-and-it-takes-the-odds-as-an-argument)
+   that takes its odds as an argument. The four formulas the simulation runs on
+   — miles, food, health, and the odds of dying — and the flat `Random(6)` that
+   picks which illness. Every store price. The scoring rates and the 500/400/
+   300/200 by health. The party as eleven-byte records at `DS:0x17FE`.
+
+   *Not traced:* hunting, the events table that fires them, the river-crossing
+   choice (ferry, ford, caulk and float) beyond the rafting accident, and the
+   day-to-day loop that ties them together. Those are the remaining routines in
+   segment `0x00000` and the five MECC units from `0x007B6` to `0x00F30`, and
+   the route in is the one that
+   worked five times already: find the strings, read the code before them,
+   decode the `Real` constants, and check which arithmetic helper consumes each.
+
+   `prior-attempt/src/` has a unit per topic and not one has been checked
+   against any of this.
+
 2. **That `0x015BB` is specifically *Genus's*.** It is established as not
    Borland's — 0.0% against both of Borland's libraries — and the program links
    exactly two third-party libraries, so this is the other one by elimination.
