@@ -1264,6 +1264,50 @@ code**. Once `DS:0x185D` was identified, four instructions were all that
 remained; before that, twenty-nine `Random` calls looked like twenty-nine
 separate mysteries.
 
+### The six illnesses, and a table nothing points at
+
+Immediately after the rations words, in the same shape, sit the six illnesses:
+
+```
+DS:0x0CD6  exhaustion    DS:0x0CF7  measles
+DS:0x0CE1  typhoid       DS:0x0D02  dysentery
+DS:0x0CEC  cholera       DS:0x0D0D  a fever
+```
+
+Eleven bytes apart, a `string[10]` each — identical in construction to the two
+tables above them.
+
+**And nothing in the program addresses it.** No `add di, 0x0CD6`, no `add ax`,
+no `mov di` followed by `push ds`; the same for all six entries individually.
+The word `typhoid` occurs exactly once in 201,184 bytes, and it is in this
+table.
+
+That absence is worth something precisely because the same search *does* find
+its neighbours:
+
+```nasm
+0013007  add di, 0x0C92        ; the pace words
+001302D  add di, 0x0CB4        ; the rations words
+```
+
+So the method works, the two tables either side of the illnesses are reached the
+way you would expect, and the illnesses are not. This is a **bounded** unknown
+rather than an open-ended one: either the illness names are never printed in
+this build, or they are reached by something that leaves no literal behind —
+a pointer computed at run time, or a base held in a variable.
+
+What is *not* unknown is the model itself. The question "what drives illness"
+is answered above: health accumulates from pace, rations, weather and running
+out of food, and the casualty routine's probability is computed from it. Only
+the choice of *which word gets printed* is unaccounted for, and that is a
+display detail rather than a rule.
+
+**What transfers.** A negative result is only worth stating when the same
+procedure has a positive control. "I looked and found nothing" means nothing on
+its own; "I looked, found the two tables on either side, and did not find this
+one" is evidence. Build the control into the search whenever the answer you
+expect is an absence.
+
 ## Where the artwork is loaded from
 
 Not traced in the code — but the file format is fully read, and

@@ -173,6 +173,13 @@ health          += (pace + 1) x 2 x k + rations x 2 + weatherBits
 odds of dying    = (health - 2.5) / y              ; per party member
 ```
 
+**One thing genuinely unaccounted for**: the six illnesses at `DS:0x0CD6` are an
+11-byte-stride table exactly like the two before them, and **nothing addresses
+it** — no `add di`, no `add ax`, no `mov di`+`push ds`, for the base or for any
+of the six. The control is that the same search finds `add di, 0x0C92` and
+`add di, 0x0CB4` for pace and rations. So either the names are never printed in
+this build, or they are reached by a pointer computed at run time.
+
 Scoring: a person is worth **500 / 400 / 300 / 200** by health (`0x0C0A7` holds
 the words and `0x0C0C0` the numbers, adjacent), plus one point per 50 bullets,
 per 25 lb of food and per $5; then x1 banker, x2 carpenter, x3 farmer.
