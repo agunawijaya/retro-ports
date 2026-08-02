@@ -104,13 +104,31 @@ def observe(comrun, image, builder):
     h = m.uc.hook_add(UC_HOOK_CODE, hook)
     m.call(builder)
     m.uc.hook_del(h)
-    return seen, where
+
+    # The state the build left behind. Some of what a drawer reads is not in
+    # the file at all: `randomise_holes` runs *inside* the builder and decides
+    # which pits and rivets exist, and `spawn_lunchbox` picks one of four
+    # shapes from a random number. A static reading cannot know those, and the
+    # honest question is not whether it guesses them but whether it is right
+    # about everything else -- so hand them to it and ask again.
+    #
+    # The drawer parameter block is left out. Those are scratch, rewritten
+    # before every call, and seeding them would let a routine that writes no
+    # selector inherit the last shape of the whole screen.
+    lo, hi = 0x0100, 0x0100 + len(image)
+    raw = m.uc.mem_read(comrun.BASE + comrun.LOAD, len(image))
+    skip = set(PAIR_TRIPLES[0]) | set(PAIR_TRIPLES[1]) | set(FILL_BLOCK)
+    skip |= {SPRITE_TRIPLE[2] + 1, PAIR_TRIPLES[0][2] + 1}
+    after = {a: raw[a - lo] for a in range(lo, hi)
+             if a not in skip and raw[a - lo] != image[a - lo]}
+    return seen, where, after
 
 
-def predicted(placements, rec, drawers, builder):
+def predicted(placements, rec, drawers, builder, seed=None):
     ex = placements.Extractor(rec, drawers, fillers=FILLERS)
     out = []
-    for sel, col, row, scale in ex.walk(builder):
+    for sel, col, row, scale in ex.walk(
+            builder, inherited={"bytes": dict(seed)} if seed else None):
         # Which routine drew it says nothing about the picture, and two of the
         # three use the same column scale anyway -- so the kind is not part of
         # the comparison. Position and shape are.
@@ -154,9 +172,19 @@ def main():
                 break
         return lo or f"0x{off:05X}"
 
+    seeded_hit = seeded_real = seeded_pred = 0
     for name, builder in BUILDERS:
-        real, where = observe(comrun, image, builder)
+        real, where, after = observe(comrun, image, builder)
         pred, (got, reached, _) = predicted(placements, rec, drawers, builder)
+
+        # ...and the same reading again, given the values the file does not
+        # contain. Two numbers, and the difference between them is exactly
+        # what "static" costs.
+        sp, _ = predicted(placements, rec, drawers, builder, seed=after)
+        csr, csp = Counter(real), Counter(sp)
+        seeded_hit += sum((csr & csp).values())
+        seeded_real += sum(csr.values())
+        seeded_pred += sum(csp.values())
 
         # Multisets: a screen is a bag of placements, and the order the program
         # makes them in is its business, not the reading's.
@@ -188,6 +216,11 @@ def main():
     print(f"\noverall: {total_hit} of {total_real} placements reproduced from "
           f"the file alone -- recall {total_hit*100//max(1,total_real)}%, "
           f"precision {total_hit*100//max(1,total_pred)}%")
+    print(f"         {seeded_hit} of {seeded_real} given the run-time values "
+          f"as well -- recall {seeded_hit*100//max(1,seeded_real)}%, "
+          f"precision {seeded_hit*100//max(1,seeded_pred)}%")
+    print("         (the second line is the reading's own accuracy; the gap "
+          "between them\n          is what the file does not contain)")
 
 
 main()

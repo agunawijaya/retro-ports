@@ -38,26 +38,41 @@ the listing as a heading, splitting a `db` run where it has to.
 Nothing that reading the file can settle.
 
 Hard Hat Mack's static level render — the last thing on this list for several
-sessions — reproduces **186 of the 193** placements the program makes. Recall
-98% / 95% / 97% by level, precision 94% / 95% / 88%.
+sessions — reproduces **186 of the 193** placements the program makes, and
+invents **three**. Recall 98% / 95% / 97% by level, precision 98% / 99% / 97%.
 
 The seven that remain are all one thing: `spawn_lunchbox` chooses its shape
 with `random() & 3`, and the table it chooses from holds four *different*
 entries — 15, 68, 16, 67 — so there is no shape in the file to read. Three of
 the seven are its own placements and four are `draw_rivets`, which writes no
-selector and draws whatever that pick left behind. The thirteen the reading
-invents are the same fact from the other side, plus two in `draw_pits` and four
-in `draw_rivet_row` that depend on which arm of a conditional runs.
+selector and draws whatever that pick left behind.
+
+"Which arm of a conditional runs" used to be on this list and is not any more.
+The extractor evaluates a branch it can decide: the flag comes from the 6502
+translation's own idiom — `mov al, X / inc al / dec al` sets Z from AL, which
+is what `LDA` did — and from `cmp reg, imm`. Only forward jumps are followed,
+because a back edge is a loop and loops are handled by unrolling the call site.
+`draw_pits` and `draw_rivet_row` draw one entry per slot when that slot's state
+byte is non-zero; the byte is zero, so the program skips them and now so does
+the reading. Six invented placements, gone.
+
+The referee prints a second number as well. It runs the build, keeps the state
+it left behind, and asks the reading again *with the run-time values supplied*
+— so the gap between the two lines is exactly what being static costs. Right
+now there is no gap, which says something worth knowing: the seven are not
+missing because the reading lacks data. They are missing because the value is
+a random number, and having watched the program pick one tells you nothing
+about the next one.
 
 That is the boundary of static extraction, and it is now the *only* thing left
 — established per placement rather than asserted about the method. Getting
-there took eight bugs, and the one that mattered was in the referee rather than
+there took ten bugs, and the one that mattered was in the referee rather than
 in the extractor: it had listed the wrong placements by coordinate for three
 sessions, and coordinates describe the picture, which is never where the bug
 is. Naming the routine that made each one — the return address is a word down
 `SS:SP` at the hook — turned it into a work list the same afternoon.
 
-The eight, in the order they were found:
+The ten, in the order they were found:
 
 - **A counted loop that runs up.** `mov bl, 1` … `inc byte [V]` … `cmp bl, 5`
   read as the down-loop shape every other loop uses, so `draw_toolboxes` drew
@@ -88,13 +103,20 @@ The eight, in the order they were found:
   is safe for the loop case, because the drawer is called inside the body and
   its site has already been emitted before the counter steps.
 
-Every one of the eight still produced *a* placement, which is why none of them
+Every one of the ten still produced *a* placement, which is why none of them
 ever failed and why the coverage number never moved. The last two did not move
 it either — `spawn_lunchbox`'s shape is unreadable whatever its position — but
 the reading now puts it at (12, 39), (24, 39) and (20, 188), which is where the
 program puts it, instead of at (14, 44) on all three. **A number that does not
 change is not the same as a change that did not happen.** See
 [knowledge/12](../DOS-Decompiler/knowledge/12-hooking-the-right-thing.md).
+
+- **A selector written with a value nobody could decide.** "Written, and
+  undecided" was treated as "not written", which fell back to the last shape
+  anyone had resolved. `spawn_lunchbox` stores `shapes[random() & 3]` there, so
+  the address does hold a value — it is just not one the file contains — and
+  `draw_rivets`, which writes no selector at all, inherited a definite wrong
+  shape rather than an admitted unknown. Four more invented placements, gone.
 
 Two candidate fixes were measured and thrown away: clearing the loop counter
 when the index is loaded from a variable (`draw_pillar_cell` then unrolled 26

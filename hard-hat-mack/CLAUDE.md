@@ -20,9 +20,9 @@ instruction, and the numbers below are counts rather than estimates.
 | variables named | 605 |
 | bracketed constants covered | 567 of 573; the other six are not addresses (see `_not_addresses`) |
 | bytes in a named span | 42,112 of 42,112 |
-| level screens drawn from the file alone | **186 of 193 placements** — recall **98% / 95% / 97%**, precision **94% / 95% / 88%** |
+| level screens drawn from the file alone | **186 of 193 placements** — recall **98% / 95% / 97%**, precision **98% / 99% / 97%** |
 | the 7 that remain | all of them a value that does not exist until the program runs. `spawn_lunchbox` picks one of four shapes with `random() & 3` — the table at `0x593A` gives entries 15, 68, 16 and 67, so there is no shape to read — and `draw_rivets` writes no selector of its own, so it draws whatever that pick left behind. Its *position* is now right on all three screens. |
-| the 13 it invents | the same seven from the other side, plus 2 in `draw_pits` and 4 in `draw_rivet_row`, which draw one entry per slot only when that slot's state byte says so — and the byte is written while the game runs |
+| the 3 it invents | `spawn_lunchbox` again, at the right place with a shape it cannot know. The six that used to come from `draw_pits` and `draw_rivet_row` are gone: the extractor evaluates the conditional now, and the per-slot state byte it tests is zero in the file, so those slots are correctly skipped |
 | how that is known | `tools/verify-screens.py` runs the game under `comrun.py`, hooks the four drawing routines, and diffs the call list against the static reading |
 | what it actually is | a mechanical **6502 to 8086 translation** of the Apple II original — see [knowledge/14](../../DOS-Decompiler/knowledge/14-translated-binaries.md) |
 
