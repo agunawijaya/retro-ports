@@ -1629,14 +1629,46 @@ screenshot. Eight attempts, each a reasonable hypothesis, each recorded:
 | `--at` on the `1-5` validator | key delivered, `0x0EBA2` never reached |
 | `--at` on the input routine | key delivered, `0x0EBA2` never reached |
 
-The Genus failure is the more interesting half. Its library runs 2,043
-instructions during start-up, loading the logo without trouble, and **six** in
-the hunting call before `genuspcx:0x1A20` — the routine that uppercases a name
-and parses it into 8.3 form, so the container's member lookup — returns an error
-code. The caller takes its error branch at `0x1CF31` and the game then continues
-with a buffer nothing filled, which is what runs away into the heap. So the
-library's state at the main menu is not the state the hunting path assumes, and
-what that state is has not been established.
+### The Genus failure, established rather than supposed
+
+That one was worth chasing to the bottom, and two new instruments got there:
+a log of every file operation, and a dump of `DS:SI` and `ES:DI` at a chosen
+instruction — because a watch that only reads globals cannot see a string being
+compared on the stack, which is where this one lives.
+
+The container walk is **perfect**. Open `OTCGA.PCL`, read the 122-byte header,
+read an 84-byte directory entry, seek forward by that member's size, read the
+next, and so on through all 29 — ending with a read of 0 bytes at position
+189,831, exactly the file's length. That short read is the error `0xFFF2` that
+`genuspcx:0x1A20` returns and `0x1CF31` acts on. Nothing is wrong with the
+reader.
+
+What is wrong is the name it is looking for. At the comparison — a `repe cmpsb`
+of twelve bytes at `0x1A8A6` — the entries arrive intact:
+
+```
+ES:DI  'ANIMALS .PCC'
+ES:DI  'HUNTER  .PCC'
+ES:DI  'TERRAIN .PCC'      <- the one being searched for, read and walked past
+```
+
+and the string being compared against them is
+
+```
+DS:SI  f9 eb 0a 8a 46 fe 50 ff 56 04 e8 4e fa 8b 46 fe
+```
+
+which is not a filename. It is **x86 instructions** — `stc`, `jmp`,
+`mov al,[bp-2]`, `push ax` — sitting in an uninitialised stack buffer. The
+member name never reaches the lookup at all, so every entry is compared against
+rubbish and rejected, including the right one.
+
+So the cause is settled: **`--call` leaves a buffer that the program's own path
+would have filled.** Entering a compiled program in the middle gives you its
+code without its state, and the eight attempts above were all looking at
+consequences of that one fact. What would actually produce the screenshot is
+reaching hunting the way the game does, which is the input-protocol problem on
+the other side of this section.
 
 **This is a negative result, not a pause.** Eight hypotheses, all reasonable,
 none correct, and the method — probing a program's input protocol by feeding it
