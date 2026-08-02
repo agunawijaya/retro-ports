@@ -1302,6 +1302,33 @@ out of food, and the casualty routine's probability is computed from it. Only
 the choice of *which word gets printed* is unaccounted for, and that is a
 display detail rather than a rule.
 
+**And the choice of illness is a coin toss.** Following `' has '` back to the
+code that builds the sentence:
+
+```nasm
+0013BC0  mov ax, 6 / push ax
+0013BC5  call 0x1049D              ; a wrapper on System+0x0C94 -- Random(6)
+0013BC8  add ax, 3                 ; an illness code, 3..8
+0013BCB  mov [bp-0x103], al
+0013BD5  call 0x13B3A              ; and pick a party member
+0013BE3  mov dx, 0x000B / mul dx
+0013BEA  add di, 0x17FE            ; that member's name
+0013BF5  mov di, 0x3786            ; ' has '
+0013C15  cmp byte [di + 0x1853], 0 ; the member's status byte
+0013C2D  mov di, 0x378C            ; 'died.'
+```
+
+So **which illness you get is uniform across the six** — `Random(6)`, no
+weighting, no dependence on where you are or what you have eaten. Only *whether*
+someone falls ill depends on the health accumulator. Six codes numbered 3 to 8,
+which is exactly six illnesses offset by three, and `DS:0x1853` is a status byte
+per party member sitting beside the eleven-byte name array at `DS:0x17FE`.
+
+That is the last input the model needed, and it makes the shape complete: pace
+and rations decide *how often* something goes wrong, and a flat die decides
+*what*. The only thing still unaccounted for is the path from the code to the
+word, and it is now a labelling question rather than a modelling one.
+
 **What transfers.** A negative result is only worth stating when the same
 procedure has a positive control. "I looked and found nothing" means nothing on
 its own; "I looked, found the two tables on either side, and did not find this

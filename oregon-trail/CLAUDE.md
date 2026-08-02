@@ -158,6 +158,7 @@ Data-segment offsets (add `0x23480` for an image offset):
 | `DS:0x185E` | **rations** — 0, 1, 2; words at `DS:0x0CB4` |
 | `DS:0x185F` | which leg of the trail; a 37-byte record per leg at `DS:0x0896` |
 | `DS:0x1886` | **health**, a 6-byte `Real`, and a *badness* score — it goes up |
+| `DS:0x1853` | a status byte per party member, beside the names at `DS:0x17FE` |
 | `DS:0x183F` | food in pounds |
 
 ### The simulation, in four formulas
@@ -171,6 +172,7 @@ food eaten       = people x (3 - rations)          ; 3, 2 or 1 lb each
 health          += (pace + 1) x 2 x k + rations x 2 + weatherBits
                    + 0.2 a day once the food runs out
 odds of dying    = (health - 2.5) / y              ; per party member
+which illness    = Random(6) + 3                   ; flat, no weighting
 ```
 
 **One thing genuinely unaccounted for**: the six illnesses at `DS:0x0CD6` are an
