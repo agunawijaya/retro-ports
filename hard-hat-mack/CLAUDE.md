@@ -20,7 +20,7 @@ instruction, and the numbers below are counts rather than estimates.
 | variables named | 605 |
 | bracketed constants covered | 567 of 573; the other six are not addresses (see `_not_addresses`) |
 | bytes in a named span | 42,112 of 42,112 |
-| level screens drawn from the file alone | recall **90% / 83% / 76%**, precision **91% / 95% / 90%**; the pixels the game draws are **93% / 89% / 90%** covered, with 10% / 4% / 7% drawn that it does not |
+| level screens drawn from the file alone | recall **98% / 87% / 81%**, precision **94% / 96% / 86%**; the pixels the game draws are **95% / 90% / 90%** covered |
 | how that is known | `tools/verify-screens.py` runs the game under `comrun.py`, hooks the four drawing routines, and diffs the call list against the static reading |
 | what it actually is | a mechanical **6502 to 8086 translation** of the Apple II original — see [knowledge/14](../../dos-decompiler/knowledge/14-translated-binaries.md) |
 

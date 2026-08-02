@@ -526,9 +526,9 @@ by value, not by eye.
 
 | | placements reproduced | precision | pixels the game draws, covered |
 |---|---|---|---|
-| Level 1 | 45 of 50 — **90%** | 91% | 93% |
-| Level 2 | 88 of 105 — **83%** | 95% | 89% |
-| Level 3 | 29 of 38 — **76%** | 90% | 90% |
+| Level 1 | 49 of 50 — **98%** | 94% | 95% |
+| Level 2 | 92 of 105 — **87%** | 96% | 90% |
+| Level 3 | 31 of 38 — **81%** | 86% | 90% |
 
 Three faults in the extractor came out of that comparison, and all three had
 been invisible because the old metric counted calls that produced *a*

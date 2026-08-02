@@ -909,9 +909,9 @@ dumps the framebuffer, and the two pictures are compared pixel by pixel:
 
 | | pixels the game draws | covered by the static render | drawn but not in the game |
 |---|---|---|---|
-| Level 1 | 10,125 | **93.4%** | 10.2% |
-| Level 2 | 12,571 | **88.5%** | 4.0% |
-| Level 3 | 8,706 | **89.7%** | 6.7% |
+| Level 1 | 10,125 | **94.6%** | 10.9% |
+| Level 2 | 12,571 | **89.5%** | 4.0% |
+| Level 3 | 8,706 | **90.4%** | 11.7% |
 
 Both columns are needed. A renderer that draws nothing scores 0% and 0%; one
 that fills the screen scores 100% and enormously.
@@ -929,9 +929,9 @@ performs, against every placement the static reading produces — does not:
 
 | | placements the game makes | placements read from the file | recall | precision |
 |---|---|---|---|---|
-| Level 1 | 50 | 49 | **90%** | 91% |
-| Level 2 | 105 | 92 | **83%** | 95% |
-| Level 3 | 38 | 32 | **76%** | 90% |
+| Level 1 | 50 | 52 | **98%** | 94% |
+| Level 2 | 105 | 95 | **87%** | 96% |
+| Level 3 | 38 | 36 | **81%** | 86% |
 
 `tools/verify-screens.py` produces that table, and it reports the difference by
 value rather than as a fraction: which calls were missed, and which were
@@ -966,17 +966,29 @@ trophy and its sign into every level.
 Stopping at an unconditional jump unless something already seen branches past
 it — the ordinary end-of-basic-block rule — took precision from 67% to 93%.
 
-**What is left is recall, and it has a name.** The 31 placements still missed
-are almost all from loops whose trip count is a table terminator rather than an
-immediate: `draw_ladder_list` walks a (column, row) list until it reads `0xFF`,
-and the extractor unrolls only what a `mov bl, imm` tells it to. The chains
-hanging from the girders and Level 2's pillars are the visible result. The
-table is in the file and the terminator is in the file, so this is readable —
-it is simply not read yet.
+**A fifth fault, in the other direction.** The recall gap had a name too, and
+naming it was most of the work: loops whose trip count is a table terminator
+rather than an immediate. `draw_ladder_list` walks a (column, row) list until
+it reads `0xFF`, and the extractor unrolled only what a `mov bl, imm` told it
+to — so it drew the first chain of a row of them and stopped.
 
-Genuinely unreadable without executing: which arm of a conditional runs. Four
-of Level 1's five spurious placements are that, and it is now the smaller half
-of a small problem.
+Two things were missing. SI could hold a loop index but never a table address,
+so `[bx + si]` — how every per-screen table in this game is read — resolved to
+nothing. And a loop with no immediate count had no trip count at all. Now SI
+remembers whether it came from CX (an index) or from a word variable (a
+pointer), and a loop with no counter walks its table until the terminator,
+falling back to a single iteration when there is no terminator to find. Over-
+unrolling would invent placements, and precision is dearer than the last chain.
+
+Recall went from 83% to 89%, and Level 1 from 90% to 98%.
+
+**What is left, in order of size.** Thirteen of the twenty-one remaining misses
+are on Level 2 and eight on Level 3, in three groups: four rivets along the
+bottom row, a vertical run of five, and a column of three. Each is its own
+small reading. And under all of it sits the one thing that is genuinely a limit
+— which arm of a conditional runs — which is now three placements on Level 1
+rather than the whole gap it was blamed for through two revisions of this
+document.
 
 **Level 1's floors have holes in them, and that is correct.** Its task is to
 fill the gaps in the girders, so it starts incomplete — a sparse screen that
@@ -992,16 +1004,17 @@ is what turns these into game screens.
 
 Two things, and both are smaller than the five that used to be here.
 
-- **Recall.** 90%, 83% and 76% by level, against precision of 91%, 95% and
-  90%. Thirty-one placements out of 193 are still missed, and almost all of
-  them come from one cause: a loop whose trip count is a table terminator
-  rather than an immediate. `draw_ladder_list` walks a (column, row) list until
-  it reads `0xFF`; the extractor unrolls only what a `mov bl, imm` tells it to,
-  so it draws the first chain and stops. Both the table and the terminator are
-  in the file, so this is readable and simply not read yet.
+- **Twenty-one placements out of 193.** Recall is 98%, 87% and 81% by level;
+  precision 94%, 96% and 86%. Level 1 is essentially finished — one missed
+  placement and three invented. What remains is on Levels 2 and 3, in three
+  groups: four rivets along the bottom row, a vertical run of five, and a
+  column of three. Each is its own small reading, and none of them is a limit
+  of the method.
 
-  The genuinely unreadable part is which arm of a conditional runs, and that is
-  now four placements on Level 1 rather than the whole gap.
+  Underneath that sits the one thing that is: which arm of a conditional runs.
+  It is three placements on Level 1, and it was blamed for the whole gap
+  through two revisions of this document while four separate bugs hid behind
+  it.
 
 - ~~**The two bytes at file `0x0001`.**~~ **Settled, and the entry that used
   to be here was wrong three times over.** The bytes an `EB 02` jumps over are
