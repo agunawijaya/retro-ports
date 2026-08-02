@@ -1763,12 +1763,48 @@ So the chain is fully known, end to end, for both kinds of prompt:
 | the input fields | `ui:0x0D24` → `0x10FCC` → `Crt.ReadKey` at `0x11020`, terminated by `DS:0x1A0A` |
 | the landmark screens | `ui:0x04A1` → `Crt.KeyPressed` / `Crt.ReadKey` at `0x1096C`, accepting `CR` or space |
 
-**And it still does not advance.** With the accepted characters known, the call
-sites gated, and 128 keys queued, the landmark screen holds. Eleven attempts.
-What is now excluded is everything about *how* it reads — that is established.
-What remains is why a key that reaches `INT 16h` does not satisfy it, and the
-partially-drawn screen behind the illustration suggests the answer is somewhere
-in the state the emulator has got wrong rather than in the input path at all.
+### The loop that looked like a wait and was a flush
+
+The reason more keys never helped is in five instructions:
+
+```nasm
+0010963  lcall Crt:0x02FA      ; KeyPressed
+0010968  or al, al
+001096A  je  0010977           ; NO key -> on to the real logic
+001096C  lcall Crt:0x030C      ; a key IS waiting -> read it
+0010971  mov [bp-0x204], al    ;   and keep it, unused
+0010975  jmp 0010963           ; <- back to the top
+```
+
+That is not a wait. It is a **flush**: the screen throws away anything typed
+ahead before it starts listening, and it loops until the buffer is *empty*. A
+harness that hands out a key whenever its queue runs dry feeds that loop for
+ever. Every attempt that supplied more keys made the problem worse, and the
+screen that looked like it was ignoring input was in fact being fed input
+continuously and never allowed to finish clearing it.
+
+The real read comes afterwards, at `0x104CE`, and it does not block either:
+
+```nasm
+00104D4  lcall Crt:0x02FA      ; KeyPressed -- here it must say yes
+00104DB  je  00104FB           ;   no key -> return (0, 0) immediately
+00104DD  lcall Crt:0x030C      ; the character
+00104E9  jne 00104F5           ;   zero means an extended key ...
+00104EB  lcall Crt:0x030C      ;   ... so read the scancode too
+```
+
+So `Crt.KeyPressed` is called twice from the same screen, at two addresses that
+need **opposite answers**: `0x10963` must see an empty buffer, `0x104D4` must
+see a key. That distinction is the whole of it, and it is not visible from
+outside the program — only from the disassembly.
+
+**And with all of that known, the screen still holds.** Gating `0x104D4` and
+suppressing every other release does put a key exactly where the getter asks
+for one, and South Pass does not advance. Fourteen attempts now. What is
+established is the complete input path, both prompt kinds, both `KeyPressed`
+sites and their opposite requirements. What is not established is why a key
+delivered at the point the program asks for it still does not satisfy the
+comparison that follows.
 
 So the hunting screen is described here from its code and not shown. That is a
 worse outcome than a picture and a better one than a picture that was invented,
