@@ -1722,6 +1722,54 @@ a space bar by any of these routes, so hunting remains unreached by driving.
 Eleven attempts now, each recorded. The mechanism is sound and the sequence is
 not found.
 
+### How the landmark screen reads its key
+
+The screen that will not advance is the landmark arrival — *South Pass, May 13,
+1848* — and its input is a different routine from the prompts:
+
+```nasm
+0008A5C  mov di, 0xE70             ; 'Press SPACE BAR to continue'
+0008A61  lcall ui:0x147C           ;   drawn
+0008A75  lcall ui:0x04A1           ; <- the wait, image 0x108C1
+0008A7A  cmp byte [0x19FD], 0      ;   and its answer
+```
+
+`ui:0x04A1` is passed a buffer, the set of keys it will accept, and a byte to
+put the answer in. The accepted set is two characters long and sits at
+`scoring+0xE8C`:
+
+```
+0x0089EC   db 2, 0x0D, 0x20        ; carriage return, space
+```
+
+Inside, the loop is `Crt.KeyPressed` then `Crt.ReadKey`:
+
+```nasm
+0010963  lcall Crt:0x02FA          ; KeyPressed
+001096C  lcall Crt:0x030C          ; ReadKey
+00109F9  lcall System.StrCompare   ; is it in the accepted set?
+```
+
+and both of those go through `INT 16h` after all — `KeyPressed` at `0x216CA`
+is `cmp byte [0x3DD5], 0` (a pending extended byte) then `mov ah,1 / int 16h`,
+answering on the **zero flag**, and `ReadKey` at `0x216DC` is `xor ah,ah /
+int 16h` with the same pending-byte check in front of it. The BIOS-buffer
+theory was wrong; Borland's `Crt` uses the interrupt.
+
+So the chain is fully known, end to end, for both kinds of prompt:
+
+| | |
+|---|---|
+| the input fields | `ui:0x0D24` → `0x10FCC` → `Crt.ReadKey` at `0x11020`, terminated by `DS:0x1A0A` |
+| the landmark screens | `ui:0x04A1` → `Crt.KeyPressed` / `Crt.ReadKey` at `0x1096C`, accepting `CR` or space |
+
+**And it still does not advance.** With the accepted characters known, the call
+sites gated, and 128 keys queued, the landmark screen holds. Eleven attempts.
+What is now excluded is everything about *how* it reads — that is established.
+What remains is why a key that reaches `INT 16h` does not satisfy it, and the
+partially-drawn screen behind the illustration suggests the answer is somewhere
+in the state the emulator has got wrong rather than in the input path at all.
+
 So the hunting screen is described here from its code and not shown. That is a
 worse outcome than a picture and a better one than a picture that was invented,
 which is what this folder had before.
