@@ -13,10 +13,10 @@ program is shaped, and everything else hangs off it. The other four are
 
 ## State of the work
 
-**The code is read.** Reconstruction, data formats, move libraries, fight loop,
-hit test, health, the map, the input chain from the stick to the move, and every
-one of the 120 routines. What is left is **data**: 113 globals with no name, 94
-of them referenced twice or fewer.
+**Nothing is unnamed.** 120 of 120 routines, 312 of 312 data-segment addresses,
+all 1,642 references. The reconstruction is byte-identical and the reading is
+complete — with the caveat that the names are not equally strong, and each
+`why` in `symbols.json` says which kind of evidence it rests on.
 
 | | |
 |---|---|
@@ -27,7 +27,7 @@ of them referenced twice or fewer.
 | the animation system | a 14-command **compiler**, opcode = 2 × command index |
 | the fighting | choreography read — 150 moves in three plain-text libraries |
 | the fight AI | **found and read** — `0x2605`, a tree over pose, pose and distance |
-| the reading | **120 of 120 routines named**; 199 of 312 globals, 90% of references |
+| the reading | **120 of 120 routines, 312 of 312 globals, 100% of references** |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |
@@ -110,13 +110,11 @@ of 40 moves changed x by exactly the frame's `inc_x`.
 
 `recovered/karateka.asm` is correct and is not source: ten thousand
 instructions under labels named after their own addresses. `symbols.json` holds
-the reading — **all 120 routines and 215 globals**, each with the evidence
+the reading — **all 120 routines and 320 globals**, each with the evidence
 for its name — and the toolkit's `annotate.py` applies them.
 
-**Every routine is named; the data is not.** 120 of 120 routine prologues, plus
-18 interior labels. Globals: **199 of the 312 data-segment addresses the code
-touches** — 64% of the addresses and **90% of the references**, because what is
-left is thin.
+**Everything is named.** 120 of 120 routine prologues plus 18 interior labels,
+and every data-segment address the code references.
 
 **The finding that moved this most was not a naming technique.** `DS:0x0337` is
 a 16,000-byte off-screen CGA frame, 200 rows of 80, ending at `0x4217` exactly
@@ -344,11 +342,11 @@ Hercules detection.
 
 What is actually left:
 
-1. **113 globals, of which 94 are referenced twice or fewer.** Two uses cannot
-   tell a flag from a counter. Running the game further than the attract
-   sequence — into a fight a human is losing — would move some of them and is
-   the only thing that would. **This is the last thing in the code that is not
-   read**; everything else on this list is a new project rather than a gap.
+1. **A C reconstruction**, which is a different and weaker claim than this one:
+   assembly that reassembles exactly proves the bytes, C that compiles to the
+   same bytes would prove the design. It needs **Lattice C 2.1**. The copy on
+   this machine is 3.10 (1985–86) and ships no library at all, so `libscan.py`
+   has nothing to match against.
 2. **A container reader in the toolkit**, not in this folder — an index-and-heap
    pair is not Broderbund's invention and the next game may use one.
 3. **The Apple II original** is in `reference/apple-ii/`, six disk images. Now
