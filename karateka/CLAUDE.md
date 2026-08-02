@@ -109,11 +109,18 @@ of 40 moves changed x by exactly the frame's `inc_x`.
 
 `recovered/karateka.asm` is correct and is not source: ten thousand
 instructions under labels named after their own addresses. `symbols.json` holds
-the reading — **all 120 routines and 55 globals**, each with the evidence
+the reading — **all 120 routines and 134 globals**, each with the evidence
 for its name — and the toolkit's `annotate.py` applies them.
 
-**Nothing is left unnamed.** The game side was read. The library side was
-settled three ways — *probed* with the arguments a specification takes,
+**Every routine is named; the data is not.** 120 of 120 routine prologues, plus
+18 interior labels. Globals are the unfinished half: **127 of the 312
+data-segment addresses the code touches**, which is 41% of the addresses but
+**77% of the references**, because what is left is mostly touched once or twice.
+
+A routine has an entry point, callers and behaviour you can probe. A global has
+only its uses, and a global used twice leaves almost nothing to reason from.
+
+The game side was read. The library side was settled three ways — *probed* with the arguments a specification takes,
 *watched* during a real run to see what the program actually passes, and *read*
 where the body says it outright. Which one applies is in each `why`, because
 the names are not equally strong and pretending otherwise would undo the point

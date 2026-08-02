@@ -789,6 +789,322 @@
     "0xE1B0": [
       "file_table",
       "FILE slots to 0xE2C8, stride 14; 0xE1DA is slot 3"
+    ],
+    "0x000F": [
+      "dos_version",
+      "set by the entry stub from INT 21h AH=30h; the runtime refuses DOS 1"
+    ],
+    "0x0015": [
+      "heap_flag",
+      "read by heap_init, heap_extend and run_script"
+    ],
+    "0x005B": [
+      "psp_segment",
+      "kept by the entry stub from ES"
+    ],
+    "0x005D": [
+      "heap_base",
+      "read by heap_init"
+    ],
+    "0x0061": [
+      "heap_top",
+      "heap_init sets it, heap_extend moves it"
+    ],
+    "0x0065": [
+      "heap_break",
+      "the 32-bit break, low word; [0x67] is the high"
+    ],
+    "0x0069": [
+      "block_size",
+      "dos_setblock's argument"
+    ],
+    "0x0080": [
+      "dos_status",
+      "written by every dos_* primitive, read by the layers above"
+    ],
+    "0xE4B6": [
+      "seek_pos",
+      "32-bit file position, low word; [0xE4B8] the high"
+    ],
+    "0xE4BA": [
+      "seek_result",
+      "where seek_pos_copy puts it"
+    ],
+    "0x00E2": [
+      "story_flag",
+      "startup clears it, story_step sets it to 1 and reads it"
+    ],
+    "0x00E4": [
+      "draw_enable",
+      "read by both sprite dispatchers and play_script"
+    ],
+    "0x00E6": [
+      "frame_pending",
+      "set to 1 by pose_handler and startup"
+    ],
+    "0x00EE": [
+      "scene_kind",
+      "1 or 2; read by draw_sprite, written by init_fight and next_section"
+    ],
+    "0x00F4": [
+      "spawn_distance",
+      "120, 160 or 250; read by place_guard"
+    ],
+    "0x00F6": [
+      "guard_flag",
+      "guard_choose_move both reads and writes it"
+    ],
+    "0x0100": [
+      "fight_param_0",
+      "init_fight writes it, fight_frame reads it"
+    ],
+    "0x0106": [
+      "fight_param_1",
+      "init_fight writes it, story_step reads it"
+    ],
+    "0x0108": [
+      "fight_param_2",
+      "init_fight writes it, fight_frame reads it"
+    ],
+    "0x010A": [
+      "fight_param_3",
+      "init_fight and story_step write it"
+    ],
+    "0x011C": [
+      "regen_reload",
+      "read by reset_guard and resolve_strikes, never written"
+    ],
+    "0x0120": [
+      "score_step",
+      "resolve_strikes and story_step write it"
+    ],
+    "0x0122": [
+      "score_bonus",
+      "read by resolve_strikes only"
+    ],
+    "0x012A": [
+      "startup_state",
+      "0, 1 or 2; startup and player_choose_move"
+    ],
+    "0x012C": [
+      "section_state",
+      "reselect_section and story_step read it"
+    ],
+    "0x0140": [
+      "level_tier",
+      "init_fight sets it to 3"
+    ],
+    "0x0152": [
+      "story_sub",
+      "story_step's own counter"
+    ],
+    "0x0158": [
+      "guard_slot",
+      "0xFFFF for none; init_fight, reset_guard and story_step set it"
+    ],
+    "0x015A": [
+      "input_armed",
+      "main clears it, player_choose_move sets it"
+    ],
+    "0x0160": [
+      "sprite_set",
+      "load_player_library and load_sprite_set write it"
+    ],
+    "0x0164": [
+      "mask_set",
+      "the same, for the km* half"
+    ],
+    "0x0166": [
+      "story_cue",
+      "1, 2, 9, 20, 40, 50, 60 -- what story_step is waiting for"
+    ],
+    "0x0168": [
+      "draw_ready",
+      "draw_sprite sets it, read_intent reads it"
+    ],
+    "0x016A": [
+      "key_mode",
+      "handle_key sets it, startup reads it"
+    ],
+    "0x016C": [
+      "want_random_move",
+      "set by guard_choose_move and main, consumed by player_choose_move"
+    ],
+    "0x016E": [
+      "pose_request",
+      "written by three routines, read by pose_handler"
+    ],
+    "0x0170": [
+      "defeat_flag",
+      "resolve_strikes sets it; player_choose_move and scripted_defeat read it"
+    ],
+    "0x0172": [
+      "library_loaded",
+      "load_player_library sets it to 1"
+    ],
+    "0x0174": [
+      "reaction_armed",
+      "resolve_strikes sets it, player_choose_move consumes it"
+    ],
+    "0x421A": [
+      "rand_scratch",
+      "random() multiplies through it"
+    ],
+    "0x421E": [
+      "shape_stream",
+      "the shape record's read pointer"
+    ],
+    "0x4220": [
+      "mask_stream",
+      "the mask record's read pointer"
+    ],
+    "0x4222": [
+      "sprite_width",
+      "in bytes, from the record's first header byte"
+    ],
+    "0x4223": [
+      "sprite_height",
+      "in scanlines, from the second"
+    ],
+    "0x4224": [
+      "sprite_width_px",
+      "the width shifted left twice -- four pixels to a byte"
+    ],
+    "0x4227": [
+      "shift_in_byte",
+      "how far into a byte the column starts; the ror count"
+    ],
+    "0x4228": [
+      "wipe_flag",
+      "0 or 1"
+    ],
+    "0x422A": [
+      "scanlines_left",
+      "the blitter's inner counter"
+    ],
+    "0x422C": [
+      "shape_run_count",
+      "run-length state for the shape stream"
+    ],
+    "0x422D": [
+      "shape_run_value",
+      ""
+    ],
+    "0x422E": [
+      "mask_run_count",
+      "and the same for the mask"
+    ],
+    "0x422F": [
+      "mask_run_value",
+      ""
+    ],
+    "0x0337": [
+      "screen_rows",
+      "a table base, not a variable: [di + 0x337] is a scanline"
+    ],
+    "0x4234": [
+      "edge_masks",
+      "a table base, indexed by pixel offset"
+    ],
+    "0x423C": [
+      "shape_records",
+      "a table base: sprite id x2 -> the record's address"
+    ],
+    "0x443C": [
+      "sprite_data",
+      "the base the record offsets are relative to"
+    ],
+    "0xB87A": [
+      "tune_cursor",
+      "play_sound reads and writes it"
+    ],
+    "0xB89C": [
+      "note_period",
+      ""
+    ],
+    "0xB89E": [
+      "note_length",
+      ""
+    ],
+    "0xB8A0": [
+      "note_index",
+      ""
+    ],
+    "0x0067": [
+      "heap_break_hi",
+      "the high word of the 32-bit break at [0x65]"
+    ],
+    "0x4226": [
+      "blit_dest",
+      "draw_sprite and draw_sprite_shifted both keep it"
+    ],
+    "0x4230": [
+      "blit_column",
+      "the same pair; the outer loop's counter"
+    ],
+    "0xBB2A": [
+      "redraw_all",
+      "0xFFFF forces it; set by guard_choose_move and init_fight"
+    ],
+    "0xBB2E": [
+      "draw_layer",
+      "3 by default; read by draw_sprite, input_layer and run_script"
+    ],
+    "0xBB30": [
+      "draw_layer_max",
+      "cleared by fight_frame and run_script"
+    ],
+    "0xBCD7": [
+      "script_state",
+      "0 or 2, run_script's own"
+    ],
+    "0xBCDC": [
+      "script_saved",
+      "play_script saves and restores it around a nested script"
+    ],
+    "0xBCE6": [
+      "script_cursor",
+      "run_script's position in the compiled byte code"
+    ],
+    "0xD5A4": [
+      "frame_scratch",
+      "fight_frame's, read and written only there"
+    ],
+    "0xD652": [
+      "defeat_pending",
+      "0 or 0xFFFF; set by guard_choose_move and init_fight"
+    ],
+    "0xD6BC": [
+      "sound_on",
+      "handle_key toggles it; play_sound and read_intent honour it"
+    ],
+    "0xDF43": [
+      "input_latch",
+      "0 or 1; set by three routines, consumed by read_intent"
+    ],
+    "0xDF46": [
+      "input_source",
+      "0 or 1; handle_key sets it, poll_intent and read_intent read it"
+    ],
+    "0xE1A3": [
+      "input_up",
+      "the third direction bit, beside input_left and input_right"
+    ],
+    "0xE1AB": [
+      "stick_calibrated",
+      "handle_key sets it; input_layer will not read an uncalibrated stick"
+    ],
+    "0xE43A": [
+      "scan_pushback",
+      "sscanf and scan_getc share it -- the one-character ungetc"
+    ],
+    "0xE4B8": [
+      "seek_pos_hi",
+      "the high word of the 32-bit position at [0xE4B6]"
+    ],
+    "0xE4BC": [
+      "heap_cursor",
+      "the allocator's current block; every heap routine touches it"
     ]
   },
   "_unnamed": [
