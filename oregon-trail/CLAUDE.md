@@ -28,7 +28,7 @@ shorter working reference you come back to.
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
-| game logic as code | **the model is out** — miles, food, health and the odds of dying are all four formulas; every store price; 29 `Random` sites; the casualty routine |
+| game logic as code | **most of the model is out** — miles, food, the health term, the illness die, every store price, 29 `Random` sites, the casualty routine. The health *update* is **not** traced |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | documents | [four](docs/), written from the above |
 
@@ -184,7 +184,7 @@ Data-segment offsets (add `0x23480` for an image offset):
 | `DS:0x1853` | a status byte per party member, beside the names at `DS:0x17FE` |
 | `DS:0x183F` | food in pounds |
 
-### The simulation, in four formulas
+### The simulation, in formulas — with the column that matters
 
 All four established from the code, and each byte is touched only seven times in
 the whole program:
