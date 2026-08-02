@@ -1,45 +1,68 @@
 {
   "_about": [
-    "Hard Hat Mack, Electronic Arts, 1983. A 42,112-byte .COM written by",
-    "hand: no compiler prologue anywhere in it, and no library, so",
-    "probelib.py finds nothing -- 0 of 250 entry points, which is a real",
-    "negative result rather than a failure.",
+    "Hard Hat Mack, Electronic Arts, 1983. A 42,112-byte .COM with no compiler",
+    "prologue anywhere in it, so probelib.py finds nothing -- 0 of 250 entry",
+    "points, a real negative result. It is still machine-generated: `mov al, 0",
+    "/ inc al / dec al` appears hundreds of times to set flags after a load,",
+    "and `cmc` follows almost every `cmp`. That is why there are 221 call",
+    "targets for perhaps eighty distinct behaviours.",
     "",
-    "It keeps its variables next to the code that uses them. 436 addresses",
-    "fall into 132 clusters scattered through the image, and the two that",
-    "carry most of the traffic are the actor block at 0x0B60 (391",
-    "references in 0x21 bytes) and the drawing block at 0x6D97 (789 in",
-    "0x33).",
+    "All of them are named here, and the whole code region was read to do it.",
+    "The variables live next to the routines that own them -- 436 addresses in",
+    "132 clusters scattered through the image -- and the two that carry most of",
+    "the traffic are Mack's block at 0x0B60 (391 references in 0x21 bytes) and",
+    "the drawing block at 0x6D97 (789 in 0x33).",
     "",
-    "This file is honest about being unfinished. The routines named below",
-    "were read; the 180-odd that were not are listed in _unread with what",
-    "the profiler could see about each, and none of them has been given a",
-    "name on that evidence alone."
+    "Five names in the previous version were wrong, all of them guessed from",
+    "caller counts. The worst was `shift_history`: it is the routine that saves",
+    "the tune position so a sound effect can borrow the speaker. The game has",
+    "no sound hardware beyond one bit, and it plays music by running a phase",
+    "accumulator against a drifting duty threshold -- pulse-width modulation,",
+    "in 1983, on a PC speaker."
+  ],
+  "_not_addresses": [
+    "Six bracketed constants in the listing are not addresses at all:",
+    "0x001E, 0x0047, 0x0302, 0x0601, 0x2402 and 0x5F7F. Each sits inside a run",
+    "of table bytes that comrec classified as code because it decodes cleanly --",
+    "0x01B3C before girder_fall, 0x01A64, 0x020E6 before hotkeys, 0x02AFC and",
+    "its two neighbours, and 0x04952. NASM re-emits them as the same bytes, so",
+    "the rebuild is unaffected, but `and bx, word [0x1e]` is a coincidence of",
+    "the encoding and naming 0x001E would invent a variable the game does not",
+    "have.",
+    "",
+    "This is the mirror of the residue problem knowledge/11 records. There the",
+    "question was whether unreached bytes are code; here it is whether reached",
+    "bytes that decode are data. Both are answered by what refers to them, and",
+    "nothing refers to these."
   ],
   "routines": {
+    "0x0000": [
+      "entry",
+      "a two-byte jump over two bytes nothing reads"
+    ],
     "0x0004": [
       "start",
-      "CS everywhere, INT 09h hooked through 0:0x24 with the old vector kept at 0x0782, the BIOS equipment word forced to 40-column colour, mode 4, and five added to all 200 scanline_table entries before anything is drawn"
+      "CS into every segment, INT 09h hooked through 0:0x24 with the old vector kept, the BIOS equipment word forced to 40-column colour, mode 4, and five added to all 200 scanline_table entries"
     ],
     "0x0060": [
-      "restart",
-      "the same video setup without the vector work"
+      "restart_video",
+      "the same video setup without the vector work; reached when the configuration menu returns"
     ],
     "0x0071": [
       "keyboard_isr",
-      "reads port 0x60, maps the scan code through scan_map, and keeps any entry with the high bit set in key_pressed. Two mapped values are not keys at all: 1 unhooks the vector and returns far to DOS, 2 jumps to the configuration menu"
+      "port 0x60 through scan_map. Two mapped values are not keys: 1 unhooks the vector and returns far to DOS, 2 enters the configuration menu"
     ],
     "0x00DF": [
-      "delay_pair",
-      "AL times AL of nothing; the only timing the game has"
+      "delay",
+      "AL times AL of nothing -- the only timing the game has"
     ],
     "0x00EA": [
-      "note_off",
-      "stops the tone generator and biases BL by 0x80"
+      "read_stick_axis",
+      "joystick_scaled, then bias the axis by 0x80 so centre reads 0x80"
     ],
     "0x0105": [
       "joy_button_1",
-      "port 0x201 bit 0x10 rotated into the carry through AH"
+      "port 0x201 bit 0x10, rotated into the carry through AH"
     ],
     "0x0114": [
       "joy_button_2",
@@ -47,181 +70,1293 @@
     ],
     "0x0123": [
       "clear_playfield",
-      "0x50 bytes of AL along every one of the 200 scanlines, five bytes in from where scanline_table points -- which is what the five added at start-up is for"
+      "0x50 bytes along each of the 200 scanlines, five bytes in from where scanline_table points"
     ],
     "0x013E": [
-      "locate_cell",
-      "turns (place_col, place_row) into a screen address: seven bytes to a column, the row through row_table, and the low two bits of the column kept as a shift"
+      "draw_glyph",
+      "one character: row through row_table, seven bytes to a column, the low two bits of the column kept as a shift"
     ],
     "0x0199": [
-      "draw_cell",
-      "the inner loop of the three place_ routines"
+      "plot_cell",
+      "one cell of the font at (place_col, place_row), XORed in"
     ],
     "0x01A0": [
-      "draw_cell_row",
-      ""
+      "plot_cell_at",
+      "the same with the row already in BX"
     ],
     "0x01C8": [
-      "fill_tiles",
-      "the rectangle filler: rows fill_row0 to fill_row1, columns fill_col0 to fill_col1, fill_step deciding whether rows advance by one or two"
+      "fill_rect",
+      "rows fill_row0..fill_row1 by fill_col0..fill_col1, fill_step deciding whether rows advance by one or two"
     ],
     "0x0217": [
       "place_sprite",
-      "multiplies place_col by seven, takes place_row as it stands, and draws shape_select. Forty-seven callers -- the busiest routine in the program"
+      "column times seven, row as it stands, shape from shape_select. Forty-seven callers, and the busiest routine in the program"
     ],
     "0x0268": [
       "place_pair",
-      "two shapes at unit column scale"
+      "erase the previous position and draw the new one, at unit column scale -- how every moving object is animated"
     ],
     "0x02B1": [
       "place_pair_x7",
-      "two shapes at the seven-pixel column scale"
+      "the same at the seven-pixel column scale"
+    ],
+    "0x030A": [
+      "shape_lookup",
+      "shape number to bitmap through shape_table"
+    ],
+    "0x0319": [
+      "blit_xor",
+      "rows of bytes XORed into video"
+    ],
+    "0x0343": [
+      "blit_or",
+      "ORed instead"
     ],
     "0x036D": [
-      "blit_shape",
-      "what all three placement routines reach"
+      "blit_masked",
+      "clipped against (clip_row, clip_col); two shape numbers are special-cased to the OR and erase blitters"
     ],
     "0x03DD": [
-      "blit_shape_masked",
+      "blit_erase",
+      "AND with a clipped mask -- what place_pair calls to remove the last frame"
+    ],
+    "0x08DE": [
+      "config_menu",
+      "mode 3, the calibration prompt, then joystick_calibrate"
+    ],
+    "0x08FA": [
+      "show_screen_2",
       ""
     ],
+    "0x0902": [
+      "show_and_wait",
+      "draw a text screen and block until a key arrives"
+    ],
+    "0x0912": [
+      "joystick_calibrate",
+      "three corner readings, and two slopes computed from them by dividing 0x8000 by each half range. This is the 'Put the stick in the upper left and then press the space bar' the text asks for"
+    ],
     "0x096B": [
-      "note_start",
-      "loads a divisor and gates the speaker"
+      "joystick_scaled",
+      "the raw reading through those slopes, clamped"
     ],
     "0x09B5": [
-      "set_timer",
-      "programs PIT channel 0 through ports 0x43 and 0x40 -- the only place the tick rate is set"
+      "joystick_read_raw",
+      "times the potentiometer discharge on port 0x201 against PIT channel 0, reading the counter twice per pass. It was called set_timer"
+    ],
+    "0x0A35": [
+      "draw_text_screen",
+      "a script of (row, attribute, 32 characters) straight into text-mode video, ended by 0xFF"
+    ],
+    "0x0A81": [
+      "main",
+      "sets state_vector and loops: new_life, handle_key, then jump through the vector into whichever screen was chosen"
+    ],
+    "0x0ADB": [
+      "screen_1",
+      "the girder screen. Draws it, then the per-frame call list: input, hazards, holes, rivets, collision, music"
+    ],
+    "0x0BB6": [
+      "screen_2",
+      "the elevator screen, and the one main starts on"
+    ],
+    "0x0C72": [
+      "screen_3",
+      "the cement screen"
+    ],
+    "0x0D52": [
+      "reset_round",
+      "the handful of variables that survive a lost life"
+    ],
+    "0x0D8E": [
+      "reset_screen_state",
+      "sixty-one variables back to zero and eight to their starting values. This is the program's own list of what a screen owns"
+    ],
+    "0x0E90": [
+      "handle_key",
+      "the four movement scan codes and the fire button set the moved flag; anything else falls through"
     ],
     "0x0F49": [
-      "actors_step",
-      "the actor loop, 430 instructions over 79 blocks: state, timer, direction and frame for every actor in the actor block, and the four movement routines it dispatches to"
+      "mack_input",
+      "which way the player asked to go, and whether the girder underneath allows it"
+    ],
+    "0x0FEC": [
+      "mack_left",
+      ""
+    ],
+    "0x0FFC": [
+      "mack_left_step",
+      "two columns left, and the walking frame from shape_left"
+    ],
+    "0x1027": [
+      "mack_right",
+      ""
+    ],
+    "0x1037": [
+      "mack_right_step",
+      "two columns right"
+    ],
+    "0x1044": [
+      "mack_set_shape",
+      "the shape both of them end on, then clamp and draw"
+    ],
+    "0x1057": [
+      "mack_up",
+      ""
+    ],
+    "0x10A5": [
+      "mack_down",
+      ""
+    ],
+    "0x10F0": [
+      "mack_jump",
+      "sixteen frames of an arc, the horizontal step chosen by facing and the vertical by frame number"
+    ],
+    "0x11C4": [
+      "mack_land",
+      "ends a jump early"
     ],
     "0x11F6": [
-      "actor_draw",
-      "actor_x and actor_y into a place_pair"
+      "mack_draw",
+      "position into the six place_pair variables, then draw"
+    ],
+    "0x1262": [
+      "can_walk_left",
+      "walks the girder table for this screen looking for one that spans the proposed position"
+    ],
+    "0x12EF": [
+      "can_walk_right",
+      "the same with the span tested from the other end"
+    ],
+    "0x138C": [
+      "can_climb",
+      "the five ladder rows; row 0xA7 on screen 3 is the exception"
+    ],
+    "0x13DC": [
+      "clamp_position",
+      "keeps Mack inside the screen, wrapping where the screen wraps"
+    ],
+    "0x141C": [
+      "wrap_x",
+      ""
+    ],
+    "0x144E": [
+      "wrap_jump",
+      "the same during a jump, which is when the wrap can happen mid-arc"
     ],
     "0x14D8": [
-      "draw_level",
-      "one screen: the girders through fill_tiles, then the ladders, the hazards, the rivets, and the actors, dispatched on screen_number through mode_vector"
+      "screen_1_setup",
+      "screen_number 1: the girders, the ladders, the holes and their random directions, Mack at 0xE0,0x47"
     ],
     "0x1627": [
-      "draw_level_2",
-      "the same shape for the second screen layout"
+      "screen_3_setup",
+      "screen_number 3"
     ],
     "0x1763": [
-      "draw_level_3",
-      "and the third"
+      "screen_2_setup",
+      "screen_number 2"
     ],
     "0x1841": [
       "draw_floor",
-      "three fill_tiles calls with shapes 0xBD, 0xBE and 0xBF -- the three-row girder every screen stands on"
+      "three fill_rect calls with shapes 0xBD, 0xBE and 0xBF -- the girder every screen stands on"
+    ],
+    "0x1897": [
+      "draw_fixture_a",
+      "one placed shape; four of these open screen 2"
+    ],
+    "0x18BA": [
+      "draw_fixture_b",
+      ""
+    ],
+    "0x18D9": [
+      "draw_fixture_c",
+      ""
+    ],
+    "0x18F9": [
+      "draw_fixture_d",
+      ""
+    ],
+    "0x1918": [
+      "mack_place",
+      "position into place_pair's variables without moving him"
+    ],
+    "0x193E": [
+      "draw_hud",
+      "the three label strings: BONUS, SCORE, HI-SCORE"
+    ],
+    "0x1951": [
+      "draw_girder_grid",
+      "fourteen columns by five rows of girder cells"
+    ],
+    "0x198F": [
+      "draw_girder_cell",
+      ""
+    ],
+    "0x19C9": [
+      "draw_pillars",
+      "two columns, four rows"
+    ],
+    "0x19FE": [
+      "draw_pillar_cell",
+      ""
+    ],
+    "0x1A23": [
+      "draw_beams",
+      "four of them across the top"
     ],
     "0x1A7E": [
-      "draw_run",
-      "a horizontal run of one shape"
+      "draw_vector",
+      "the turtle interpreter. 0 plots, 1..4 step then plot, 5..8 step without plotting, 0x0F ends. Chains, sparks and the falling girder all come out of this"
+    ],
+    "0x1B52": [
+      "girder_fall",
+      "the loose girder: a random launch from four presets, then a parabola redrawn by draw_vector until it passes the floor"
     ],
     "0x1CEA": [
-      "actor_step",
-      "one actor's position by its velocity pair"
+      "random",
+      "five bytes at 0x1E19: add three of them with the carry in, shift the register along. A Fibonacci generator, and the reason it was mistaken for an actor step is that it looks like a state update"
+    ],
+    "0x1D27": [
+      "randomise_toolboxes",
+      "four positions from the low bits of random"
+    ],
+    "0x1D56": [
+      "randomise_rivets",
+      "four more, with their shapes"
     ],
     "0x1D86": [
-      "actor_update",
-      "clip, locate_cell, draw"
+      "draw_text",
+      "a script of (column, row) then a run of shape numbers, 0 to end and 1 to start a new position. Every string on screen goes through it"
+    ],
+    "0x1FE8": [
+      "draw_lives",
+      "the lives count as one digit"
+    ],
+    "0x1FFF": [
+      "place_at",
+      "place_pair with the position in CL and BL"
+    ],
+    "0x2027": [
+      "animate_ladder",
+      "the four-frame ladder shimmer"
+    ],
+    "0x20BE": [
+      "select_tune",
+      "the walking tune while Mack is moving, the idle one when he is not"
     ],
     "0x2169": [
-      "level_init",
-      "sets up a screen: seventeen reads of key_pressed while it waits, the state vector, the hazard table, and the actor block"
+      "hotkeys",
+      "the in-game keys: restart, pause, sound, help, and the configured abort"
+    ],
+    "0x21E1": [
+      "sound_key",
+      ""
+    ],
+    "0x21EA": [
+      "toggle_sound",
+      "flips sound_on, which music_tick tests first"
+    ],
+    "0x2201": [
+      "pause",
+      "blocks until the same key comes again"
+    ],
+    "0x2223": [
+      "abort_to_main",
+      ""
+    ],
+    "0x222E": [
+      "toggle_hoist",
+      ""
+    ],
+    "0x2244": [
+      "help_screen_1",
+      ""
+    ],
+    "0x2269": [
+      "help_screen_2",
+      ""
+    ],
+    "0x228F": [
+      "hoist_step",
+      "the platform on screen 2, eight rows a move between 0x54 and 0xB4"
     ],
     "0x2428": [
-      "hazard_update",
-      "the six-byte hazard record at hazard_slots"
+      "score_add",
+      "five decimal digits with a carry chain, then redraw. It was called hazard_update"
+    ],
+    "0x2478": [
+      "score_draw",
+      "five digits at the positions in score_positions"
+    ],
+    "0x24B1": [
+      "high_score_check",
+      "compares the five digits from the top down"
+    ],
+    "0x24E5": [
+      "high_score_draw",
+      ""
+    ],
+    "0x29AD": [
+      "draw_girders",
+      "five girder runs, three left-facing and two right"
+    ],
+    "0x2A03": [
+      "draw_girder_left",
+      ""
+    ],
+    "0x2A28": [
+      "draw_girder_right",
+      ""
+    ],
+    "0x2A4D": [
+      "draw_rail",
+      "eighteen cells along the top"
+    ],
+    "0x2A8A": [
+      "draw_post",
+      ""
+    ],
+    "0x2AA7": [
+      "draw_sign",
+      ""
+    ],
+    "0x2AC6": [
+      "set_hazards_screen_2",
+      "the six hazard kinds this screen uses"
+    ],
+    "0x2AE1": [
+      "set_hazards_screen_1",
+      ""
+    ],
+    "0x2B19": [
+      "draw_ladder_list",
+      "walks a (column, row) list until 0xFF"
+    ],
+    "0x2B66": [
+      "draw_ladders_1",
+      ""
+    ],
+    "0x2BC4": [
+      "draw_fixture_e",
+      ""
+    ],
+    "0x2BEC": [
+      "draw_posts_pair",
+      ""
+    ],
+    "0x2BFD": [
+      "draw_post_at",
+      ""
+    ],
+    "0x2C17": [
+      "draw_fixture_f",
+      ""
+    ],
+    "0x2C37": [
+      "draw_fixture_g",
+      ""
+    ],
+    "0x2C5C": [
+      "draw_chain_anchor",
+      "six cells, and the chain animation's starting shape"
+    ],
+    "0x2CB4": [
+      "draw_fixture_h",
+      ""
+    ],
+    "0x2CD3": [
+      "draw_fixture_i",
+      ""
+    ],
+    "0x2D0C": [
+      "draw_wheels",
+      "two of them, and the shapes the wheel animation starts from"
+    ],
+    "0x2D41": [
+      "draw_wheel",
+      ""
+    ],
+    "0x2D5C": [
+      "draw_fixture_j",
+      ""
+    ],
+    "0x2D7B": [
+      "draw_hoist_shaft",
+      "the car and the two cable columns"
+    ],
+    "0x2DD6": [
+      "draw_conveyor",
+      "four segments and the two walls beside them"
+    ],
+    "0x2E6C": [
+      "draw_fixtures_screen_3",
+      ""
+    ],
+    "0x2EF9": [
+      "draw_fixtures_screen_3b",
+      ""
+    ],
+    "0x316B": [
+      "randomise_holes",
+      "one random bit per hole decides which way it drifts"
+    ],
+    "0x31A2": [
+      "holes_step",
+      "each hole toward its target column and row, two units a frame, with the shape animating off a free-running counter"
+    ],
+    "0x320C": [
+      "hole_move",
+      "one hole: column first, then row, then the shape index"
+    ],
+    "0x3334": [
+      "fall_check",
+      "is Mack standing over an unplugged hole. If he is, walk him down two rows at a time with a rising tone, then lose_life"
+    ],
+    "0x352C": [
+      "draw_mack_frame",
+      ""
+    ],
+    "0x3552": [
+      "draw_fall_frame",
+      ""
+    ],
+    "0x357D": [
+      "lose_life",
+      "one off the count; if any are left restart the current screen, otherwise the high score table"
+    ],
+    "0x35E5": [
+      "draw_rivets",
+      "the four that are still unplugged"
+    ],
+    "0x3635": [
+      "draw_toolboxes",
+      ""
+    ],
+    "0x3692": [
+      "vandal_step",
+      "the saboteur: eighteen waypoints, two units a frame, column before row"
+    ],
+    "0x37BF": [
+      "draw_rivet_row",
+      "six rivets, alternating between two position tables so they blink"
+    ],
+    "0x385A": [
+      "draw_pits",
+      "the cement pits, alternating the same way"
+    ],
+    "0x394C": [
+      "conveyor_step",
+      "five segments around a 0x52-long cycle, drawn by draw_vector"
+    ],
+    "0x3A41": [
+      "conveyor_advance",
+      ""
     ],
     "0x3A8F": [
-      "score_add",
-      "adds to the five-digit score at score_digits and redraws it, then queues the scoring sound through music_push"
+      "rivet_collect",
+      "Mack over a rivet: erase it, five points, and the pickup sound"
+    ],
+    "0x3B31": [
+      "pit_touch",
+      "Mack over a cement pit: the same five points, and the hammer starts following him"
+    ],
+    "0x3BCC": [
+      "hammer_target",
+      "where the hammer wants to be -- fourteen units the way Mack faces"
+    ],
+    "0x3C12": [
+      "hammer_step",
+      ""
+    ],
+    "0x3C64": [
+      "toolbox_touch",
+      ""
+    ],
+    "0x3D04": [
+      "toolbox_target",
+      ""
+    ],
+    "0x3D4F": [
+      "toolbox_throw",
+      ""
+    ],
+    "0x3DCC": [
+      "bonus_tick",
+      "the bonus counts down on its own timer"
+    ],
+    "0x3DDE": [
+      "bonus_subtract",
+      "four digits with a borrow"
+    ],
+    "0x3E30": [
+      "bonus_draw",
+      ""
+    ],
+    "0x3E69": [
+      "bonus_check",
+      "a bonus of zero ends the life; the low-bonus warning tone fires once"
+    ],
+    "0x3EEB": [
+      "bonus_payout",
+      "at the end of a screen, the bonus is added to the score a step at a time with a tone for each"
+    ],
+    "0x3F3D": [
+      "plug_hole",
+      "the hammer reaches a hole: plug it, five points"
+    ],
+    "0x400B": [
+      "vandal_unplug",
+      "and the saboteur takes the plug back out"
+    ],
+    "0x40C4": [
+      "hazard_zone_a",
+      "one rectangle that kills Mack; there are nine of these, one per fixture that can crush him"
+    ],
+    "0x4126": [
+      "hazard_zone_b",
+      ""
+    ],
+    "0x41A0": [
+      "hazard_zone_c",
+      ""
+    ],
+    "0x41C1": [
+      "hazard_zone_d",
+      ""
+    ],
+    "0x41E2": [
+      "hazard_zone_e",
+      ""
+    ],
+    "0x4203": [
+      "hazard_zone_f",
+      ""
+    ],
+    "0x4261": [
+      "hazard_zone_g",
+      ""
+    ],
+    "0x4282": [
+      "hazard_zone_h",
+      ""
+    ],
+    "0x42B3": [
+      "hazard_zone_i",
+      "the falling girder's, which is why it reads its live position"
+    ],
+    "0x42FB": [
+      "vandal_catch",
+      "Mack walks into the saboteur and grabs him"
+    ],
+    "0x4383": [
+      "vandal_release",
+      "and the configured key lets him go again"
+    ],
+    "0x43D9": [
+      "hole_touch",
+      "an unplugged hole under Mack's feet"
+    ],
+    "0x441D": [
+      "die",
+      "finish any jump first, then twenty frames of the death animation"
+    ],
+    "0x445E": [
+      "death_frame_step",
+      "the frame index up to 3 and back down"
+    ],
+    "0x44A7": [
+      "death_frame",
+      ""
+    ],
+    "0x44C4": [
+      "draw_death",
+      ""
+    ],
+    "0x44F3": [
+      "joystick_input",
+      "the analogue path: two buttons, then a direction from the two axes"
+    ],
+    "0x455B": [
+      "joystick_direction",
+      "the two readings against a dead zone of 0x46..0xB4, then the diagonal decided by which is larger"
+    ],
+    "0x45D4": [
+      "toggle_flag",
+      ""
     ],
     "0x45FB": [
       "music_push",
-      "saves the tune position so a sound effect can take the speaker and give it back. Sixteen callers, every one of them an event that makes a noise. It was called shift_history"
+      "saves the tune position so a sound effect can take the speaker and give it back. Sixteen callers, every one an event that makes a noise. It was called shift_history"
     ],
     "0x4623": [
       "music_pop",
-      "puts the saved position back"
+      ""
     ],
     "0x4648": [
       "music_reset",
-      "back to the default tune at tune_default"
+      "back to whichever tune select_tune last chose"
     ],
     "0x4661": [
       "music_tick",
-      "the software synthesiser. Adds the note's phase increment to the accumulator 0x78 times a tick and toggles port 0x61 bit 1 against a duty threshold that itself drifts -- pulse-width modulation on a one-bit speaker"
+      "the synthesiser: a phase increment added to a 16-bit accumulator 0x78 times a tick, and port 0x61 bit 1 toggled against a duty threshold that itself drifts. Pulse-width modulation on a one-bit speaker"
+    ],
+    "0x4714": [
+      "music_tick_alt",
+      "a second modulation loop nothing in the code region reaches"
+    ],
+    "0x4837": [
+      "respawn_pits",
+      ""
+    ],
+    "0x4857": [
+      "respawn_toolboxes",
+      ""
+    ],
+    "0x4894": [
+      "respawn_none",
+      "a bare ret; screen 3 has nothing to put back"
+    ],
+    "0x4895": [
+      "respawn_screen_1",
+      ""
+    ],
+    "0x48B1": [
+      "respawn_screen_2",
+      ""
+    ],
+    "0x48D7": [
+      "respawn_screen_3",
+      ""
+    ],
+    "0x48F7": [
+      "exit_check",
+      "Mack at the top of a screen and inside the exit's six columns"
+    ],
+    "0x493C": [
+      "is_left_half",
+      "AL under 0x7F -- which half of the screen a thing is on, and how the game picks between paired fixtures"
+    ],
+    "0x4963": [
+      "hoist_catch",
+      "Mack steps onto the hoist"
+    ],
+    "0x4A09": [
+      "hoist_ride",
+      "and rides it along its path table until the end"
+    ],
+    "0x4A6B": [
+      "hoist_frame",
+      ""
+    ],
+    "0x4AD8": [
+      "conveyor_catch",
+      "Mack lands on a conveyor segment"
+    ],
+    "0x4B8C": [
+      "conveyor_ride",
+      ""
+    ],
+    "0x4C05": [
+      "hammer_land",
+      "the hammer reaches the floor: five points and it falls away"
+    ],
+    "0x4D26": [
+      "draw_hammer",
+      ""
+    ],
+    "0x4D5B": [
+      "walk_off_edge",
+      "the top-right corner of screen 1"
+    ],
+    "0x4DE3": [
+      "sparks",
+      "six frames of the shower a landed hammer throws"
+    ],
+    "0x4E86": [
+      "draw_spark",
+      "through draw_vector"
+    ],
+    "0x4E96": [
+      "hoist_call",
+      "Mack at the left edge with all his rivets: start the hoist and freeze him"
+    ],
+    "0x4F9A": [
+      "hoist_arrive",
+      "nine frames of it opening, then Mack is put where the screen said"
+    ],
+    "0x507F": [
+      "compute_row",
+      "Mack's Y as a girder index -- the top four bits minus one"
+    ],
+    "0x50BB": [
+      "ladder_ride",
+      "the last ladder on screen 2, which moves on its own"
+    ],
+    "0x5178": [
+      "ladder_up",
+      ""
+    ],
+    "0x5182": [
+      "ladder_down",
+      ""
+    ],
+    "0x518B": [
+      "draw_ladder_mack",
+      "three shapes by height, the top one with a sound"
+    ],
+    "0x520D": [
+      "edge_flag",
+      ""
+    ],
+    "0x5239": [
+      "screen_2_complete",
+      "all four toolboxes gone: pay the bonus and go to screen 3"
+    ],
+    "0x5274": [
+      "lift_catch",
+      "the platform on screen 3"
+    ],
+    "0x531C": [
+      "lift_ride",
+      ""
+    ],
+    "0x5383": [
+      "draw_lift_mack",
+      ""
+    ],
+    "0x5397": [
+      "slide_step",
+      "the chute that carries Mack down the right-hand side"
+    ],
+    "0x53EF": [
+      "slide_start",
+      ""
+    ],
+    "0x542E": [
+      "face_right",
+      ""
+    ],
+    "0x543E": [
+      "face_left",
+      ""
+    ],
+    "0x544E": [
+      "jump_length",
+      "0x18 frames from a girder row, 0xF from anywhere else"
+    ],
+    "0x54C8": [
+      "low_flag",
+      ""
+    ],
+    "0x54E7": [
+      "ledge_check",
+      "two gaps on screen 3 that drop Mack a row"
+    ],
+    "0x5552": [
+      "landing_row",
+      "which girder a jump ends on"
+    ],
+    "0x55D9": [
+      "chute_start",
+      ""
+    ],
+    "0x5639": [
+      "chute_step",
+      ""
+    ],
+    "0x5686": [
+      "chute_end",
+      "the walk to the exit, then the bonus and screen 1 again"
+    ],
+    "0x57D1": [
+      "draw_explosion",
+      "a shape picked fresh from random every frame"
+    ],
+    "0x5850": [
+      "spawn_lunchbox",
+      "a random one of four shapes at a random spot from the per-screen table"
+    ],
+    "0x58B3": [
+      "collect_lunchbox",
+      "erase it and score"
+    ],
+    "0x592D": [
+      "hit_small",
+      "an 18 by 8 box around Mack"
+    ],
+    "0x598F": [
+      "hit_large",
+      "16 by 24 -- what the holes use"
+    ],
+    "0x59FA": [
+      "pendulum_step",
+      "the two swinging weights, drawn by draw_vector, reversing at their limits"
+    ],
+    "0x5B0D": [
+      "draw_pendulum",
+      ""
+    ],
+    "0x5B3D": [
+      "wheels_step",
+      "the two cement-mixer wheels, four frames each"
+    ],
+    "0x5C2D": [
+      "platform_step",
+      "the platform that shuttles between 0x8C and 0xF0"
+    ],
+    "0x5D04": [
+      "button_step",
+      "the call button: pressed, then twenty frames of animation, then toggle_hoist"
+    ],
+    "0x5E3A": [
+      "lights_step",
+      "the two indicator lamps"
+    ],
+    "0x5E8B": [
+      "next_level",
+      "the two-digit level counter, carried by hand"
+    ],
+    "0x5EB3": [
+      "draw_level_number",
+      ""
+    ],
+    "0x5ED6": [
+      "draw_digit",
+      ""
+    ],
+    "0x5EF7": [
+      "high_score_screen",
+      "the trophy, three scores, and a wait"
+    ],
+    "0x5F70": [
+      "draw_trophy",
+      ""
+    ],
+    "0x5F8F": [
+      "screen_1_complete",
+      "all six pits filled: pay the bonus and go to screen 2"
+    ],
+    "0x600C": [
+      "walk_off",
+      "eighteen scripted steps to the right edge at the end of screen 3"
+    ],
+    "0x607F": [
+      "extra_life",
+      "one more at seven -- the digit at 0x2509"
+    ],
+    "0x60A4": [
+      "pause_short",
+      ""
+    ],
+    "0x60BB": [
+      "pause_short_2",
+      ""
+    ],
+    "0x60D2": [
+      "attract_wait",
+      "0x40 delays, watching for a key the whole time"
+    ],
+    "0x611C": [
+      "new_life",
+      "resets the per-life flags and cycles the attract-mode screen through its four entries"
+    ],
+    "0x616C": [
+      "frame_end",
+      "counts the frame budget down; zero goes back to the outer loop"
+    ],
+    "0x61BD": [
+      "screen_select",
+      "the three keys that choose a starting screen, through screen_entry"
+    ],
+    "0x61FA": [
+      "config_key",
+      ""
+    ],
+    "0x6206": [
+      "configure_keys",
+      "six prompts, each waiting for a key that is not already taken"
+    ],
+    "0x6297": [
+      "read_config_key",
+      "rejects the nine reserved codes and anything already assigned, and beeps if you try"
+    ],
+    "0x6347": [
+      "error_beep",
+      "0xA0 toggles of port 0x61 bit 1, five times"
+    ],
+    "0x648A": [
+      "play_tune",
+      "a (divisor, length) list terminated by zero, played by toggling the speaker in a counted loop. Silent while sound_on is clear"
+    ],
+    "0x64EA": [
+      "sparks_2",
+      "the second spark shower, on screen 3"
+    ],
+    "0x6586": [
+      "chain_step",
+      "eleven links around a 0x2B cycle"
+    ],
+    "0x667E": [
+      "conveyor2_step",
+      "the second conveyor's four frames"
+    ],
+    "0x6715": [
+      "bolt_drop",
+      "a bolt falls from row 0xA6 to 0xB4, its shape chosen by the low nibble of its row"
+    ],
+    "0x6822": [
+      "bolts_step",
+      ""
+    ],
+    "0x6847": [
+      "bolt_step",
+      "one bolt along the 0x23-entry path table"
+    ],
+    "0x695C": [
+      "hoist_move",
+      "four rows a frame between its two limits, with a stop at each end"
+    ],
+    "0x69F2": [
+      "draw_hoist",
+      ""
+    ],
+    "0x6A18": [
+      "draw_hoist_cables",
+      "four fill_rect calls, two per side, so the cable grows and shrinks with the car"
+    ],
+    "0x6A93": [
+      "lift_step",
+      "the screen-3 platform, one row a frame between 0x4F and 0xA8"
+    ],
+    "0x6B14": [
+      "erase_lift_line",
+      ""
+    ],
+    "0x6B26": [
+      "draw_lift",
+      "four segments"
+    ],
+    "0x6B81": [
+      "blink_sign",
+      "two shapes, ten frames each"
+    ],
+    "0x6BDD": [
+      "flame_step",
+      "the furnace, two shapes alternating"
     ]
   },
   "globals": {
     "0x0103": [
       "exit_allowed",
-      "the keyboard ISR refuses to return to DOS unless this is set"
+      ""
     ],
-    "0x0410": [
-      "bios_equipment",
-      "0x40:0x10, forced to 40-column colour"
+    "0x0171": [
+      "keyboard_isr_offset",
+      "`lea ax, [0x171]` -- the offset start puts in the INT 09h vector; the same address as keyboard_isr"
+    ],
+    "0x02C4": [
+      "font",
+      "the character cells plot_cell draws from"
     ],
     "0x052D": [
       "scanline_table",
-      "200 words, one per scanline: 0x0000, 0x2000, 0x0050, 0x2050 -- the two CGA banks interleaved. Start-up adds five to every entry, so the playfield begins five bytes in and clear_playfield writes 0x50 bytes from there"
+      "200 words, one per scanline: the two CGA banks interleaved. Start-up adds five to every entry, so the playfield begins five bytes in. It had been recorded as 600 words, and in file offsets while every other key here is an address, so it never once substituted"
     ],
     "0x072D": [
       "scan_map",
-      "0x80 bytes: scan code to game action. Values 1 and 2 are the two escapes, anything with the high bit set is a movement key"
+      "0x80 bytes: scan code to game action"
     ],
     "0x0781": [
       "key_pressed",
-      "what the ISR left; cleared by whoever consumes it"
+      "what the ISR left, high bit set; cleared by whoever consumes it"
     ],
     "0x0782": [
       "old_int09",
-      "the vector the ISR puts back on the way out"
+      ""
+    ],
+    "0x0784": [
+      "old_int09_seg",
+      ""
     ],
     "0x0786": [
       "entry_es",
       "the PSP segment, saved so the far return has one"
     ],
+    "0x09AC": [
+      "stick_raw",
+      "the two axes as joystick_read_raw left them"
+    ],
+    "0x09AE": [
+      "stick_raw_y",
+      ""
+    ],
+    "0x09B0": [
+      "stick_slope_low",
+      "0x8000 divided by the lower half range, per axis"
+    ],
+    "0x09B8": [
+      "stick_slope_high",
+      ""
+    ],
+    "0x09C0": [
+      "stick_corner_1",
+      "the three calibration readings"
+    ],
+    "0x09C4": [
+      "stick_corner_2",
+      ""
+    ],
+    "0x09C8": [
+      "stick_corner_3",
+      ""
+    ],
+    "0x09CC": [
+      "stick_sample",
+      ""
+    ],
+    "0x09D2": [
+      "stick_count_low",
+      ""
+    ],
+    "0x09D8": [
+      "stick_count_high",
+      ""
+    ],
     "0x0B60": [
-      "actor_x",
-      "99 references; also the first byte of the 0x21-byte actor block that runs to 0x0B80"
+      "mack_x",
+      "99 references"
+    ],
+    "0x0B61": [
+      "fire_held",
+      ""
+    ],
+    "0x0B62": [
+      "key_event",
+      "handle_key sets it, main tests it"
+    ],
+    "0x0B63": [
+      "mack_row",
+      "the girder index compute_row derives from mack_y"
+    ],
+    "0x0B64": [
+      "hoist_row",
+      ""
     ],
     "0x0B65": [
-      "actor_y",
-      "81"
+      "mack_y",
+      "81 references"
+    ],
+    "0x0B66": [
+      "mack_prev_x",
+      "what place_pair erases"
+    ],
+    "0x0B67": [
+      "mack_prev_y",
+      ""
+    ],
+    "0x0B68": [
+      "death_shape_2",
+      ""
     ],
     "0x0B69": [
-      "actor_state",
+      "mack_shape",
+      ""
+    ],
+    "0x0B6B": [
+      "mack_prev_shape",
       ""
     ],
     "0x0B6C": [
-      "actor_frame",
+      "mack_jumping",
       ""
     ],
     "0x0B6D": [
-      "actor_dir",
+      "mack_facing",
+      "1 right, 2 down, 3 left"
+    ],
+    "0x0B6E": [
+      "jump_frame",
+      "0 to jump_length"
+    ],
+    "0x0B70": [
+      "key_code",
+      ""
+    ],
+    "0x0B71": [
+      "sound_on",
+      "music_tick's first test, and hotkeys toggles it"
+    ],
+    "0x0B72": [
+      "mack_frozen",
+      "set whenever something else is moving him"
+    ],
+    "0x0B73": [
+      "move_allowed",
+      "what can_walk_left and friends answer"
+    ],
+    "0x0B77": [
+      "stick_x",
+      ""
+    ],
+    "0x0B78": [
+      "stick_y",
+      ""
+    ],
+    "0x0B79": [
+      "using_stick",
       ""
     ],
     "0x0B7A": [
-      "actor_timer",
+      "mack_moved",
+      "select_tune reads it, and so does the hoist"
+    ],
+    "0x0B7B": [
+      "jump_length_v",
+      "0x18 or 0xF"
+    ],
+    "0x0B7C": [
+      "near_floor",
+      ""
+    ],
+    "0x0B7D": [
+      "level_stage",
+      ""
+    ],
+    "0x0B7E": [
+      "long_death",
+      ""
+    ],
+    "0x0B7F": [
+      "screen_dirty",
+      ""
+    ],
+    "0x0B80": [
+      "in_play",
       ""
     ],
     "0x0BD9": [
       "state_vector",
-      "`jmp word [0x0BD9]`; comrec resolves it to 0x0BB6 by following what writes it"
+      "`jmp word [0x0BD9]` -- which screen main enters"
+    ],
+    "0x0BDA": [
+      "state_vector_hi",
+      ""
+    ],
+    "0x1003": [
+      "shape_up",
+      "the climbing shapes, four of them"
+    ],
+    "0x100B": [
+      "shape_down",
+      ""
+    ],
+    "0x1013": [
+      "shape_left",
+      ""
+    ],
+    "0x1015": [
+      "ladder_shape",
+      "swapped while the moving ladder carries him"
+    ],
+    "0x1017": [
+      "jump_step_x",
+      "the horizontal step per jump frame"
+    ],
+    "0x1030": [
+      "jump_step_y",
+      "and the vertical one"
     ],
     "0x10E3": [
-      "hazard_vector",
-      "five words, 20 references"
+      "key_left",
+      "the five configurable keys"
+    ],
+    "0x10E5": [
+      "key_right",
+      ""
+    ],
+    "0x10E7": [
+      "key_up",
+      ""
+    ],
+    "0x10E9": [
+      "key_down",
+      ""
+    ],
+    "0x10EB": [
+      "key_jump",
+      ""
+    ],
+    "0x11EF": [
+      "jump_dir_mark",
+      "0x79 or 0xF9 -- which sign the horizontal step takes"
+    ],
+    "0x1340": [
+      "girder_y0_1",
+      "screen 1's girder tables: top, bottom, left"
+    ],
+    "0x1344": [
+      "girder_y1_1",
+      ""
+    ],
+    "0x1348": [
+      "girder_y0_2",
+      "screen 2's"
+    ],
+    "0x134C": [
+      "girder_y1_2",
+      ""
+    ],
+    "0x1350": [
+      "girder_y0_3",
+      "screen 3's"
+    ],
+    "0x1351": [
+      "girder_y1_3",
+      ""
+    ],
+    "0x1352": [
+      "girder_x_1",
+      ""
+    ],
+    "0x1356": [
+      "girder_x_2",
+      ""
+    ],
+    "0x135A": [
+      "girder_x_3",
+      ""
+    ],
+    "0x135B": [
+      "girder_count",
+      "per screen"
+    ],
+    "0x135F": [
+      "span_low",
+      "scratch for can_walk_right"
+    ],
+    "0x1360": [
+      "span_high",
+      ""
+    ],
+    "0x1361": [
+      "span_end",
+      ""
+    ],
+    "0x1486": [
+      "ladder_rows",
+      "the five rows a ladder can be climbed at"
+    ],
+    "0x1546": [
+      "wrap_from",
+      "per screen"
+    ],
+    "0x154A": [
+      "wrap_to",
+      ""
     ],
     "0x15A0": [
       "fill_row0",
-      "the rectangle filler's parameter block, 0x15A0..0x15B1"
+      "fill_rect's parameter block"
     ],
     "0x15A1": [
       "fill_row1",
@@ -239,45 +1374,853 @@
       "fill_shape",
       ""
     ],
+    "0x15A6": [
+      "girder_x",
+      "the falling girder"
+    ],
+    "0x15A7": [
+      "girder_y",
+      ""
+    ],
+    "0x15A8": [
+      "girder_prev_x",
+      ""
+    ],
+    "0x15A9": [
+      "girder_prev_y",
+      ""
+    ],
+    "0x15AA": [
+      "girder_dx",
+      ""
+    ],
+    "0x15AB": [
+      "girder_dy",
+      "increases every frame, which is the parabola"
+    ],
+    "0x15AC": [
+      "girder_active",
+      ""
+    ],
+    "0x15AD": [
+      "girder_dy0",
+      ""
+    ],
+    "0x15AE": [
+      "girder_preset",
+      "one of four, chosen by random"
+    ],
     "0x15B1": [
       "fill_step",
       "non-zero makes rows advance in twos"
     ],
+    "0x15B3": [
+      "hazard_rows",
+      "the rows toolboxes and rivets sit on"
+    ],
+    "0x15B9": [
+      "rivet_rows",
+      ""
+    ],
+    "0x15BF": [
+      "girder_columns",
+      ""
+    ],
+    "0x15CD": [
+      "pillar_rows",
+      ""
+    ],
+    "0x15D1": [
+      "pillar_col_a",
+      ""
+    ],
+    "0x15D2": [
+      "pillar_col_b",
+      ""
+    ],
+    "0x15D3": [
+      "beam_row",
+      ""
+    ],
+    "0x15D4": [
+      "beam_columns",
+      ""
+    ],
     "0x1B64": [
-      "place_flag_a",
-      "the five flags place_sprite tests, 129 references"
+      "clip_row",
+      "the masked blitter's origin, 129 references with clip_col"
     ],
     "0x1B65": [
-      "place_flag_b",
+      "clip_col",
       ""
     ],
     "0x1B66": [
-      "place_flag_c",
+      "use_or_blit",
       ""
     ],
     "0x1B67": [
-      "place_flag_d",
+      "use_xor_blit",
       ""
     ],
     "0x1B68": [
-      "place_flag_e",
+      "use_erase_blit",
       ""
     ],
+    "0x1C3C": [
+      "girder_dx_table",
+      "the four launch presets"
+    ],
+    "0x1C40": [
+      "girder_dy_table",
+      ""
+    ],
+    "0x1C44": [
+      "girder_dy_limit",
+      ""
+    ],
+    "0x1C48": [
+      "girder_y_table",
+      ""
+    ],
+    "0x1C4C": [
+      "girder_x_limit",
+      ""
+    ],
+    "0x1C4E": [
+      "girder_delay",
+      ""
+    ],
+    "0x1C4F": [
+      "girder_timer",
+      ""
+    ],
+    "0x1C50": [
+      "girder_delay_table",
+      ""
+    ],
+    "0x1E19": [
+      "rng_state",
+      "five bytes; random adds three of them and shifts"
+    ],
+    "0x1E1A": [
+      "rng_1",
+      ""
+    ],
+    "0x1E1D": [
+      "rng_2",
+      ""
+    ],
+    "0x1E1E": [
+      "rng_3",
+      ""
+    ],
+    "0x1E21": [
+      "toolbox_x_table",
+      ""
+    ],
+    "0x1E4D": [
+      "toolbox_x",
+      "four of them"
+    ],
+    "0x1E52": [
+      "toolbox_x_choices",
+      ""
+    ],
+    "0x1EEE": [
+      "text_bonus",
+      "the three HUD labels, as draw_text scripts"
+    ],
+    "0x1F19": [
+      "text_score",
+      ""
+    ],
+    "0x1F35": [
+      "text_hiscore",
+      ""
+    ],
+    "0x1F4D": [
+      "text_game_over",
+      ""
+    ],
+    "0x1F77": [
+      "text_high_scores",
+      ""
+    ],
+    "0x203E": [
+      "text_help_2",
+      ""
+    ],
+    "0x209B": [
+      "text_help_1",
+      ""
+    ],
+    "0x20FB": [
+      "text_lives",
+      ""
+    ],
+    "0x20FD": [
+      "lives_digit",
+      ""
+    ],
+    "0x2120": [
+      "ladder_shape_a",
+      "the shimmer's two shape words and their previous values"
+    ],
+    "0x2121": [
+      "ladder_shape_a_hi",
+      ""
+    ],
+    "0x2122": [
+      "ladder_shape_b",
+      ""
+    ],
+    "0x2123": [
+      "ladder_shape_b_hi",
+      ""
+    ],
+    "0x2124": [
+      "ladder_started",
+      ""
+    ],
+    "0x2125": [
+      "ladder_timer",
+      ""
+    ],
+    "0x2126": [
+      "ladder_frame",
+      ""
+    ],
+    "0x21E6": [
+      "tune_idle",
+      "the note stream the game plays while nothing is happening"
+    ],
+    "0x21E7": [
+      "hazard_kind_1",
+      "the six kinds set per screen"
+    ],
+    "0x21EB": [
+      "hazard_kind_2",
+      ""
+    ],
+    "0x21ED": [
+      "hazard_kind_3",
+      ""
+    ],
+    "0x21EF": [
+      "hazard_kind_4",
+      ""
+    ],
+    "0x21F1": [
+      "hazard_kind_5",
+      ""
+    ],
+    "0x21FD": [
+      "hazard_kind_6",
+      ""
+    ],
+    "0x2264": [
+      "hoist_y",
+      ""
+    ],
+    "0x2265": [
+      "hoist_dir",
+      ""
+    ],
+    "0x2266": [
+      "hoist_cable_y",
+      ""
+    ],
+    "0x2267": [
+      "hoist_running",
+      ""
+    ],
+    "0x2268": [
+      "hoist_shape",
+      ""
+    ],
+    "0x22E0": [
+      "key_release",
+      "the sixth configurable key -- the one that lets the saboteur go"
+    ],
     "0x2500": [
-      "hazard_slots",
-      "six bytes, one per hazard on the screen"
+      "score_pending",
+      "the digits score_add is about to add"
+    ],
+    "0x2501": [
+      "score_pending_2",
+      ""
+    ],
+    "0x2502": [
+      "score_pending_3",
+      ""
+    ],
+    "0x2503": [
+      "score_pending_4",
+      ""
+    ],
+    "0x2504": [
+      "score_pending_5",
+      ""
+    ],
+    "0x2505": [
+      "score_pending_6",
+      ""
+    ],
+    "0x2506": [
+      "score_digits",
+      "five decimal digits, most significant first"
+    ],
+    "0x2509": [
+      "score_digit_4",
+      "the one extra_life watches for a 7"
+    ],
+    "0x250C": [
+      "score_positions",
+      ""
+    ],
+    "0x2517": [
+      "high_score_digits",
+      ""
+    ],
+    "0x251D": [
+      "high_score_positions",
+      ""
+    ],
+    "0x25AD": [
+      "text_digit",
+      "the two-byte script draw_text is handed for a single digit"
+    ],
+    "0x25AF": [
+      "text_digit_char",
+      ""
+    ],
+    "0x261A": [
+      "hoist_path_x",
+      ""
+    ],
+    "0x266B": [
+      "hoist_path_y",
+      ""
+    ],
+    "0x26BC": [
+      "spark_x_left",
+      "the two spark tables, six positions each"
+    ],
+    "0x26C2": [
+      "spark_y_left",
+      ""
+    ],
+    "0x26C8": [
+      "spark_x_right",
+      ""
+    ],
+    "0x26CE": [
+      "spark_y_right",
+      ""
+    ],
+    "0x2894": [
+      "column_table",
+      "a column index to its pixel column"
+    ],
+    "0x2A94": [
+      "rail_columns",
+      ""
+    ],
+    "0x2AAC": [
+      "girder_variant",
+      ""
+    ],
+    "0x2C62": [
+      "ladder_columns_1",
+      ""
+    ],
+    "0x2C64": [
+      "ladder_columns_2",
+      ""
+    ],
+    "0x2D36": [
+      "wide_columns",
+      "makes place_pair_x7 step eight instead of sixteen"
+    ],
+    "0x2D56": [
+      "chain_rows",
+      ""
+    ],
+    "0x3040": [
+      "hole_x_table_3",
+      ""
+    ],
+    "0x304C": [
+      "hole_y_table_3",
+      ""
+    ],
+    "0x305E": [
+      "path_x",
+      "the 0x23-entry path the bolts and the chute both follow"
+    ],
+    "0x3082": [
+      "path_y",
+      ""
+    ],
+    "0x30A6": [
+      "chain_x",
+      ""
+    ],
+    "0x30D2": [
+      "chain_y",
+      ""
+    ],
+    "0x30FE": [
+      "vandal_waypoint_x",
+      "eighteen of them"
+    ],
+    "0x3111": [
+      "vandal_waypoint_y",
+      ""
+    ],
+    "0x3124": [
+      "conveyor_x",
+      ""
+    ],
+    "0x3176": [
+      "conveyor_y",
+      ""
+    ],
+    "0x31E4": [
+      "hole_target_shape",
+      "the per-hole arrays, one entry each"
+    ],
+    "0x31E8": [
+      "hole_shape_1",
+      ""
+    ],
+    "0x31EC": [
+      "hole_shape_2",
+      ""
+    ],
+    "0x31F0": [
+      "hole_shape_3",
+      ""
+    ],
+    "0x31F4": [
+      "hole_target_1",
+      ""
+    ],
+    "0x31FC": [
+      "hole_target_2",
+      ""
+    ],
+    "0x3200": [
+      "hole_x_ptr",
+      ""
+    ],
+    "0x3204": [
+      "hole_x_ptr_2",
+      ""
+    ],
+    "0x3208": [
+      "hole_y_ptr",
+      ""
+    ],
+    "0x320C": [
+      "hole_y_ptr_2",
+      ""
+    ],
+    "0x3210": [
+      "hole_dir_x",
+      "the random bit that decides which way it drifts"
+    ],
+    "0x3214": [
+      "hole_dir_y",
+      ""
+    ],
+    "0x3218": [
+      "hole_shape",
+      ""
+    ],
+    "0x321C": [
+      "hole_x",
+      ""
+    ],
+    "0x3220": [
+      "hole_prev_x",
+      ""
+    ],
+    "0x3224": [
+      "hole_y",
+      ""
+    ],
+    "0x3228": [
+      "hole_prev_y",
+      ""
+    ],
+    "0x322C": [
+      "hole_prev_shape",
+      ""
+    ],
+    "0x3230": [
+      "hole_prev_shape_2",
+      ""
+    ],
+    "0x3234": [
+      "hole_frame",
+      "a free-running counter the shape index is taken from"
+    ],
+    "0x3235": [
+      "hole_count",
+      ""
+    ],
+    "0x323B": [
+      "hole_x_tables",
+      ""
+    ],
+    "0x324B": [
+      "hole_x_tables_2",
+      ""
+    ],
+    "0x3253": [
+      "hole_y_tables",
+      ""
+    ],
+    "0x3263": [
+      "hole_y_tables_2",
+      ""
+    ],
+    "0x3420": [
+      "fall_left",
+      "the hole Mack is about to drop through"
+    ],
+    "0x3421": [
+      "fall_right",
+      ""
+    ],
+    "0x3422": [
+      "fall_x",
+      ""
+    ],
+    "0x3423": [
+      "fall_bottom",
+      ""
+    ],
+    "0x3424": [
+      "fall_left_2",
+      ""
+    ],
+    "0x3425": [
+      "fall_right_2",
+      ""
+    ],
+    "0x3426": [
+      "respawn_x",
+      ""
+    ],
+    "0x3427": [
+      "respawn_y",
+      ""
+    ],
+    "0x3428": [
+      "rivet_x",
+      "four rivet columns, randomised each screen"
+    ],
+    "0x342D": [
+      "fall_tone",
+      "drops two each row, which is the falling sound"
+    ],
+    "0x342E": [
+      "lives",
+      ""
+    ],
+    "0x3433": [
+      "short_fall",
+      ""
+    ],
+    "0x364F": [
+      "fall_shapes",
+      ""
     ],
     "0x3788": [
-      "hazard_state",
-      "eight bytes from 0x3788, 54 references"
+      "vandal_x",
+      ""
+    ],
+    "0x3789": [
+      "vandal_prev_x",
+      ""
+    ],
+    "0x378A": [
+      "vandal_y",
+      ""
+    ],
+    "0x378B": [
+      "vandal_prev_y",
+      ""
+    ],
+    "0x378D": [
+      "vandal_shape",
+      ""
+    ],
+    "0x378F": [
+      "vandal_prev_shape",
+      ""
+    ],
+    "0x3790": [
+      "vandal_active",
+      ""
+    ],
+    "0x3791": [
+      "vandal_waypoint",
+      ""
+    ],
+    "0x38A0": [
+      "pit_state",
+      "six of them; 1 means still open"
+    ],
+    "0x38A6": [
+      "pit_x_a",
+      "two position tables, alternated so the pits blink"
+    ],
+    "0x38AC": [
+      "pit_y_a",
+      ""
+    ],
+    "0x38B2": [
+      "pit_x_b",
+      ""
+    ],
+    "0x38B8": [
+      "pit_y_b",
+      ""
+    ],
+    "0x38BE": [
+      "pit_phase",
+      ""
+    ],
+    "0x3941": [
+      "cement_x_a",
+      ""
+    ],
+    "0x394D": [
+      "cement_x_b",
+      ""
+    ],
+    "0x3953": [
+      "cement_y",
+      ""
+    ],
+    "0x3959": [
+      "cement_phase",
+      ""
+    ],
+    "0x39D7": [
+      "conveyor_started",
+      ""
+    ],
+    "0x39D8": [
+      "conveyor_pos",
+      "five segments"
+    ],
+    "0x39DD": [
+      "conveyor_draw_y",
+      ""
+    ],
+    "0x39E2": [
+      "conveyor_draw_x",
+      ""
+    ],
+    "0x39E7": [
+      "conveyor_index",
+      ""
+    ],
+    "0x39E8": [
+      "conveyor_spacing",
+      ""
+    ],
+    "0x39E9": [
+      "conveyor_timer",
+      ""
+    ],
+    "0x39EA": [
+      "conveyor_shape_index",
+      ""
+    ],
+    "0x3A3C": [
+      "conveyor_shapes",
+      ""
+    ],
+    "0x3C22": [
+      "hammer_x",
+      ""
+    ],
+    "0x3C23": [
+      "hammer_y",
+      ""
+    ],
+    "0x3C24": [
+      "hammer_prev_x",
+      ""
+    ],
+    "0x3C25": [
+      "hammer_prev_y",
+      ""
+    ],
+    "0x3C27": [
+      "hammer_prev_shape",
+      ""
+    ],
+    "0x3C28": [
+      "cement_state",
+      "six pits"
     ],
     "0x3C2E": [
-      "hazard_timer",
+      "hammer_active",
+      ""
+    ],
+    "0x3C2F": [
+      "cement_count",
+      ""
+    ],
+    "0x3C30": [
+      "cement_slot",
+      ""
+    ],
+    "0x3D58": [
+      "throw_x",
+      ""
+    ],
+    "0x3D59": [
+      "throw_y",
+      ""
+    ],
+    "0x3D5A": [
+      "throw_prev_x",
+      ""
+    ],
+    "0x3D5B": [
+      "throw_prev_y",
+      ""
+    ],
+    "0x3D5C": [
+      "toolbox_state",
+      ""
+    ],
+    "0x3D63": [
+      "throw_prev_shape",
+      ""
+    ],
+    "0x3EAF": [
+      "bonus_threshold",
+      "the value the warning tone fires below"
+    ],
+    "0x3EB5": [
+      "bonus_sum",
+      ""
+    ],
+    "0x3EB6": [
+      "bonus_expired",
+      ""
+    ],
+    "0x3EB7": [
+      "bonus_paying",
+      ""
+    ],
+    "0x3EB8": [
+      "bonus_warned",
+      ""
+    ],
+    "0x3EB9": [
+      "bonus_start",
+      ""
+    ],
+    "0x3EBB": [
+      "bonus_digits",
+      "four of them"
+    ],
+    "0x3EBC": [
+      "bonus_digit_2",
+      ""
+    ],
+    "0x3EBD": [
+      "bonus_digit_3",
+      ""
+    ],
+    "0x3EBE": [
+      "bonus_digit_4",
+      ""
+    ],
+    "0x3EBF": [
+      "bonus_digit_5",
+      ""
+    ],
+    "0x3EC0": [
+      "bonus_positions",
+      ""
+    ],
+    "0x3ECA": [
+      "bonus_period",
+      ""
+    ],
+    "0x3ECB": [
+      "bonus_timer",
+      ""
+    ],
+    "0x3F65": [
+      "text_bonus_digit",
+      ""
+    ],
+    "0x3F67": [
+      "text_bonus_char",
+      ""
+    ],
+    "0x4030": [
+      "vandal_held",
+      ""
+    ],
+    "0x4031": [
+      "hole_state",
+      "four holes: 0 open, 1 plugged, 2 gone"
+    ],
+    "0x4036": [
+      "throw_slot",
+      ""
+    ],
+    "0x4037": [
+      "hole_slot",
+      ""
+    ],
+    "0x41C0": [
+      "hazard_x_screen",
+      ""
+    ],
+    "0x43FA": [
+      "vandal_enabled",
+      ""
+    ],
+    "0x4515": [
+      "death_dir",
+      ""
+    ],
+    "0x4516": [
+      "death_frame_index",
+      ""
+    ],
+    "0x4517": [
+      "death_shapes",
+      "four (shape, shape) pairs"
+    ],
+    "0x46F3": [
+      "stick_direction",
+      ""
+    ],
+    "0x46F4": [
+      "toggle_state",
       ""
     ],
     "0x46F5": [
       "tune_saved",
       "where music_push keeps the interrupted position"
+    ],
+    "0x46F6": [
+      "tune_saved_hi",
+      ""
     ],
     "0x46F7": [
       "duty_step",
@@ -285,30 +2228,902 @@
     ],
     "0x46F8": [
       "tune_default",
-      "the tune music_reset goes back to"
+      ""
+    ],
+    "0x46F9": [
+      "tune_default_hi",
+      ""
+    ],
+    "0x46FA": [
+      "octave_shift",
+      ""
     ],
     "0x4895": [
       "note_table",
       "phase increments, two bytes a note"
     ],
+    "0x4896": [
+      "note_table_hi",
+      ""
+    ],
+    "0x49F3": [
+      "exit_x",
+      ""
+    ],
+    "0x49F5": [
+      "hammer_stop_x",
+      ""
+    ],
     "0x4A3A": [
-      "bonus_state",
-      "14 references"
+      "mack_left_half",
+      "what is_left_half answered for mack_x; the game picks between paired fixtures with it"
+    ],
+    "0x4A52": [
+      "hoist_riding",
+      ""
+    ],
+    "0x4A53": [
+      "hoist_row_index",
+      ""
+    ],
+    "0x4A54": [
+      "hoist_x",
+      ""
+    ],
+    "0x4A56": [
+      "hoist_path_start_l",
+      ""
+    ],
+    "0x4A5A": [
+      "hoist_path_start_r",
+      ""
+    ],
+    "0x4A5E": [
+      "hoist_step_dir",
+      ""
+    ],
+    "0x4A5F": [
+      "hoist_path_end",
+      ""
+    ],
+    "0x4A62": [
+      "hoist_path_pos",
+      ""
+    ],
+    "0x4B65": [
+      "hoist_shapes",
+      ""
+    ],
+    "0x4B6A": [
+      "hoist_shape_index",
+      ""
+    ],
+    "0x4BD7": [
+      "conveyor_slot",
+      ""
+    ],
+    "0x4C8B": [
+      "conveyor_ride_timer",
+      ""
+    ],
+    "0x4CFD": [
+      "hammer_fall_x",
+      ""
+    ],
+    "0x4CFE": [
+      "hammer_fall_prev_x",
+      ""
+    ],
+    "0x4CFF": [
+      "hammer_fall_y",
+      ""
+    ],
+    "0x4D00": [
+      "hammer_fall_prev_y",
+      ""
+    ],
+    "0x4D01": [
+      "hammer_falling",
+      ""
+    ],
+    "0x4D03": [
+      "hammer_fall_shape",
+      ""
+    ],
+    "0x4D04": [
+      "hammer_fall_slot",
+      ""
+    ],
+    "0x4E56": [
+      "edge_frame",
+      ""
+    ],
+    "0x4E57": [
+      "edge_shapes",
+      ""
+    ],
+    "0x4EDD": [
+      "spark_state",
+      ""
+    ],
+    "0x4EDE": [
+      "spark_frame",
+      ""
+    ],
+    "0x4EDF": [
+      "spark_kind",
+      ""
+    ],
+    "0x4EE1": [
+      "spark_x",
+      ""
+    ],
+    "0x4EE2": [
+      "spark_y",
+      ""
+    ],
+    "0x4F90": [
+      "at_left_edge",
+      ""
+    ],
+    "0x4F91": [
+      "hoist_armed",
+      ""
+    ],
+    "0x4F92": [
+      "hoist_opening",
+      ""
+    ],
+    "0x4F93": [
+      "throw_pending",
+      ""
+    ],
+    "0x4F94": [
+      "no_jump",
+      ""
+    ],
+    "0x4F95": [
+      "input_locked",
+      ""
+    ],
+    "0x5097": [
+      "hoist_open_frame",
+      ""
+    ],
+    "0x5098": [
+      "hoist_open_started",
+      ""
+    ],
+    "0x5099": [
+      "hoist_open_timer",
+      ""
+    ],
+    "0x51B0": [
+      "ladder_going_up",
+      ""
+    ],
+    "0x51B1": [
+      "ladder_stop_row",
+      ""
+    ],
+    "0x51B2": [
+      "ladder_riding",
+      ""
+    ],
+    "0x51B3": [
+      "ladder_prev_shape",
+      ""
+    ],
+    "0x51B4": [
+      "ladder_prev_shape_hi",
+      ""
+    ],
+    "0x51B5": [
+      "ladder_cur_shape",
+      ""
+    ],
+    "0x51B6": [
+      "ladder_cur_shape_hi",
+      ""
+    ],
+    "0x51B7": [
+      "ladder_columns",
+      ""
+    ],
+    "0x51BA": [
+      "ladder_side",
+      ""
+    ],
+    "0x5370": [
+      "on_platform",
+      ""
+    ],
+    "0x5371": [
+      "platform_riding",
+      ""
+    ],
+    "0x5372": [
+      "platform_facing",
+      ""
+    ],
+    "0x5373": [
+      "wrap_pending",
+      ""
+    ],
+    "0x5494": [
+      "sliding",
+      ""
+    ],
+    "0x5495": [
+      "slide_pos",
+      ""
+    ],
+    "0x5496": [
+      "slide_armed",
+      ""
+    ],
+    "0x564D": [
+      "landing_rows",
+      ""
+    ],
+    "0x56D7": [
+      "chute_dx",
+      ""
+    ],
+    "0x56D8": [
+      "chute_dy",
+      ""
+    ],
+    "0x5737": [
+      "chute_running",
+      ""
+    ],
+    "0x5738": [
+      "chute_armed",
+      ""
+    ],
+    "0x5866": [
+      "explosion_x",
+      ""
+    ],
+    "0x593A": [
+      "lunchbox_shapes",
+      "four of them"
+    ],
+    "0x5942": [
+      "lunchbox_spots",
+      "one (column, row) per screen"
+    ],
+    "0x594A": [
+      "lunchbox_x",
+      ""
+    ],
+    "0x594B": [
+      "lunchbox_y",
+      ""
+    ],
+    "0x594C": [
+      "lunchbox_shape",
+      ""
+    ],
+    "0x594D": [
+      "lunchbox_shape_hi",
+      ""
+    ],
+    "0x594E": [
+      "lunchbox_taken",
+      ""
     ],
     "0x594F": [
       "screen_number",
-      "written in exactly three places"
+      "1, 2 or 3, written in exactly three places"
     ],
     "0x5A2A": [
-      "score_digits",
-      "five digits, one per byte, 45 references"
+      "hit_result",
+      ""
+    ],
+    "0x5A2B": [
+      "hit_x",
+      "what hit_small and hit_large are asked about"
+    ],
+    "0x5A2C": [
+      "hit_y",
+      ""
+    ],
+    "0x5AE8": [
+      "pendulum_timer",
+      ""
+    ],
+    "0x5AE9": [
+      "pendulum_x",
+      "two weights"
+    ],
+    "0x5AEB": [
+      "pendulum_prev_x",
+      ""
+    ],
+    "0x5AED": [
+      "pendulum_limit",
+      ""
+    ],
+    "0x5AF1": [
+      "pendulum_y",
+      ""
+    ],
+    "0x5AF2": [
+      "pendulum_dir",
+      ""
+    ],
+    "0x5AF4": [
+      "pendulum_started",
+      ""
+    ],
+    "0x5AF5": [
+      "pendulum_index",
+      ""
+    ],
+    "0x5AF6": [
+      "pendulum_shapes",
+      ""
+    ],
+    "0x5C2B": [
+      "wheel_prev_a",
+      "the two mixer wheels, each keeping its previous shape so place_pair can erase it"
+    ],
+    "0x5C2C": [
+      "wheel_prev_a_hi",
+      ""
+    ],
+    "0x5C2D": [
+      "wheel_shape_a",
+      ""
+    ],
+    "0x5C2E": [
+      "wheel_shape_a_hi",
+      ""
+    ],
+    "0x5C2F": [
+      "wheel_prev_b",
+      ""
+    ],
+    "0x5C30": [
+      "wheel_prev_b_hi",
+      ""
+    ],
+    "0x5C31": [
+      "wheel_shape_b",
+      ""
+    ],
+    "0x5C32": [
+      "wheel_shape_b_hi",
+      ""
+    ],
+    "0x5C33": [
+      "wheel_x_a",
+      ""
+    ],
+    "0x5C35": [
+      "wheel_x_b",
+      ""
+    ],
+    "0x5C37": [
+      "wheel_y_a",
+      ""
+    ],
+    "0x5C39": [
+      "wheel_y_b",
+      ""
+    ],
+    "0x5C3B": [
+      "wheel_frame",
+      ""
+    ],
+    "0x5C3C": [
+      "wheel_timer",
+      ""
+    ],
+    "0x5D25": [
+      "platform_x",
+      ""
+    ],
+    "0x5D26": [
+      "platform_y",
+      ""
+    ],
+    "0x5D27": [
+      "platform_prev_x",
+      ""
+    ],
+    "0x5D28": [
+      "platform_prev_y",
+      ""
+    ],
+    "0x5D2A": [
+      "platform_prev_shape",
+      ""
+    ],
+    "0x5D2B": [
+      "platform_started",
+      ""
+    ],
+    "0x5D2C": [
+      "platform_dir",
+      ""
+    ],
+    "0x5DF7": [
+      "button_pressed",
+      ""
+    ],
+    "0x5DF8": [
+      "button_timer",
+      ""
+    ],
+    "0x5DF9": [
+      "button_dir",
+      ""
+    ],
+    "0x5DFA": [
+      "button_frame",
+      ""
+    ],
+    "0x5DFB": [
+      "button_shape",
+      ""
+    ],
+    "0x5DFC": [
+      "button_shape_hi",
+      ""
+    ],
+    "0x5DFD": [
+      "button_prev_shape",
+      ""
+    ],
+    "0x5DFE": [
+      "button_prev_shape_hi",
+      ""
+    ],
+    "0x5DFF": [
+      "button_x",
+      ""
+    ],
+    "0x5E00": [
+      "button_draw_x",
+      ""
+    ],
+    "0x5E01": [
+      "button_y",
+      ""
+    ],
+    "0x5E02": [
+      "button_test_y",
+      ""
+    ],
+    "0x5F37": [
+      "lamp_columns",
+      ""
+    ],
+    "0x5F39": [
+      "lamp_timer",
+      ""
+    ],
+    "0x5F89": [
+      "level_ones",
+      ""
+    ],
+    "0x5F8A": [
+      "level_tens",
+      ""
+    ],
+    "0x5FF7": [
+      "text_level_digit",
+      ""
+    ],
+    "0x5FF8": [
+      "text_level_row",
+      ""
+    ],
+    "0x5FF9": [
+      "text_level_char",
+      ""
+    ],
+    "0x60D0": [
+      "walkoff_x",
+      "eighteen scripted steps"
+    ],
+    "0x60E2": [
+      "walkoff_y",
+      ""
+    ],
+    "0x60F4": [
+      "walkoff_shape_index",
+      ""
+    ],
+    "0x6106": [
+      "walkoff_shapes",
+      ""
+    ],
+    "0x617E": [
+      "extra_life_given",
+      ""
+    ],
+    "0x6208": [
+      "life_running",
+      ""
+    ],
+    "0x6209": [
+      "frame_budget",
+      ""
+    ],
+    "0x620A": [
+      "attract_index",
+      "cycles 0..3"
+    ],
+    "0x620B": [
+      "attract_entry",
+      "four code addresses"
+    ],
+    "0x620C": [
+      "attract_entry_hi",
+      ""
+    ],
+    "0x6213": [
+      "attract_level",
+      ""
+    ],
+    "0x621B": [
+      "sound_on_saved",
+      ""
+    ],
+    "0x62B5": [
+      "screen_entry",
+      "the three addresses screen_select can install"
+    ],
+    "0x62B6": [
+      "screen_entry_hi",
+      ""
+    ],
+    "0x643A": [
+      "beep_count",
+      ""
+    ],
+    "0x6476": [
+      "text_config_1",
+      "the configuration prompts"
+    ],
+    "0x648B": [
+      "text_config_2",
+      ""
+    ],
+    "0x649C": [
+      "text_config_down",
+      ""
+    ],
+    "0x64A5": [
+      "text_config_up",
+      ""
+    ],
+    "0x64AE": [
+      "text_config_left",
+      ""
+    ],
+    "0x64B7": [
+      "text_config_right",
+      ""
+    ],
+    "0x64C0": [
+      "text_config_jump",
+      ""
+    ],
+    "0x64C9": [
+      "text_config_release",
+      ""
+    ],
+    "0x64D2": [
+      "text_config_done",
+      ""
+    ],
+    "0x64F0": [
+      "tune_divisor",
+      ""
+    ],
+    "0x64F1": [
+      "tune_length",
+      ""
+    ],
+    "0x64F2": [
+      "tune_index",
+      ""
+    ],
+    "0x64F3": [
+      "tune_divisors",
+      "the table play_tune indexes"
+    ],
+    "0x65E4": [
+      "spark2_shape",
+      ""
+    ],
+    "0x65E5": [
+      "spark2_shape_hi",
+      ""
+    ],
+    "0x65E6": [
+      "spark2_prev_shape",
+      ""
+    ],
+    "0x65E7": [
+      "spark2_prev_shape_hi",
+      ""
+    ],
+    "0x65E8": [
+      "spark2_started",
+      ""
+    ],
+    "0x65E9": [
+      "spark2_timer",
+      ""
+    ],
+    "0x6674": [
+      "chain_started",
+      ""
+    ],
+    "0x6675": [
+      "chain_pos",
+      "eleven links"
+    ],
+    "0x6685": [
+      "chain_timer",
+      ""
+    ],
+    "0x6776": [
+      "conveyor2_shape",
+      ""
+    ],
+    "0x6777": [
+      "conveyor2_shape_hi",
+      ""
+    ],
+    "0x6778": [
+      "conveyor2_prev",
+      ""
+    ],
+    "0x6779": [
+      "conveyor2_prev_hi",
+      ""
+    ],
+    "0x677A": [
+      "conveyor2_frame",
+      ""
+    ],
+    "0x677B": [
+      "conveyor2_rows",
+      ""
+    ],
+    "0x677D": [
+      "conveyor2_timer",
+      ""
+    ],
+    "0x680A": [
+      "bolt_x",
+      ""
+    ],
+    "0x680B": [
+      "bolt_y",
+      ""
+    ],
+    "0x680C": [
+      "bolt_prev_x",
+      ""
+    ],
+    "0x680D": [
+      "bolt_prev_y",
+      ""
+    ],
+    "0x680E": [
+      "bolt_shape",
+      ""
+    ],
+    "0x680F": [
+      "bolt_shape_hi",
+      ""
+    ],
+    "0x6810": [
+      "bolt_prev_shape",
+      ""
+    ],
+    "0x6811": [
+      "bolt_prev_shape_hi",
+      ""
+    ],
+    "0x6812": [
+      "bolt_timer",
+      ""
+    ],
+    "0x6813": [
+      "bolt_falling",
+      ""
+    ],
+    "0x6814": [
+      "bolt_slot",
+      ""
+    ],
+    "0x6910": [
+      "bolt_path_pos",
+      ""
+    ],
+    "0x6912": [
+      "bolt_active",
+      "two of them"
+    ],
+    "0x6913": [
+      "bolt_active_2",
+      ""
+    ],
+    "0x6914": [
+      "bolt_walk_x",
+      ""
+    ],
+    "0x6915": [
+      "bolt_walk_x_2",
+      ""
+    ],
+    "0x6916": [
+      "bolt_walk_prev_x",
+      ""
+    ],
+    "0x6918": [
+      "bolt_walk_y",
+      ""
+    ],
+    "0x6919": [
+      "bolt_walk_y_2",
+      ""
+    ],
+    "0x691A": [
+      "bolt_walk_prev_y",
+      ""
+    ],
+    "0x691F": [
+      "bolt_walking",
+      ""
+    ],
+    "0x6920": [
+      "bolt_walking_2",
+      ""
+    ],
+    "0x6921": [
+      "bolt_index",
+      ""
+    ],
+    "0x6A4E": [
+      "hoist_car_y",
+      ""
+    ],
+    "0x6A4F": [
+      "hoist_car_prev_y",
+      ""
+    ],
+    "0x6A50": [
+      "hoist_car_dir",
+      ""
+    ],
+    "0x6A51": [
+      "hoist_cable_from",
+      ""
+    ],
+    "0x6A52": [
+      "hoist_cable_to",
+      ""
+    ],
+    "0x6A53": [
+      "hoist_car_pause",
+      ""
+    ],
+    "0x6A54": [
+      "hoist_cable_bias",
+      ""
+    ],
+    "0x6A56": [
+      "hoist_top",
+      ""
+    ],
+    "0x6A57": [
+      "hoist_bottom",
+      ""
+    ],
+    "0x6A58": [
+      "hoist_car_x",
+      ""
+    ],
+    "0x6A59": [
+      "hoist_cable_x1",
+      ""
+    ],
+    "0x6A5A": [
+      "hoist_cable_x2",
+      ""
+    ],
+    "0x6A5B": [
+      "hoist_cable_col",
+      ""
+    ],
+    "0x6B8D": [
+      "lift_top",
+      "what lift_catch compares Mack against"
+    ],
+    "0x6B8E": [
+      "lift_y",
+      ""
+    ],
+    "0x6B8F": [
+      "lift_prev_y",
+      ""
+    ],
+    "0x6B90": [
+      "lift_dir",
+      ""
+    ],
+    "0x6B91": [
+      "lift_pause",
+      ""
+    ],
+    "0x6B92": [
+      "lift_enabled",
+      ""
+    ],
+    "0x6C7F": [
+      "sign_frame",
+      ""
+    ],
+    "0x6C80": [
+      "sign_timer",
+      ""
+    ],
+    "0x6CD6": [
+      "flame_started",
+      ""
+    ],
+    "0x6CD7": [
+      "flame_shape",
+      ""
+    ],
+    "0x6CD8": [
+      "flame_shape_hi",
+      ""
+    ],
+    "0x6CD9": [
+      "flame_prev_shape",
+      ""
+    ],
+    "0x6CDA": [
+      "flame_prev_shape_hi",
+      ""
+    ],
+    "0x6CDB": [
+      "flame_phase",
+      ""
+    ],
+    "0x6CDC": [
+      "flame_timer",
+      ""
+    ],
+    "0x6D92": [
+      "round_shape",
+      ""
     ],
     "0x6D97": [
       "shape_select",
-      "0, 768, 1024, 1280, 3072, 3328 -- multiples of 256, so an index into a shape table"
+      "multiples of 256 -- an index into shape_table"
+    ],
+    "0x6D98": [
+      "shape_select_hi",
+      ""
+    ],
+    "0x6D99": [
+      "shape_select_2",
+      "the second shape, for the pair routines"
     ],
     "0x6D9A": [
-      "place_scratch",
+      "shape_prev",
       ""
     ],
     "0x6D9B": [
@@ -317,71 +3132,346 @@
     ],
     "0x6D9C": [
       "place_row",
-      "the row, used as it stands"
+      ""
     ],
     "0x6D9D": [
       "place_col_2",
-      "the second shape's, in the pair routines"
+      ""
     ],
     "0x6D9E": [
       "place_row_2",
       ""
     ],
+    "0x6DA2": [
+      "pair_row_step",
+      "8 or 16, by whether wide_columns is set"
+    ],
+    "0x6DA6": [
+      "hole_ptr_x",
+      ""
+    ],
+    "0x6DA7": [
+      "hole_ptr_x2",
+      ""
+    ],
+    "0x6DA8": [
+      "hole_ptr_y",
+      ""
+    ],
+    "0x6DA9": [
+      "hole_ptr_y2",
+      ""
+    ],
     "0x6DAA": [
       "mode_vector",
-      "`jmp word [0x6DAA]`: 0x2AFC, 0x2B05, 0x2B0E"
+      "`jmp word [0x6DAA]`, and also the ladder list pointer -- the screen sets both"
+    ],
+    "0x6DAB": [
+      "mode_vector_hi",
+      ""
+    ],
+    "0x6DAC": [
+      "ladder_row_ptr",
+      ""
+    ],
+    "0x6DAE": [
+      "girder_y0_ptr",
+      "the three girder tables for whichever screen is running"
+    ],
+    "0x6DB0": [
+      "girder_y1_ptr",
+      ""
+    ],
+    "0x6DB2": [
+      "girder_x_ptr",
+      ""
+    ],
+    "0x6DB4": [
+      "rivet_x_ptr",
+      ""
+    ],
+    "0x6DB6": [
+      "rivet_y_ptr",
+      ""
+    ],
+    "0x6DB8": [
+      "text_ptr",
+      "what draw_text is walking"
+    ],
+    "0x6DB9": [
+      "text_ptr_hi",
+      ""
     ],
     "0x6DBB": [
       "phase_accumulator",
-      "the synthesiser's, two bytes"
+      "the synthesiser's"
+    ],
+    "0x6DBC": [
+      "phase_accumulator_hi",
+      ""
+    ],
+    "0x6DBE": [
+      "pwm_state",
+      ""
     ],
     "0x6DC0": [
       "phase_increment",
-      "the current note's"
+      ""
+    ],
+    "0x6DC1": [
+      "phase_increment_hi",
+      ""
     ],
     "0x6DC2": [
       "samples_left",
-      "0x78 per tick"
+      "0x78 to a tick"
     ],
     "0x6DC3": [
       "note_ticks",
-      "how long this note still has"
+      ""
     ],
     "0x6DC4": [
       "duty_threshold",
       ""
     ],
+    "0x6DC5": [
+      "duty_accumulator",
+      ""
+    ],
+    "0x6DC6": [
+      "pwm_counter",
+      ""
+    ],
     "0x6DC8": [
-      "anim_cursor",
-      "111 references, read and written by one cluster"
+      "loop_index",
+      "the generated code's inner loop variable, 111 references"
     ],
     "0x6DC9": [
-      "anim_frame",
+      "loop_index_2",
+      ""
+    ],
+    "0x6DD6": [
+      "cement_x_ptr",
+      ""
+    ],
+    "0x6DD8": [
+      "cement_y_ptr",
       ""
     ],
     "0x6DDA": [
       "tune_ptr",
       "the note stream position. It was called input_latch"
     ],
+    "0x6DDB": [
+      "tune_ptr_hi",
+      ""
+    ],
+    "0x6DDC": [
+      "play_tune_ptr",
+      ""
+    ],
+    "0x6E10": [
+      "shape_table",
+      "shape number to bitmap; shape_lookup is the only reader"
+    ],
+    "0x71E2": [
+      "ladder_shape_deltas",
+      ""
+    ],
+    "0x71E6": [
+      "hoist_shape_deltas",
+      ""
+    ],
+    "0x71E8": [
+      "girder_shape_deltas",
+      ""
+    ],
+    "0x71EA": [
+      "girder_cell_deltas",
+      ""
+    ],
+    "0x71F8": [
+      "rail_shape_deltas",
+      ""
+    ],
+    "0x720B": [
+      "chain_shape_deltas",
+      ""
+    ],
+    "0x7211": [
+      "fixture_shape_deltas",
+      ""
+    ],
+    "0x7214": [
+      "unplug_shape_deltas",
+      ""
+    ],
+    "0x7224": [
+      "hoist_open_shapes",
+      ""
+    ],
+    "0x722D": [
+      "wheel_shape_deltas",
+      ""
+    ],
+    "0x7231": [
+      "button_shape_deltas",
+      ""
+    ],
+    "0x7234": [
+      "conveyor2_shape_deltas",
+      ""
+    ],
+    "0x7238": [
+      "bolt_shape_deltas",
+      ""
+    ],
+    "0x7248": [
+      "sign_shape_deltas",
+      ""
+    ],
+    "0x724A": [
+      "flame_shape_deltas",
+      ""
+    ],
+    "0x724C": [
+      "conveyor_wall_shapes",
+      ""
+    ],
+    "0x7250": [
+      "explosion_shape_deltas",
+      ""
+    ],
+    "0x7254": [
+      "toolbox_shape",
+      ""
+    ],
+    "0x7259": [
+      "toolbox_shape_choices",
+      ""
+    ],
+    "0x725D": [
+      "shape_platform",
+      "the shape-number constants the screens share"
+    ],
+    "0x725E": [
+      "shape_carry_a",
+      ""
+    ],
+    "0x725F": [
+      "shape_carry_b",
+      ""
+    ],
+    "0x7260": [
+      "shape_trophy",
+      ""
+    ],
+    "0x7261": [
+      "shape_mack_right",
+      ""
+    ],
+    "0x7262": [
+      "shape_mack_screen2",
+      ""
+    ],
+    "0x7263": [
+      "shape_mack_left",
+      ""
+    ],
+    "0x7264": [
+      "shape_mack_screen1",
+      ""
+    ],
+    "0x7265": [
+      "shape_jump_right",
+      ""
+    ],
+    "0x7266": [
+      "shape_jump_left",
+      ""
+    ],
+    "0x7267": [
+      "shape_mack_fall",
+      ""
+    ],
+    "0x7268": [
+      "shape_thrown",
+      ""
+    ],
+    "0x7269": [
+      "shape_bolt",
+      ""
+    ],
+    "0x726A": [
+      "shape_vandal",
+      ""
+    ],
     "0x726B": [
-      "level_table",
-      "read by three routines, written by none"
+      "shape_blank",
+      "the shape place_pair erases with"
+    ],
+    "0x726C": [
+      "shape_hammer",
+      ""
+    ],
+    "0x726D": [
+      "shape_trophy_2",
+      ""
+    ],
+    "0x726E": [
+      "shape_hole_base",
+      ""
     ],
     "0x726F": [
       "row_table",
-      "what locate_cell turns a row into"
+      "what draw_glyph turns a row into"
+    ],
+    "cs:0x0103": [
+      "exit_allowed",
+      "the interrupt handler reaches it through CS, because DS is whatever the interrupted code left"
+    ],
+    "cs:0x072D": [
+      "scan_map",
+      "0x80 bytes: scan code to game action; the interrupt handler reaches it through CS, because DS is whatever the interrupted code left"
+    ],
+    "cs:0x0781": [
+      "key_pressed",
+      "what the ISR left, high bit set; cleared by whoever consumes it; the interrupt handler reaches it through CS, because DS is whatever the interrupted code left"
+    ],
+    "cs:0x0782": [
+      "old_int09",
+      "the interrupt handler reaches it through CS, because DS is whatever the interrupted code left"
+    ],
+    "cs:0x0784": [
+      "old_int09_seg",
+      "the interrupt handler reaches it through CS, because DS is whatever the interrupted code left"
+    ],
+    "cs:0x0786": [
+      "entry_es",
+      "the PSP segment, saved so the far return has one; the interrupt handler reaches it through CS, because DS is whatever the interrupted code left"
+    ],
+    "es:0x0024": [
+      "int09_vector",
+      "0000:0024, the INT 09h entry. start exchanges it and the handler puts it back on the way out"
+    ],
+    "es:0x0026": [
+      "int09_vector_seg",
+      ""
+    ],
+    "es:0x0410": [
+      "bios_equipment_word",
+      "0040:0010 -- masked to 0x20 so the BIOS believes the machine is in 40-column colour"
     ]
   },
   "_data_spans": {
     "_note": [
-      "File offsets, contiguous across the whole 42,112-byte image.",
-      "Hard Hat Mack has no separate data segment: 19,719 bytes are data",
-      "and 5,394 of those are scattered in 646 runs shorter than 64",
-      "bytes, sitting between the routines that own them."
+      "File offsets, contiguous across the whole image. 19,719 bytes are",
+      "data, and 5,394 of those sit in 646 runs shorter than 64 bytes,",
+      "between the routines that own them."
     ],
     "0x00000": [
       1069,
-      "the entry, the keyboard ISR, the three placement routines and the two blitters"
+      "the entry, the keyboard ISR, the three placement routines and the four blitters"
     ],
     "0x0042D": [
       400,
@@ -389,83 +3479,71 @@
     ],
     "0x005BD": [
       801,
-      "the configuration text and the scan code map"
+      "the calibration text and the scan code map"
     ],
     "0x008DE": [
       1573,
-      "the tone generator, the timer, and the first actor code"
+      "the configuration menu and the joystick"
     ],
     "0x00F03": [
       70,
-      "a 70-byte table of word pairs the actor loop indexes"
+      "70 bytes of movement tables"
     ],
     "0x00F49": [
       3749,
-      "the actor loop, the level drawing and the fill primitive"
+      "Mack: input, movement, the three screens, the turtle interpreter"
     ],
     "0x01DEE": [
       506,
-      "'BONUS:00000', 'SCORE:00000', 'HI-SCORE:00000' and the digits behind them"
+      "the HUD strings and two dedications to the author's sons"
     ],
     "0x01FE8": [
       1330,
-      "the hazards and the rivet logic"
+      "the hotkeys, the hoist, the score"
     ],
     "0x0251A": [
       1171,
-      "1,171 bytes of shape rows -- runs of 0x54 and the ascending ladders"
+      "1,171 bytes of column and row tables"
     ],
     "0x029AD": [
       1417,
-      "the per-object placement helpers, one short routine each"
+      "the fixed scenery of all three screens, one short routine each"
     ],
     "0x02F36": [
       565,
-      "565 bytes of descending and ascending byte ramps: the girder and ladder column patterns"
+      "565 bytes of paths: the bolts', the chain's, the conveyor's, the saboteur's"
     ],
     "0x0316B": [
       1900,
-      "the score, the four screens' hazards, the bonus"
+      "the holes, falling, the saboteur, the rivets"
     ],
     "0x038D7": [
       117,
-      "117 bytes of table"
+      "117 bytes of pit and cement positions"
     ],
     "0x0394C": [
       3657,
-      "the screen scripts, the collision checks, and the music player"
+      "the conveyor, the hammer, the bonus, dying, and the music player"
     ],
     "0x04795": [
       162,
-      "162 bytes the music player indexes"
+      "162 bytes of phase increments -- the note table"
     ],
     "0x04837": [
       6975,
-      "the remaining screen scripts and the actor variants"
+      "the hoist, the conveyor, the ladders, the chute, the high score"
     ],
     "0x06376": [
       276,
-      "'CONFIGURATION MENU' and the key prompts"
+      "'CONFIGURATION MENU' and the six key prompts"
     ],
     "0x0648A": [
       2049,
-      "the last of the code, ending where the shape data begins"
+      "play_tune and the last of the moving scenery"
     ],
     "0x06C8B": [
       14325,
-      "14,325 bytes of shape data, 42% zero. Every sprite in the game, and the working variables the drawing code keeps at 0x6D97..0x6DC9 sit at the front of it"
+      "14,325 bytes of shape data, 42% zero. Every sprite in the game, with shape_table at its front and the drawing code's working variables just before it"
     ]
-  },
-  "_unread": [
-    "180 of the 221 call targets have not been read instruction by",
-    "instruction. Most are short and follow one of two shapes: set",
-    "place_col, place_row and shape_select and call place_sprite (about",
-    "sixty of them), or set a level pointer and fall into the shared game",
-    "loop (about a dozen entries that all reach the same 350-instruction",
-    "tail, which is why the profiler reports them at that size).",
-    "",
-    "They are left unnamed deliberately. Naming a routine `draw_shape_12`",
-    "from its constants would raise the count without adding a fact, and",
-    "the count is not the point."
-  ]
+  }
 }

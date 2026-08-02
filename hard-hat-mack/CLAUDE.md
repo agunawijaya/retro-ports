@@ -10,15 +10,17 @@ the explanation.
 
 ## State of the work
 
-**The reconstruction is finished. The reading is not, and the gap is measured
-rather than guessed at.**
+**Both are finished.** The whole code region was read, instruction by
+instruction, and the numbers below are counts rather than estimates.
 
 | | |
 |---|---|
-| rebuild | byte-identical, rung 1b |
+| rebuild | byte-identical, rung 1b, `FD70BAB8…` |
+| routines named | 252 — all 221 call targets, plus every jump-table entry |
+| variables named | 604 |
+| bracketed constants covered | 567 of 573; the other six are not addresses (see `_not_addresses`) |
+| bytes in a named span | 42,112 of 42,112 |
 | level screens drawn from the file alone | **38% / 83% / 58%** of the blits the game actually performs |
-| variables named | 53, covering the two clusters that carry 1,180 of the 1,700 references |
-| bytes with a bucket | 92.4% |
 
 There is no port, and porting was deliberately out of scope.
 [docs/04-porting.md](docs/04-porting.md) is the decision that comes before one.
@@ -28,11 +30,8 @@ If a port starts, it goes in `web/` and gets documents 05 and 06, following
 ## Source you can rebuild
 
 `recovered/hhm.asm` is correct and is not source. `symbols.json` holds the
-reading — 35 routines and 53 globals, each with the evidence for
-its name, plus `_data_spans` accounting for all 42,112 bytes. **This game
-is the one that is not finished**: 180 of its 221 call targets have not
-been read, and they are listed in `_unread` rather than given names the
-evidence would not support — and the toolkit's `annotate.py` applies it.
+reading — 252 routines and 604 globals, each with the evidence for
+its name, plus `_data_spans` accounting for all 42,112 bytes — and the toolkit's `annotate.py` applies it.
 
 ```powershell
 .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
