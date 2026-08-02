@@ -56,9 +56,25 @@ call order are the program's; only the seed is ours.
 
 The animals enter from an edge, by `hunt:0x71F0`: x is either 0 or 316 minus
 the width, y is `Random(199 - h)`, and the same overlap test rejects and
-redraws. That much is read. **How many appear and which species** is the wave
-logic inside `hunt:0x72DD`, which is not read -- `--animals` and `--species`
-stand in for it, and this docstring is the only place that admission belongs.
+redraws. The wave logic is read too, at `hunt:0x7052`:
+
+    000705B  cmp byte ss:[di-0x57], 4     ; four spawns per slot, and no more
+    0007062  push 0x64 / lcall ui:0x007D  ; Random(100)
+    000706B  cmp ax, 6 / jle              ;   <= 6 -- a 7% chance, per slot
+    0007077  push 6 / lcall ui:0x007D     ; Random(6) -- the species
+    0007086  cmp ax,0 / cmp ss:[di-0x38]  ;   species 0 needs its flag ...
+    000709B  cmp ax,1 / cmp ss:[di-0x39]  ;   ... 1 needs its own ...
+    00070B0  cmp ax,2 / cmp ss:[di-0x3a]  ;   ... 2 as well
+    00070C7  je 0x7073                    ;   refused -- draw the species again
+
+and those three flags come from the landmark index in `hunt:0x646A`:
+`[0x185F] > 3 and < 13` for species 0, `> 6` for species 1, `>= 7` for species
+2. Three and four are always allowed. So which animals you meet depends on how
+far along the trail you are, which is why `--landmark` exists.
+
+The count is a rate rather than a number: seven percent per slot per turn, so
+`--animals` says how many to draw at once, and the rate is what decides that in
+the game.
 
 Output goes to `reference/`, which is gitignored, because the sprites in it are
 MECC's artwork.
@@ -144,7 +160,7 @@ def overlaps(a, b):
 
 
 def build(hunter, scenery, regions, animals, region, seed, direction,
-          n_animals=0, species=()):
+          n_animals=0, species=(), landmark=0):
     """hunt:0x646A and hunt:0x6310, in the order the program runs them."""
     rnd = TpRandom(seed)
     placed = []
@@ -180,7 +196,8 @@ def build(hunter, scenery, regions, animals, region, seed, direction,
             continue
         out.append((spot[0], spot[1], w, h, "terrain", sx, sy))
         placed.append((spot[0], spot[1], w, h))
-    add_animals(out, placed, animals, rnd, n_animals, species)
+    add_animals(out, placed, animals, rnd, n_animals, species,
+                landmark)
     return out
 
 
@@ -188,7 +205,8 @@ ANIMAL_TAB = 0x01C2     # animals.pcc, (srcX, srcY, w, h), four frames each
 ANIMAL_X_RANGE = 0x13C  # 316 -- hunt:0x71F0, two narrower than the scenery's
 
 
-def add_animals(objects, placed, animals, rnd, count, species):
+def add_animals(objects, placed, animals, rnd, count, species,
+                landmark=0):
     """hunt:0x71F0 -- an animal enters from an edge, not from anywhere.
 
         00071F0  mov ax, 0x13C / sub ax, es:[di+5]   ; 316 - width
@@ -205,8 +223,15 @@ def add_animals(objects, placed, animals, rnd, count, species):
     `hunt:0x72DD`, which has not been read -- `--animals` and `--species`
     stand in for it, and the caption says so.
     """
+    allowed = [s for s in range(6)
+               if not (s == 0 and not (3 < landmark < 13))
+               and not (s == 1 and not landmark > 6)
+               and not (s == 2 and not landmark >= 7)]
     for n in range(count):
-        sp = species[n % len(species)] if species else rnd(7)
+        if species:
+            sp = species[n % len(species)]
+        else:
+            sp = allowed[rnd(len(allowed))]     # hunt:0x7077, minus the retry
         sx, sy, w, h = animals[(sp * 4) % 28]        # frame 0 of that species
         from_left = (n % 2 == 0)
         for _ in range(200):
@@ -255,6 +280,9 @@ def main():
     ap.add_argument("--species", default="",
                     help="0..6, comma separated. Also not read: which "
                          "species a region offers is unknown")
+    ap.add_argument("--landmark", type=int, default=8,
+                    help="0..17, how far along the trail. Species 0, 1 "
+                         "and 2 are gated on it -- hunt:0x64C5")
     ap.add_argument("--scale", type=int, default=3)
     args = ap.parse_args()
 
@@ -262,7 +290,8 @@ def main():
     terrain, hunter_sheet, animal_sheet = sheets(args.pcl)
     species = [int(s) for s in args.species.split(",")] if args.species else ()
     objects = build(hunter, scenery, regions, animals, args.region,
-                    args.seed, args.direction, args.animals, species)
+                    args.seed, args.direction, args.animals, species,
+                    args.landmark)
     field = compose(objects, terrain, hunter_sheet, animal_sheet)
 
     out = Path(args.out)

@@ -1982,6 +1982,40 @@ Not drawn at all: the animals. The mini-game at `hunt:0x72DD` adds them from
 `animals.pcc` into slots 7 and above while it runs, so this is the field as it
 stands the moment hunting begins.
 
+### The wave: how many animals, and which
+
+Neither is a number in a table. `hunt:0x7052` is called per slot per turn, and
+the count is a **rate**:
+
+```nasm
+000705B  cmp byte ss:[di-0x57], 4      ; four spawns from this slot, and no more
+0007060  jae -> nothing
+0007062  push 0x64 / lcall ui:0x007D   ; Random(100)
+000706B  cmp ax, 6 / jle               ;   <= 6 -- seven percent, per slot
+0007077  push 6 / lcall ui:0x007D      ; Random(6) -- the species
+0007086  cmp ax, 0 / cmp ss:[di-0x38]  ;   species 0 needs its flag ...
+000709B  cmp ax, 1 / cmp ss:[di-0x39]  ;   ... 1 needs its own ...
+00070B0  cmp ax, 2 / cmp ss:[di-0x3A]  ;   ... 2 as well
+00070C7  je 0x7073                     ;   refused -- draw the species again
+```
+
+and the three flags are set in `hunt:0x646A` from `[0x185F]`, which
+`0x4270` loads from `[0x1885]` and immediately compares against `0x11` — **17,
+the number of landmarks**. So it is the leg of the trail:
+
+| species | available |
+|---|---|
+| 0 | landmark index above 3 and below 13 |
+| 1 | above 6 |
+| 2 | 7 or later |
+| 3, 4, 5 | always |
+
+Which is to say the game gives you different animals as you go west, and a
+refused draw is redrawn rather than skipped — so the odds among the *permitted*
+species stay even. `tools/render-hunting.py --landmark N` applies the same gate,
+and the sprite table at `DS:0x01C2` runs in groups of four: `species × 4 +
+frame`, which is what `es:[di+3] + es:[di+1]` indexes at the blit.
+
 ### Inside the mini-game, as far as it has been read
 
 `0x72DD` is a **nested procedure**: its `[bp+4]` is Turbo Pascal's static link
@@ -2142,6 +2176,25 @@ So there is **one** input vocabulary in the hunting screen, not two: the keypad
 digits, `Enter` and `Space` that the instructions name. A joystick is converted
 into them before anything else sees it, which is why the screen can describe
 itself entirely in keys.
+
+**Which value of `[0x1583]` is which, settled from the program's own text.** It
+is the *joystick disabled* flag, and **zero means enabled** — inverted from the
+obvious reading. `[0x16BE]` is separate: a detection routine at start-up fills
+it (`0x14CCF`), and the conversion runs only when a joystick was both detected
+*and* not switched off. The setting persists — `0x148DA` loads it from
+`JOYCAL.REC` beside the calibration bounds `[0x16B6…0x16BC]`, with defaults if
+the file is missing — and `0x1004E` toggles it:
+
+```
+000FFD6  'The joystick is now turned '
+00101F9  'Erase saved games\  6. Turn joys…'
+```
+
+The keyboard is read **always**, at the tail: `0x11B25` calls `ui:0x00AE`,
+which leaves the character in `[0x19FE]` and the scancode in `[0x19FF]` and
+returns the character, or the scancode plus `0x80` for an extended key. So the
+joystick is an *additional* source translated into the same vocabulary, never
+an alternative to it.
 
 ## Where the artwork is loaded from
 
@@ -2512,12 +2565,28 @@ is `0.0`, so a condition is written as a certainty or an impossibility:
 0002A5D  mov word [0x188E], 0                         ;   at or below -> 0.0
 ```
 
-`[0x1867]` is itself a six-byte `Real` accumulator, and `0x141E4` updates it
-each day by multiplying by a constant near `0.97` and adding `[0x19AE]`.
-**[inferred]** that this is a decaying pressure — risk that builds while a
-condition holds and fades when it stops — which is a more interesting mechanism
-than a fixed die and is the reason the odds could not be read out of the file.
-What `[0x19AE]` measures is **not** established.
+`[0x1867]` is a six-byte `Real` accumulator, and `0x141E4` updates it each day
+as `0.97 × [0x1867] + [0x19AE]` — a first-order lag. `[0x19AE]` is read too, at
+`0x13E80`:
+
+```nasm
+0013EA0  cmp word [0x19A6], 1         ; only on legs where a coin came up
+0013EAA  System:0x0CAA / compare 0.30 ; then Random < 0.30 -> a flag
+0013EE6  [0x19A8] = flag × 0.60 + 0.20        ; 0.20 or 0.80
+0013F04  cmp word [0x19A4], 2 / jge           ; and only within two days ...
+0013F25  [0x19AE] = 8.0 × [0x19A8]            ;   ... of a landmark: 1.6 or 6.4
+0013F35  [0x19A8] = 0
+```
+
+`[0x19A4]` counts down to the next landmark — `0x13E55` computes
+`round(([0x19A4] + 10) / 20)`, miles at twenty a day, the plains rate the
+simulation section already recovered.
+
+So the shape is **a hazard level that decays three percent a day and is topped
+up only in the last two days before a landmark**, by 1.6 or 6.4 with the larger
+drawn thirty percent of the time. Above 30 it makes event 0 — the snakebite —
+certain. Nothing in it is a fixed die, which is exactly why the odds could not
+be found anywhere in the file.
 
 Similarly `[0x18A6]` (event 4, the Indians) is enabled only when `[0x19B9] > 0`
 and one of two frame bytes is set, and event 6's `0.15` applies only when
@@ -2528,21 +2597,14 @@ that saves a starving party is gated on a counter that has to be small.
 
 The list is now short, and each item says what would close it.
 
-- **`[0x19AE]` and `[0x1867]`** — the events' pressure term. The arithmetic is
-  read; what it measures is not. A watch on `[0x1867]` across a driven run
-  would settle it, and the run now exists.
-- **Which branch of `DS:0x1583`** selects the keyboard rather than the
-  joystick in `ui:0x15A0`. Both paths are read; which flag value picks which is
-  not.
 - **What the two populations in the object array are** — slots 0…6 against
   7…16. The split is established from the allocator's starting index; what
   lives in the lower seven is not. Partly answered since: slot 0 is the hunter
   and the scenery goes into 3 and up, both placed by `hunt:0x6310`, which has
   exactly two callers. Animals are *not* placed by it.
-- **The wave logic in `hunt:0x72DD`** — how many animals a hunt gets and which
-  species. Their *entry* is read (`hunt:0x71F0`: an edge, `Random(199 - h)`,
-  reject on overlap) and `tools/render-hunting.py` draws them with it, but the
-  count and the species are supplied by hand and labelled as such.
+- **What ends a hunt besides the Escape key**, and how the meat is carried
+  back. The spawn rate, the species gate and the entry rule are all read; the
+  exit condition is not.
 - **A byte-identical rebuild**, which is blocked for a measured reason rather
   than an unknown one: 22.6% of the image is a Genus library nobody archived.
 
