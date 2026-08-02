@@ -826,10 +826,7 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    every price in its own dialogue. **And the simulation itself is out**: miles
    today is `legRate × (pace + 2) / 2`, food is `people × (3 − rations)`, both
    settings feed one health accumulator at `DS:0x1886`, and the casualty
-   routine's probability is computed from it. One thing there is **not**
-   accounted for: nothing in the program addresses the six-illness table at
-   `DS:0x0CD6`, though the pace and rations tables either side of it are both
-   reached by `add di, base`. The scoring is partly read —
+   routine's probability is computed from it. The scoring is partly read —
    the rates are one point per 50 bullets, per 25 pounds of food and per $5,
    and the profession multiplier is in the strings
    ([document three](03-the-code.md#the-first-numbers-out-of-the-simulation)).

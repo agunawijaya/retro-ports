@@ -1264,7 +1264,7 @@ code**. Once `DS:0x185D` was identified, four instructions were all that
 remained; before that, twenty-nine `Random` calls looked like twenty-nine
 separate mysteries.
 
-### The six illnesses, and a table nothing points at
+### The six illnesses, and an array whose address is never written down
 
 Immediately after the rations words, in the same shape, sit the six illnesses:
 
@@ -1277,30 +1277,66 @@ DS:0x0CEC  cholera       DS:0x0D0D  a fever
 Eleven bytes apart, a `string[10]` each — identical in construction to the two
 tables above them.
 
-**And nothing in the program addresses it.** No `add di, 0x0CD6`, no `add ax`,
-no `mov di` followed by `push ds`; the same for all six entries individually.
-The word `typhoid` occurs exactly once in 201,184 bytes, and it is in this
-table.
+Searching for the address `0x0CD6` finds nothing — no `add di`, no `add ax`, no
+`mov di` followed by `push ds`, for the base or for any of the six entries. The
+word `typhoid` occurs exactly once in 201,184 bytes and it is in this table.
 
-That absence is worth something precisely because the same search *does* find
-its neighbours:
+That was written up here as an unsolved absence, with the honest observation
+that the same search *does* find its neighbours:
 
 ```nasm
 0013007  add di, 0x0C92        ; the pace words
 001302D  add di, 0x0CB4        ; the rations words
 ```
 
-So the method works, the two tables either side of the illnesses are reached the
-way you would expect, and the illnesses are not. This is a **bounded** unknown
-rather than an open-ended one: either the illness names are never printed in
-this build, or they are reached by something that leaves no literal behind —
-a pointer computed at run time, or a base held in a variable.
+**The absence was real and the conclusion drawn from it was wrong, for the
+second time in this program.** The right question was not *where is `0x0CD6`
+referenced* but *what does every eleven-byte-stride table access in this program
+use as a base*. There are 42 of them, and the answer is on the list:
 
-What is *not* unknown is the model itself. The question "what drives illness"
-is answered above: health accumulates from pace, rations, weather and running
-out of food, and the casualty routine's probability is computed from it. Only
-the choice of *which word gets printed* is unaccounted for, and that is a
-display detail rather than a rule.
+```nasm
+0013C61  mov al, [bp-0x103]        ; the illness code, 3..8
+0013C67  mov dx, 0x000B / mul dx   ; times eleven
+0013C6E  add di, 0x0CB5            ; <- and this is not the table
+0013C72  push ds / push di
+0013C74  lcall System+0x06C1       ; append it to the message
+0013C79  mov di, 0x3792            ; '.'
+```
+
+`0x0CB5` is **thirty-three bytes before the table**, and it is not the start of
+anything: it lands in the middle of the word `filling`. Work it out for the
+codes `Random(6) + 3` actually produces and every one is exact:
+
+| code | `0x0CB5 + 11 × code` | |
+|---|---|---|
+| 3 | `0x0CD6` | exhaustion |
+| 4 | `0x0CE1` | typhoid |
+| 5 | `0x0CEC` | cholera |
+| 6 | `0x0CF7` | measles |
+| 7 | `0x0D02` | dysentery |
+| 8 | `0x0D0D` | a fever |
+
+The array is declared `array[3..8] of string[10]`, and Pascal lets you say that.
+The compiler then folds the lower bound into the base once, at compile time —
+`base − 3 × 11` — so that indexing costs a multiply and an add rather than a
+multiply, a subtract and an add. **The address of the array never appears in the
+program at all.** The completed sentence is `<name> has <illness>.`
+
+*Zaxxon does the same thing*, and this repository already had it written down:
+two of its tables are indexed from a base pointing four bytes before the data,
+and its notes say *"it looks like a bug and is not."* Two games, two compilers,
+six years apart, one idiom — a subscript range that does not start at zero
+becomes an address you will never find by searching for the array.
+
+**What transfers, and the correction that produced it.** A control saved this
+from being a wrong answer rather than a missing one: because the pace and
+rations tables *were* found by the same search, the absence was clearly real and
+worth explaining rather than shrugging at. But a control tells you the search
+works; it cannot tell you the search is asking the right question. Both times
+this program hid something, the fix was to stop searching for the thing and
+start enumerating the mechanism — every segment base that could explain a
+reference, every table access with the right stride. **When a search with a good
+control comes back empty, change the question, not the thresholds.**
 
 **And the choice of illness is a coin toss.** Following `' has '` back to the
 code that builds the sentence:
@@ -1326,14 +1362,9 @@ per party member sitting beside the eleven-byte name array at `DS:0x17FE`.
 
 That is the last input the model needed, and it makes the shape complete: pace
 and rations decide *how often* something goes wrong, and a flat die decides
-*what*. The only thing still unaccounted for is the path from the code to the
-word, and it is now a labelling question rather than a modelling one.
+*what*.
 
-**What transfers.** A negative result is only worth stating when the same
-procedure has a positive control. "I looked and found nothing" means nothing on
-its own; "I looked, found the two tables on either side, and did not find this
-one" is evidence. Build the control into the search whenever the answer you
-expect is an absence.
+
 
 ## Where the artwork is loaded from
 
