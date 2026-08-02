@@ -54,9 +54,11 @@ generator from the clock, so its stream cannot be reproduced without the clock
 it ran under. The LCG itself is implemented below, so the distribution and the
 call order are the program's; only the seed is ours.
 
-Also not drawn: the animals. They are added at run time by the mini-game loop
-at `hunt:0x72DD`, out of `animals.pcc`, into slots 7 and above -- this draws
-the field as it stands the moment hunting begins.
+The animals enter from an edge, by `hunt:0x71F0`: x is either 0 or 316 minus
+the width, y is `Random(199 - h)`, and the same overlap test rejects and
+redraws. That much is read. **How many appear and which species** is the wave
+logic inside `hunt:0x72DD`, which is not read -- `--animals` and `--species`
+stand in for it, and this docstring is the only place that admission belongs.
 
 Output goes to `reference/`, which is gitignored, because the sprites in it are
 MECC's artwork.
@@ -113,15 +115,16 @@ def tables(exe):
         return struct.unpack_from("<HHHH", img, DGROUP + base + k * 8)
 
     hunter = [rec(HUNTER_TAB, k) for k in range(8)]
+    animals = [rec(ANIMAL_TAB, k) for k in range(28)]
     scenery = [rec(SCENERY_TAB, k) for k in range(16)]
     regions = [list(img[DGROUP + REGION_TAB + 6 * r:
                         DGROUP + REGION_TAB + 6 * r + 6]) for r in range(5)]
-    return hunter, scenery, regions
+    return hunter, scenery, regions, animals
 
 
 def sheets(pcl):
     data = Path(pcl).read_bytes()
-    want = {"TERRAIN": None, "HUNTER": None}
+    want = {"TERRAIN": None, "HUNTER": None, "ANIMALS": None}
     for name, off, size in pcxlib.members(data):
         key = name.split(".")[0].strip().upper()
         if key in want:
@@ -129,7 +132,7 @@ def sheets(pcl):
     missing = [k for k, v in want.items() if v is None]
     if missing:
         raise SystemExit(f"render-hunting: not in the container: {missing}")
-    return want["TERRAIN"], want["HUNTER"]
+    return want["TERRAIN"], want["HUNTER"], want["ANIMALS"]
 
 
 def overlaps(a, b):
@@ -140,7 +143,8 @@ def overlaps(a, b):
                 ay + ah <= by or by + bh <= ay)
 
 
-def build(hunter, scenery, regions, region, seed, direction):
+def build(hunter, scenery, regions, animals, region, seed, direction,
+          n_animals=0, species=()):
     """hunt:0x646A and hunt:0x6310, in the order the program runs them."""
     rnd = TpRandom(seed)
     placed = []
@@ -176,13 +180,51 @@ def build(hunter, scenery, regions, region, seed, direction):
             continue
         out.append((spot[0], spot[1], w, h, "terrain", sx, sy))
         placed.append((spot[0], spot[1], w, h))
+    add_animals(out, placed, animals, rnd, n_animals, species)
     return out
 
 
-def compose(objects, terrain, hunter_sheet):
+ANIMAL_TAB = 0x01C2     # animals.pcc, (srcX, srcY, w, h), four frames each
+ANIMAL_X_RANGE = 0x13C  # 316 -- hunt:0x71F0, two narrower than the scenery's
+
+
+def add_animals(objects, placed, animals, rnd, count, species):
+    """hunt:0x71F0 -- an animal enters from an edge, not from anywhere.
+
+        00071F0  mov ax, 0x13C / sub ax, es:[di+5]   ; 316 - width
+        00071FD  mov es:[di+1], ax                   ;   x = the right edge
+        0007204  mov byte es:[di+4], 0xFE            ;   travelling left, -2
+        0007219  mov es:[di+1], 0                    ; or x = the left edge
+        0007220  mov byte es:[di+4], 2               ;   travelling right, +2
+        0007229  push 5 / lcall ui:0x007D / sub ax,2 ; dy = Random(5) - 2
+        0007243  lcall ui:0x007D                     ; y = Random(199 - h)
+        0007260  call 0x5FF9 / jne                   ; overlaps -- draw again
+
+    The edge, the y draw and the rejection are the program's. **How many
+    animals appear and which species** is decided by the wave logic inside
+    `hunt:0x72DD`, which has not been read -- `--animals` and `--species`
+    stand in for it, and the caption says so.
+    """
+    for n in range(count):
+        sp = species[n % len(species)] if species else rnd(7)
+        sx, sy, w, h = animals[(sp * 4) % 28]        # frame 0 of that species
+        from_left = (n % 2 == 0)
+        for _ in range(200):
+            x = 0 if from_left else ANIMAL_X_RANGE - w
+            y = rnd(Y_RANGE - h)
+            if not any(overlaps((x, y, w, h), p[:4]) for p in placed):
+                objects.append((x, y, w, h, "animals", sx, sy))
+                placed.append((x, y, w, h))
+                break
+
+
+def compose(objects, terrain, hunter_sheet, animal_sheet=None):
     field = [[0] * FIELD_W for _ in range(FIELD_H)]
     for x, y, w, h, sheet, sx, sy in objects:
-        src = terrain if sheet == "terrain" else hunter_sheet
+        src = {"terrain": terrain, "hunter": hunter_sheet,
+               "animals": animal_sheet}[sheet]
+        if src is None:
+            continue
         for row in range(h):
             if not (0 <= sy + row < len(src)) or not (0 <= y + row < FIELD_H):
                 continue
@@ -206,14 +248,22 @@ def main():
                     help="0..4; region 0 permits kinds 0 1 2 6 7 8")
     ap.add_argument("--direction", type=int, default=2,
                     help="0..7, the hunter's facing")
+    ap.add_argument("--animals", type=int, default=0,
+                    help="how many animals to enter the field. The entry "
+                         "rule is read from hunt:0x71F0; the COUNT is not "
+                         "-- the wave logic in hunt:0x72DD is unread")
+    ap.add_argument("--species", default="",
+                    help="0..6, comma separated. Also not read: which "
+                         "species a region offers is unknown")
     ap.add_argument("--scale", type=int, default=3)
     args = ap.parse_args()
 
-    hunter, scenery, regions = tables(args.exe)
-    terrain, hunter_sheet = sheets(args.pcl)
-    objects = build(hunter, scenery, regions, args.region, args.seed,
-                    args.direction)
-    field = compose(objects, terrain, hunter_sheet)
+    hunter, scenery, regions, animals = tables(args.exe)
+    terrain, hunter_sheet, animal_sheet = sheets(args.pcl)
+    species = [int(s) for s in args.species.split(",")] if args.species else ()
+    objects = build(hunter, scenery, regions, animals, args.region,
+                    args.seed, args.direction, args.animals, species)
+    field = compose(objects, terrain, hunter_sheet, animal_sheet)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
