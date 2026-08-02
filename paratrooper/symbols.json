@@ -447,7 +447,7 @@
     ],
     "0x2134": [
       "climb_active",
-      ""
+      "written by climber_step; read by climber_step; holds 1"
     ],
     "0x2135": [
       "climber_screen",
@@ -455,7 +455,7 @@
     ],
     "0x2137": [
       "climber_column",
-      ""
+      "written by climber_step; read by climber_step"
     ],
     "0x2139": [
       "climber_phase",
@@ -523,7 +523,7 @@
     ],
     "0x2AF0": [
       "shatter_column",
-      ""
+      "written by bullet_hit_test and explode_gun; read by bullet_hit_test and explode_gun; holds 0x24"
     ],
     "0x2AF1": [
       "hit_column",
@@ -531,11 +531,11 @@
     ],
     "0x2AF3": [
       "hit_x",
-      ""
+      "written by bullet_hit_test; read by bullet_hit_test"
     ],
     "0x2AF5": [
       "hit_y",
-      ""
+      "written by bullet_hit_test; read by bullet_hit_test"
     ],
     "0x2AF7": [
       "shatter_screen",
@@ -564,6 +564,114 @@
     "0x2B2E": [
       "button_repeat",
       "reloaded with 3 while the joystick button is held"
+    ],
+    "0x1D99": [
+      "lane_screen_1",
+      "the second entry of lane_screen; the wave handlers set it directly"
+    ],
+    "0x1DA1": [
+      "flight_dir_1",
+      "the second entry of flight_dir, set to +1 for the bomber lane"
+    ],
+    "0x2154": [
+      "sound_bomb",
+      "sound_timers[1] -- 0x32 when a bomb is released, 0 when it is destroyed"
+    ],
+    "0x2155": [
+      "sound_hit",
+      "sound_timers[2] -- 0x14, set by every scoring hit"
+    ],
+    "0x2156": [
+      "sound_shot",
+      "sound_timers[3] -- 2, set by fire_bullet"
+    ],
+    "0x2157": [
+      "sound_explosion",
+      "sound_timers[4] -- 0x61, the longest, set by explode_gun"
+    ],
+    "es:0x0010": [
+      "bios_equipment",
+      "0040:0010. start reads bits 0x30 to find the adapter and writes 0x20 back to claim 40-column colour"
+    ],
+    "0x08BB": [
+      "aircraft_sprite_pair",
+      "the midpoint of aircraft_sprite_left and aircraft_sprite_right; the lane code reads [di + 0x8BB] with di = +/-1 to pick a side"
+    ],
+    "0x10A1": [
+      "title_letter_rows",
+      "read as [bx + 0x10A1] while the title letters are drawn"
+    ],
+    "0x1163": [
+      "title_letter_table_base",
+      "title_letter_table reached with the loop's own base; the first entry used is +2"
+    ],
+    "0x1BF2": [
+      "fall_offset_rebased",
+      "fall_offset with the column already biased by 0x43 -- the same array the bomb spawn walks"
+    ],
+    "0x1D95": [
+      "lane_cells_1",
+      "the second entry of lane_cells"
+    ],
+    "0x1DA4": [
+      "edge_step_base",
+      "edge_step reached with the direction in DI, so the base is one entry below"
+    ],
+    "0x1DA8": [
+      "lane_scan_start_base",
+      "lane_scan_start the same way"
+    ],
+    "0x200F": [
+      "bullet_velocity_dy",
+      "bullet_velocity + 2: the dy of each (dx, dy) pair"
+    ],
+    "0x2062": [
+      "max_gun_angle_base",
+      "max_gun_angle reached with the index already in SI"
+    ],
+    "0x2159": [
+      "sound_handler_base",
+      "sound_handler less the two the index starts at"
+    ],
+    "0x04AE": [
+      "particle_speed_offset",
+      "the +0x4AE displacement from a particle's pixel byte to its speed"
+    ],
+    "0x04AF": [
+      "particle_speed_offset_w",
+      "the same as a word write"
+    ],
+    "0x0706": [
+      "particle_column_offset",
+      "and +0x706 to its column"
+    ],
+    "0x0707": [
+      "particle_column_offset_w",
+      "written by bullet_hit_test and explode_gun"
+    ],
+    "ds:0x1167": [
+      "title_letter_table",
+      "11 pointers at +2..+0x16 into 6 distinct bitmaps -- PARATROOPER has six distinct letters; also written [ds:...] in 1 place, which is the same address -- the prefix only overrides the default segment for the base register"
+    ],
+    "ds:0x2066": [
+      "particle_spread",
+      "16 words, picked by the low five bits of the RNG; also written [ds:...] in 1 place, which is the same address -- the prefix only overrides the default segment for the base register"
+    ],
+    "ds:0x1D99": [
+      "lane_screen_1",
+      "the second entry of lane_screen; the wave handlers set it directly; also written [ds:...] in 1 place, which is the same address -- the prefix only overrides the default segment for the base register"
+    ],
+    "ds:0x1D91": [
+      "lane_dir",
+      "+1 or -1, copied out of flight_dir; also written [ds:...] in 2 places, which is the same address -- the prefix only overrides the default segment for the base register"
+    ],
+    "ds:0x1D95": [
+      "lane_cells_1",
+      "the second entry of lane_cells; also written [ds:...] in 1 place, which is the same address -- the prefix only overrides the default segment for the base register"
+    ],
+    "ds:0x1D9D": [
+      "lane_row_2",
+      "the second lane's, capped at 0x6C; also written [ds:...] in 2 places, which is the same address -- the prefix only overrides the default segment for the base register"
     ]
   },
   "_data_spans": {
@@ -660,6 +768,51 @@
     "0x2ACC": [
       100,
       "the shatter scratch, the score, the landed-trooper timers"
+    ]
+  },
+  "_displacements": {
+    "_note": [
+      "10 bracketed constants in the listing are displacements, not",
+      "addresses: each appears only with a base register and never on its own,",
+      "and every one is under 0x400 -- a field inside a record the base points",
+      "at. They are listed so the coverage number has a denominator that means",
+      "something, and so the next reader does not go looking for a variable."
+    ],
+    "0x0012": [
+      "di",
+      "si"
+    ],
+    "0x0026": [
+      "di",
+      "si"
+    ],
+    "0x003A": [
+      "di",
+      "si"
+    ],
+    "0x003C": [
+      "di",
+      "si"
+    ],
+    "0x004E": [
+      "di",
+      "si"
+    ],
+    "0x0078": [
+      "di",
+      "si"
+    ],
+    "0x00A0": [
+      "si"
+    ],
+    "0x0140": [
+      "si"
+    ],
+    "0x0256": [
+      "si"
+    ],
+    "0x0257": [
+      "di"
     ]
   }
 }

@@ -549,7 +549,7 @@ Nothing this document set out to read, and nothing it deferred. The eight arms
 and the calibration are above.
 
 And the data is read too, since this was written: every address the code names,
-and 99.5% of the data segment by byte. What moved the last of it was not
+and 100% of the data segment by byte. What moved the last of it was not
 analysis but driving the game — writing `[0x156] = 0` and a scripted `[0xE19F]`
 plays it as a human would, and 48 globals moved that the demo never touched.
 

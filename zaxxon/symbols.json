@@ -127,7 +127,7 @@
     ],
     "0x0534": [
       "draw_stage_number",
-      ""
+      "the stage number as two digits at cursor 0x1725, from the third word of the player's context"
     ],
     "0x0545": [
       "load_start_map",
@@ -191,7 +191,7 @@
     ],
     "0x0AA3": [
       "scene_space",
-      ""
+      "the space stage: state 0 clears the section, 1 points level_tiles at 0x932, 2 unpacks 0x3A5F with mode 1"
     ],
     "0x0ADD": [
       "scene_2",
@@ -199,27 +199,27 @@
     ],
     "0x0AED": [
       "scene_3",
-      ""
+      "one of seven scenes with the same three-step shape: a stage_handler at 0x3AB1, a scene name pointer, a scene_kind, then unpack_level"
     ],
     "0x0AFF": [
       "scene_4",
-      ""
+      "handler 0x3AB3, scene_kind 0"
     ],
     "0x0B10": [
       "scene_5",
-      ""
+      "handler 0x3AB5, scene_kind 0"
     ],
     "0x0B21": [
       "scene_6",
-      ""
+      "handler 0x3AB1, scene_kind 3"
     ],
     "0x0B32": [
       "scene_7",
-      ""
+      "handler 0x3AB1, scene_kind 5"
     ],
     "0x0B43": [
       "scene_8",
-      ""
+      "handler 0x3AB3, scene_kind 1"
     ],
     "0x0B8D": [
       "unpack_level",
@@ -251,11 +251,11 @@
     ],
     "0x0D0F": [
       "blit_or_16x4",
-      ""
+      "16 rows of two words, ORed, starting 0x140 into the buffer"
     ],
     "0x0D2B": [
       "blit_or_16x6",
-      ""
+      "16 rows of three words, ORed, starting 0x141 -- the odd byte is the half-cell shift"
     ],
     "0x0D4E": [
       "blit_masked_16x4",
@@ -267,7 +267,7 @@
     ],
     "0x0D99": [
       "blit_or_8x2",
-      ""
+      "8 rows of one word, ORed, starting 0x282"
     ],
     "0x0DAD": [
       "blit_masked_8x2",
@@ -359,7 +359,7 @@
     ],
     "0x155F": [
       "lose_life",
-      ""
+      "one off the lives byte the player's context points at, with nine frames of grace before it counts"
     ],
     "0x1580": [
       "spawn_tick",
@@ -375,19 +375,19 @@
     ],
     "0x1860": [
       "boss_appear",
-      ""
+      "the fortress arrives: six bytes copied over object slot 0xCA once it is free"
     ],
     "0x1882": [
       "boss_spawn",
-      ""
+      "up to five shots from the fortress, one per free slot in the first five, each seeded from boss_shot"
     ],
     "0x18E5": [
       "boss_wait_clear",
-      ""
+      "waits until all six of the first object slots are free again"
     ],
     "0x18F9": [
       "boss_done",
-      ""
+      "resets the scene name to 0x1E15 and steps the stage script"
     ],
     "0x1902": [
       "wall_stage",
@@ -395,23 +395,23 @@
     ],
     "0x192D": [
       "wall_approach",
-      ""
+      "the wall approaches: world_y up to 0x18, and the six wall pieces walk one cell a frame"
     ],
     "0x1981": [
       "wall_hold",
-      ""
+      "holds for wall_timer frames, then clears bit 7 of draw_flags"
     ],
     "0x19A4": [
       "wall_result",
-      ""
+      "did the ship pass: enemy_shots empty and wall_cleared decides whether the script skips a step"
     ],
     "0x19C4": [
       "wall_retreat",
-      ""
+      "world_x back up to 0x57 and world_y down, with the objects hidden"
     ],
     "0x19E3": [
       "wall_clear",
-      ""
+      "the wall goes: six pieces restored from wall_objects, the section bitmap filled with 0x5555, then twenty frames of the ordinary loop"
     ],
     "0x1A6E": [
       "wall_bonus",
@@ -451,7 +451,7 @@
     ],
     "0x1F9F": [
       "engine_quiet",
-      ""
+      "engine_timer to 0x28 -- a short hum rather than silence"
     ],
     "0x1FAD": [
       "engine_sound_tick",
@@ -463,15 +463,15 @@
     ],
     "0x2012": [
       "sound_shot",
-      ""
+      "channel 1: di 0x35C, eighteen steps, then speaker_stop"
     ],
     "0x2034": [
       "sound_explosion",
-      ""
+      "channel 2: di 0x33FE over 0xB4 steps, halving the rate while sound_variant is set"
     ],
     "0x2063": [
       "sound_swoop",
-      ""
+      "channel 3: di 0x4B0 over four steps, each 0xFFC4 further on"
     ],
     "0x2098": [
       "speaker_stop",
@@ -479,7 +479,7 @@
     ],
     "0x209D": [
       "speaker_off",
-      ""
+      "clears bit 1 of port 0x61 and leaves bit 0 alone"
     ],
     "0x20A4": [
       "speaker_tone",
@@ -513,7 +513,7 @@
     ],
     "0x0004": [
       "stick_centre_y",
-      ""
+      "the second axis of the reading taken before the game started"
     ],
     "0x0005": [
       "tick_last",
@@ -533,7 +533,7 @@
     ],
     "0x000B": [
       "scene_kind",
-      ""
+      "0, 1, 3 or 5, set by each scene and read by the drawing"
     ],
     "0x000C": [
       "stage_id",
@@ -541,11 +541,11 @@
     ],
     "0x000E": [
       "p1_lives",
-      ""
+      "the byte the first player's context points at"
     ],
     "0x0011": [
       "p2_lives",
-      ""
+      "and the second player's"
     ],
     "0x0016": [
       "wall_cleared",
@@ -557,7 +557,7 @@
     ],
     "0x00F7": [
       "shot_y",
-      ""
+      "its row"
     ],
     "0x00FC": [
       "shot_2_x",
@@ -573,7 +573,7 @@
     ],
     "0x0021": [
       "sound_reset",
-      ""
+      "set to 1 whenever engine_timer is reloaded to 0x64"
     ],
     "0x0023": [
       "hit_flag",
@@ -585,19 +585,19 @@
     ],
     "0x0027": [
       "sound_channel_2",
-      ""
+      "the second of the four two-byte channels at sound_channels"
     ],
     "0x0029": [
       "sound_channel_3",
-      ""
+      "the third"
     ],
     "0x002B": [
       "sound_channel_4",
-      ""
+      "the fourth"
     ],
     "0x0033": [
       "sound_variant",
-      ""
+      "read by sound_explosion, which halves its step while it is set"
     ],
     "0x0038": [
       "rng_tick",
@@ -621,7 +621,7 @@
     ],
     "0x0040": [
       "wall_timer",
-      ""
+      "0x14 while the wall holds its position"
     ],
     "0x0055": [
       "joystick_pos",
@@ -653,7 +653,7 @@
     ],
     "0x006C": [
       "in_flight",
-      ""
+      "set once the playfield is built and cleared while a stage is changing"
     ],
     "0x006D": [
       "spawn_budget",
@@ -665,7 +665,7 @@
     ],
     "0x006F": [
       "hide_objects",
-      ""
+      "set during the wall retreat, when the objects must not be drawn"
     ],
     "0x0070": [
       "world_x",
@@ -681,7 +681,7 @@
     ],
     "0x0098": [
       "p2_score",
-      ""
+      "eight digits, one per byte"
     ],
     "0x00A0": [
       "ship",
@@ -689,11 +689,11 @@
     ],
     "0x00A2": [
       "ship_x",
-      ""
+      "clamped to 6..0x2E by ship_control"
     ],
     "0x00A3": [
       "ship_y",
-      ""
+      "clamped to the band 0x28..0x3E offset by ship_alt"
     ],
     "0x00A4": [
       "ship_alt",
@@ -705,7 +705,7 @@
     ],
     "0x00A8": [
       "shadow_pos",
-      ""
+      "the shadow's, set to the ship's position plus (8, -8) when something is under it"
     ],
     "0x00AC": [
       "objects",
@@ -717,7 +717,7 @@
     ],
     "0x00F6": [
       "shot_x",
-      ""
+      "the first enemy shot's column, tested so two shots never aim at the same one"
     ],
     "0x0100": [
       "player_bullets",
@@ -757,7 +757,7 @@
     ],
     "cs:0x04EE": [
       "p1_stage_ptr",
-      ""
+      "the context's fourth word: where main clears ten bytes of stage state"
     ],
     "cs:0x04F0": [
       "p1_lives_ptr",
@@ -773,11 +773,11 @@
     ],
     "cs:0x05FD": [
       "msg_keyboard_only",
-      ""
+      "'Only Keyboard Control Available' and 'Joystick Not Attached'"
     ],
     "cs:0x063A": [
       "msg_control_choice",
-      ""
+      "'Keyboard Control=K' and 'Joystick Control=J'"
     ],
     "cs:0x0667": [
       "hud_script",
@@ -789,19 +789,19 @@
     ],
     "cs:0x06D8": [
       "msg_players",
-      ""
+      "'Enter' and '1 or 2 Players'"
     ],
     "cs:0x06F4": [
       "msg_player_1",
-      ""
+      "'Player 1 Your Turn'"
     ],
     "cs:0x0707": [
       "msg_player_2",
-      ""
+      "'Player 2 Your Turn'"
     ],
     "cs:0x071A": [
       "msg_game_over",
-      ""
+      "three lines, the middle one ' GAME OVER '"
     ],
     "cs:0x075E": [
       "stage_script",
@@ -809,7 +809,7 @@
     ],
     "cs:0x0B7B": [
       "msg_bonus_1000",
-      ""
+      "'1000 Point BONUS'"
     ],
     "cs:0x0E4D": [
       "explosion_frames",
@@ -853,7 +853,7 @@
     ],
     "cs:0x150E": [
       "spawn_position",
-      ""
+      "the (column, row) each spawned kind starts at"
     ],
     "cs:0x1518": [
       "spawn_lists",
@@ -861,19 +861,19 @@
     ],
     "cs:0x1754": [
       "boss_script",
-      ""
+      "five entries: appear, spawn, wait, done, and the scroll between them"
     ],
     "cs:0x177C": [
       "boss_object",
-      ""
+      "the six bytes that become the fortress in object slot 0xCA"
     ],
     "cs:0x17C7": [
       "boss_shot",
-      ""
+      "the six bytes each fortress shot is seeded from"
     ],
     "cs:0x1821": [
       "wall_script",
-      ""
+      "six entries: approach, hold, result, retreat, clear, bonus"
     ],
     "cs:0x194A": [
       "wall_objects",
@@ -881,15 +881,15 @@
     ],
     "cs:0x19E2": [
       "msg_bonus_200",
-      ""
+      "'200 Point BONUS'"
     ],
     "cs:0x19F2": [
       "msg_bonus_2000",
-      ""
+      "'2000 Point BONUS'"
     ],
     "cs:0x1A43": [
       "wall_scroll_state",
-      ""
+      "eight bytes copied over world_x when the wall stage begins"
     ],
     "cs:0x1F12": [
       "sound_handler",
@@ -1019,5 +1019,78 @@
       10597,
       "the sprite bitmaps, their masks, and the explosion frames -- 10,597 bytes, half the file, reached only through those two tables"
     ]
-  }
+  },
+  "_displacements": {
+    "_note": [
+      "18 bracketed constants in the listing are displacements, not",
+      "addresses: each appears only with a base register and never on its own,",
+      "and every one is under 0x400 -- a field inside a record the base points",
+      "at. They are listed so the coverage number has a denominator that means",
+      "something, and so the next reader does not go looking for a variable."
+    ],
+    "0x000A": [
+      "bx"
+    ],
+    "0x0028": [
+      "bx",
+      "di"
+    ],
+    "0x002A": [
+      "bx"
+    ],
+    "0x0040": [
+      "si"
+    ],
+    "0x0042": [
+      "si"
+    ],
+    "0x0050": [
+      "bx"
+    ],
+    "0x0051": [
+      "bx"
+    ],
+    "0x0052": [
+      "bx"
+    ],
+    "0x0053": [
+      "bx"
+    ],
+    "0x005C": [
+      "bx",
+      "si"
+    ],
+    "0x0060": [
+      "si"
+    ],
+    "0x0077": [
+      "di"
+    ],
+    "0x0078": [
+      "bx"
+    ],
+    "0x0079": [
+      "bx"
+    ],
+    "0x007A": [
+      "bx"
+    ],
+    "0x007B": [
+      "bx"
+    ],
+    "0x0090": [
+      "si"
+    ]
+  },
+  "_not_addresses": [
+    "0x3311 is not an address. It is two bytes of joystick_dir_map -- the 34-byte",
+    "table at cs:0x107C that folds two stick axes into one of nine directions --",
+    "and the run it sits in decodes cleanly enough that comrec emits it as",
+    "`mov byte [bx + si + 0x3311], cl` twice. NASM re-emits the same bytes, so the",
+    "rebuild is unaffected, and naming it would invent a variable the game does",
+    "not have.",
+    "",
+    "The tell is the one knowledge/13 records: referenced from a run with no",
+    "incoming branch, and nothing writes it that anything reads."
+  ]
 }

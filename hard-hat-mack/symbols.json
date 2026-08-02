@@ -1062,7 +1062,7 @@
   "globals": {
     "0x0103": [
       "exit_allowed",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x0171": [
       "keyboard_isr_offset",
@@ -1086,11 +1086,11 @@
     ],
     "0x0782": [
       "old_int09",
-      ""
+      "written by start"
     ],
     "0x0784": [
       "old_int09_seg",
-      ""
+      "written by start"
     ],
     "0x0786": [
       "entry_es",
@@ -1102,7 +1102,7 @@
     ],
     "0x09AE": [
       "stick_raw_y",
-      ""
+      "read by joystick_scaled"
     ],
     "0x09B0": [
       "stick_slope_low",
@@ -1110,7 +1110,7 @@
     ],
     "0x09B8": [
       "stick_slope_high",
-      ""
+      "written by joystick_calibrate and joystick_scaled"
     ],
     "0x09C0": [
       "stick_corner_1",
@@ -1118,23 +1118,23 @@
     ],
     "0x09C4": [
       "stick_corner_2",
-      ""
+      "read by joystick_calibrate and joystick_scaled"
     ],
     "0x09C8": [
       "stick_corner_3",
-      ""
+      "read by joystick_calibrate"
     ],
     "0x09CC": [
       "stick_sample",
-      ""
+      "written by joystick_read_raw; read by joystick_read_raw; holds 0xff"
     ],
     "0x09D2": [
       "stick_count_low",
-      ""
+      "written by joystick_read_raw; read by joystick_read_raw"
     ],
     "0x09D8": [
       "stick_count_high",
-      ""
+      "written by joystick_read_raw; read by joystick_read_raw"
     ],
     "0x0B60": [
       "mack_x",
@@ -1142,7 +1142,7 @@
     ],
     "0x0B61": [
       "fire_held",
-      ""
+      "written by handle_key; read by handle_key and mack_input"
     ],
     "0x0B62": [
       "key_event",
@@ -1154,7 +1154,7 @@
     ],
     "0x0B64": [
       "hoist_row",
-      ""
+      "written by hoist_step and reset_screen_state; read by fall_check, hoist_arrive and hoist_call"
     ],
     "0x0B65": [
       "mack_y",
@@ -1166,23 +1166,23 @@
     ],
     "0x0B67": [
       "mack_prev_y",
-      ""
+      "written by draw_explosion, hoist_arrive and 2 others; read by draw_explosion and mack_draw"
     ],
     "0x0B68": [
       "death_shape_2",
-      ""
+      "written by death_frame"
     ],
     "0x0B69": [
       "mack_shape",
-      ""
+      "written by death_frame, face_left and 8 others; read by draw_death and mack_draw"
     ],
     "0x0B6B": [
       "mack_prev_shape",
-      ""
+      "written by draw_death, fall_check and 5 others; read by draw_death, fall_check and 2 others"
     ],
     "0x0B6C": [
       "mack_jumping",
-      ""
+      "written by ladder_ride, mack_jump and 2 others; read by conveyor_catch, die and 11 others"
     ],
     "0x0B6D": [
       "mack_facing",
@@ -1194,7 +1194,7 @@
     ],
     "0x0B70": [
       "key_code",
-      ""
+      "written by handle_key; read by handle_key"
     ],
     "0x0B71": [
       "sound_on",
@@ -1210,15 +1210,15 @@
     ],
     "0x0B77": [
       "stick_x",
-      ""
+      "written by screen_1, screen_2 and screen_3; read by joystick_direction"
     ],
     "0x0B78": [
       "stick_y",
-      ""
+      "written by screen_1, screen_2 and screen_3; read by joystick_direction"
     ],
     "0x0B79": [
       "using_stick",
-      ""
+      "written by conveyor_catch, lift_catch and 3 others; read by joystick_input and mack_input"
     ],
     "0x0B7A": [
       "mack_moved",
@@ -1230,23 +1230,23 @@
     ],
     "0x0B7C": [
       "near_floor",
-      ""
+      "written by low_flag and reset_screen_state; read by mack_jump"
     ],
     "0x0B7D": [
       "level_stage",
-      ""
+      "written by reset_round and screen_1_complete; read by girder_fall, reset_screen_state and screen_2_setup"
     ],
     "0x0B7E": [
       "long_death",
-      ""
+      "written by reset_screen_state and walk_off; read by fall_check"
     ],
     "0x0B7F": [
       "screen_dirty",
-      ""
+      "written by lose_life, respawn_screen_1 and 2 others; read by screen_1, screen_2 and screen_3"
     ],
     "0x0B80": [
       "in_play",
-      ""
+      "written by main and new_life; read by hole_touch"
     ],
     "0x0BD9": [
       "state_vector",
@@ -1254,7 +1254,7 @@
     ],
     "0x0BDA": [
       "state_vector_hi",
-      ""
+      "written by screen_select"
     ],
     "0x1003": [
       "shape_up",
@@ -1262,11 +1262,11 @@
     ],
     "0x100B": [
       "shape_down",
-      ""
+      "read by mack_down"
     ],
     "0x1013": [
       "shape_left",
-      ""
+      "read by mack_left_step"
     ],
     "0x1015": [
       "ladder_shape",
@@ -1286,19 +1286,19 @@
     ],
     "0x10E5": [
       "key_right",
-      ""
+      "written by configure_keys; read by mack_input and read_config_key"
     ],
     "0x10E7": [
       "key_up",
-      ""
+      "written by configure_keys; read by mack_input and read_config_key"
     ],
     "0x10E9": [
       "key_down",
-      ""
+      "written by configure_keys; read by mack_input and read_config_key"
     ],
     "0x10EB": [
       "key_jump",
-      ""
+      "written by configure_keys; read by mack_input and read_config_key"
     ],
     "0x11EF": [
       "jump_dir_mark",
@@ -1310,7 +1310,7 @@
     ],
     "0x1344": [
       "girder_y1_1",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x1348": [
       "girder_y0_2",
@@ -1318,7 +1318,7 @@
     ],
     "0x134C": [
       "girder_y1_2",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x1350": [
       "girder_y0_3",
@@ -1326,19 +1326,19 @@
     ],
     "0x1351": [
       "girder_y1_3",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x1352": [
       "girder_x_1",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x1356": [
       "girder_x_2",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x135A": [
       "girder_x_3",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x135B": [
       "girder_count",
@@ -1350,11 +1350,11 @@
     ],
     "0x1360": [
       "span_high",
-      ""
+      "written by can_walk_right; read by can_walk_right"
     ],
     "0x1361": [
       "span_end",
-      ""
+      "written by can_walk_left and can_walk_right; read by can_walk_left and can_walk_right"
     ],
     "0x1486": [
       "ladder_rows",
@@ -1366,7 +1366,7 @@
     ],
     "0x154A": [
       "wrap_to",
-      ""
+      "read by clamp_position and wrap_jump"
     ],
     "0x15A0": [
       "fill_col_from",
@@ -1374,15 +1374,15 @@
     ],
     "0x15A1": [
       "fill_col_to",
-      ""
+      "written by draw_conveyor, draw_floor and draw_hoist_cables; read by fill_line"
     ],
     "0x15A2": [
       "fill_row_from",
-      ""
+      "written by draw_conveyor, draw_floor and draw_hoist_cables; read by fill_line"
     ],
     "0x15A3": [
       "fill_row_to",
-      ""
+      "written by draw_conveyor, draw_floor and draw_hoist_cables; read by fill_line"
     ],
     "0x15A4": [
       "fill_shape_unused",
@@ -1394,19 +1394,19 @@
     ],
     "0x15A7": [
       "girder_y",
-      ""
+      "written by girder_fall; read by girder_fall and hazard_girder"
     ],
     "0x15A8": [
       "girder_prev_x",
-      ""
+      "written by girder_fall; read by girder_fall"
     ],
     "0x15A9": [
       "girder_prev_y",
-      ""
+      "written by girder_fall; read by girder_fall"
     ],
     "0x15AA": [
       "girder_dx",
-      ""
+      "written by girder_fall; read by girder_fall"
     ],
     "0x15AB": [
       "girder_dy",
@@ -1414,11 +1414,11 @@
     ],
     "0x15AC": [
       "girder_active",
-      ""
+      "written by girder_fall and reset_screen_state; read by girder_fall"
     ],
     "0x15AD": [
       "girder_dy0",
-      ""
+      "written by girder_fall; read by girder_fall"
     ],
     "0x15AE": [
       "girder_preset",
@@ -1434,31 +1434,31 @@
     ],
     "0x15B9": [
       "rivet_rows",
-      ""
+      "read by draw_girder_grid, draw_rivets and 2 others"
     ],
     "0x15BF": [
       "girder_columns",
-      ""
+      "read by draw_girder_cell"
     ],
     "0x15CD": [
       "pillar_rows",
-      ""
+      "read by draw_pillar_cell"
     ],
     "0x15D1": [
       "pillar_col_a",
-      ""
+      "read by draw_pillars"
     ],
     "0x15D2": [
       "pillar_col_b",
-      ""
+      "read by draw_pillars"
     ],
     "0x15D3": [
       "beam_row",
-      ""
+      "read by draw_beams"
     ],
     "0x15D4": [
       "beam_columns",
-      ""
+      "read by draw_beams"
     ],
     "0x1B64": [
       "clip_row",
@@ -1466,19 +1466,19 @@
     ],
     "0x1B65": [
       "clip_col",
-      ""
+      "written by blink_sign, collect_lunchbox and 40 others; read by blit_erase and blit_masked"
     ],
     "0x1B66": [
       "use_or_blit",
-      ""
+      "written by draw_fixtures_screen_3, draw_ladders_1 and 2 others; read by place_sprite"
     ],
     "0x1B67": [
       "use_xor_blit",
-      ""
+      "written by collect_lunchbox, draw_beams and 11 others; read by place_sprite"
     ],
     "0x1B68": [
       "use_erase_blit",
-      ""
+      "written by place_sprite; read by place_sprite"
     ],
     "0x1C3C": [
       "girder_dx_table",
@@ -1486,31 +1486,31 @@
     ],
     "0x1C40": [
       "girder_dy_table",
-      ""
+      "read by girder_fall"
     ],
     "0x1C44": [
       "girder_dy_limit",
-      ""
+      "read by girder_fall"
     ],
     "0x1C48": [
       "girder_y_table",
-      ""
+      "read by girder_fall"
     ],
     "0x1C4C": [
       "girder_x_limit",
-      ""
+      "read by girder_fall"
     ],
     "0x1C4E": [
       "girder_delay",
-      ""
+      "written by girder_fall; read by girder_fall"
     ],
     "0x1C4F": [
       "girder_timer",
-      ""
+      "written by girder_fall"
     ],
     "0x1C50": [
       "girder_delay_table",
-      ""
+      "read by girder_fall"
     ],
     "0x1E19": [
       "rng_state",
@@ -1518,19 +1518,19 @@
     ],
     "0x1E1A": [
       "rng_1",
-      ""
+      "written by random; read by random"
     ],
     "0x1E1D": [
       "rng_2",
-      ""
+      "read by random"
     ],
     "0x1E1E": [
       "rng_3",
-      ""
+      "read by random"
     ],
     "0x1E21": [
       "toolbox_x_table",
-      ""
+      "read by randomise_toolboxes"
     ],
     "0x1E4D": [
       "toolbox_x",
@@ -1538,7 +1538,7 @@
     ],
     "0x1E52": [
       "toolbox_x_choices",
-      ""
+      "read by randomise_rivets"
     ],
     "0x1EEE": [
       "text_bonus",
@@ -1546,35 +1546,35 @@
     ],
     "0x1F19": [
       "text_score",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x1F35": [
       "text_hiscore",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x1F4D": [
       "text_game_over",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x1F77": [
       "text_high_scores",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x203E": [
       "text_help_2",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x209B": [
       "text_help_1",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x20FB": [
       "text_lives",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x20FD": [
       "lives_digit",
-      ""
+      "written by draw_lives"
     ],
     "0x2120": [
       "ladder_shape_a",
@@ -1582,27 +1582,27 @@
     ],
     "0x2121": [
       "ladder_shape_a_hi",
-      ""
+      "read by animate_ladder"
     ],
     "0x2122": [
       "ladder_shape_b",
-      ""
+      "written by animate_ladder; read by animate_ladder; holds 0x5c00"
     ],
     "0x2123": [
       "ladder_shape_b_hi",
-      ""
+      "written by animate_ladder; read by animate_ladder"
     ],
     "0x2124": [
       "ladder_started",
-      ""
+      "written by animate_ladder and reset_screen_state; read by animate_ladder"
     ],
     "0x2125": [
       "ladder_timer",
-      ""
+      "written by animate_ladder"
     ],
     "0x2126": [
       "ladder_frame",
-      ""
+      "written by animate_ladder; read by animate_ladder"
     ],
     "0x21E6": [
       "tune_idle",
@@ -1614,43 +1614,43 @@
     ],
     "0x21EB": [
       "hazard_kind_2",
-      ""
+      "written by set_hazards_screen_1 and set_hazards_screen_2"
     ],
     "0x21ED": [
       "hazard_kind_3",
-      ""
+      "written by set_hazards_screen_1 and set_hazards_screen_2"
     ],
     "0x21EF": [
       "hazard_kind_4",
-      ""
+      "written by set_hazards_screen_1 and set_hazards_screen_2"
     ],
     "0x21F1": [
       "hazard_kind_5",
-      ""
+      "written by set_hazards_screen_1 and set_hazards_screen_2"
     ],
     "0x21FD": [
       "hazard_kind_6",
-      ""
+      "written by set_hazards_screen_1 and set_hazards_screen_2"
     ],
     "0x2264": [
       "hoist_y",
-      ""
+      "written by hoist_step and reset_screen_state; read by draw_hoist_car, fall_check and hoist_step"
     ],
     "0x2265": [
       "hoist_dir",
-      ""
+      "written by hoist_step and reset_screen_state; read by hoist_step"
     ],
     "0x2266": [
       "hoist_cable_y",
-      ""
+      "written by hoist_step and reset_screen_state; read by hoist_step"
     ],
     "0x2267": [
       "hoist_running",
-      ""
+      "written by hoist_call, hoist_step and toggle_hoist; read by girder_fall, hoist_call and 2 others"
     ],
     "0x2268": [
       "hoist_shape",
-      ""
+      "written by hoist_call and toggle_hoist; read by hoist_step"
     ],
     "0x22E0": [
       "key_release",
@@ -1662,23 +1662,23 @@
     ],
     "0x2501": [
       "score_pending_2",
-      ""
+      "written by bonus_subtract, button_step and 7 others"
     ],
     "0x2502": [
       "score_pending_3",
-      ""
+      "written by bonus_payout, bonus_subtract and 6 others"
     ],
     "0x2503": [
       "score_pending_4",
-      ""
+      "written by bonus_subtract and score_add"
     ],
     "0x2504": [
       "score_pending_5",
-      ""
+      "written by bonus_subtract and score_add"
     ],
     "0x2505": [
       "score_pending_6",
-      ""
+      "written by bonus_subtract and score_add"
     ],
     "0x2506": [
       "score_digits",
@@ -1690,15 +1690,15 @@
     ],
     "0x250C": [
       "score_positions",
-      ""
+      "read by score_draw"
     ],
     "0x2517": [
       "high_score_digits",
-      ""
+      "written by high_score_check; read by high_score_check and high_score_draw"
     ],
     "0x251D": [
       "high_score_positions",
-      ""
+      "read by high_score_draw"
     ],
     "0x25AD": [
       "text_digit",
@@ -1706,15 +1706,15 @@
     ],
     "0x25AF": [
       "text_digit_char",
-      ""
+      "written by high_score_draw and score_draw"
     ],
     "0x261A": [
       "hoist_path_x",
-      ""
+      "read by hoist_ride"
     ],
     "0x266B": [
       "hoist_path_y",
-      ""
+      "read by hoist_ride"
     ],
     "0x26BC": [
       "spark_x_left",
@@ -1722,15 +1722,15 @@
     ],
     "0x26C2": [
       "spark_y_left",
-      ""
+      "read by hammer_land and sparks"
     ],
     "0x26C8": [
       "spark_x_right",
-      ""
+      "read by hammer_land and sparks"
     ],
     "0x26CE": [
       "spark_y_right",
-      ""
+      "read by hammer_land and sparks"
     ],
     "0x2894": [
       "column_table",
@@ -1738,19 +1738,19 @@
     ],
     "0x2A94": [
       "rail_columns",
-      ""
+      "read by draw_girder_run and draw_rail"
     ],
     "0x2AAC": [
       "girder_variant",
-      ""
+      "written by high_score_screen, screen_1_setup and screen_3_setup; read by draw_girder_left and draw_girder_right"
     ],
     "0x2C62": [
       "ladder_columns_1",
-      ""
+      "read by draw_ladders_1"
     ],
     "0x2C64": [
       "ladder_columns_2",
-      ""
+      "read by draw_ladders_1"
     ],
     "0x2D36": [
       "wide_columns",
@@ -1758,15 +1758,15 @@
     ],
     "0x2D56": [
       "chain_rows",
-      ""
+      "read by draw_chain_anchor"
     ],
     "0x3040": [
       "hole_x_table_3",
-      ""
+      "read by screen_2_setup"
     ],
     "0x304C": [
       "hole_y_table_3",
-      ""
+      "read by screen_2_setup"
     ],
     "0x305E": [
       "path_x",
@@ -1774,15 +1774,15 @@
     ],
     "0x3082": [
       "path_y",
-      ""
+      "read by bolt_step, chute_start and 3 others"
     ],
     "0x30A6": [
       "chain_x",
-      ""
+      "read by chain_step"
     ],
     "0x30D2": [
       "chain_y",
-      ""
+      "read by chain_step"
     ],
     "0x30FE": [
       "vandal_waypoint_x",
@@ -1790,15 +1790,15 @@
     ],
     "0x3111": [
       "vandal_waypoint_y",
-      ""
+      "read by vandal_release and vandal_step"
     ],
     "0x3124": [
       "conveyor_x",
-      ""
+      "read by conveyor_advance, conveyor_ride and conveyor_step"
     ],
     "0x3176": [
       "conveyor_y",
-      ""
+      "read by conveyor_advance, conveyor_ride and conveyor_step"
     ],
     "0x31E4": [
       "hole_target_shape",
@@ -1806,39 +1806,39 @@
     ],
     "0x31E8": [
       "hole_shape_1",
-      ""
+      "read by screen_1_setup"
     ],
     "0x31EC": [
       "hole_shape_2",
-      ""
+      "read by screen_2_setup"
     ],
     "0x31F0": [
       "hole_shape_3",
-      ""
+      "read by screen_3_setup"
     ],
     "0x31F4": [
       "hole_target_1",
-      ""
+      "read by screen_1_setup"
     ],
     "0x31FC": [
       "hole_target_2",
-      ""
+      "read by screen_3_setup"
     ],
     "0x3200": [
       "hole_x_ptr",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by hole_move"
     ],
     "0x3204": [
       "hole_x_ptr_2",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by hole_move"
     ],
     "0x3208": [
       "hole_y_ptr",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by hole_move"
     ],
     "0x320C": [
       "hole_y_ptr_2",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by hole_move"
     ],
     "0x3210": [
       "hole_dir_x",
@@ -1846,35 +1846,35 @@
     ],
     "0x3214": [
       "hole_dir_y",
-      ""
+      "written by randomise_holes; read by holes_step and randomise_holes"
     ],
     "0x3218": [
       "hole_shape",
-      ""
+      "written by hole_move, screen_1_setup and 2 others; read by hole_move"
     ],
     "0x321C": [
       "hole_x",
-      ""
+      "written by hole_move, screen_1_setup and 2 others; read by hole_move, hole_touch and holes_step"
     ],
     "0x3220": [
       "hole_prev_x",
-      ""
+      "written by holes_step"
     ],
     "0x3224": [
       "hole_y",
-      ""
+      "written by hole_move, screen_1_setup and 2 others; read by hole_move, hole_touch and holes_step"
     ],
     "0x3228": [
       "hole_prev_y",
-      ""
+      "written by holes_step"
     ],
     "0x322C": [
       "hole_prev_shape",
-      ""
+      "written by holes_step and randomise_holes; read by holes_step"
     ],
     "0x3230": [
       "hole_prev_shape_2",
-      ""
+      "written by holes_step and randomise_holes"
     ],
     "0x3234": [
       "hole_frame",
@@ -1882,23 +1882,23 @@
     ],
     "0x3235": [
       "hole_count",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by hole_touch, holes_step and 4 others"
     ],
     "0x323B": [
       "hole_x_tables",
-      ""
+      "read by screen_1_setup"
     ],
     "0x324B": [
       "hole_x_tables_2",
-      ""
+      "read by screen_3_setup"
     ],
     "0x3253": [
       "hole_y_tables",
-      ""
+      "read by screen_1_setup"
     ],
     "0x3263": [
       "hole_y_tables_2",
-      ""
+      "read by screen_3_setup"
     ],
     "0x3420": [
       "fall_left",
@@ -1906,31 +1906,31 @@
     ],
     "0x3421": [
       "fall_right",
-      ""
+      "written by fall_check; read by fall_check"
     ],
     "0x3422": [
       "fall_x",
-      ""
+      "written by exit_check, fall_check and 2 others"
     ],
     "0x3423": [
       "fall_bottom",
-      ""
+      "written by exit_check, fall_check and 2 others; read by fall_check"
     ],
     "0x3424": [
       "fall_left_2",
-      ""
+      "written by fall_check; read by fall_check"
     ],
     "0x3425": [
       "fall_right_2",
-      ""
+      "written by fall_check; read by fall_check"
     ],
     "0x3426": [
       "respawn_x",
-      ""
+      "written by hoist_step; read by hoist_arrive"
     ],
     "0x3427": [
       "respawn_y",
-      ""
+      "written by hoist_step; read by hoist_arrive"
     ],
     "0x3428": [
       "rivet_x",
@@ -1942,47 +1942,47 @@
     ],
     "0x342E": [
       "lives",
-      ""
+      "written by extra_life, lose_life and reset_round; read by draw_lives"
     ],
     "0x3433": [
       "short_fall",
-      ""
+      "written by exit_check and reset_screen_state; read by fall_check"
     ],
     "0x364F": [
       "fall_shapes",
-      ""
+      "read by draw_fall_frame"
     ],
     "0x3788": [
       "vandal_x",
-      ""
+      "written by vandal_catch, vandal_release and vandal_step; read by hoist_call, vandal_catch and 2 others"
     ],
     "0x3789": [
       "vandal_prev_x",
-      ""
+      "written by hoist_arrive and vandal_step; read by vandal_step"
     ],
     "0x378A": [
       "vandal_y",
-      ""
+      "written by vandal_catch, vandal_release and vandal_step; read by hoist_call, vandal_catch and vandal_step"
     ],
     "0x378B": [
       "vandal_prev_y",
-      ""
+      "written by hoist_arrive and vandal_step; read by vandal_step"
     ],
     "0x378D": [
       "vandal_shape",
-      ""
+      "written by vandal_step; read by vandal_step"
     ],
     "0x378F": [
       "vandal_prev_shape",
-      ""
+      "written by hoist_call and vandal_step; read by hoist_call and vandal_step"
     ],
     "0x3790": [
       "vandal_active",
-      ""
+      "written by reset_screen_state and vandal_step; read by vandal_step"
     ],
     "0x3791": [
       "vandal_waypoint",
-      ""
+      "written by vandal_release and vandal_step; read by vandal_step"
     ],
     "0x38A0": [
       "pit_state",
@@ -1994,39 +1994,39 @@
     ],
     "0x38AC": [
       "pit_y_a",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x38B2": [
       "pit_x_b",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x38B8": [
       "pit_y_b",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x38BE": [
       "pit_phase",
-      ""
+      "written by draw_rivet_row; read by draw_rivet_row"
     ],
     "0x3941": [
       "cement_x_a",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x394D": [
       "cement_x_b",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x3953": [
       "cement_y",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x3959": [
       "cement_phase",
-      ""
+      "written by draw_pits; read by draw_pits"
     ],
     "0x39D7": [
       "conveyor_started",
-      ""
+      "written by conveyor_step and reset_screen_state; read by conveyor_step"
     ],
     "0x39D8": [
       "conveyor_pos",
@@ -2034,27 +2034,27 @@
     ],
     "0x39DD": [
       "conveyor_draw_y",
-      ""
+      "written by conveyor_step; read by conveyor_catch"
     ],
     "0x39E2": [
       "conveyor_draw_x",
-      ""
+      "written by conveyor_step; read by conveyor_catch"
     ],
     "0x39E7": [
       "conveyor_index",
-      ""
+      "written by conveyor_step; read by conveyor_step"
     ],
     "0x39E8": [
       "conveyor_spacing",
-      ""
+      "written by conveyor_step; read by conveyor_step"
     ],
     "0x39E9": [
       "conveyor_timer",
-      ""
+      "written by conveyor_step"
     ],
     "0x39EA": [
       "conveyor_shape_index",
-      ""
+      "read by conveyor_advance and conveyor_step"
     ],
     "0x3A3C": [
       "conveyor_programs",
@@ -2062,23 +2062,23 @@
     ],
     "0x3C22": [
       "hammer_x",
-      ""
+      "written by hammer_target; read by hammer_land, hammer_step and hammer_target"
     ],
     "0x3C23": [
       "hammer_y",
-      ""
+      "written by hammer_target; read by hammer_land, hammer_step and hammer_target"
     ],
     "0x3C24": [
       "hammer_prev_x",
-      ""
+      "written by hammer_target; read by hammer_land and hammer_step"
     ],
     "0x3C25": [
       "hammer_prev_y",
-      ""
+      "written by hammer_target; read by hammer_step"
     ],
     "0x3C27": [
       "hammer_prev_shape",
-      ""
+      "written by hammer_step and pit_touch; read by hammer_step"
     ],
     "0x3C28": [
       "cement_state",
@@ -2086,39 +2086,39 @@
     ],
     "0x3C2E": [
       "hammer_active",
-      ""
+      "written by hammer_land, pit_touch and 5 others; read by hammer_land, hammer_step and 7 others"
     ],
     "0x3C2F": [
       "cement_count",
-      ""
+      "written by screen_1_setup; read by draw_pits and pit_touch"
     ],
     "0x3C30": [
       "cement_slot",
-      ""
+      "written by pit_touch; read by hammer_land"
     ],
     "0x3D58": [
       "throw_x",
-      ""
+      "written by toolbox_target; read by hoist_call, plug_hole and 2 others"
     ],
     "0x3D59": [
       "throw_y",
-      ""
+      "written by toolbox_target; read by hoist_call, plug_hole and 2 others"
     ],
     "0x3D5A": [
       "throw_prev_x",
-      ""
+      "written by hoist_arrive and toolbox_target; read by toolbox_throw"
     ],
     "0x3D5B": [
       "throw_prev_y",
-      ""
+      "written by hoist_arrive and toolbox_target; read by toolbox_throw"
     ],
     "0x3D5C": [
       "toolbox_state",
-      ""
+      "written by respawn_screen_2, respawn_toolboxes and 2 others; read by draw_toolboxes, respawn_toolboxes and toolbox_touch"
     ],
     "0x3D63": [
       "throw_prev_shape",
-      ""
+      "written by hoist_call, toolbox_throw and toolbox_touch; read by hoist_call and toolbox_throw"
     ],
     "0x3EAF": [
       "bonus_threshold",
@@ -2126,23 +2126,23 @@
     ],
     "0x3EB5": [
       "bonus_sum",
-      ""
+      "written by bonus_check; read by bonus_check"
     ],
     "0x3EB6": [
       "bonus_expired",
-      ""
+      "written by bonus_check and reset_screen_state; read by bonus_payout"
     ],
     "0x3EB7": [
       "bonus_paying",
-      ""
+      "written by chute_end, reset_screen_state and 2 others; read by bonus_check"
     ],
     "0x3EB8": [
       "bonus_warned",
-      ""
+      "written by bonus_check and reset_screen_state; read by bonus_check"
     ],
     "0x3EB9": [
       "bonus_start",
-      ""
+      "read by reset_screen_state"
     ],
     "0x3EBB": [
       "bonus_digits",
@@ -2150,43 +2150,43 @@
     ],
     "0x3EBC": [
       "bonus_digit_2",
-      ""
+      "written by reset_screen_state"
     ],
     "0x3EBD": [
       "bonus_digit_3",
-      ""
+      "written by reset_screen_state"
     ],
     "0x3EBE": [
       "bonus_digit_4",
-      ""
+      "written by reset_screen_state"
     ],
     "0x3EBF": [
       "bonus_digit_5",
-      ""
+      "written by reset_screen_state"
     ],
     "0x3EC0": [
       "bonus_positions",
-      ""
+      "read by bonus_draw"
     ],
     "0x3ECA": [
       "bonus_period",
-      ""
+      "read by bonus_tick"
     ],
     "0x3ECB": [
       "bonus_timer",
-      ""
+      "written by bonus_tick"
     ],
     "0x3F65": [
       "text_bonus_digit",
-      ""
+      "written by bonus_draw"
     ],
     "0x3F67": [
       "text_bonus_char",
-      ""
+      "written by bonus_draw"
     ],
     "0x4030": [
       "vandal_held",
-      ""
+      "written by reset_screen_state, vandal_catch and vandal_release; read by hoist_arrive, hoist_call and 6 others"
     ],
     "0x4031": [
       "hole_state",
@@ -2194,27 +2194,27 @@
     ],
     "0x4036": [
       "throw_slot",
-      ""
+      "written by toolbox_touch; read by plug_hole"
     ],
     "0x4037": [
       "hole_slot",
-      ""
+      "written by plug_hole; read by vandal_unplug"
     ],
     "0x41C0": [
       "hazard_x_screen",
-      ""
+      "read by hazard_hoist"
     ],
     "0x43FA": [
       "vandal_enabled",
-      ""
+      "written by hoist_arrive and hoist_call; read by vandal_catch and vandal_step"
     ],
     "0x4515": [
       "death_dir",
-      ""
+      "written by death_frame_step and reset_screen_state; read by death_frame_step"
     ],
     "0x4516": [
       "death_frame_index",
-      ""
+      "written by death_frame_step and reset_screen_state; read by death_frame and death_frame_step"
     ],
     "0x4517": [
       "death_shapes",
@@ -2222,11 +2222,11 @@
     ],
     "0x46F3": [
       "stick_direction",
-      ""
+      "written by joystick_direction; read by joystick_direction and joystick_input"
     ],
     "0x46F4": [
       "toggle_state",
-      ""
+      "written by toggle_flag; read by toggle_flag"
     ],
     "0x46F5": [
       "tune_saved",
@@ -2234,7 +2234,7 @@
     ],
     "0x46F6": [
       "tune_saved_hi",
-      ""
+      "written by music_pop, music_push and music_reset; read by music_pop, music_push and music_tick"
     ],
     "0x46F7": [
       "duty_step",
@@ -2242,15 +2242,15 @@
     ],
     "0x46F8": [
       "tune_default",
-      ""
+      "written by reset_screen_state and select_tune; read by music_reset and select_tune; holds 0x21e6, 0x4903"
     ],
     "0x46F9": [
       "tune_default_hi",
-      ""
+      "read by music_reset"
     ],
     "0x46FA": [
       "octave_shift",
-      ""
+      "read by music_tick"
     ],
     "0x4895": [
       "note_table",
@@ -2258,15 +2258,15 @@
     ],
     "0x4896": [
       "note_table_hi",
-      ""
+      "read by music_tick"
     ],
     "0x49F3": [
       "exit_x",
-      ""
+      "read by exit_check"
     ],
     "0x49F5": [
       "hammer_stop_x",
-      ""
+      "read by hammer_land"
     ],
     "0x4A3A": [
       "mack_left_half",
@@ -2274,231 +2274,231 @@
     ],
     "0x4A52": [
       "hoist_riding",
-      ""
+      "written by hoist_catch, hoist_ride and reset_screen_state; read by hoist_catch and hoist_ride"
     ],
     "0x4A53": [
       "hoist_row_index",
-      ""
+      "written by hoist_catch; read by hoist_catch"
     ],
     "0x4A54": [
       "hoist_x",
-      ""
+      "read by hoist_catch"
     ],
     "0x4A56": [
       "hoist_path_start_l",
-      ""
+      "read by hoist_catch"
     ],
     "0x4A5A": [
       "hoist_path_start_r",
-      ""
+      "read by hoist_catch"
     ],
     "0x4A5E": [
       "hoist_step_dir",
-      ""
+      "written by hoist_catch; read by hoist_frame and hoist_ride"
     ],
     "0x4A5F": [
       "hoist_path_end",
-      ""
+      "read by hoist_ride"
     ],
     "0x4A62": [
       "hoist_path_pos",
-      ""
+      "written by hoist_catch and hoist_ride; read by hoist_frame and hoist_ride"
     ],
     "0x4B65": [
       "hoist_shapes",
-      ""
+      "read by hoist_frame"
     ],
     "0x4B6A": [
       "hoist_shape_index",
-      ""
+      "written by hoist_frame; read by hoist_frame"
     ],
     "0x4BD7": [
       "conveyor_slot",
-      ""
+      "written by conveyor_catch, conveyor_ride and reset_screen_state; read by conveyor_ride and walk_off"
     ],
     "0x4C8B": [
       "conveyor_ride_timer",
-      ""
+      "written by conveyor_ride"
     ],
     "0x4CFD": [
       "hammer_fall_x",
-      ""
+      "written by hammer_land; read by draw_hammer and hammer_land"
     ],
     "0x4CFE": [
       "hammer_fall_prev_x",
-      ""
+      "written by draw_hammer and hammer_land; read by draw_hammer"
     ],
     "0x4CFF": [
       "hammer_fall_y",
-      ""
+      "written by hammer_land; read by draw_hammer and hammer_land"
     ],
     "0x4D00": [
       "hammer_fall_prev_y",
-      ""
+      "written by draw_hammer and hammer_land; read by draw_hammer and hammer_land"
     ],
     "0x4D01": [
       "hammer_falling",
-      ""
+      "written by hammer_land and reset_screen_state; read by hammer_land"
     ],
     "0x4D03": [
       "hammer_fall_shape",
-      ""
+      "written by hammer_land; read by draw_hammer"
     ],
     "0x4D04": [
       "hammer_fall_slot",
-      ""
+      "written by hammer_land; read by sparks"
     ],
     "0x4E56": [
       "edge_frame",
-      ""
+      "written by walk_off_edge; read by walk_off_edge"
     ],
     "0x4E57": [
       "edge_shapes",
-      ""
+      "read by walk_off_edge"
     ],
     "0x4EDD": [
       "spark_state",
-      ""
+      "written by hammer_land, reset_screen_state and sparks; read by screen_1_complete and sparks"
     ],
     "0x4EDE": [
       "spark_frame",
-      ""
+      "written by sparks; read by sparks"
     ],
     "0x4EDF": [
       "spark_kind",
-      ""
+      "read by hammer_land"
     ],
     "0x4EE1": [
       "spark_x",
-      ""
+      "written by hammer_land and sparks; read by sparks"
     ],
     "0x4EE2": [
       "spark_y",
-      ""
+      "written by hammer_land and sparks; read by sparks"
     ],
     "0x4F90": [
       "at_left_edge",
-      ""
+      "written by hoist_call and reset_screen_state"
     ],
     "0x4F91": [
       "hoist_armed",
-      ""
+      "written by compute_row, hoist_call and reset_screen_state; read by hoist_call"
     ],
     "0x4F92": [
       "hoist_opening",
-      ""
+      "written by hoist_arrive and hoist_step; read by hoist_arrive"
     ],
     "0x4F93": [
       "throw_pending",
-      ""
+      "written by hoist_arrive and hoist_call; read by toolbox_throw"
     ],
     "0x4F94": [
       "no_jump",
-      ""
+      "written by edge_flag, hoist_arrive and 2 others; read by hazard_girder"
     ],
     "0x4F95": [
       "input_locked",
-      ""
+      "written by hoist_arrive and hoist_call; read by hotkeys and vandal_release"
     ],
     "0x5097": [
       "hoist_open_frame",
-      ""
+      "written by hoist_arrive; read by hoist_arrive"
     ],
     "0x5098": [
       "hoist_open_started",
-      ""
+      "written by hoist_arrive; read by hoist_arrive"
     ],
     "0x5099": [
       "hoist_open_timer",
-      ""
+      "written by hoist_arrive"
     ],
     "0x51B0": [
       "ladder_going_up",
-      ""
+      "written by ladder_ride and reset_screen_state; read by ladder_ride"
     ],
     "0x51B1": [
       "ladder_stop_row",
-      ""
+      "written by ladder_ride; read by ladder_ride"
     ],
     "0x51B2": [
       "ladder_riding",
-      ""
+      "written by ladder_ride and reset_screen_state; read by ladder_ride"
     ],
     "0x51B3": [
       "ladder_prev_shape",
-      ""
+      "written by draw_ladder_mack and reset_screen_state; read by draw_ladder_mack; holds 0xc00"
     ],
     "0x51B4": [
       "ladder_prev_shape_hi",
-      ""
+      "written by draw_ladder_mack; read by draw_ladder_mack"
     ],
     "0x51B5": [
       "ladder_cur_shape",
-      ""
+      "written by draw_ladder_mack; read by draw_ladder_mack"
     ],
     "0x51B6": [
       "ladder_cur_shape_hi",
-      ""
+      "written by draw_ladder_mack; read by draw_ladder_mack"
     ],
     "0x51B7": [
       "ladder_columns",
-      ""
+      "read by draw_ladder_mack"
     ],
     "0x51BA": [
       "ladder_side",
-      ""
+      "written by hoist_ride, screen_2_setup and walk_off; read by draw_ladder_mack"
     ],
     "0x5370": [
       "on_platform",
-      ""
+      "written by conveyor_catch, lift_catch and 2 others; read by conveyor_catch and lift_catch"
     ],
     "0x5371": [
       "platform_riding",
-      ""
+      "written by conveyor_catch, lift_catch and 2 others; read by conveyor_catch, conveyor_ride and 4 others"
     ],
     "0x5372": [
       "platform_facing",
-      ""
+      "written by lift_catch, lift_ride and 3 others; read by mack_jump"
     ],
     "0x5373": [
       "wrap_pending",
-      ""
+      "written by mack_land, reset_screen_state and slide_step; read by mack_land"
     ],
     "0x5494": [
       "sliding",
-      ""
+      "written by mack_jump, reset_screen_state and slide_start; read by slide_step"
     ],
     "0x5495": [
       "slide_pos",
-      ""
+      "written by chute_start, chute_step and 3 others; read by chute_step and slide_step"
     ],
     "0x5496": [
       "slide_armed",
-      ""
+      "written by reset_screen_state and slide_start; read by slide_start"
     ],
     "0x564D": [
       "landing_rows",
-      ""
+      "read by landing_row"
     ],
     "0x56D7": [
       "chute_dx",
-      ""
+      "read by chute_start and chute_step"
     ],
     "0x56D8": [
       "chute_dy",
-      ""
+      "read by chute_start and chute_step"
     ],
     "0x5737": [
       "chute_running",
-      ""
+      "written by chute_start and reset_screen_state; read by chute_end and chute_step"
     ],
     "0x5738": [
       "chute_armed",
-      ""
+      "written by chute_start and reset_screen_state; read by chute_start"
     ],
     "0x5866": [
       "explosion_x",
-      ""
+      "written by chute_step and hazard_top_left; read by draw_explosion"
     ],
     "0x593A": [
       "lunchbox_shapes",
@@ -2510,23 +2510,23 @@
     ],
     "0x594A": [
       "lunchbox_x",
-      ""
+      "written by spawn_lunchbox; read by collect_lunchbox and spawn_lunchbox"
     ],
     "0x594B": [
       "lunchbox_y",
-      ""
+      "written by spawn_lunchbox; read by collect_lunchbox and spawn_lunchbox"
     ],
     "0x594C": [
       "lunchbox_shape",
-      ""
+      "written by spawn_lunchbox; read by collect_lunchbox"
     ],
     "0x594D": [
       "lunchbox_shape_hi",
-      ""
+      "written by spawn_lunchbox; read by collect_lunchbox"
     ],
     "0x594E": [
       "lunchbox_taken",
-      ""
+      "written by collect_lunchbox and reset_screen_state; read by collect_lunchbox"
     ],
     "0x594F": [
       "screen_number",
@@ -2534,7 +2534,7 @@
     ],
     "0x5A2A": [
       "hit_result",
-      ""
+      "written by hit_large and hit_small; read by collect_lunchbox, hazard_bolts and 9 others"
     ],
     "0x5A2B": [
       "hit_x",
@@ -2542,11 +2542,11 @@
     ],
     "0x5A2C": [
       "hit_y",
-      ""
+      "written by collect_lunchbox, hazard_bolts and 9 others; read by hit_large, hit_small and 3 others"
     ],
     "0x5AE8": [
       "pendulum_timer",
-      ""
+      "written by pendulum_step"
     ],
     "0x5AE9": [
       "pendulum_x",
@@ -2554,27 +2554,27 @@
     ],
     "0x5AEB": [
       "pendulum_prev_x",
-      ""
+      "written by pendulum_step; read by pendulum_step"
     ],
     "0x5AED": [
       "pendulum_limit",
-      ""
+      "read by pendulum_step"
     ],
     "0x5AF1": [
       "pendulum_y",
-      ""
+      "read by pendulum_step"
     ],
     "0x5AF2": [
       "pendulum_dir",
-      ""
+      "written by pendulum_step; read by pendulum_step"
     ],
     "0x5AF4": [
       "pendulum_started",
-      ""
+      "written by pendulum_step and reset_screen_state; read by pendulum_step"
     ],
     "0x5AF5": [
       "pendulum_index",
-      ""
+      "written by pendulum_step; read by pendulum_step"
     ],
     "0x5AF6": [
       "pendulum_programs",
@@ -2586,159 +2586,159 @@
     ],
     "0x5C2C": [
       "wheel_prev_a_hi",
-      ""
+      "written by rollers_step; read by rollers_step"
     ],
     "0x5C2D": [
       "wheel_shape_a",
-      ""
+      "written by draw_crane_arms and rollers_step; read by rollers_step"
     ],
     "0x5C2E": [
       "wheel_shape_a_hi",
-      ""
+      "read by rollers_step"
     ],
     "0x5C2F": [
       "wheel_prev_b",
-      ""
+      "written by draw_crane_arms and rollers_step; read by rollers_step"
     ],
     "0x5C30": [
       "wheel_prev_b_hi",
-      ""
+      "written by rollers_step; read by rollers_step"
     ],
     "0x5C31": [
       "wheel_shape_b",
-      ""
+      "written by draw_crane_arms and rollers_step; read by rollers_step"
     ],
     "0x5C32": [
       "wheel_shape_b_hi",
-      ""
+      "read by rollers_step"
     ],
     "0x5C33": [
       "wheel_x_a",
-      ""
+      "read by rollers_step"
     ],
     "0x5C35": [
       "wheel_x_b",
-      ""
+      "read by rollers_step"
     ],
     "0x5C37": [
       "wheel_y_a",
-      ""
+      "read by rollers_step"
     ],
     "0x5C39": [
       "wheel_y_b",
-      ""
+      "read by rollers_step"
     ],
     "0x5C3B": [
       "wheel_frame",
-      ""
+      "written by rollers_step; read by rollers_step"
     ],
     "0x5C3C": [
       "wheel_timer",
-      ""
+      "written by rollers_step"
     ],
     "0x5D25": [
       "platform_x",
-      ""
+      "written by platform_step; read by chute_end and platform_step"
     ],
     "0x5D26": [
       "platform_y",
-      ""
+      "written by platform_step; read by chute_end and platform_step"
     ],
     "0x5D27": [
       "platform_prev_x",
-      ""
+      "written by platform_step; read by platform_step"
     ],
     "0x5D28": [
       "platform_prev_y",
-      ""
+      "written by platform_step; read by platform_step"
     ],
     "0x5D2A": [
       "platform_prev_shape",
-      ""
+      "written by platform_step; read by platform_step"
     ],
     "0x5D2B": [
       "platform_started",
-      ""
+      "written by platform_step and reset_screen_state; read by platform_step"
     ],
     "0x5D2C": [
       "platform_dir",
-      ""
+      "written by platform_step; read by platform_step"
     ],
     "0x5DF7": [
       "button_pressed",
-      ""
+      "written by button_step; read by button_step"
     ],
     "0x5DF8": [
       "button_timer",
-      ""
+      "written by button_step"
     ],
     "0x5DF9": [
       "button_dir",
-      ""
+      "written by button_step; read by button_step"
     ],
     "0x5DFA": [
       "button_frame",
-      ""
+      "written by button_step; read by button_step"
     ],
     "0x5DFB": [
       "button_shape",
-      ""
+      "written by button_step; read by button_step; holds 0x4500"
     ],
     "0x5DFC": [
       "button_shape_hi",
-      ""
+      "read by button_step"
     ],
     "0x5DFD": [
       "button_prev_shape",
-      ""
+      "written by button_step; read by button_step; holds 0x4600"
     ],
     "0x5DFE": [
       "button_prev_shape_hi",
-      ""
+      "written by button_step; read by button_step"
     ],
     "0x5DFF": [
       "button_x",
-      ""
+      "read by button_step"
     ],
     "0x5E00": [
       "button_draw_x",
-      ""
+      "read by button_step"
     ],
     "0x5E01": [
       "button_y",
-      ""
+      "read by button_step"
     ],
     "0x5E02": [
       "button_test_y",
-      ""
+      "written by button_step; read by button_step"
     ],
     "0x5F37": [
       "lamp_columns",
-      ""
+      "read by lights_step"
     ],
     "0x5F39": [
       "lamp_timer",
-      ""
+      "written by lights_step"
     ],
     "0x5F89": [
       "level_ones",
-      ""
+      "written by new_life, next_level and reset_round; read by draw_level_number and next_level"
     ],
     "0x5F8A": [
       "level_tens",
-      ""
+      "written by next_level and reset_round; read by draw_level_number and next_level"
     ],
     "0x5FF7": [
       "text_level_digit",
-      ""
+      "written by draw_digit"
     ],
     "0x5FF8": [
       "text_level_row",
-      ""
+      "written by draw_digit"
     ],
     "0x5FF9": [
       "text_level_char",
-      ""
+      "written by draw_digit"
     ],
     "0x60D0": [
       "walkoff_x",
@@ -2746,27 +2746,27 @@
     ],
     "0x60E2": [
       "walkoff_y",
-      ""
+      "read by walk_off"
     ],
     "0x60F4": [
       "walkoff_shape_index",
-      ""
+      "read by walk_off"
     ],
     "0x6106": [
       "walkoff_shapes",
-      ""
+      "read by walk_off"
     ],
     "0x617E": [
       "extra_life_given",
-      ""
+      "written by extra_life and reset_round; read by extra_life"
     ],
     "0x6208": [
       "life_running",
-      ""
+      "written by main and new_life; read by frame_end, hotkeys and 3 others"
     ],
     "0x6209": [
       "frame_budget",
-      ""
+      "written by frame_end and new_life"
     ],
     "0x620A": [
       "attract_index",
@@ -2778,15 +2778,15 @@
     ],
     "0x620C": [
       "attract_entry_hi",
-      ""
+      "read by new_life"
     ],
     "0x6213": [
       "attract_level",
-      ""
+      "read by new_life"
     ],
     "0x621B": [
       "sound_on_saved",
-      ""
+      "written by main and toggle_sound; read by attract_wait, frame_end and 2 others"
     ],
     "0x62B5": [
       "screen_entry",
@@ -2794,11 +2794,11 @@
     ],
     "0x62B6": [
       "screen_entry_hi",
-      ""
+      "read by screen_select"
     ],
     "0x643A": [
       "beep_count",
-      ""
+      "written by error_beep"
     ],
     "0x6476": [
       "text_config_1",
@@ -2806,47 +2806,47 @@
     ],
     "0x648B": [
       "text_config_2",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x649C": [
       "text_config_down",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x64A5": [
       "text_config_up",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x64AE": [
       "text_config_left",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x64B7": [
       "text_config_right",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x64C0": [
       "text_config_jump",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x64C9": [
       "text_config_release",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x64D2": [
       "text_config_done",
-      ""
+      "no named routine reaches it in the code region -- it is referenced only from a run the map calls data"
     ],
     "0x64F0": [
       "tune_divisor",
-      ""
+      "written by play_tune; read by play_tune"
     ],
     "0x64F1": [
       "tune_length",
-      ""
+      "written by play_tune"
     ],
     "0x64F2": [
       "tune_index",
-      ""
+      "written by play_tune; read by play_tune"
     ],
     "0x64F3": [
       "tune_divisors",
@@ -2854,31 +2854,31 @@
     ],
     "0x65E4": [
       "spark2_shape",
-      ""
+      "written by chute_end, draw_explosion and 2 others; read by draw_explosion and sparks_2; holds 0x600, 0x3500"
     ],
     "0x65E5": [
       "spark2_shape_hi",
-      ""
+      "read by draw_explosion and sparks_2"
     ],
     "0x65E6": [
       "spark2_prev_shape",
-      ""
+      "written by chute_end, draw_explosion and 2 others; read by draw_explosion and sparks_2; holds 0x5c00"
     ],
     "0x65E7": [
       "spark2_prev_shape_hi",
-      ""
+      "written by draw_explosion and sparks_2; read by draw_explosion and sparks_2"
     ],
     "0x65E8": [
       "spark2_started",
-      ""
+      "written by reset_screen_state and sparks_2; read by sparks_2"
     ],
     "0x65E9": [
       "spark2_timer",
-      ""
+      "written by sparks_2"
     ],
     "0x6674": [
       "chain_started",
-      ""
+      "written by chain_step and reset_screen_state; read by chain_step"
     ],
     "0x6675": [
       "chain_pos",
@@ -2886,83 +2886,83 @@
     ],
     "0x6685": [
       "chain_timer",
-      ""
+      "written by chain_step"
     ],
     "0x6776": [
       "conveyor2_shape",
-      ""
+      "written by conveyor2_step and draw_chain_anchor; read by conveyor2_step"
     ],
     "0x6777": [
       "conveyor2_shape_hi",
-      ""
+      "read by conveyor2_step"
     ],
     "0x6778": [
       "conveyor2_prev",
-      ""
+      "written by conveyor2_step and draw_chain_anchor; read by conveyor2_step"
     ],
     "0x6779": [
       "conveyor2_prev_hi",
-      ""
+      "written by conveyor2_step; read by conveyor2_step"
     ],
     "0x677A": [
       "conveyor2_frame",
-      ""
+      "written by conveyor2_step and draw_chain_anchor; read by conveyor2_step"
     ],
     "0x677B": [
       "conveyor2_rows",
-      ""
+      "read by conveyor2_step"
     ],
     "0x677D": [
       "conveyor2_timer",
-      ""
+      "written by conveyor2_step"
     ],
     "0x680A": [
       "bolt_x",
-      ""
+      "written by bolt_drop; read by bolt_drop"
     ],
     "0x680B": [
       "bolt_y",
-      ""
+      "written by bolt_drop; read by bolt_drop"
     ],
     "0x680C": [
       "bolt_prev_x",
-      ""
+      "written by bolt_drop"
     ],
     "0x680D": [
       "bolt_prev_y",
-      ""
+      "written by bolt_drop; read by bolt_drop"
     ],
     "0x680E": [
       "bolt_shape",
-      ""
+      "written by bolt_drop; read by bolt_drop; holds 0x1700"
     ],
     "0x680F": [
       "bolt_shape_hi",
-      ""
+      "read by bolt_drop"
     ],
     "0x6810": [
       "bolt_prev_shape",
-      ""
+      "written by bolt_drop; read by bolt_drop; holds 0x5c00"
     ],
     "0x6811": [
       "bolt_prev_shape_hi",
-      ""
+      "written by bolt_drop; read by bolt_drop"
     ],
     "0x6812": [
       "bolt_timer",
-      ""
+      "written by bolt_drop"
     ],
     "0x6813": [
       "bolt_falling",
-      ""
+      "written by bolt_drop and reset_screen_state; read by bolt_drop"
     ],
     "0x6814": [
       "bolt_slot",
-      ""
+      "written by bolt_drop; read by bolt_drop"
     ],
     "0x6910": [
       "bolt_path_pos",
-      ""
+      "written by bolt_step; read by bolt_step"
     ],
     "0x6912": [
       "bolt_active",
@@ -2970,95 +2970,95 @@
     ],
     "0x6913": [
       "bolt_active_2",
-      ""
+      "written by reset_screen_state"
     ],
     "0x6914": [
       "bolt_walk_x",
-      ""
+      "written by bolt_step and reset_screen_state; read by bolt_step and hazard_bolts"
     ],
     "0x6915": [
       "bolt_walk_x_2",
-      ""
+      "written by reset_screen_state"
     ],
     "0x6916": [
       "bolt_walk_prev_x",
-      ""
+      "written by bolt_step; read by bolt_step"
     ],
     "0x6918": [
       "bolt_walk_y",
-      ""
+      "written by bolt_step and reset_screen_state; read by bolt_step and hazard_bolts"
     ],
     "0x6919": [
       "bolt_walk_y_2",
-      ""
+      "written by reset_screen_state"
     ],
     "0x691A": [
       "bolt_walk_prev_y",
-      ""
+      "written by bolt_step; read by bolt_step"
     ],
     "0x691F": [
       "bolt_walking",
-      ""
+      "written by bolt_step and reset_screen_state; read by bolt_step"
     ],
     "0x6920": [
       "bolt_walking_2",
-      ""
+      "written by reset_screen_state"
     ],
     "0x6921": [
       "bolt_index",
-      ""
+      "written by bolts_step; read by bolt_step and bolts_step"
     ],
     "0x6A4E": [
       "hoist_car_y",
-      ""
+      "written by draw_hoist_shaft and hoist_move; read by draw_hoist, hazard_hoist and hoist_move"
     ],
     "0x6A4F": [
       "hoist_car_prev_y",
-      ""
+      "written by draw_hoist_shaft and hoist_move; read by draw_hoist"
     ],
     "0x6A50": [
       "hoist_car_dir",
-      ""
+      "written by hoist_move and reset_screen_state; read by hoist_move"
     ],
     "0x6A51": [
       "hoist_cable_from",
-      ""
+      "written by hoist_move; read by draw_hoist_cables"
     ],
     "0x6A52": [
       "hoist_cable_to",
-      ""
+      "written by hoist_move; read by draw_hoist_cables"
     ],
     "0x6A53": [
       "hoist_car_pause",
-      ""
+      "written by hoist_move; read by hazard_hoist and hoist_move"
     ],
     "0x6A54": [
       "hoist_cable_bias",
-      ""
+      "read by draw_hoist_cables"
     ],
     "0x6A56": [
       "hoist_top",
-      ""
+      "written by screen_1_setup and screen_3_setup; read by draw_hoist_shaft and hoist_move"
     ],
     "0x6A57": [
       "hoist_bottom",
-      ""
+      "written by screen_1_setup and screen_3_setup; read by hoist_move"
     ],
     "0x6A58": [
       "hoist_car_x",
-      ""
+      "written by screen_1_setup and screen_3_setup; read by draw_hoist and draw_hoist_shaft"
     ],
     "0x6A59": [
       "hoist_cable_x1",
-      ""
+      "written by screen_1_setup and screen_3_setup; read by draw_hoist_cables and draw_hoist_shaft"
     ],
     "0x6A5A": [
       "hoist_cable_x2",
-      ""
+      "written by screen_1_setup and screen_3_setup; read by draw_hoist_cables and draw_hoist_shaft"
     ],
     "0x6A5B": [
       "hoist_cable_col",
-      ""
+      "written by screen_1_setup and screen_3_setup; read by draw_hoist_cables and draw_hoist_shaft"
     ],
     "0x6B8D": [
       "lift_top",
@@ -3066,63 +3066,63 @@
     ],
     "0x6B8E": [
       "lift_y",
-      ""
+      "written by draw_conveyor and lift_step; read by draw_conveyor, draw_lift and 2 others"
     ],
     "0x6B8F": [
       "lift_prev_y",
-      ""
+      "written by draw_conveyor and lift_step; read by draw_conveyor and draw_lift"
     ],
     "0x6B90": [
       "lift_dir",
-      ""
+      "written by draw_conveyor and lift_step; read by lift_step"
     ],
     "0x6B91": [
       "lift_pause",
-      ""
+      "written by lift_step; read by lift_step"
     ],
     "0x6B92": [
       "lift_enabled",
-      ""
+      "written by frame_end, lift_catch and 3 others; read by lift_step"
     ],
     "0x6C7F": [
       "sign_frame",
-      ""
+      "written by blink_sign; read by blink_sign"
     ],
     "0x6C80": [
       "sign_timer",
-      ""
+      "written by blink_sign"
     ],
     "0x6CD6": [
       "flame_started",
-      ""
+      "written by flame_step and reset_screen_state; read by flame_step"
     ],
     "0x6CD7": [
       "flame_shape",
-      ""
+      "written by flame_step; read by flame_step; holds 0x3d00"
     ],
     "0x6CD8": [
       "flame_shape_hi",
-      ""
+      "read by flame_step"
     ],
     "0x6CD9": [
       "flame_prev_shape",
-      ""
+      "written by flame_step; read by flame_step"
     ],
     "0x6CDA": [
       "flame_prev_shape_hi",
-      ""
+      "written by flame_step; read by flame_step"
     ],
     "0x6CDB": [
       "flame_phase",
-      ""
+      "written by flame_step and reset_screen_state; read by flame_step"
     ],
     "0x6CDC": [
       "flame_timer",
-      ""
+      "written by flame_step"
     ],
     "0x6D92": [
       "round_shape",
-      ""
+      "written by reset_round"
     ],
     "0x6D97": [
       "shape_select",
@@ -3130,7 +3130,7 @@
     ],
     "0x6D98": [
       "shape_select_hi",
-      ""
+      "written by animate_ladder, bolt_drop and 40 others; read by draw_girder_cell, draw_ladder_mack and holes_step"
     ],
     "0x6D99": [
       "shape_select_2",
@@ -3138,7 +3138,7 @@
     ],
     "0x6D9A": [
       "shape_prev",
-      ""
+      "written by animate_ladder, bolt_drop and 25 others"
     ],
     "0x6D9B": [
       "place_col",
@@ -3146,15 +3146,15 @@
     ],
     "0x6D9C": [
       "place_row",
-      ""
+      "written by animate_ladder, blink_sign and 81 others; read by blit_erase, blit_masked and 9 others"
     ],
     "0x6D9D": [
       "place_col_2",
-      ""
+      "written by animate_ladder, bolt_drop and 30 others; read by place_pair"
     ],
     "0x6D9E": [
       "place_row_2",
-      ""
+      "written by animate_ladder, bolt_drop and 31 others; read by place_pair and place_pair_x7"
     ],
     "0x6DA2": [
       "pair_row_step",
@@ -3162,19 +3162,19 @@
     ],
     "0x6DA6": [
       "hole_ptr_x",
-      ""
+      "written by hole_move, screen_1_setup and screen_3_setup; read by hole_move, screen_1_setup and screen_3_setup"
     ],
     "0x6DA7": [
       "hole_ptr_x2",
-      ""
+      "written by hole_move, screen_1_setup and screen_3_setup"
     ],
     "0x6DA8": [
       "hole_ptr_y",
-      ""
+      "written by hole_move, screen_1_setup and screen_3_setup; read by hole_move, screen_1_setup and screen_3_setup"
     ],
     "0x6DA9": [
       "hole_ptr_y2",
-      ""
+      "written by hole_move, screen_1_setup and screen_3_setup"
     ],
     "0x6DAA": [
       "mode_vector",
@@ -3182,11 +3182,11 @@
     ],
     "0x6DAB": [
       "mode_vector_hi",
-      ""
+      "written by new_life"
     ],
     "0x6DAC": [
       "ladder_row_ptr",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by draw_ladder_list; holds 0x2c01, 0x2c0a, 0x2c11"
     ],
     "0x6DAE": [
       "girder_y0_ptr",
@@ -3194,19 +3194,19 @@
     ],
     "0x6DB0": [
       "girder_y1_ptr",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by can_walk_left and can_walk_right; holds 0x1344, 0x134c, 0x1351"
     ],
     "0x6DB2": [
       "girder_x_ptr",
-      ""
+      "written by screen_1_setup, screen_2_setup and screen_3_setup; read by can_walk_left and can_walk_right; holds 0x1352, 0x1356, 0x135a"
     ],
     "0x6DB4": [
       "rivet_x_ptr",
-      ""
+      "written by draw_rivet_row; read by draw_rivet_row and rivet_collect; holds 0x38a6, 0x38b2"
     ],
     "0x6DB6": [
       "rivet_y_ptr",
-      ""
+      "written by draw_rivet_row; read by draw_rivet_row and rivet_collect; holds 0x38ac, 0x38b8"
     ],
     "0x6DB8": [
       "text_ptr",
@@ -3214,7 +3214,7 @@
     ],
     "0x6DB9": [
       "text_ptr_hi",
-      ""
+      "written by draw_text"
     ],
     "0x6DBB": [
       "phase_accumulator",
@@ -3222,19 +3222,19 @@
     ],
     "0x6DBC": [
       "phase_accumulator_hi",
-      ""
+      "written by music_tick_alt; read by music_tick_alt"
     ],
     "0x6DBE": [
       "pwm_state",
-      ""
+      "written by music_tick_alt; read by music_tick_alt"
     ],
     "0x6DC0": [
       "phase_increment",
-      ""
+      "written by music_tick; read by music_tick and music_tick_alt"
     ],
     "0x6DC1": [
       "phase_increment_hi",
-      ""
+      "written by music_tick; read by music_tick and music_tick_alt"
     ],
     "0x6DC2": [
       "samples_left",
@@ -3242,19 +3242,19 @@
     ],
     "0x6DC3": [
       "note_ticks",
-      ""
+      "written by music_pop, music_push and 3 others; read by music_tick"
     ],
     "0x6DC4": [
       "duty_threshold",
-      ""
+      "written by music_tick and music_tick_alt; read by music_tick and music_tick_alt"
     ],
     "0x6DC5": [
       "duty_accumulator",
-      ""
+      "written by music_tick_alt; read by music_tick_alt"
     ],
     "0x6DC6": [
       "pwm_counter",
-      ""
+      "written by music_tick_alt"
     ],
     "0x6DC8": [
       "loop_index",
@@ -3262,15 +3262,15 @@
     ],
     "0x6DC9": [
       "loop_index_2",
-      ""
+      "written by chain_step, draw_conveyor and 4 others; read by chain_step, draw_conveyor and 4 others"
     ],
     "0x6DD6": [
       "cement_x_ptr",
-      ""
+      "written by draw_pits; read by draw_pits and pit_touch; holds 0x3941, 0x394d"
     ],
     "0x6DD8": [
       "cement_y_ptr",
-      ""
+      "written by draw_pits; read by draw_pits and pit_touch; holds 0x3953"
     ],
     "0x6DDA": [
       "tune_ptr",
@@ -3278,11 +3278,11 @@
     ],
     "0x6DDB": [
       "tune_ptr_hi",
-      ""
+      "written by music_pop, music_reset and music_tick; read by music_push and music_tick"
     ],
     "0x6DDC": [
       "play_tune_ptr",
-      ""
+      "written by play_tune; read by play_tune"
     ],
     "0x6E10": [
       "shape_table",
@@ -3290,79 +3290,79 @@
     ],
     "0x71E2": [
       "ladder_shape_deltas",
-      ""
+      "read by animate_ladder"
     ],
     "0x71E6": [
       "hoist_shape_deltas",
-      ""
+      "read by hoist_step"
     ],
     "0x71E8": [
       "girder_shape_deltas",
-      ""
+      "read by draw_girder_left and draw_girder_right"
     ],
     "0x71EA": [
       "girder_cell_deltas",
-      ""
+      "read by draw_girder_cell"
     ],
     "0x71F8": [
       "rail_shape_deltas",
-      ""
+      "read by draw_rail"
     ],
     "0x720B": [
       "chain_shape_deltas",
-      ""
+      "read by draw_chain_anchor"
     ],
     "0x7211": [
       "fixture_shape_deltas",
-      ""
+      "read by draw_girder_run"
     ],
     "0x7214": [
       "unplug_shape_deltas",
-      ""
+      "read by vandal_unplug"
     ],
     "0x7224": [
       "hoist_open_shapes",
-      ""
+      "read by hoist_arrive"
     ],
     "0x722D": [
       "wheel_shape_deltas",
-      ""
+      "read by rollers_step"
     ],
     "0x7231": [
       "button_shape_deltas",
-      ""
+      "read by button_step"
     ],
     "0x7234": [
       "conveyor2_shape_deltas",
-      ""
+      "read by conveyor2_step"
     ],
     "0x7238": [
       "bolt_shape_deltas",
-      ""
+      "read by bolt_drop"
     ],
     "0x7248": [
       "sign_shape_deltas",
-      ""
+      "read by blink_sign"
     ],
     "0x724A": [
       "flame_shape_deltas",
-      ""
+      "read by flame_step"
     ],
     "0x724C": [
       "conveyor_wall_shapes",
-      ""
+      "read by draw_conveyor and draw_lift"
     ],
     "0x7250": [
       "explosion_shape_deltas",
-      ""
+      "read by draw_explosion and sparks_2"
     ],
     "0x7254": [
       "toolbox_shape",
-      ""
+      "written by randomise_rivets; read by draw_toolboxes and toolbox_touch"
     ],
     "0x7259": [
       "toolbox_shape_choices",
-      ""
+      "read by randomise_rivets"
     ],
     "0x725D": [
       "shape_platform",
@@ -3370,55 +3370,55 @@
     ],
     "0x725E": [
       "shape_carry_a",
-      ""
+      "read by fall_check"
     ],
     "0x725F": [
       "shape_carry_b",
-      ""
+      "read by fall_check"
     ],
     "0x7260": [
       "shape_trophy",
-      ""
+      "read by high_score_screen"
     ],
     "0x7261": [
       "shape_mack_right",
-      ""
+      "read by face_right and screen_3_setup"
     ],
     "0x7262": [
       "shape_mack_screen2",
-      ""
+      "read by screen_2_setup"
     ],
     "0x7263": [
       "shape_mack_left",
-      ""
+      "read by face_left"
     ],
     "0x7264": [
       "shape_mack_screen1",
-      ""
+      "read by screen_1_setup"
     ],
     "0x7265": [
       "shape_jump_right",
-      ""
+      "read by mack_jump"
     ],
     "0x7266": [
       "shape_jump_left",
-      ""
+      "read by mack_jump"
     ],
     "0x7267": [
       "shape_mack_fall",
-      ""
+      "read by fall_check, hoist_arrive and mack_set_shape"
     ],
     "0x7268": [
       "shape_thrown",
-      ""
+      "read by plug_hole and toolbox_throw"
     ],
     "0x7269": [
       "shape_bolt",
-      ""
+      "read by bolt_step"
     ],
     "0x726A": [
       "shape_vandal",
-      ""
+      "read by vandal_step"
     ],
     "0x726B": [
       "shape_blank",
@@ -3426,15 +3426,15 @@
     ],
     "0x726C": [
       "shape_hammer",
-      ""
+      "read by draw_hammer, draw_pits and 3 others"
     ],
     "0x726D": [
       "shape_trophy_2",
-      ""
+      "read by high_score_screen"
     ],
     "0x726E": [
       "shape_hole_base",
-      ""
+      "read by high_score_screen and holes_step"
     ],
     "0x726F": [
       "row_table",
@@ -3470,7 +3470,7 @@
     ],
     "es:0x0026": [
       "int09_vector_seg",
-      ""
+      "written by keyboard_isr and start"
     ],
     "es:0x0410": [
       "bios_equipment_word",
@@ -3562,6 +3562,21 @@
     "0x06C8B": [
       14325,
       "14,325 bytes of shape data, 42% zero. Every sprite in the game, with shape_table at its front and the drawing code's working variables just before it"
+    ]
+  },
+  "_displacements": {
+    "_note": [
+      "3 bracketed constants in the listing are displacements, not",
+      "addresses: each appears only with a base register and never on its own,",
+      "and every one is under 0x400 -- a field inside a record the base points",
+      "at. They are listed so the coverage number has a denominator that means",
+      "something, and so the next reader does not go looking for a variable."
+    ],
+    "0x0028": [
+      "bx + si"
+    ],
+    "0x0047": [
+      "bx"
     ]
   }
 }

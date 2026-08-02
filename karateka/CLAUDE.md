@@ -14,14 +14,14 @@ program is shaped, and everything else hangs off it. The other four are
 ## State of the work
 
 **Read in full, with the denominators stated.** The reconstruction is
-byte-identical; the code region is entirely read; the data segment is 99.5%
+byte-identical; the code region is entirely read; the data segment is 100%
 accounted for *by byte*.
 
 | | |
 |---|---|
 | routines | 120 of 120 |
 | data-segment addresses the code names | 312 of 312, all 1,642 references |
-| the data segment **by byte** | 59,390 of 59,670 — **99.5%**, the rest in gaps under 26 bytes |
+| the data segment **by byte** | 59,670 of 59,670 — **100%**, in 58 contiguous spans with no gap |
 
 **Quote the third row whenever you quote the second.** "312 of 312 addresses"
 was true and read as completeness for a while, and it is a fact about
@@ -43,7 +43,7 @@ own library and came back right.
 | the animation system | a 14-command **compiler**, opcode = 2 × command index |
 | the fighting | choreography read — 150 moves in three plain-text libraries |
 | the fight AI | **found and read** — `0x2605`, a tree over pose, pose and distance |
-| the reading | 120/120 routines, 312/312 named addresses, **99.5% of the data segment by byte** |
+| the reading | 148 routines, 338 named addresses, **100% of the data segment by byte** |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |
