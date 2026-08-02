@@ -1465,34 +1465,452 @@
     "0xE19D": [
       "stick_down_bound",
       "the second half of the axis-2 pair calibrate_axis fills"
+    ],
+    "0xC3F4": [
+      "player_move_index_16",
+      "element 16 of player_move_index at 0xC3D4 (42 from `mov cl, 0x2a` in index_blocks)"
+    ],
+    "0xC40E": [
+      "player_move_index_29",
+      "element 29 of player_move_index at 0xC3D4 (42 from `mov cl, 0x2a` in index_blocks)"
+    ],
+    "0xC414": [
+      "player_move_index_32",
+      "element 32 of player_move_index at 0xC3D4 (42 from `mov cl, 0x2a` in index_blocks)"
+    ],
+    "0xCDFA": [
+      "guard_move_index_8",
+      "element 8 of guard_move_index at 0xCDEA (the same builder, same count)"
+    ],
+    "0xCE10": [
+      "guard_move_index_19",
+      "element 19 of guard_move_index at 0xCDEA (the same builder, same count)"
+    ],
+    "0xCE22": [
+      "guard_move_index_28",
+      "element 28 of guard_move_index at 0xCDEA (the same builder, same count)"
+    ],
+    "0xCE28": [
+      "guard_move_index_31",
+      "element 31 of guard_move_index at 0xCDEA (the same builder, same count)"
+    ],
+    "0xCE2E": [
+      "guard_move_index_34",
+      "element 34 of guard_move_index at 0xCDEA (the same builder, same count)"
+    ],
+    "0xC3B6": [
+      "section_table_b_0",
+      "element 0 of section_table_b at 0xC3B6 (the second of the three)"
+    ],
+    "0xE1B2": [
+      "file_table_0_at2",
+      "element 0 of file_table at 0xE1B0 (close_all_files loops 0..19 at stride 14; fopen walks the same), byte 2 of it"
+    ],
+    "0xE1B8": [
+      "file_table_0_at8",
+      "element 0 of file_table at 0xE1B0 (close_all_files loops 0..19 at stride 14; fopen walks the same), byte 8 of it"
+    ],
+    "0xE1B9": [
+      "file_table_0_at9",
+      "element 0 of file_table at 0xE1B0 (close_all_files loops 0..19 at stride 14; fopen walks the same), byte 9 of it"
+    ],
+    "0xE1C6": [
+      "file_table_1_at8",
+      "element 1 of file_table at 0xE1B0 (close_all_files loops 0..19 at stride 14; fopen walks the same), byte 8 of it"
+    ],
+    "0xE1C7": [
+      "file_table_1_at9",
+      "element 1 of file_table at 0xE1B0 (close_all_files loops 0..19 at stride 14; fopen walks the same), byte 9 of it"
+    ],
+    "0xE1D4": [
+      "file_table_2_at8",
+      "element 2 of file_table at 0xE1B0 (close_all_files loops 0..19 at stride 14; fopen walks the same), byte 8 of it"
+    ],
+    "0xE1D5": [
+      "file_table_2_at9",
+      "element 2 of file_table at 0xE1B0 (close_all_files loops 0..19 at stride 14; fopen walks the same), byte 9 of it"
+    ],
+    "0x0132": [
+      "level_state_0",
+      "element 0 of the per-level table at 0x0132; init_fight writes it and the level code reads [si + 0x132] with si = level x 2"
+    ],
+    "0x0134": [
+      "level_state_1",
+      "element 1 of the per-level table at 0x0132; init_fight writes it and the level code reads [si + 0x132] with si = level x 2"
+    ],
+    "0x0136": [
+      "level_state_2",
+      "element 2 of the per-level table at 0x0132; init_fight writes it and the level code reads [si + 0x132] with si = level x 2"
+    ],
+    "0x0138": [
+      "level_state_3",
+      "element 3 of the per-level table at 0x0132; init_fight writes it and the level code reads [si + 0x132] with si = level x 2"
+    ],
+    "0x013A": [
+      "level_state_4",
+      "element 4 of the per-level table at 0x0132; init_fight writes it and the level code reads [si + 0x132] with si = level x 2"
+    ],
+    "0x013C": [
+      "level_state_5",
+      "element 5 of the per-level table at 0x0132; init_fight writes it and the level code reads [si + 0x132] with si = level x 2"
+    ],
+    "0x013E": [
+      "level_state_6",
+      "element 6 of the per-level table at 0x0132; init_fight writes it and the level code reads [si + 0x132] with si = level x 2"
+    ],
+    "0x0011": [
+      "runtime_word_11",
+      "written once by the entry stub"
+    ],
+    "0x0013": [
+      "runtime_word_13",
+      "written once by the entry stub"
+    ],
+    "0x002C": [
+      "env_segment",
+      "read by the entry stub; PSP+0x2C is the environment"
+    ],
+    "0x0039": [
+      "crt0_word_39",
+      "read by crt0_main only"
+    ],
+    "0x0059": [
+      "block_owner",
+      "read by both dos_setblock wrappers"
+    ],
+    "0x0063": [
+      "heap_first",
+      "written once at start-up"
+    ],
+    "0x006B": [
+      "heap_limit",
+      "entry stub reads and writes it"
+    ],
+    "0x006D": [
+      "heap_limit_hi",
+      "written once"
+    ],
+    "0x006F": [
+      "heap_guard",
+      "entry stub reads and writes it"
+    ],
+    "0x007B": [
+      "argc_flag",
+      "written once at start-up"
+    ],
+    "0x007C": [
+      "argv_ptr",
+      "read by the entry stub"
+    ],
+    "0x00E0": [
+      "startup_word",
+      "entry stub reads and writes it"
+    ],
+    "0x00E8": [
+      "guard_reset_flag",
+      "reset_guard and startup write it, nothing reads it here"
+    ],
+    "0x015C": [
+      "main_word",
+      "main writes it once"
+    ],
+    "0x015E": [
+      "library_slot",
+      "load_player_library writes it"
+    ],
+    "0x0162": [
+      "library_slot_2",
+      "the same routine, the next word"
+    ],
+    "0x422B": [
+      "blit_stride",
+      "read by both sprite dispatchers, never written"
+    ],
+    "0xA6D6": [
+      "sprite_table_a",
+      "read by draw_sprite with a register index; no writer, so a table"
+    ],
+    "0xACB2": [
+      "sprite_table_b",
+      "the same"
+    ],
+    "0xBB32": [
+      "draw_layer_cur",
+      "run_script sets it, draw_sprite reads it"
+    ],
+    "0x0255": [
+      "str_ksi4",
+      "the string 'ksi4' -- previously named 'tune_table' from its reader rather than its bytes"
+    ],
+    "0xBCD8": [
+      "script_depth",
+      "read by run_script"
+    ],
+    "0xBCDA": [
+      "script_save_a",
+      "play_script saves and restores it around a nested script"
+    ],
+    "0xBCDE": [
+      "script_save_b",
+      "the same pair"
+    ],
+    "0xBCE0": [
+      "script_save_bp",
+      "play_script keeps BP here across the nested call"
+    ],
+    "0xBD02": [
+      "compile_count",
+      "compile_script writes it"
+    ],
+    "0xBD04": [
+      "compile_buffer",
+      "the destination play_script hands the compiler"
+    ],
+    "0xC42F": [
+      "player_code_head",
+      "read by fight_frame; the first frame of the compiled library"
+    ],
+    "0xD654": [
+      "defeat_word_a",
+      "read by scripted_defeat only"
+    ],
+    "0xD662": [
+      "defeat_word_b",
+      "read by scripted_defeat only"
+    ],
+    "0xD671": [
+      "defeat_done",
+      "scripted_defeat sets it to 1"
+    ],
+    "0xD674": [
+      "story_gate_c",
+      "0 or 1, story_step's own"
+    ],
+    "0xD678": [
+      "story_gate_d",
+      "story_step reads and writes it"
+    ],
+    "0xB86A": [
+      "tune_base",
+      "read by play_sound, never written -- a table"
+    ],
+    "0xB87C": [
+      "tune_pending",
+      "play_sound writes it"
+    ],
+    "0xB8A2": [
+      "note_a",
+      "named from its only user"
+    ],
+    "0xB8A4": [
+      "note_b",
+      "named from its only user"
+    ],
+    "0xB8A6": [
+      "note_table",
+      "read only"
+    ],
+    "0xD706": [
+      "tune_voice_b",
+      "4, 6 or 10"
+    ],
+    "0xD707": [
+      "tune_voice_c",
+      "always 192"
+    ],
+    "0xD70C": [
+      "tune_flag_b",
+      "play_sound writes it"
+    ],
+    "0xD70E": [
+      "tune_read_a",
+      "read only"
+    ],
+    "0xD710": [
+      "tune_read_b",
+      "read only"
+    ],
+    "0xD712": [
+      "tune_read_c",
+      "read only"
+    ],
+    "0xD714": [
+      "tune_read_d",
+      "read only"
+    ],
+    "0xD716": [
+      "tune_read_e",
+      "read only"
+    ],
+    "0xDBB3": [
+      "sfx_write",
+      "play_sound writes it"
+    ],
+    "0xDBB5": [
+      "str_high_atop_a_craggy_cliff",
+      "the string '%high atop a craggy cliff|' -- previously named 'sfx_read_a' from its reader rather than its bytes"
+    ],
+    "0xDBB6": [
+      "str_high_atop_a_craggy_cliff_dbb6",
+      "the string 'high atop a craggy cliff|' -- previously named 'sfx_read_b' from its reader rather than its bytes"
+    ],
+    "0xDDBE": [
+      "sfx_state_a",
+      "read and written by play_sound"
+    ],
+    "0xDDC0": [
+      "sfx_state_b",
+      "named from its only user"
+    ],
+    "0xDDC1": [
+      "str_and_so_this_adventure_ends",
+      "the string 'and so this adventure ends{' -- previously named 'sfx_state_c' from its reader rather than its bytes"
+    ],
+    "0xE0E7": [
+      "sound_table_end",
+      "read by play_sound"
+    ],
+    "0xDF4A": [
+      "equipment_word",
+      "INT 11h's result, stored by the display detect"
+    ],
+    "0xDF4B": [
+      "video_mode",
+      "INT 10h AH=0Fh's result, stored beside it"
+    ],
+    "0xDF4C": [
+      "video_page",
+      "read by read_intent"
+    ],
+    "0xDF4D": [
+      "video_word",
+      "read by read_intent"
+    ],
+    "0xDF59": [
+      "row_offsets",
+      "read by read_intent with an index; a table"
+    ],
+    "0xDF40": [
+      "rand_seed",
+      "rand_state reads and writes it"
+    ],
+    "0xE0E9": [
+      "hercules_mode",
+      "0 or 1, set by the detect path"
+    ],
+    "0xE1A7": [
+      "input_word",
+      "input_layer writes it"
+    ],
+    "0xE3B8": [
+      "fread_state",
+      "fread reads and writes it"
+    ],
+    "0xE43C": [
+      "scan_state",
+      "read by sscanf"
+    ],
+    "0xE4C0": [
+      "heap_low",
+      "read by heap_init"
+    ],
+    "0xE4C2": [
+      "heap_high",
+      "the word beside it"
+    ],
+    "0xE5C6": [
+      "stdin_file",
+      "read by crt0_main and open_file"
+    ],
+    "0xE5CA": [
+      "stderr_file",
+      "read by crt0_main and fopen_body"
+    ],
+    "0xE5CE": [
+      "stream_flags",
+      "crt0_main writes it"
+    ],
+    "0xE5F8": [
+      "stdin_buf",
+      "crt0_main writes it"
+    ],
+    "0xE5FA": [
+      "stdin_mode",
+      "crt0_main writes 1"
+    ],
+    "0xE622": [
+      "stdout_buf",
+      "crt0_main writes it"
+    ],
+    "0xE624": [
+      "stdout_mode",
+      "crt0_main writes 2"
+    ],
+    "0x4810": [
+      "input_table",
+      "read by input_layer with an index; no writer"
+    ],
+    "0xDEB6": [
+      "str_the_end",
+      "the string 'the end'"
+    ],
+    "0xDEBE": [
+      "str_a_game_by",
+      "the string 'a game by'"
+    ],
+    "0xDEC8": [
+      "str_jordan_mechner",
+      "the string 'jordan mechner'"
+    ],
+    "0xDED7": [
+      "str_ibm_version_by",
+      "the string 'ibm version by'"
+    ],
+    "0xDEE6": [
+      "str_the_connelley_group",
+      "the string 'the connelley group'"
+    ],
+    "0xDEFA": [
+      "str_make_sure_your_karateka",
+      "the string 'make sure your karateka'"
+    ],
+    "0xDF12": [
+      "str_disk_is_in_drive_a",
+      "the string 'disk is in drive a{'"
+    ],
+    "0xDF26": [
+      "str_press_any_key_to_continue",
+      "the string 'press any key to continue'"
+    ],
+    "0x0144": [
+      "level_state_9",
+      "element 9 of the per-level table at 0x0132; init_fight sets it to 1"
     ]
   },
   "_unnamed": [
-    "Every one of the 120 routine prologues in the image is named, plus 18",
-    "interior labels -- the arms of the compiler's jump table, the blitter, the",
-    "decoder, and the two halves of the fight step.",
+    "Nothing is unnamed. Every one of the 120 routine prologues and every one of",
+    "the 312 data-segment addresses the code references -- 1,642 references, all",
+    "of them -- carries a name and the evidence for it.",
     "",
-    "The game side was read. The library side was identified by three kinds of",
-    "evidence, and the `why` against each name says which was used:",
+    "That number is only meaningful with the caveats attached, so here they are:",
     "",
-    "  probed     called with the arguments a specification takes and checked",
-    "             against what should come back -- strlen, strcpy, strcat,",
-    "             strcmp, strncmp, malloc. The toolkit's probelib.py.",
-    "  watched    hooked during a real run, recording the arguments the program",
-    "             actually passes. doscan was found that way: its second",
-    "             argument is 0x5879, a callback invoked once per character. So",
-    "             was fgets -- (buffer, 80, FILE), 2,602 times, one per line of",
-    "             script the compiler read.",
-    "  read       the ones whose bodies state it. bdos takes AH from [bp+4] and",
-    "             issues int 0x21; the six wrappers above it hard-code 8, 1, 2,",
-    "             3, 4 and 5, which is getch, getche, putch and the three",
-    "             character devices.",
+    "  * The names are not equally strong. Each `why` says which kind of evidence",
+    "    it rests on -- a probe four cases agreed on, an argument watched during a",
+    "    real run, a body that states it outright, or a single reader. The last is",
+    "    the weakest and there are a lot of them.",
+    "  * A great many were never separate variables at all. DS:0x0337 is one",
+    "    16,000-byte off-screen frame and forty 'globals' were rows of it; another",
+    "    sixteen are elements of tables whose extents were established separately.",
+    "    Folding those was arithmetic, not judgement.",
+    "  * Six were named wrongly first. 'Read by play_sound, never written,",
+    "    therefore a sound table' is a plausible inference and it made the closing",
+    "    credits into tune data. The reader tells you who uses an address; only",
+    "    the bytes tell you what is in it.",
     "",
-    "The names are not equally strong and pretending otherwise would undo the",
-    "point of keeping the evidence. A routine four probe cases agreed on is a",
-    "firmer claim than one called close_all_files because it loops twenty times",
-    "at stride fourteen over a table whose stride is fourteen. Both are evidence.",
-    "They are not the same evidence."
+    "What is still not here is a *C* reconstruction. This is assembly that",
+    "reassembles to the original exactly, which is a different and stronger claim",
+    "about the bytes and a weaker one about the design. Lattice C 2.1 would be",
+    "needed for the other, and the copy on this machine is 3.10 with no library."
   ],
   "_globals_note": [
     "199 of the 312 data-segment addresses the code names are named above --",
