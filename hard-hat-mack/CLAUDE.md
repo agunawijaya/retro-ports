@@ -20,8 +20,8 @@ instruction, and the numbers below are counts rather than estimates.
 | variables named | 605 |
 | bracketed constants covered | 567 of 573; the other six are not addresses (see `_not_addresses`) |
 | bytes in a named span | 42,112 of 42,112 |
-| level screens drawn from the file alone | **179 of 193 placements** — recall **98% / 94% / 81%**, precision **94% / 94% / 86%** |
-| the 14 that remain | 3 from `spawn_lunchbox`, whose shape is `random() & 3`; 4 from `draw_rivets`, which writes no selector and so inherits that same random pick; 6 from `draw_conveyor`; 1 from `draw_hoist_car` |
+| level screens drawn from the file alone | **186 of 193 placements** — recall **98% / 95% / 97%**, precision **94% / 95% / 88%** |
+| the 7 that remain | all of them a value that does not exist until the program runs. `spawn_lunchbox` picks one of four shapes with `random() & 3` — the table at `0x593A` gives entries 15, 68, 16 and 67, so there is no shape to read — and `draw_rivets` writes no selector of its own, so it draws whatever that pick left behind. Nothing else is missing. |
 | how that is known | `tools/verify-screens.py` runs the game under `comrun.py`, hooks the four drawing routines, and diffs the call list against the static reading |
 | what it actually is | a mechanical **6502 to 8086 translation** of the Apple II original — see [knowledge/14](../../DOS-Decompiler/knowledge/14-translated-binaries.md) |
 

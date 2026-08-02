@@ -35,35 +35,52 @@ the listing as a heading, splitting a `db` run where it has to.
 
 ### What is still open
 
-One thing, and it is a measurement rather than a gap.
-Hard Hat Mack's static level render reproduces **179 of the 193** placements
-the program actually makes — recall 98% / 94% / 81% by level, precision
-94% / 94% / 86%. `hard-hat-mack/tools/verify-screens.py` runs the game under
-the toolkit's `comrun.py`, and it now names the routine that made each missing
-placement, which is what turned "21 in three groups" into a work list.
+Nothing that reading the file can settle.
 
-Three extractor bugs came out of that list and are fixed:
+Hard Hat Mack's static level render — the last thing on this list for several
+sessions — reproduces **186 of the 193** placements the program makes. Recall
+98% / 95% / 97% by level, precision 94% / 95% / 88%.
+
+The seven that remain are all one thing: `spawn_lunchbox` chooses its shape
+with `random() & 3`, and the table it chooses from holds four *different*
+entries — 15, 68, 16, 67 — so there is no shape in the file to read. Three of
+the seven are its own placements and four are `draw_rivets`, which writes no
+selector and draws whatever that pick left behind. The thirteen the reading
+invents are the same fact from the other side, plus two in `draw_pits` and four
+in `draw_rivet_row` that depend on which arm of a conditional runs.
+
+That is the boundary of static extraction, and it is now the *only* thing left
+— established per placement rather than asserted about the method. Getting
+there took six bugs, and the one that mattered was in the referee rather than
+in the extractor: it had listed the wrong placements by coordinate for three
+sessions, and coordinates describe the picture, which is never where the bug
+is. Naming the routine that made each one — the return address is a word down
+`SS:SP` at the hook — turned it into a work list the same afternoon.
+
+The six, in the order they were found:
 
 - **A counted loop that runs up.** `mov bl, 1` … `inc byte [V]` … `cmp bl, 5`
-  was read as the down-loop shape (N, N-1, … 0), so `draw_toolboxes` drew two
-  toolboxes at the wrong rows instead of three at the right ones. Every
-  iteration still produced *a* placement, so nothing failed.
-- **A zero immediate written in decimal.** NASM prints `mov word [sel], 0`,
-  not `0x0000`, and the store regex required the `0x` form. `draw_beams` sets
-  the selector that way and nothing else, so its four beams took whatever
-  shape the previous routine had left.
-- **A selector that outlives the routine that set it.** Callee state is
-  deliberately not merged back into the caller — that once let two calls to
-  `draw_crate` read each other's columns — so a routine that writes no
-  selector had none. The last value written to it is now carried in walk
-  order, which is the order the program writes it in.
+  read as the down-loop shape every other loop uses, so `draw_toolboxes` drew
+  two at the wrong rows instead of three at the right ones.
+- **A zero immediate in decimal.** NASM prints `mov word [sel], 0`, not
+  `0x0000`, and the store pattern wanted the `0x` form. `draw_beams` sets its
+  shape that way and no other.
+- **A selector that outlives its routine.** `draw_rivets` writes none, so it
+  needs the last one written; carried in walk order now.
+- **A loop kept entirely in memory.** `draw_conveyor` counts down in one
+  variable and steps across in another and never puts either in a register
+  except to index a table, so there was no loop to see and one of four
+  conveyor segments got drawn.
+- **…and a `place_pair` erase that is in that loop without touching the
+  index.** Unrolling on "does it use BX" gave four draws and one erase.
+- **Callee state that is game state.** Writes were isolated wholesale to stop
+  two calls to `draw_crate` reading each other's columns — but a column is
+  scratch and `hoist_y` is not. The rule is by address now: the drawer
+  parameter block stays isolated, everything else comes back.
 
-The 14 that remain: three from `spawn_lunchbox`, whose shape is `random() & 3`
-into a four-entry table, and four more from `draw_rivets`, which writes no
-selector of its own and therefore inherits that same random pick. Those seven
-are the genuine limit of static extraction — which arm of a conditional runs,
-or which of four shapes a random number chose. The other seven, six in
-`draw_conveyor` and one in `draw_hoist_car`, have not been read yet.
+Every one of the six still produced *a* placement, which is why none of them
+ever failed and why the coverage number never moved. See
+[knowledge/12](../DOS-Decompiler/knowledge/12-hooking-the-right-thing.md).
 
 ### How to check any of this rather than believe it
 
