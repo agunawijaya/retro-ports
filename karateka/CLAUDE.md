@@ -104,6 +104,41 @@ are `[0x102]` and `[0x104]`.
 207 of 209 in-phase samples have the pose global equal to the frame's byte; 38
 of 40 moves changed x by exactly the frame's `inc_x`.
 
+## Source you can rebuild
+
+`recovered/karateka.asm` is correct and is not source: ten thousand
+instructions under labels named after their own addresses. `symbols.json` holds
+the reading — 38 routines and 44 globals, each with the evidence for its name —
+and `tools/annotate.py` applies them.
+
+```powershell
+.uild.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path	o
+asm.exe
+```
+
+Three steps: reconstruct, name, **rebuild and compare**. The third is the point.
+Names are applied as `%define`s and label renames only, so NASM emits the bytes
+it emitted before they existed — *naming a thing must not change it* — and the
+script refuses to report success on anything short of the original's SHA-256.
+
+```nasm
+guard_choose_move:
+    push bp
+    sub  sp, 0xc
+    cmp  sp, word [stack_limit]
+    ...
+    cmp  word [guard_pose], 0x46
+    jne  L_0263A
+    cmp  word [patience_b], 0
+```
+
+**Globals are renamed only inside brackets.** `mov ax, 0x116` is the constant
+278, not `player_health`; rewriting it would be a lie that still assembles.
+
+**None of the output may be committed.** `recovered/` is gitignored because a
+byte-identical reconstruction is the game, named or not. What is worth keeping
+is `symbols.json`, and it is small enough to read.
+
 ## Regenerating
 
 ```powershell

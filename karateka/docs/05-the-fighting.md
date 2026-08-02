@@ -430,10 +430,33 @@ that.
 
 `0x205E` reads no input directly. It branches on reaction flags — `[0xFC]` just
 hit, `[0x16C]`, `[0x170]`, `[0x174]` — and then dispatches on the player's own
-pose through a sparse switch at `0x228B`, whose arms are where the input is
-consumed. **[unresolved]** the joystick routine at `0x425E` — two `in al, dx`
-around a counted `loop`, the classic RC-decay timing — has no direct caller
-anywhere in the image, so the path from hardware to those flags is not traced.
+pose through a sparse switch at `0x228B`. The chain from there to the hardware
+is six calls long and every link is a plain `call`:
+
+```
+0x205E   the chooser
+  jmp 0x228B                 a sparse (pose, arm) switch, seventeen cases
+    0x214B … 0x2231          eight arms, grouping poses 1/8, 2-4, 5-7, 10/11,
+                             15, 42-44, 65/66, 70
+      call 0x1D07            the pose handler
+        call 0x4149          at 0x1D2A and 0x1DAA
+          call 0x44D3        turn the input mask into an intent
+            call 0x4756      read the stick
+              in al, 0x201
+```
+
+`0x4756` masks the two fire buttons out of port 0x201 with `and 0x30`, then
+reads each axis and compares it against calibration bounds at `[0xE197]`,
+`[0xE199]` and `[0xE19B]`, building a direction-and-button bitmask in
+**`[0xE19F]`**. `[0xE196]` says whether a stick is attached at all.
+
+**An earlier draft of this document called `0x425E` the joystick routine and
+said nothing reached it. Both halves were wrong.** `0x425E` writes port `0x3BA`
+and `0x3BF` — it is Hercules display detection, and the `add al, 0x41` below it
+returns the adapter as a letter. And "nothing calls `0x42EC`" was a question
+badly asked: `0x42EC` is not a routine at all, it is a `call` instruction inside
+the routine that begins at `0x42D1`. Asking for callers of an address in the
+middle of a routine will always answer none.
 
 ## The rest of the guard's tree
 
@@ -453,14 +476,31 @@ the moment he closes. When they expire the guard is pushed into pose 70 and the
 chooser starts returning move 14. **It is the routine that stops you waiting
 the game out.**
 
+## What the stance classes turn out to mean
+
+Run every move in `ALLPAL` through the two tables and they line up with what the
+moves are:
+
+| | |
+|---|---|
+| **reach 16** | standing stances |
+| **reach 12** | the low ones — `pal09`, `pal11`, `pal19`, `pal21` and the middle of the run |
+| **class 6** | the neutral stance, and the whole of stepping back and forward |
+| **class 7** | crouched |
+| **classes 3 and 4** | **cannot be hit by anything** |
+
+`pal01` through `pal06` are the six strikes and each has **exactly one frame
+whose flag bit is set** — one frame per move that can score, which is why
+timing matters at all. And of those six, `pal05` and `pal06` finish on class 3
+and class 4 respectively: **two of the six attacks leave you untouchable as
+they recover.** Only five stance values in the whole table reach those classes —
+3, 4, 26, 27 and 31.
+
 ## What is still unread
 
-- **The path from the joystick to the reaction flags.** `0x425E` reads the
-  hardware and nothing calls it directly.
-- **The arms of the pose switch at `0x228B`**, which is where the player's
-  chooser turns input into a move.
-- **What the second stance table's classes mean.** The numbers are read; that
-  class 3 and class 4 can never be hit is a fact, not yet an explanation.
+Nothing that this document set out to read. What is left is smaller and named:
+the eight arms of the pose switch are identified but not individually read, and
+the calibration routine that fills `[0xE197]`–`[0xE19B]` has not been traced.
 
 ## How this was found
 
