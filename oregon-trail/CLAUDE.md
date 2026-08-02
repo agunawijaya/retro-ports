@@ -255,12 +255,13 @@ health           = health x 0.5,  or health + 0.2 when the day        ESTABLISHE
                    went badly or the food ran out  (0x14055)
 DS:0x184D        = 0.9 x itself + the term + 0x199E + 0x199F         ESTABLISHED
                    + two locals + health   -- role not established
-odds of dying    = (health - 2.5) / y                              2.5 is real
+strain           = max(0, alive/oxen - (5 - 2 x conditions))       ESTABLISHED
+odds of dying    = (health - 2.5) / (severity x 10)                ESTABLISHED
 which illness    = Random(6) + 3                   ; flat          ESTABLISHED
 ```
 
-**Read the right-hand column.** An earlier version of this file wrote the third
-and fourth lines as a single `health += ...` and called it established. It is
+**Read the right-hand column.** An earlier version of this file wrote the health
+lines as a single `health += ...` and called it established. It is
 not: the integer term is real, but it is stored to a local and becomes one
 argument among six to a computation at image `0x140C2` that also takes
 `DS:0x199E`, `DS:0x199F`, a second local and `Real` constants near 0.9 and 0.5,

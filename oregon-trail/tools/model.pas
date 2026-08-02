@@ -82,7 +82,9 @@ const
     is still missing is the threshold that decides "bad", and the divisor in the
     casualty probability. Both are marked where they are stood in for. }
 
-  DeathOffset    = 2.5;      { image 0x04871: the literal 2.5 -- established }
+  DeathOffset    = 2.5;      { image 0x04871 -- established }
+  DeathScale     = 10;       { image 0x04854: the divisor is severity x 10 }
+  StrainLimit    = 0.5;      { image 0x13FE1 and 0x14075 -- the same 0.5 }
 
   { The per-leg rate byte lives in a 37-byte record at DS:0x08B2. Its values
     have not been extracted, so a flat rate stands in. }
@@ -109,6 +111,7 @@ var
   Cash          : Real;
   Health        : Real;      { DS:0x1886 -- a badness score: it goes up }
   Oxen, Clothes, Bullets, Parts : Integer;
+  Conditions    : Integer;   { DS:0x19A4 -- the going; larger is worse }
   Miles, Day    : LongInt;
   Profession    : Integer;
   Buried        : Integer;
@@ -137,15 +140,40 @@ begin
   HealthTermToday := (Pace + 1) * 2 + Rations * 2;
 end;
 
+{ image 0x13F63..0x13FCC. How hard the day was: people per ox, less what the
+  conditions allow, floored at zero. Too few oxen for the party is what strains
+  it, and bad going makes the allowance smaller. }
+function StrainToday : Real;
+var s : Real; alive, i : Integer;
+begin
+  alive := 0;
+  for i := 1 to PartySize do
+    if Party[i].Alive then Inc(alive);
+  if Oxen = 0 then
+    StrainToday := 99.0
+  else
+  begin
+    s := alive / Oxen - (5 - 2 * Conditions);
+    if s < 0 then s := 0;
+    StrainToday := s;
+  end;
+end;
+
 { image 0x014055. Health halves when the day goes well and rises by a fifth
   when it does not -- an exponential decay with a linear penalty, which is why
   a party recovers quickly but three bad weeks running are fatal. }
-procedure UpdateHealth(strainedDay : Boolean);
+procedure UpdateHealth;
 begin
-  if strainedDay or (Food <= 0) then
+  if (StrainToday > StrainLimit) or (Food <= 0) then
     Health := Health + 0.2
   else
     Health := Health * 0.5;
+end;
+
+{ image 0x0484F..0x04881, applied per party member by ui+0x30B6. }
+function OddsOfDying(severity : Integer) : Real;
+begin
+  OddsOfDying := (Health - DeathOffset) / (severity * DeathScale);
 end;
 
 { ---- the store, which states its own prices ---------------------------- }
@@ -220,21 +248,28 @@ end;
 { ---- one day, and a whole journey -------------------------------------- }
 
 procedure OneDay;
+var p : Real; i : Integer;
 begin
   Inc(Day);
   Miles := Miles + Trunc(MilesToday);
   Food := Food - FoodEatenToday;
-  { The strain threshold is a Real the game computes earlier in the day and
-    which is not traced; the pace-and-rations term stands in for it here, so
-    the shape is right and the exact day a party turns is not. }
-  UpdateHealth(HealthTermToday > 6);
-  { Still no deaths: the casualty probability is (health - 2.5) / y, and y is
-    computed from state that has not been traced. }
+  UpdateHealth;
+  { The casualty routine walks the party from the last member down to the
+    second -- member one is the player and this routine never takes them
+    (image 0x134EC). Severity 1 is the ordinary daily check. }
+  p := OddsOfDying(1);
+  if p > 0 then
+    for i := PartySize downto 2 do
+      if Party[i].Alive and (Random < p) then
+      begin
+        Party[i].Alive := False;
+        Inc(Buried);
+      end;
 end;
 
 procedure Journey;
 begin
-  Miles := 0; Day := 0; Health := 1.0;
+  Miles := 0; Day := 0; Health := 1.0; Buried := 0;
   while (Miles < TrailMiles) and (Day < 400) and (Food > 0) do
     OneDay;
 end;
@@ -256,16 +291,17 @@ begin
   end;
 end;
 
-procedure RunOne(p, r : Integer);
+procedure RunOne(p, r, yoke, cond : Integer);
 begin
   Setup;
   Pace := p; Rations := r;
   Profession := 1;
   Outfit;
+  Oxen := yoke * 2;                     { the shopkeeper recommends 3 yoke }
+  Conditions := cond;
   Journey;
-  WriteLn(PaceWord[Pace]:10, RationWord[Rations]:12,
-          Trunc(MilesToday):8, FoodEatenToday:8,
-          Day:8, Food:9, HealthTermToday:6, Health:9:2);
+  WriteLn(PaceWord[Pace]:10, RationWord[Rations]:12, (Oxen div 2):5,
+          cond:6, Day:7, Food:9, Health:9:2, Buried:7);
 end;
 
 var band, i : Integer;
@@ -274,23 +310,28 @@ begin
   WriteLn('The Oregon Trail -- the recovered rules, run.');
   WriteLn('This is not MECC''s source. It is what the binary was found to say.');
   WriteLn;
-  WriteLn('     pace     rations   miles/d  food/d    days  food left  term   health');
+  WriteLn('     pace     rations  yoke  cond   days food left   health  buried');
   WriteLn('  ------------------------------------------------------------------');
   for i := 0 to 2 do
-    RunOne(i, i);
-  RunOne(0, 2);
-  RunOne(2, 0);
+    RunOne(i, i, 3, 1);                 { as the shopkeeper advises }
+  RunOne(0, 2, 3, 1);
+  RunOne(2, 0, 3, 1);
+  WriteLn;
+  WriteLn('  ... and the same trips underprovisioned, which is where the');
+  WriteLn('  game keeps its difficulty:');
+  RunOne(1, 1, 1, 1);                   { one yoke instead of three }
+  RunOne(1, 1, 1, 2);                   { one yoke, and hard going  }
+  RunOne(2, 2, 1, 2);
   WriteLn;
   WriteLn('  miles/d = legRate x (pace + 2) / 2      image 0x0003C5');
   WriteLn('  food/d  = people x (3 - rations)        image 0x013D34');
   WriteLn('  health term = (pace+1) x 2 + rations x 2  image 0x014045');
   WriteLn('  legRate is NOT recovered; ', LegRate, ' stands in for it.');
   WriteLn;
-  WriteLn('Health halves on a good day and rises 0.2 on a bad one (0x14055).');
-  WriteLn('The threshold for "bad" is a Real the game computes earlier and');
-  WriteLn('which is not traced, so the shape is right and the exact day a');
-  WriteLn('party turns is not. No deaths: the casualty odds are');
-  WriteLn('(health - 2.5) / y, and y is still unrecovered.');
+  WriteLn('  strain      = max(0, alive/oxen - (5 - 2 x conditions))  0x13F63');
+  WriteLn('  health      = x0.5 on a good day, +0.2 when strain > 0.5  0x14055');
+  WriteLn('                or the food has run out');
+  WriteLn('  odds of dying = (health - 2.5) / (severity x 10)          0x0484F');
   WriteLn;
   WriteLn('Outfitted as a banker at Matt''s stated prices, the score would be:');
   for band := 0 to 3 do

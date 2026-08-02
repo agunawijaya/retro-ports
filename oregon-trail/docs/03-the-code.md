@@ -918,8 +918,21 @@ Five places call it, and the probability is not a constant in any of them:
 004889  lcall ui+0x30B6                                ; and use that as p
 ```
 
-so the odds are `(something − 2.5) / somethingElse` at one call site and
-`(something − 3.0) / somethingElse` at another. **The chance of losing someone
+and the divisor is on the stack from a few instructions earlier:
+
+```nasm
+000484F  mov al, [bp+6]            ; the caller's severity
+0004854  mov cx, 0x000A / imul cx  ;   times ten
+0004865  mov ax, ss:[di-0xA]       ; health, passed in by the caller
+0004871  ... 2.5 ... RealSub
+0004881  lcall System.RealDiv
+```
+
+```
+odds per person = (health - 2.5) / (severity x 10)
+```
+
+with 3.0 in place of 2.5 at the other call site. **The chance of losing someone
 is computed from the state of the party**, not drawn from a table — which is why
 searching for a table of death probabilities finds nothing.
 
@@ -1245,6 +1258,30 @@ So:
 if <today's strain> > 0.5 or food = 0 then health := health + 0.2
                                       else health := health x 0.5
 ```
+
+And the strain is computed just above it, at `0x13F63`:
+
+```nasm
+0013F63  call 0013045              ; how many are still alive
+0013F73  mov al, [0x1841]          ; and how many oxen
+0013F82  lcall System.RealDiv      ; people per ox
+0013F8A  mov ax, 5 / sub [0x19A4] / sub [0x19A4]   ; 5 - 2 x the going
+0013F9E  lcall System.RealSub
+0013FBB  lcall System.RealCmp      ; floored at zero
+```
+
+```
+strain = max(0, alive / oxen - (5 - 2 x conditions))
+```
+
+**Too few oxen for the number of people is what wears a party down**, and bad
+going shrinks the allowance. Five people behind three yoke gives 0.83 against an
+allowance of 3, so nothing happens; five behind one yoke in hard country gives
+2.5 against an allowance of 1, and health climbs every day until somebody dies.
+That is the whole difficulty curve of the outfitting screen, and it is why the
+shopkeeper's *"I recommend at least 3 yoke"* is advice worth taking.
+
+The same 0.5 threshold is tested twice, at `0x13FE1` and again at `0x14075`.
 
 **Health halves when the day goes well and creeps up by a fifth when it does
 not.** That is an exponential decay toward zero with a linear penalty, which is

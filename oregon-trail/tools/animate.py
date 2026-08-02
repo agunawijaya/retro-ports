@@ -244,6 +244,45 @@ def strip(frames, path, scale=3):
     sheet.save(path)
 
 
+def contact_sheet(gif, out, picks, cols=2, label=True, crop=None, scale=1):
+    """A flip-book: chosen frames of an animation, in reading order.
+
+    A GIF shown by anything that does not animate is a single still, which is
+    no proof of motion at all. Laying successive frames out in a grid is -- you
+    can see the wheel spokes turn and the scenery move between one cell and the
+    next, which is the whole claim.
+    """
+    from PIL import ImageSequence
+    im = Image.open(gif)
+    frames = []
+    for i, f in enumerate(ImageSequence.Iterator(im)):
+        if i in picks:
+            g = f.convert("RGB")
+            if crop:
+                g = g.crop(crop)
+            if scale != 1:
+                g = g.resize((int(g.width * scale), int(g.height * scale)),
+                             Image.NEAREST)
+            frames.append((i, g))
+    if not frames:
+        raise SystemExit(f"no frames picked from {gif}")
+    fw, fh = frames[0][1].size
+    rows = (len(frames) + cols - 1) // cols
+    pad, bar = 6, (16 if label else 0)
+    sheet = Image.new("RGB", (cols * fw + (cols + 1) * pad,
+                              rows * (fh + bar) + (rows + 1) * pad), (24, 24, 24))
+    d = ImageDraw.Draw(sheet)
+    for k, (idx, g) in enumerate(frames):
+        r, c = divmod(k, cols)
+        x = pad + c * (fw + pad)
+        y = pad + r * (fh + bar + pad)
+        if label:
+            d.text((x + 2, y + 3), f"frame {idx}", fill=(200, 200, 200))
+        sheet.paste(g, (x, y + bar))
+    sheet.save(out)
+    return len(frames)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pcl", required=True)
@@ -278,10 +317,23 @@ def main():
         padded.append(c.resize((f.width * 3, top * 3), Image.NEAREST))
     strip(padded, outdir / "river_frames.png")
 
+    # Flip-books, because a still viewer shows only a GIF's first frame and
+    # that proves nothing about motion.
+    n3 = contact_sheet(outdir / "wagon.gif", outdir / "sheet_wheels.png",
+                       picks=set(range(8)), cols=2,
+                       crop=(390, 250, 750, 396))
+    n4 = contact_sheet(outdir / "wagon.gif", outdir / "sheet_travel.png",
+                       picks={0, 12, 24, 36, 48, 60}, cols=2, scale=0.62)
+    n5 = contact_sheet(outdir / "river.gif", outdir / "sheet_river.png",
+                       picks={0, 11, 21, 27, 34, 40, 47, 55}, cols=2, scale=0.55)
+
     print(f"wagon.gif        {n1} frames")
     print(f"river.gif        {n2} frames")
     print(f"wagon_frames.png the wheel cycle, X + X +")
     print(f"river_frames.png the crossing, five states")
+    print(f"sheet_wheels.png {n3} consecutive frames, wheels only")
+    print(f"sheet_travel.png {n4} frames across the journey")
+    print(f"sheet_river.png  {n5} frames across the crossing")
     print(f"\nwrote to {outdir}/ -- gitignored, this is the game's own artwork")
 
 
