@@ -776,13 +776,20 @@ The library signs itself twice, in DGROUP:
          Copyright (c) Genus Microprogramming, Inc. 1988-89
 ```
 
-That converts an open-ended problem into a search with a target: **PCX
-Programmer's Toolkit 3.55** and **PCX Text 1.00**, both Genus Microprogramming,
-both 1988–89. A rebuild needs their Turbo Pascal 5.0 units, and the version
-numbers matter — 3.55 will not be 3.5 or 3.6 byte for byte. Whether a copy
-survives anywhere is a question for a search rather than for the disassembler,
-and it is the *only* thing standing between this reconstruction and a
-byte-identical one.
+That converted an open-ended problem into a search with a target, and the
+search has now been run. **The product survives; the version does not.**
+Dr Dobb's reviewed **3.52** in 1990, and BetaArchive holds **6.01** from 1994.
+Nothing at 3.55 turns up anywhere.
+
+And a near miss will not serve, for a reason that is in the file rather than in
+the argument: the toolkit's own version string is compiled into DGROUP, at
+image `0x24515`. A rebuild against 6.01 would differ in the **data** segment
+before it differed in a single instruction — the string `PCX Programmer's
+Toolkit 3.55` is part of the bytes that have to match.
+
+So this is settled rather than open: byte-identical is not achievable with what
+exists, the requirement is exact, and closing it is a question for an archivist
+rather than for a disassembler.
 
 So the verdict is precise rather than gloomy:
 

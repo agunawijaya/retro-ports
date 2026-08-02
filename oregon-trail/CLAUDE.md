@@ -32,7 +32,7 @@ shorter working reference you come back to.
 | river crossings | **traced** — `0x0042D0`; the menu is assembled at run time and its option numbers are recomputed by the dispatcher, so the rule exists twice |
 | events | **traced** — 15 slots at `DS:0x188E`, all zero in the file because the odds are rewritten daily; dispatcher at `0x2BD7`, slot 2 has no handler |
 | game logic as code | **the model is out** — miles, food, the health term and its update at `0x14055`, the illness die, every store price, 29 `Random` sites, the casualty routine. Runs as `tools/model.pas` |
-| byte-identical rebuild | **not reachable, and the blocker is now named** — 22.6% of the code is *PCX Programmer's Toolkit 3.55* and *PCX Text 1.00*, Genus Microprogramming, 1988–89, both signed in DGROUP |
+| byte-identical rebuild | **settled: not achievable** — 22.6% of the code is *PCX Programmer's Toolkit 3.55* + *PCX Text 1.00*, Genus Microprogramming. 3.52 is reviewed in Dr Dobb's, 6.01 is on BetaArchive, 3.55 is nowhere. And its version string is in DGROUP at `0x24515`, so a near miss differs in the data too |
 | the output | `recovered/oregon.asm` — 26,935 instructions, **99.8%** of MECC's code region accounted for, 0 phase conflicts |
 | documents | [four](docs/), written from the above |
 

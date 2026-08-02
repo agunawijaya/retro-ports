@@ -2635,12 +2635,54 @@ that saves a starving party is gated on a counter that has to be small.
 
 ## What has not been read
 
-The list is now short, and each item says what would close it.
+Nothing, in the sense this heading was written to mean. Both of the last two
+entries turned out to be answerable, and one of them was answerable with a file
+that had been sitting in the folder the whole time. What remains is stated
+below as a *settled* limit rather than an open question.
 
-- **A byte-identical rebuild.** Still blocked, but the blocker is now *named*
-  rather than merely measured — see below. 32,720 bytes, 22.6% of the code.
-- **Whether this copy matches what MECC shipped.** The file carries no crack
-  banner and the artwork verifies, but no second copy has been compared.
+**A byte-identical rebuild: settled, and not achievable.** The blocker is
+`PCX Programmer's Toolkit 3.55` and `PCX Text 1.00`, Genus Microprogramming of
+Houston, Texas, 1988–89 — 32,720 bytes, 22.6% of the code. Searching for it
+finds the product but not the version: Dr Dobb's reviewed **3.52** in 1990, and
+BetaArchive holds **6.01** from 1994. Nothing at 3.55.
+
+And a near miss will not do, for a reason that is in the file rather than in
+the argument: **the toolkit's version string is compiled into DGROUP**, at
+image `0x24515`, offset `0x1095`. A rebuild against 6.01 would differ in the
+data segment before it differed in a single instruction. So the requirement is
+exact — that version or nothing — and it is now a question for an archivist,
+not for a disassembler.
+
+**Whether this copy matches what MECC shipped: as settled as one copy can
+make it.** Three independent things agree, and none of them is the absence of a
+crack banner:
+
+- Every one of the 19 files is byte-identical to the distribution archive it
+  came in — checked, not assumed.
+- `README` is MECC's own letter to a purchaser: the User's Guide, the
+  registration card, "make a backup copy and put the original disks in a safe
+  place". `PRODUCT.PF` carries the St. Paul address and telephone number and
+  reads *"Copyright 1988-1991, MECC"* — which, incidentally, contradicts the
+  archive's own metadata of 1990. The binary outranks the catalogue again.
+- The README documents `OREGON CGA` and `OREGON VGA`, and **the executable
+  implements exactly that**. At image `0x14D73` sit five length-prefixed
+  strings — `'cga'`, `'CGA'`, `'vga'`, `'VGA'`, `'VGA256'` — followed by the
+  artwork each mode selects: `OTMCGA.PCL`/`LOGO.256` and
+  `OTCGA.PCL`/`LOGO.004`. A README that describes behaviour the binary does
+  not have would be the giveaway; this one describes behaviour it does have,
+  in both letter cases.
+
+What one copy cannot do is prove the *archive* was not altered before it was
+made. So the hashes are published here instead, and the claim becomes checkable
+by anyone who finds a second copy:
+
+```
+OREGON.EXE   4d53abb5c55661b0e38ce6f1dbae82b2875f381bb7d81d04b0cf6b98d52aefed
+PRODUCT.PF   062e347c99c684c5e826bd58e2971c8cb45dd5ef8ffb59b6b6dbe80395cc0dfd
+README       354cc3a157bdffd9c5511e07d69eb33312b3cb651de042ccd4ed5861d1f226a4
+OTCGA.PCL    b3e32882125e9bbef1d8f1fd38fca29d4ae3448f379ddc671a5205274a0cc285
+the archive  e7dffa207408cf75c336f9f4a011fd328aa304c062fc1981f6f897e3a726225d
+```
 
 `prior-attempt/src/` contains a 17-unit Pascal reconstruction covering these
 topics. On the evidence of this document it should be read as a set of
