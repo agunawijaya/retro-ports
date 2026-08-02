@@ -15,92 +15,559 @@
     "that will be believed by the next reader, and this project has already",
     "published three of those and had to withdraw them."
   ],
-
   "routines": {
-    "0x0002":  ["entry",                 "the MZ entry from CS:IP; sets DS once and never again"],
-    "0x0629":  ["random",                "rand() * (n+1), high word taken -- uniform 0..n with no divide"],
-    "0x083C":  ["draw_sprite",           "takes an id, sets both stream pointers from two tables"],
-    "0x0AE7":  ["blit_column",           "one byte per scanline, add di 0x50"],
-    "0x0B95":  ["next_pixel_byte",       "run-length decoder, called once per output byte"],
-    "0x1277":  ["compile_script",        "text in, byte code out; called with (name, destination)"],
-    "0x1364":  ["compile_set_tune",      "arm 0 of the compiler's jump table at 0x163E"],
-    "0x157E":  ["compile_set_pos",       "arm 10; emits opcode 20 and sscanfs \"%d %d\""],
-    "0x15BE":  ["compile_inc_x",         "arm 11; emits opcode 22"],
-    "0x162D":  ["compile_end_animation", "arm 13; emits 0xFF, the only opcode that is not 2*index"],
-    "0x1976":  ["index_blocks",          "walks a compiled library recording each block's offset; 42 of them, frames 17 bytes"],
-    "0x19A2":  ["index_guard_library",   "the same for the library at 0xCE3E"],
-    "0x19EE":  ["index_sections",        "builds n section tables from a scenery script; n is 1 or 6"],
-    "0x190B":  ["play_script",           "compile a named script and run it"],
-    "0x1AC2":  ["load_scene",            "scene 0..3 -> bal00..bal03 through the pointer table at DS:0x021C"],
-    "0x1D07":  ["pose_handler",          "reached from every arm of the pose switch; calls the input layer"],
-    "0x205E":  ["player_choose_move",    "the human's chooser; [0x156]==0 selects it"],
-    "0x228B":  ["pose_switch",           "sparse (pose, arm) dispatch, seventeen cases, table at 0x2247"],
-    "0x2324":  ["fight_step_player",     "advance or restart the player's move"],
-    "0x246B":  ["fight_step_guard",      "the same for the guard"],
-    "0x2605":  ["guard_choose_move",     "the AI: its pose, the player's pose, the distance"],
-    "0x2A49":  ["demo_choose_move",      "plays the attract sequence; computes a distance a keyboard reader would not want"],
-    "0x3A2D":  ["setup_level",           "sets the walls and the section index"],
-    "0x3A8A":  ["select_section",        "copies section [0xC3A6] out of the three tables"],
-    "0x3B19":  ["spawn_guard",           "pose 31, and random(2)*12 for an aggression of 0, 12 or 24"],
-    "0x3B5C":  ["player_scripted_hit",   "knock back 4 px and take a point; the scripted kind, not the fight kind"],
-    "0x3BAE":  ["play_sound",            "21 call sites"],
-    "0x40D5":  ["rand",                  "the generator random() scales"],
-    "0x4149":  ["read_intent",           "called from inside pose_handler at 0x1D2A and 0x1DAA"],
-    "0x425E":  ["hercules_sync_wait",    "port 0x3BA with a counted loop -- display detection, NOT the joystick"],
-    "0x4273":  ["detect_cga",            "0x55AA written into video memory and read back"],
-    "0x42D1":  ["detect_hercules",       "port 0x3BF, then the sync wait above"],
-    "0x43AA":  ["hit_test",              "attacker's pose, distance, target's stance -> 4 for a miss, 2 or 3 for a hit"],
-    "0x44D3":  ["intent_from_input",     "turns the stick bitmask into an intent, given the player's pose"],
-    "0x470D":  ["read_buttons",          "port 0x201 masked with 0x30"],
-    "0x4756":  ["read_stick",            "buttons plus both axes against the calibration bounds"],
-    "0x4840":  ["fopen",                 "Lattice C: walks FILE slots from 0xE1B0 to 0xE2C8, stride 14"],
-    "0x5741":  ["sscanf",                "the compiler's argument parser"]
+    "0x0002": [
+      "entry",
+      "the MZ entry from CS:IP; sets DS once and never again"
+    ],
+    "0x0629": [
+      "random",
+      "rand() * (n+1), high word taken -- uniform 0..n with no divide"
+    ],
+    "0x083C": [
+      "draw_sprite",
+      "takes an id, sets both stream pointers from two tables"
+    ],
+    "0x0AE7": [
+      "blit_column",
+      "one byte per scanline, add di 0x50"
+    ],
+    "0x0B95": [
+      "next_pixel_byte",
+      "run-length decoder, called once per output byte"
+    ],
+    "0x1277": [
+      "compile_script",
+      "text in, byte code out; called with (name, destination)"
+    ],
+    "0x1364": [
+      "compile_set_tune",
+      "arm 0 of the compiler's jump table at 0x163E"
+    ],
+    "0x157E": [
+      "compile_set_pos",
+      "arm 10; emits opcode 20 and sscanfs \"%d %d\""
+    ],
+    "0x15BE": [
+      "compile_inc_x",
+      "arm 11; emits opcode 22"
+    ],
+    "0x162D": [
+      "compile_end_animation",
+      "arm 13; emits 0xFF, the only opcode that is not 2*index"
+    ],
+    "0x1976": [
+      "index_blocks",
+      "walks a compiled library recording each block's offset; 42 of them, frames 17 bytes"
+    ],
+    "0x19A2": [
+      "index_guard_library",
+      "the same for the library at 0xCE3E"
+    ],
+    "0x19EE": [
+      "index_sections",
+      "builds n section tables from a scenery script; n is 1 or 6"
+    ],
+    "0x190B": [
+      "play_script",
+      "compile a named script and run it"
+    ],
+    "0x1AC2": [
+      "load_scene",
+      "scene 0..3 -> bal00..bal03 through the pointer table at DS:0x021C"
+    ],
+    "0x1D07": [
+      "pose_handler",
+      "reached from every arm of the pose switch; calls the input layer"
+    ],
+    "0x205E": [
+      "player_choose_move",
+      "the human's chooser; [0x156]==0 selects it"
+    ],
+    "0x228B": [
+      "pose_switch",
+      "sparse (pose, arm) dispatch, seventeen cases, table at 0x2247"
+    ],
+    "0x2324": [
+      "fight_step_player",
+      "advance or restart the player's move"
+    ],
+    "0x246B": [
+      "fight_step_guard",
+      "the same for the guard"
+    ],
+    "0x2605": [
+      "guard_choose_move",
+      "the AI: its pose, the player's pose, the distance"
+    ],
+    "0x2A49": [
+      "demo_choose_move",
+      "plays the attract sequence; computes a distance a keyboard reader would not want"
+    ],
+    "0x3A2D": [
+      "setup_level",
+      "sets the walls and the section index"
+    ],
+    "0x3A8A": [
+      "select_section",
+      "copies section [0xC3A6] out of the three tables"
+    ],
+    "0x3B19": [
+      "spawn_guard",
+      "pose 31, and random(2)*12 for an aggression of 0, 12 or 24"
+    ],
+    "0x3B5C": [
+      "player_scripted_hit",
+      "knock back 4 px and take a point; the scripted kind, not the fight kind"
+    ],
+    "0x3BAE": [
+      "play_sound",
+      "21 call sites"
+    ],
+    "0x40D5": [
+      "rand",
+      "the generator random() scales"
+    ],
+    "0x4149": [
+      "read_intent",
+      "called from inside pose_handler at 0x1D2A and 0x1DAA"
+    ],
+    "0x425E": [
+      "hercules_sync_wait",
+      "port 0x3BA with a counted loop -- display detection, NOT the joystick"
+    ],
+    "0x4273": [
+      "detect_cga",
+      "0x55AA written into video memory and read back"
+    ],
+    "0x42D1": [
+      "detect_hercules",
+      "port 0x3BF, then the sync wait above"
+    ],
+    "0x43AA": [
+      "hit_test",
+      "attacker's pose, distance, target's stance -> 4 for a miss, 2 or 3 for a hit"
+    ],
+    "0x44D3": [
+      "intent_from_input",
+      "turns the stick bitmask into an intent, given the player's pose"
+    ],
+    "0x470D": [
+      "read_buttons",
+      "port 0x201 masked with 0x30"
+    ],
+    "0x4756": [
+      "read_stick",
+      "buttons plus both axes against the calibration bounds"
+    ],
+    "0x4840": [
+      "fopen",
+      "Lattice C: walks FILE slots from 0xE1B0 to 0xE2C8, stride 14"
+    ],
+    "0x5741": [
+      "sscanf",
+      "the compiler's argument parser"
+    ],
+    "0x0255": [
+      "startup",
+      "detects the display, loads the libraries, then calls main"
+    ],
+    "0x03C7": [
+      "main",
+      "loads allgal and fuji.bcg, then the title and the scene chain"
+    ],
+    "0x0569": [
+      "check_level_exit",
+      "player down, pose 67, or x reached the right wall"
+    ],
+    "0x0640": [
+      "draw_sprite_shifted",
+      "the dispatcher's sibling; sets the same stream globals plus the shift"
+    ],
+    "0x0F52": [
+      "load_backdrop",
+      "called with (\"fuji.bcg\", 1500) and (\"title.bcg\", 0)"
+    ],
+    "0x0FBB": [
+      "show_castle",
+      "loads castle.bcg and runs it through the script player"
+    ],
+    "0x1027": [
+      "load_sprite_set",
+      "indexes the ks*/km* name table at DS:0x0264"
+    ],
+    "0x12EB": [
+      "compile_line",
+      "the compiler's dispatch loop; the fourteen arms are inside it"
+    ],
+    "0x166D": [
+      "run_script",
+      "walks compiled byte code; polls for a key with AH=06"
+    ],
+    "0x19AE": [
+      "load_player_library",
+      "allpal into 0xC428, then index_blocks"
+    ],
+    "0x1B27": [
+      "init_fight",
+      "sets the walls, the health and the starting pose"
+    ],
+    "0x1C58": [
+      "reset_guard",
+      "guard x, pose, cursor and health together"
+    ],
+    "0x1D8A": [
+      "poll_intent",
+      "calls read_intent(0) once and reports whether anything was pressed"
+    ],
+    "0x1DD5": [
+      "handle_key",
+      "folds A-Z to lower case and compares -- the letter commands"
+    ],
+    "0x1F4E": [
+      "pose_action",
+      "switches on player_pose through the table at 0x200A"
+    ],
+    "0x22BC": [
+      "fight_frame",
+      "one frame for both fighters: advance, or choose and start a move"
+    ],
+    "0x29E9": [
+      "random_move_2_4",
+      "random(2) + 2 -- one of three strikes"
+    ],
+    "0x2941": [
+      "place_guard",
+      "random placement between the walls"
+    ],
+    "0x2A0F": [
+      "random_move_4_5",
+      "random(1) + 4 -- one of two strikes"
+    ],
+    "0x2B94": [
+      "should_attack",
+      "random(255) under 0x32, and only inside 0x4B -- a one-in-five roll"
+    ],
+    "0x2BDD": [
+      "resolve_strikes",
+      "calls hit_test for each fighter and applies the damage"
+    ],
+    "0x2F2D": [
+      "next_section",
+      "advances section_index and the right wall"
+    ],
+    "0x2F98": [
+      "scripted_defeat",
+      "drops guard_health on a scripted beat rather than a hit"
+    ],
+    "0x31AA": [
+      "story_step",
+      "switches on the pending story event [0xD672]; loads scenes and advances the level"
+    ],
+    "0x3AD0": [
+      "reselect_section",
+      "re-reads section_index into the three live pointers"
+    ],
+    "0x4441": [
+      "input_layer",
+      "installs a vector, reads stick and keyboard, keeps input_mask"
+    ],
+    "0x5C12": [
+      "dos_setblock",
+      "AH=0x4A"
+    ],
+    "0x5C57": [
+      "dos_setblock_2",
+      "AH=0x4A"
+    ],
+    "0x5C9B": [
+      "dos_creat",
+      "AH=0x3C"
+    ],
+    "0x5CB5": [
+      "dos_open",
+      "AH=0x3D"
+    ],
+    "0x5CCF": [
+      "dos_close",
+      "AH=0x3E"
+    ],
+    "0x5CE6": [
+      "dos_read",
+      "AH=0x3F"
+    ],
+    "0x5D05": [
+      "dos_write",
+      "AH=0x40"
+    ],
+    "0x5D24": [
+      "dos_lseek",
+      "AH=0x42"
+    ],
+    "0x5D48": [
+      "dos_unlink",
+      "AH=0x41"
+    ],
+    "0x5D5F": [
+      "dos_chmod",
+      "AH=0x43"
+    ],
+    "0x5D7E": [
+      "dos_ioctl",
+      "AH=0x44"
+    ],
+    "0x5D8D": [
+      "dos_rename",
+      "AH=0x56"
+    ],
+    "0x5953": [
+      "crt0_main",
+      "the runtime's entry wrapper; called from the entry stub at 0x1F5"
+    ],
+    "0x6725": [
+      "dos_readline",
+      "AH=0x0A, buffered console input"
+    ],
+    "0x05AD": [
+      "play_attract",
+      "castle.bcg, then fuji.bcg, scene 0 and cal01 -- the sequence that runs when nobody presses a key"
+    ],
+    "0x4A91": [
+      "stdio_flush",
+      "the only unnamed routine that touches the FILE table fopen walks"
+    ]
   },
-
   "globals": {
-    "0x0102": ["level_left",        "the current level's left wall"],
-    "0x0104": ["level_right",       "and its right"],
-    "0x010C": ["player_pose",       "written from each frame's first set_pos byte; read by the guard's AI"],
-    "0x010E": ["guard_x",           "distance is guard_x - player_x"],
-    "0x0110": ["guard_pose",        "the same, for the guard"],
-    "0x0114": ["guard_health",      "13 at the start of a fight"],
-    "0x0116": ["player_health",     "13, or 12 or 10 against tougher opponents"],
-    "0x0118": ["patience_a",        "NOT health: counts down while the player stays beyond 330 px"],
-    "0x011A": ["patience_b",        "the second stage of the same timer"],
-    "0x011E": ["guard_hits_taken",  ""],
-    "0x0124": ["player_hits_taken", ""],
-    "0x0126": ["player_regen",      "+3 per hit; runs down and gives a point back"],
-    "0x0128": ["guard_regen",       ""],
-    "0x0130": ["level",             "1 to 7, advanced by a plain inc"],
-    "0x0142": ["level_flag",        "per level; adds one to the section index"],
-    "0x0156": ["demo_mode",         "0 the human plays, 1 the demo does"],
-    "0x00EC": ["player_striking",   "bit 0 of the frame's second set_pos byte"],
-    "0x0112": ["guard_striking",    ""],
-    "0x00F8": ["player_down",       ""],
-    "0x00FA": ["fight_phase",       "2 means the opponent is leaving"],
-    "0x00FC": ["player_just_hit",   "read by the chooser on the next frame"],
-    "0x00FE": ["guard_just_hit",    ""],
-    "0xBCD5": ["player_x",          "inc_x is added here, then clamped to the walls"],
-    "0xC102": ["scenery_bytecode",  "where a compiled BAL lands"],
-    "0xC3A6": ["section_index",     "3, 4 or 5 -- which stretch of wall, and so how many opponents"],
-    "0xC3A8": ["section_table_a",   "seven slots, filled by index_sections"],
-    "0xC3D2": ["player_cursor",     "the current frame; 0xFF at it ends the move"],
-    "0xC3D4": ["player_move_index", "42 entries"],
-    "0xC428": ["player_bytecode",   "the compiled ALLPAL"],
-    "0xCDE8": ["guard_cursor",      ""],
-    "0xCDEA": ["guard_move_index",  ""],
-    "0xCE3E": ["guard_bytecode",    "the compiled ALLGAL"],
-    "0xD5AA": ["guard_present",     ""],
-    "0xD5AC": ["guard_aggression",  "0, 12 or 24, dealt on arrival"],
-    "0xD5AE": ["player_stance",     "the frame's second byte >> 1; the hit test's third argument"],
-    "0xD5B0": ["guard_stance",      ""],
-    "0xE0F8": ["strike_reach",      "16 standing, 12 crouched"],
-    "0xE112": ["strike_class",      "stance -> class 0..9; classes 3 and 4 can never be hit"],
-    "0xE196": ["stick_present",     ""],
-    "0xE197": ["stick_left_bound",  "calibration"],
-    "0xE199": ["stick_right_bound", ""],
-    "0xE19B": ["stick_up_bound",    ""],
-    "0xE19F": ["input_mask",        "direction bits and the two buttons"],
-    "0x0017": ["stack_limit",       "Lattice C's; every prologue compares sp against it"]
-  }
+    "0x0102": [
+      "level_left",
+      "the current level's left wall"
+    ],
+    "0x0104": [
+      "level_right",
+      "and its right"
+    ],
+    "0x010C": [
+      "player_pose",
+      "written from each frame's first set_pos byte; read by the guard's AI"
+    ],
+    "0x010E": [
+      "guard_x",
+      "distance is guard_x - player_x"
+    ],
+    "0x0110": [
+      "guard_pose",
+      "the same, for the guard"
+    ],
+    "0x0114": [
+      "guard_health",
+      "13 at the start of a fight"
+    ],
+    "0x0116": [
+      "player_health",
+      "13, or 12 or 10 against tougher opponents"
+    ],
+    "0x0118": [
+      "patience_a",
+      "NOT health: counts down while the player stays beyond 330 px"
+    ],
+    "0x011A": [
+      "patience_b",
+      "the second stage of the same timer"
+    ],
+    "0x011E": [
+      "guard_hits_taken",
+      ""
+    ],
+    "0x0124": [
+      "player_hits_taken",
+      ""
+    ],
+    "0x0126": [
+      "player_regen",
+      "+3 per hit; runs down and gives a point back"
+    ],
+    "0x0128": [
+      "guard_regen",
+      ""
+    ],
+    "0x0130": [
+      "level",
+      "1 to 7, advanced by a plain inc"
+    ],
+    "0x0142": [
+      "level_flag",
+      "per level; adds one to the section index"
+    ],
+    "0x0156": [
+      "demo_mode",
+      "0 the human plays, 1 the demo does"
+    ],
+    "0x00EC": [
+      "player_striking",
+      "bit 0 of the frame's second set_pos byte"
+    ],
+    "0x0112": [
+      "guard_striking",
+      ""
+    ],
+    "0x00F8": [
+      "player_down",
+      ""
+    ],
+    "0x00FA": [
+      "fight_phase",
+      "2 means the opponent is leaving"
+    ],
+    "0x00FC": [
+      "player_just_hit",
+      "read by the chooser on the next frame"
+    ],
+    "0x00FE": [
+      "guard_just_hit",
+      ""
+    ],
+    "0xBCD5": [
+      "player_x",
+      "inc_x is added here, then clamped to the walls"
+    ],
+    "0xC102": [
+      "scenery_bytecode",
+      "where a compiled BAL lands"
+    ],
+    "0xC3A6": [
+      "section_index",
+      "3, 4 or 5 -- which stretch of wall, and so how many opponents"
+    ],
+    "0xC3A8": [
+      "section_table_a",
+      "seven slots, filled by index_sections"
+    ],
+    "0xC3D2": [
+      "player_cursor",
+      "the current frame; 0xFF at it ends the move"
+    ],
+    "0xC3D4": [
+      "player_move_index",
+      "42 entries"
+    ],
+    "0xC428": [
+      "player_bytecode",
+      "the compiled ALLPAL"
+    ],
+    "0xCDE8": [
+      "guard_cursor",
+      ""
+    ],
+    "0xCDEA": [
+      "guard_move_index",
+      ""
+    ],
+    "0xCE3E": [
+      "guard_bytecode",
+      "the compiled ALLGAL"
+    ],
+    "0xD5AA": [
+      "guard_present",
+      ""
+    ],
+    "0xD5AC": [
+      "guard_aggression",
+      "0, 12 or 24, dealt on arrival"
+    ],
+    "0xD5AE": [
+      "player_stance",
+      "the frame's second byte >> 1; the hit test's third argument"
+    ],
+    "0xD5B0": [
+      "guard_stance",
+      ""
+    ],
+    "0xE0F8": [
+      "strike_reach",
+      "16 standing, 12 crouched"
+    ],
+    "0xE112": [
+      "strike_class",
+      "stance -> class 0..9; classes 3 and 4 can never be hit"
+    ],
+    "0xE196": [
+      "stick_present",
+      ""
+    ],
+    "0xE197": [
+      "stick_left_bound",
+      "calibration"
+    ],
+    "0xE199": [
+      "stick_right_bound",
+      ""
+    ],
+    "0xE19B": [
+      "stick_up_bound",
+      ""
+    ],
+    "0xE19F": [
+      "input_mask",
+      "direction bits and the two buttons"
+    ],
+    "0x0017": [
+      "stack_limit",
+      "Lattice C's; every prologue compares sp against it"
+    ],
+    "0x00EA": [
+      "scene",
+      "0..4; load_scene turns 0..3 into bal00..bal03"
+    ],
+    "0x0154": [
+      "fight_state",
+      "0 not engaged, 1 fighting, 2 opponent beaten"
+    ],
+    "0x012E": [
+      "section_flag",
+      "0 or 1; added to section_index"
+    ],
+    "0xD672": [
+      "story_event",
+      "what story_step switches on"
+    ],
+    "0x00F2": [
+      "hard_mode",
+      "gates the more aggressive random move choices"
+    ],
+    "0xE1A1": [
+      "input_left",
+      ""
+    ],
+    "0xE1A2": [
+      "input_right",
+      ""
+    ],
+    "0xE1A5": [
+      "input_button_a",
+      ""
+    ],
+    "0xE1A6": [
+      "input_button_b",
+      ""
+    ]
+  },
+  "_unnamed": [
+    "80 of Karateka's 120 routines are named above. Every routine that touches a",
+    "game global is one of them; the game side is finished.",
+    "",
+    "The remaining 40 are Lattice C's library -- formatted output, memory, maths.",
+    "They were separated from game code mechanically, not by address range: a",
+    "routine is library here if it touches no global this project named from the",
+    "fight, the drawing or the scripts, and reaches DOS only through the twelve",
+    "primitives above or through other routines that do.",
+    "",
+    "They are deliberately not named. Their shapes do not discriminate -- no FILE",
+    "pointers, no format-string walks, no divides -- so any name would be a guess,",
+    "and a guess with no evidence beside it is exactly what this project has had",
+    "to withdraw three times. libscan.py would name them in minutes given a copy",
+    "of Lattice C 2.1, and there is none on this machine.",
+    "",
+    "That is the honest end of the reading: the game is read, the library is",
+    "identified as library, and the boundary between them was drawn by evidence."
+  ]
 }
