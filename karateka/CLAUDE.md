@@ -13,10 +13,26 @@ program is shaped, and everything else hangs off it. The other four are
 
 ## State of the work
 
-**Nothing is unnamed.** 120 of 120 routines, 312 of 312 data-segment addresses,
-all 1,642 references. The reconstruction is byte-identical and the reading is
-complete — with the caveat that the names are not equally strong, and each
-`why` in `symbols.json` says which kind of evidence it rests on.
+**Read in full, with the denominators stated.** The reconstruction is
+byte-identical; the code region is entirely read; the data segment is 98.7%
+accounted for *by byte*.
+
+| | |
+|---|---|
+| routines | 120 of 120 |
+| data-segment addresses the code names | 312 of 312, all 1,642 references |
+| the data segment **by byte** | 58,917 of 59,670 — **98.7%** |
+
+**Quote the third row whenever you quote the second.** "312 of 312 addresses"
+was true and read as completeness for a while, and it is a fact about
+*references* — it says nothing about the 59,670 bytes between them, which were
+40% accounted for at the time. Half the data segment is a 24,260-byte arena of
+zeroes that files are read into; empty is finished, unread is work, and only
+counting bytes tells them apart.
+
+The names are also not equally strong. Each `why` in `symbols.json` says which
+kind of evidence it rests on, and seven of them were checked against Lattice C's
+own library and came back right.
 
 | | |
 |---|---|
@@ -27,7 +43,7 @@ complete — with the caveat that the names are not equally strong, and each
 | the animation system | a 14-command **compiler**, opcode = 2 × command index |
 | the fighting | choreography read — 150 moves in three plain-text libraries |
 | the fight AI | **found and read** — `0x2605`, a tree over pose, pose and distance |
-| the reading | **120 of 120 routines, 312 of 312 globals, 100% of references** |
+| the reading | 120/120 routines, 312/312 named addresses, **98.7% of the data segment by byte** |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |

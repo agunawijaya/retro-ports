@@ -1957,5 +1957,111 @@
     "Karateka; producing one that compiles to identical bytes is the extended-",
     "reconstruction workflow, measured in weeks. What the library gives is",
     "**verification**, and the verification passed."
-  ]
+  ],
+  "_data_spans": {
+    "_note": [
+      "Named spans, as distinct from the named addresses in `globals`. A",
+      "reference count of 100% says nothing about the bytes between the",
+      "references, and by byte the data segment was 40% accounted for until",
+      "these were recorded.",
+      "",
+      "Zero-filled entries are buffers: empty in the file because nothing is",
+      "stored there, filled at run time. Empty is finished; unread is work."
+    ],
+    "0x0337": [
+      "screen_buffer",
+      16000,
+      "the off-screen CGA frame, 200 rows of 80, ending exactly where the blitter's globals begin"
+    ],
+    "0x423E": [
+      "blit_scratch",
+      510,
+      "zero in the file; the blitter's workspace"
+    ],
+    "0x443E": [
+      "sprite_buffer",
+      978,
+      "zero in the file; where a .DAT record lands"
+    ],
+    "0x4812": [
+      "asset_arena",
+      24260,
+      "24,260 bytes of zero -- the arena the sprite files are read into, and the single largest thing in the program"
+    ],
+    "0xA6D8": [
+      "asset_arena_2",
+      1498,
+      "zero in the file; a second buffer"
+    ],
+    "0xACB4": [
+      "asset_arena_3",
+      2998,
+      "zero in the file; a third"
+    ],
+    "0xB8A8": [
+      "note_periods",
+      389,
+      "words repeating 0x0292 then varying; the tune globals sit just below it"
+    ],
+    "0xBB35": [
+      "draw_pairs",
+      323,
+      "(value, value+1) pairs -- 0x2800/0x2801, 0x3C00/0x3C01, 0x5000/0x5002"
+    ],
+    "0xBD06": [
+      "script_arena",
+      1020,
+      "98% zero with a short header; the buffer compile_script writes into"
+    ],
+    "0xD718": [
+      "message_table",
+      1177,
+      "ascending pointers 0xD736, 0xD77E, 0xD7B2 ... landing just past the table, followed by what they point at. These are the values the stub table at image 0x3C97 loads into BX"
+    ],
+    "0xDF5B": [
+      "input_scratch",
+      396,
+      "zero in the file"
+    ],
+    "0xE4C4": [
+      "ctype_table",
+      258,
+      "0x20 for space, 0x28 for digit, 256 entries -- Lattice C's ctype[]"
+    ],
+    "0xE626": [
+      "stdio_buffers",
+      752,
+      "zero in the file; the FILE buffers"
+    ],
+    "0x0082": [
+      "runtime_messages",
+      94,
+      "Invalid stack size, Invalid I/O redirection, Insufficient memory, *** STACK OVERFLOW ***"
+    ],
+    "0x02C0": [
+      "km_name_pointers",
+      98,
+      "0x0280, 0x0284, 0x0288 ... the mask filename table, the twin of the ks one at 0x0264"
+    ],
+    "0xBAAC": [
+      "draw_params",
+      126,
+      "small constants read by the drawing path"
+    ],
+    "0xD5B4": [
+      "sprite_widths",
+      152,
+      "words of 0xFF, 0xC0, 0xB0, 0x90 -- edge masks by pixel offset"
+    ],
+    "0xE12C": [
+      "strike_class_ext",
+      106,
+      "the stance-class table continues past the 26 stances the hit test indexes"
+    ],
+    "0xE440": [
+      "stdio_scratch",
+      118,
+      "zero in the file"
+    ]
+  }
 }
