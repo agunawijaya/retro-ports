@@ -944,10 +944,69 @@ dispatch in Hard Hat Mack, and it is the single most reliable thing to look for
 in a game of this era: **the place where many different situations become one
 number.** Find that and you have found the design.
 
-**What is still open.** The store's prices, the illness model's inputs, and how
-pace combines with rations. The route in is the one used above — find the
-strings a subsystem prints, read the code before them, decode the `Real`
-constants, and check which of the seven arithmetic helpers consumes each one.
+### When reading fails, play it
+
+The store resisted all of that, and the way it resisted is informative. Only one
+price is a literal anywhere in the program:
+
+```nasm
+00E1FD  cmp word [bp-2], 0x07D0       ; 2,000
+00E202  jle 00E207                    ;   more than that is refused
+00E207  mov ax, [bp-2]                ; the quantity typed
+00E20A  cdq
+00E20B  lcall System+0x0C6E           ; LongInt -> Real
+00E210  mov cx, 0xCD7E / mov si, 0xCCCC / mov di, 0x4CCC     ; 0.2
+00E219  lcall System+0x0C5A           ; multiply
+```
+
+**Food is $0.20 a pound, and you may not buy more than 2,000 pounds.** The other
+four departments have no such constant, and the obvious next guess — a table of
+`Real` prices — is wrong too: the `×6` indexing that looks like one addresses
+`[bp+di-0x2A]`, a *local* array on the stack, which is a running total per
+department rather than a price list.
+
+So the prices are neither literals nor a static table, and static reading had
+run out. But the emulator now runs the game, so the game can simply be asked.
+Driving it with forty-two keystrokes — past the title, declining a saved game,
+choosing to be a banker, typing five names, accepting them, leaving in March —
+lands on this:
+
+```
+              Matt's General Store
+             Independence, Missouri
+
+                  March 1, 1848
+
+     1. Oxen                    $0.00
+     2. Food                    $0.00
+     3. Clothing                $0.00
+     4. Ammunition              $0.00
+     5. Spare parts             $0.00
+
+              Total bill:       $0.00
+
+     Amount you have:        $1600.00
+```
+
+Two numbers there were never found by reading: the journey begins **1 March
+1848**, and a banker starts with **$1,600**. And the banner at the top is the
+same string at `0x0E79F` that
+[nothing appears to reference](#the-first-numbers-out-of-the-simulation) — so the
+negative result was about *how* it is reached, not whether, and the indirection
+is still unidentified.
+
+**What transfers.** Static reading and execution answer different questions, and
+knowing which one you are stuck on saves a great deal of time. Reading tells you
+*what the program can do* — every path, including the ones no player ever
+reaches. Running tells you *what it does do*, but only along the path you drove
+it down. The prices are a value the program computes at run time from a state
+that reading alone cannot conjure; three keystrokes of a fourth department would
+print them.
+
+**What is still open.** The four remaining store prices, the illness model's
+inputs, and how pace combines with rations. Both routes are now open, and the
+cheap one is the emulator: extend the key sequence in
+[the game's CLAUDE.md](../CLAUDE.md) by three and photograph the answer.
 
 ## Where the artwork is loaded from
 

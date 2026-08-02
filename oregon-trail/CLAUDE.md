@@ -94,6 +94,27 @@ format is identical across 4.0 to 6.0; the *code* is what separates them.
 libraries are on the Internet Archive and `fatextract.py` opens the floppy
 images; put them wherever you like and pass the paths.
 
+## Driving the game under emulation
+
+`comrun.py` now runs this program properly, and that is the cheapest way to get
+a number the code will not give up. This sequence reaches **Matt's General
+Store** — past the title, no saved game, banker, five names, accept, leave in
+March:
+
+```powershell
+python <toolkit>	ools\comrun.py original\OREGON.EXE --files original `
+  --budget 90000000 --png store.png `
+  --keys 0x1C0D,1,0x1C0D,N,0x1C0D,1,0x1C0D,1,0x1C0D,0x1C0D,A,B,C,0x1C0D,`
+D,E,F,0x1C0D,G,H,I,0x1C0D,J,K,L,0x1C0D,M,N,O,0x1C0D,0x1C0D,1,0x1C0D,`
+0x1C0D,Y,0x1C0D,1,0x1C0D,0x1C0D,0x1C0D,0x1C0D,0x1C0D
+```
+
+`0x1C0D` is Enter as scancode:ASCII; bare letters are characters. Add three more
+keys to enter a department and the prices appear. It takes a few minutes.
+
+Confirmed this way and not by reading: the journey starts **1 March 1848**, a
+banker begins with **$1,600**, and the party is **five** people.
+
 ## Where things are
 
 Image offsets.
