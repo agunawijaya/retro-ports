@@ -1598,6 +1598,53 @@ all recorded rather than replaced with a drawing:
 - Driving the game to the hunting screen by injected keystrokes did not
   converge in four runs; it gets as far as buying oxen and stops at the store.
 
+### The store's input protocol, and eight failed attempts
+
+Driving the game to hunting means getting out of Matt's store, and that turned
+into its own small piece of decompilation. The prompt is not a `ReadKey` loop:
+
+```nasm
+00EB48  mov byte [0x1A0A], 0x20   ; the terminator character -- space
+00EB4D  push 1 / push 1           ; minimum and maximum length, both one
+00EB53  mov di, ... '1-5'         ; the accepted character set
+00EB5D  lcall ui:0x0D24           ; the input routine, image 0x11144
+00EB62  mov byte [0x1A0A], 0x13   ; and put the terminator back
+```
+
+`DS:0x1A0A` is a **global terminator character**, set per prompt and restored
+after. The store accepts `1`–`5` and terminates on a space, which is what
+*"Press SPACE BAR to leave store"* means mechanically. The leave-check itself is
+at `0x0EBA2`: a `Real` compared against zero, and if it *is* zero you get
+*"Don't forget, you'll need oxen to pull your wagon."*
+
+That is the protocol, read from the code. It still did not produce the
+screenshot. Eight attempts, each a reasonable hypothesis, each recorded:
+
+| | |
+|---|---|
+| `--call` at a flat offset | wrong `CS`; fixed by teaching it `SEG:OFF` |
+| `--call 15ED:1928` | returned in four instructions — no bullets; fixed by `--poke` |
+| with bullets poked | reaches the instructions screen, then the Genus container lookup fails |
+| blind key sequences ×4 | never left the store; 81,665 keyboard reads eat 73 queued keys |
+| `--at` on the `1-5` validator | key delivered, `0x0EBA2` never reached |
+| `--at` on the input routine | key delivered, `0x0EBA2` never reached |
+
+The Genus failure is the more interesting half. Its library runs 2,043
+instructions during start-up, loading the logo without trouble, and **six** in
+the hunting call before `genuspcx:0x1A20` — the routine that uppercases a name
+and parses it into 8.3 form, so the container's member lookup — returns an error
+code. The caller takes its error branch at `0x1CF31` and the game then continues
+with a buffer nothing filled, which is what runs away into the heap. So the
+library's state at the main menu is not the state the hunting path assumes, and
+what that state is has not been established.
+
+**This is a negative result, not a pause.** Eight hypotheses, all reasonable,
+none correct, and the method — probing a program's input protocol by feeding it
+keys — has been shown not to converge here. Two things would settle it, and both
+are larger pieces of work than another guess: reverse-engineering the Genus
+library's initialisation, or tracing `ui:0x0D24` well enough to know exactly
+what it does with a key.
+
 So the hunting screen is described here from its code and not shown. That is a
 worse outcome than a picture and a better one than a picture that was invented,
 which is what this folder had before.
