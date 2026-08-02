@@ -1,8 +1,9 @@
 # Karateka — the code
 
-*Document three of four. [01-the-game.md](01-the-game.md) is what the game is;
+*Document three of five. [01-the-game.md](01-the-game.md) is what the game is;
 [02-architecture.md](02-architecture.md) is how the program is shaped;
-[04-porting.md](04-porting.md) is what rebuilding it would take.*
+[04-porting.md](04-porting.md) is what rebuilding it would take;
+[05-the-fighting.md](05-the-fighting.md) reads the fighting.*
 
 Five things, in the order they were found rather than the order they run. Every
 listing is copied from `recovered/karateka.asm` — the file that reassembles to
@@ -73,6 +74,13 @@ command table sits at `DS:0x01E8` with the names beside it:
 
 Fourteen verbs. A director's vocabulary: place a figure, change its pose, move
 it, hold, repeat, cut.
+
+**Two things said here were wrong, and [05-the-fighting.md](05-the-fighting.md)
+corrects them.** The scripts are not only the cutscenes — the *fighting* is
+written in the same language, three libraries of it, and they ship as readable
+text beside the executable. And the routine at `0x1364..0x1660` is not an
+interpreter but a **compiler**: each of its fourteen arms emits an opcode and
+parses its arguments with `sscanf`. The opcode is twice the command index.
 
 **Why this is the interesting part of the program.** A 1984 game that wanted a
 cutscene normally hard-coded it. Karateka built a small language, which is why
@@ -206,7 +214,7 @@ is a C compiler's calling convention, and it is the thread that leads to
 
 ## How each of these was found
 
-None of it by reading from the top. 9,740 instructions is too many to read and
+None of it by reading from the top. 10,589 instructions is too many to read and
 too few to search blindly.
 
 ```mermaid

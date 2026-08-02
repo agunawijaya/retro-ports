@@ -1,8 +1,9 @@
 # Karateka — the game
 
-*Document one of four. [02-architecture.md](02-architecture.md) is how the
+*Document one of five. [02-architecture.md](02-architecture.md) is how the
 program is built; [03-the-code.md](03-the-code.md) walks its routines;
-[04-porting.md](04-porting.md) is what rebuilding it would take.*
+[04-porting.md](04-porting.md) is what rebuilding it would take;
+[05-the-fighting.md](05-the-fighting.md) reads the fighting.*
 
 Two kinds of fact are kept apart here on purpose:
 
@@ -65,6 +66,97 @@ That is a cutscene system, written as a script engine, in 1984. It is traced in
 and it works; the guards vary in how quickly they close and how far they back
 off, not in what beats them.
 
+## The map, from the beach to the princess
+
+Four scenery scripts hold the whole game, and their own coordinates give the
+size of each place. Everything below was measured out of `BAL00`–`BAL03` and the
+routines that sequence them — see
+[05-the-fighting.md](05-the-fighting.md) — rather than from playing.
+
+```mermaid
+flowchart TD
+    C0["<b>CAL00</b> — the opening<br/><i>259 lines, the longest scene</i>"]
+    B0["<b>BAL00</b> · the shore<br/>689 px, about 2 screens<br/>8 pieces of scenery, 1 actor"]
+    C1["<b>CAL01 / CAL02</b><br/>the hero and the fortress"]
+    B1["<b>BAL01</b> · the cliff path<br/><b>2,152 px, about 7 screens</b><br/>27 posts, 2 actors"]
+    C3["<b>CAL03</b> — reaching the gate"]
+    B2["<b>BAL02</b> · the fortress wall<br/>6 sections, the last five<br/>all the same stretch<br/>x 1520…1902"]
+    C45["<b>CAL04 / CAL05</b><br/>inside"]
+    B3["<b>BAL03</b> · the interior<br/>6 rooms, 246–617 px each<br/>0–2 actors apiece"]
+    C6["<b>CAL06</b> — the last door"]
+    C7["<b>CAL07 / CAL07A</b><br/>Mariko — two endings"]
+    C0 --> B0 --> C1 --> B1 --> C3 --> B2 --> C45 --> B3 --> C6 --> C7
+    style B0 fill:#d4edda,stroke:#155724
+    style B1 fill:#d4edda,stroke:#155724
+    style B2 fill:#fff3cd,stroke:#856404
+    style B3 fill:#fff3cd,stroke:#856404
+    style C7 fill:#f8d7da,stroke:#721c24
+```
+
+`CAL07` and `CAL07A` are the same length, 71 lines, and differ in content:
+**the two endings**. Approach Mariko in a fighting stance and she kicks you in
+the head; drop out of it and you do not get that one.
+
+### How many rooms you fight through
+
+This is the part worth being precise about, because it is easy to assume it is
+random and the code says otherwise.
+
+`BAL02` and `BAL03` are each **six sections**, and the loader is told so
+outright — `0x19EE` is called with a literal **6**, and walks the compiled
+script counting `init_sal` markers to index them. Within `BAL02` the last five
+sections are the same piece of wall with different numbers of opponents standing
+on it:
+
+| section | scenery | opponents |
+|---|---|---|
+| 0 | 40 pieces, x −24…1902 | 1 |
+| 1 | 14 | 1 |
+| 2 | 11 | 5 |
+| 3 | 11 | **6** |
+| 4 | 11 | **7** |
+| 5 | 11 | **9** |
+
+Which one you get is **not random**. The section index is a two-line
+calculation:
+
+```nasm
+    mov  word [0xc3a6], 3       ; three, normally
+    cmp  word [bp+6], 7
+    jne  .normal
+    mov  word [0xc3a6], 5       ; five, on the last level
+.normal:
+    mov  ax, [0x12e]
+    add  word [0xc3a6], ax      ; plus a per-level flag, 0 or 1
+```
+
+So the courtyard holds **6 opponents, or 7 once the per-level flag is set, or 9
+on level 7** — three fixed outcomes, chosen by where you are in the game.
+
+### What *is* random
+
+`random(n)` sits at image `0x629` — `rand()`, multiplied by `n + 1`, high word
+taken, giving a uniform integer in `0…n` without a division. It is called from
+**eleven places**, and never for the room count:
+
+| | |
+|---|---|
+| `random(1)` | which of two variants of a move to play — `pal17` or `pal18` |
+| `random(2)` | on spawning a guard, `× 12` → an aggression of **0, 12 or 24** |
+| `random(255)` | probability rolls inside the guard's decision tree |
+
+So two guards on the same piece of wall are not identical: each is dealt one of
+three temperaments when it appears. That, and not the layout, is where the game's
+variety comes from.
+
+### The levels themselves
+
+`[0x130]` counts the level and runs **1 to 7**, advancing by a plain `inc`.
+Level 2 starts the player at x = 32 rather than 4 and shifts the level bounds
+one screen left; levels 6 and 7 are special-cased in several places; the
+`[0x102]` and `[0x104]` globals hold the current left and right walls, and the
+player's x is clamped between them every frame.
+
 ### The ending everyone gets wrong the first time
 
 When you reach Mariko, **drop out of your fighting stance before you approach
@@ -111,7 +203,7 @@ PC in the same period, turned out to be a **mechanical translation** of its 6502
 original: 391 `cmc` instructions that exist only to reconcile two processors
 that disagree about the carry flag.
 
-Karateka has **zero**, in 9,740 instructions, against 914 compares. Brøderbund's
+Karateka has **zero**, in 10,589 instructions, against 913 compares. Brøderbund's
 conversion was a rewrite in C where Electronic Arts' was a translation — and the
 difference is measurable rather than a matter of opinion.
 

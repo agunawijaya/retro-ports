@@ -45,8 +45,8 @@ prediction before any work was done, because it was falsifiable: if this is a
 provenance  : mechanically translated from 6502
 ```
 
-**It did not, and the prediction was wrong.** Zero `cmc` instructions in 9,740,
-against 914 compares. Hard Hat Mack has 391, 99% of them straight after a
+**It did not, and the prediction was wrong.** Zero `cmc` instructions in 10,589,
+against 913 compares. Hard Hat Mack has 391, 99% of them straight after a
 compare. There is no carry-flag adapter in Karateka because nothing needed
 adapting: Broderbund's DOS conversion was a rewrite where Electronic Arts' was
 a translation. Written up in
@@ -72,15 +72,26 @@ Karateka is not:
 ## What has been done
 
 `KARATEKA.EXE` **rebuilds byte for byte** — 87,990 bytes, SHA-256 checked
-outside the tool that produced it. 9,740 instructions, **85.0% of the code
-region** recovered as real instructions.
+outside the tool that produced it. 10,589 instructions, **91.9% of the code
+region** recovered as real instructions, and 99.1% of it carrying a decoded
+instruction once the ones pinned to fixed bytes are counted.
 
-That took a change to the toolkit rather than to the game. An MZ with four
-relocations and an entry stub that sets `DS` once is a `.COM` wearing a header,
-and the `.COM` route — which reaches a byte-identical rebuild — applies to it.
-`comrec.py` now strips the header itself and writes it back out beside the
-source. See
+That took two changes to the toolkit rather than to the game.
+
+An MZ with four relocations and an entry stub that sets `DS` once is a `.COM`
+wearing a header, and the `.COM` route — which reaches a byte-identical rebuild
+— applies to it. `comrec.py` now strips the header itself and writes it back out
+beside the source. See
 [docs/02-architecture.md](docs/02-architecture.md#it-is-an-mz-but-it-is-really-a-com).
+
+The second change was worth more. The reconstruction sat at 85.0% and the
+missing 15% looked like a property of the binary; it was a property of the
+*reader*. Karateka's `switch` tables sit directly behind the functions that
+switch, so the table and the arms it names are unreachable together and neither
+can be used to find the other. Recognising such a table by its contents took
+Karateka from 85.0% to 91.9% and cost the other four games here nothing. The
+whole account is in
+[dos-decompiler/knowledge/11](../../dos-decompiler/knowledge/11-unreached-code.md).
 
 **The ninety data files are decoded, all 666 records.** `(id, offset)` pairs
 terminated by `0xFFFF`; records are run-length encoded with `0x7B` as the

@@ -1,6 +1,6 @@
 # Karateka — porting it
 
-*Document four of four. [01-the-game.md](01-the-game.md) is what the game is;
+*Document four of five. [01-the-game.md](01-the-game.md) is what the game is;
 [02-architecture.md](02-architecture.md) is how the program is shaped;
 [03-the-code.md](03-the-code.md) walks its routines.*
 
@@ -36,10 +36,14 @@ rotoscoping**, which is a different problem and mostly not a programming one.
 |---|---|
 | the sprite format | **done** — [02-architecture.md](02-architecture.md#the-stream-is-run-length-encoded-and-0x7b-is-the-escape-after-all) |
 | the shape/mask pairing | **done** — `KS` is the figure, `KM` the silhouette |
-| the fighting | **not read at all** |
+| the fighting | **read** — see [05-the-fighting.md](05-the-fighting.md); the hit test is the one gap left |
 
-That third row is the honest state of this port's readiness. You can draw
-Karateka today. You cannot yet say what makes a guard step forward.
+That third row used to read *not read at all*, and it was the reason a port
+could not start. It can now. A guard steps forward because its decision routine
+at image `0x2605` compared the distance between the fighters against a constant
+and returned a move number; the move itself is five lines of text in `ALLGAL`.
+What is still missing is where a strike is *scored* — see the end of
+[05-the-fighting.md](05-the-fighting.md).
 
 ### The animation language is an opportunity, not an obstacle
 

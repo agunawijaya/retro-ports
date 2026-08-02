@@ -14,6 +14,12 @@ docs/02-architecture.md — and this applies them.
     stream   0x7B v c  ->  v repeated c+1 times;  any other byte -> itself
     layout   column-major: byte k is column k // height, row k % height
 
+    .BCG     a backdrop, and a different format entirely: a uint16 byte count,
+             then a raw CGA bitmap at 80 bytes per scanline, row after row.
+             No compression -- there is not one 0x7B in either file -- and no
+             bank interleave, so the count divided by 80 is the height.
+             FUJI.BCG is 2,800 bytes: 320 x 35, a horizon band.
+
 The layout is the blitter's own. It walks *down* a column, one byte per
 scanline (`add di, 0x50`), before stepping one column right — so reading the
 bytes row-major produces a recognisable figure lying on its side, which is the
@@ -75,6 +81,32 @@ def decode(stream, want=None):
     return bytes(out)
 
 
+def backdrop(path, pal, scale=3):
+    """A .BCG: uint16 byte count, then a raw CGA bitmap, 80 bytes per row.
+
+    Worth stating what was *not* needed, because the sprite format next door
+    makes all three look likely: no run-length decoding, no column-major read,
+    and no bank de-interleave. The count divided by 80 gives the height, and
+    reading it straight produces Mount Fuji on the first attempt -- which is
+    the check. A wrong row stride shears an image visibly; a wrong interleave
+    splits it into two combs.
+    """
+    from PIL import Image
+    d = Path(path).read_bytes()
+    n = struct.unpack_from("<H", d, 0)[0]
+    h = n // 80
+    img = Image.new("RGB", (320, h), (0, 0, 0))
+    p = img.load()
+    for row in range(h):
+        for bx in range(80):
+            k = 2 + row * 80 + bx
+            if k >= len(d):
+                break
+            for b in range(4):              # CGA mode 4: two bits per pixel
+                p[bx * 4 + b, row] = pal[(d[k] >> (6 - b * 2)) & 3]
+    return img.resize((320 * scale, h * scale), Image.NEAREST), h
+
+
 def render(d, off, nxt, pal, scale=3):
     w, h = d[off], d[off + 1]
     if not (1 <= w <= 64 and 1 <= h <= 128):
@@ -101,6 +133,8 @@ def main():
                     help="a dos-decompiler checkout, for the CGA palette")
     ap.add_argument("--pairs", help="shape:mask, e.g. KS0:KM0")
     ap.add_argument("--sheet", help="one series, e.g. KSC")
+    ap.add_argument("--backdrop", help="a .BCG, e.g. FUJI.BCG")
+    ap.add_argument("--figures", help="one series, only its human-sized records")
     ap.add_argument("--out", default="reference/sprites")
     args = ap.parse_args()
 
@@ -114,6 +148,41 @@ def main():
     folder = Path(args.game)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+
+    if args.backdrop:
+        img, h = backdrop(folder / args.backdrop, pal)
+        path = out / (Path(args.backdrop).stem.lower() + ".png")
+        img.save(path)
+        print(f"{args.backdrop}: 320 x {h} -> {path}")
+        return 0
+
+    if args.figures:
+        # A .DAT holds scenery as well as actors -- the palace gate is the
+        # biggest record in three of these files. Height picks the people out:
+        # a standing figure is 30 to 60 scanlines and no more than 14 bytes
+        # wide, where a gate is 99 tall and a banner 63 bytes across.
+        from PIL import ImageDraw
+        idx, d = index(folder, args.figures)
+        picks = [(t, o, n) for t, (o, n) in sorted(idx.items())
+                 if 30 <= d[o + 1] <= 60 and 5 <= d[o] <= 14]
+        if not picks:
+            print(f"{args.figures}: no human-sized records")
+            return 1
+        ims = [(render(d, o, n, pal=pal, scale=4)[0], t) for t, o, n in picks]
+        cols = min(8, len(ims))
+        cw = max(i.width for i, _ in ims) + 14
+        ch = max(i.height for i, _ in ims) + 22
+        rows = (len(ims) + cols - 1) // cols
+        sheet = Image.new("RGB", (cols * cw, rows * ch), (14, 14, 20))
+        dr = ImageDraw.Draw(sheet)
+        for k, (im, t) in enumerate(ims):
+            x, y = (k % cols) * cw, (k // cols) * ch
+            sheet.paste(im, (x + 4, y + 18))
+            dr.text((x + 4, y + 4), f"#{t}", fill=(170, 170, 190))
+        path = out / f"{args.figures}-figures.png"
+        sheet.save(path)
+        print(f"{args.figures}: {len(ims)} human-sized records -> {path}")
+        return 0
 
     if args.pairs:
         a, b = args.pairs.split(":")
@@ -170,7 +239,7 @@ def main():
         print(f"{len(imgs)} records -> {path}")
         return 0
 
-    ap.error("give --pairs or --sheet")
+    ap.error("give --pairs, --sheet, --figures or --backdrop")
 
 
 if __name__ == "__main__":

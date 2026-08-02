@@ -1,6 +1,6 @@
 # Karateka — architecture
 
-*Document two of four. [01-the-game.md](01-the-game.md) is what the game is;
+*Document two of five. [01-the-game.md](01-the-game.md) is what the game is;
 [03-the-code.md](03-the-code.md) walks its routines; [04-porting.md](04-porting.md)
 is what rebuilding it would take.*
 
@@ -42,9 +42,9 @@ python <toolkit>/tools/comrec.py original/KARATEKA.EXE --out recovered/karateka.
 
 ```
 format      : MZ, 512-byte header stripped; entry CS:IP -> image offset 0x2
-instructions: 9,740 disassembled (918 pinned to fixed bytes to preserve encoding)
+instructions: 10,589 disassembled (987 pinned to fixed bytes to preserve encoding)
 code region : 0x0000..0x6C9D  (27,805 bytes)
-  recovered : 23,628 bytes as instructions (85.0% of the code region)
+  recovered : 25,554 bytes as instructions (91.9% of the code region)
 data tail   : 0x6C9D..0x155B6 left as data (59,673 bytes)
 BYTE-IDENTICAL
 ```
@@ -79,10 +79,10 @@ so before the work started, in as falsifiable a form as could be managed.
 | | Hard Hat Mack | Karateka |
 |---|---|---|
 | `cmc` instructions | 391 | **0** |
-| `cmp` / `sub` | 431 | 914 |
+| `cmp` / `sub` | 431 | 913 |
 | `cmc` straight after a compare | 99% of them | — |
 
-Zero `cmc` in 9,740 instructions, against 914 compares. There is no carry-flag
+Zero `cmc` in 10,589 instructions, against 913 compares. There is no carry-flag
 adapter because nothing needed adapting. Brøderbund's DOS conversion was a
 rewrite where Electronic Arts' was a translation.
 
@@ -378,7 +378,21 @@ the check is still present.
 - **The loose files.** `ALLPAL`, `ALLBAL`, `ALLCAL`, `ALLGAL`, `ALLVAL` look
   like combined versions of the `PAL*`, `BAL*`, `CAL*`, `VAL*` series;
   `CASTLE.BCG` and `FUJI.BCG` are backdrops by their names alone.
-- **The other 15% of the code region**, and all 59,673 bytes of the data tail.
+- **All 59,673 bytes of the data tail.**
+- **254 bytes of the code region**, which is what is left of a gap that used to
+  be 15% and was never data. Karateka's `switch` tables sit directly behind the
+  functions that switch, so a table and the arms it names go unreached together
+  and neither can be used to find the other — 2,318 bytes of ordinary compiled C
+  sat in the file as data for that reason alone. Reading a table by its contents
+  took the figure from 85.0% to **91.9%**, and to 99.1% counting the
+  instructions pinned to fixed bytes. The account is in
+  [dos-decompiler/knowledge/11](../../../dos-decompiler/knowledge/11-unreached-code.md).
+
+  What remains is now *identified* rather than missing: about 120 bytes are
+  those tables, correctly left as data; eleven runs are a single `0x90` of
+  alignment padding; and roughly thirty bytes are genuinely unread code,
+  including a five-byte function that is `push bp / mov bp, sp / pop bp / ret`
+  and does nothing whatever.
 - **Everything the program does.** This document is about its shape. Nothing
   here has yet followed the game loop, the fighting, or the animation that made
   Karateka worth remembering.
