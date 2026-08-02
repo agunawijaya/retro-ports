@@ -1003,10 +1003,55 @@ it down. The prices are a value the program computes at run time from a state
 that reading alone cannot conjure; three keystrokes of a fourth department would
 print them.
 
-**What is still open.** The four remaining store prices, the illness model's
-inputs, and how pace combines with rations. Both routes are now open, and the
-cheap one is the emulator: extend the key sequence in
-[the game's CLAUDE.md](../CLAUDE.md) by three and photograph the answer.
+Three more keystrokes reach the oxen department, and it states its own price:
+
+```
+There are 2 oxen in a yoke;
+I recommend at least 3 yoke.
+I charge $40 a yoke.
+```
+
+**Oxen are $40 a yoke, and a yoke is two animals.** The ferry, elsewhere, is
+`$5.00`. And the food cap has a sentence to match the `cmp` against 2,000:
+`Your wagon may only carry 2000 pounds of food.`
+
+### The store's text is addressed by something nobody has found
+
+Worth stating carefully, because it was got wrong once. The store's strings are
+perfectly ordinary Pascal strings, packed one after another in the code segment:
+
+```
+0x0E793  len  44  "Matt's General Store\Independence, Missouri\"
+0x0E7C2  len  56  "1. Oxen\2. Food\3. Clothing\4. Ammunition\5. Spare parts"
+0x0E7FF  len  36  "      Total bill:\\\Amount you have:"
+0x0E864  len   3  "1-5"
+0x0E868  len  50  "Don't forget, you'll need\oxen to pull your wagon."
+0x0E8A3  len  31  "Okay, that comes to a total\of "
+```
+
+There is nothing unusual about them. What is unusual is that **not one is
+referenced.** The idiom every other string in the program uses — `mov di,
+offset` then `push cs / push di` — finds 266 references elsewhere and none here.
+Nor does the offset appear as a bare word anywhere, so there is no table of
+offsets either. Checked for six different strings in the block, with the offsets
+recomputed after getting the first one wrong by eleven bytes.
+
+The screen is drawn — the emulator photograph above proves it — so something
+reaches them. A base register loaded once and advanced, most likely, since the
+strings are contiguous and a walker needs only the first address. But that first
+address is not in the program as a literal either, and **how the store is
+addressed remains genuinely unknown.**
+
+This is the honest shape of an unfinished investigation, and it is worth leaving
+visible: a fact (the strings exist), a stronger fact (nothing references them
+the usual way), a demonstration that the conclusion cannot be "they are unused"
+(the screen appears), and a hypothesis that has not been tested.
+
+**What is still open.** Clothing, ammunition and spare-part prices; how the
+store's text is addressed; the illness model's inputs; and how pace combines
+with rations. Both routes are open, and the cheap one is the emulator — extend
+the key sequence in [the game's CLAUDE.md](../CLAUDE.md) and photograph the
+answer.
 
 ## Where the artwork is loaded from
 

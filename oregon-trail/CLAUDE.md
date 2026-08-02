@@ -292,12 +292,22 @@ second knew what to look for: TP 5.0 addresses a string constant as
 `strefs.py` in the scratchpad matches, and which finds **266** string references
 elsewhere in the program.
 
-It still finds nothing for the store. The banner is a Pascal string of length
-`0x2C` at image `0x0E79F`, and neither `0x6C3F` (its segment-relative offset)
-nor `0xE79F` appears as a data word anywhere. So the store screen is **not
-reached the way the other 266 strings are** — it is built from a table or an
-overlay, and that indirection is the thing to find. Note the string
-`supplies.pcc` at `0x008D35`, which names a file that is not in `original/`.
+It still finds nothing for the store, and the check has since been redone with
+the offsets corrected — the banner's length byte is at `0x0E793`, not `0x0E79F`,
+so the first attempt searched for the wrong number. With the right one
+(`0x6C33`) the answer is the same, and the same for five other strings in the
+block: **no reference, and no offset table either.**
+
+The screen is definitely drawn — there is a photograph of it in
+[document three](docs/03-the-code.md#when-reading-fails-play-it) — so something
+addresses those strings. A base register loaded once and walked forward is the
+obvious guess, since they are contiguous, but the first address is not in the
+program as a literal either. **How the store's text is addressed is genuinely
+unknown**, and it is the most concrete unsolved thing in the folder.
+
+Known store numbers, all from the running game rather than the code: oxen
+**$40 a yoke** (two animals), food **$0.20 a pound** capped at 2,000, the ferry
+**$5.00**. Clothing, ammunition and spare parts are three keystrokes away.
 
 **Redirection does not work on this program.** `OREGON.EXE > OUT.TXT` produces
 an empty file every time, because `uses Crt` replaces the driver behind `Output`
