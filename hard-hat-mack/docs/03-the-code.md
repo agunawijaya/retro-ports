@@ -524,11 +524,11 @@ toolkit's `comrun.py`, hooks the four routines that put anything on screen, and
 compares the calls the program makes with the calls the reading predicts —
 by value, not by eye.
 
-| | drawing calls reproduced | pixels identical |
-|---|---|---|
-| Level 1 | 43 of 49 — **87%** | 95% |
-| Level 2 | 87 of 104 — **83%** | 93% |
-| Level 3 | 25 of 33 — **75%** | 95% |
+| | placements reproduced | precision | pixels the game draws, covered |
+|---|---|---|---|
+| Level 1 | 45 of 50 — **90%** | 91% | 93% |
+| Level 2 | 88 of 105 — **83%** | 95% | 89% |
+| Level 3 | 29 of 38 — **76%** | 90% | 90% |
 
 Three faults in the extractor came out of that comparison, and all three had
 been invisible because the old metric counted calls that produced *a*

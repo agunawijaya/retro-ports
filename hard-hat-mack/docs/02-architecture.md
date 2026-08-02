@@ -909,16 +909,16 @@ dumps the framebuffer, and the two pictures are compared pixel by pixel:
 
 | | pixels the game draws | covered by the static render | drawn but not in the game |
 |---|---|---|---|
-| Level 1 | 10,125 | **92.6%** | 20.0% |
-| Level 2 | 12,571 | **93.2%** | 15.2% |
-| Level 3 | 8,706 | **89.1%** | 19.6% |
+| Level 1 | 10,125 | **93.4%** | 10.2% |
+| Level 2 | 12,571 | **88.5%** | 4.0% |
+| Level 3 | 8,706 | **89.7%** | 6.7% |
 
 Both columns are needed. A renderer that draws nothing scores 0% and 0%; one
 that fills the screen scores 100% and enormously.
 
 The static render is still what is produced without running anything. The
 emulator is only the referee, and it is the referee that found the Level 2
-collapse: 54.1% covered before, 93.2% after.
+collapse: 54.1% covered before, 88.5% after.
 
 ### And a harder number, which is the true one
 
@@ -927,11 +927,11 @@ in roughly the right place covers a great many pixels while getting the
 placement wrong. Comparing the **placements themselves** — every blit the game
 performs, against every placement the static reading produces — does not:
 
-| | drawing calls the game makes | calls read from the file | recall | precision |
+| | placements the game makes | placements read from the file | recall | precision |
 |---|---|---|---|---|
-| Level 1 | 49 | 71 | **87.8%** | 60.6% |
-| Level 2 | 104 | 120 | **83.7%** | 72.5% |
-| Level 3 | 33 | 54 | **75.8%** | 46.3% |
+| Level 1 | 50 | 49 | **90%** | 91% |
+| Level 2 | 105 | 92 | **83%** | 95% |
+| Level 3 | 38 | 32 | **76%** | 90% |
 
 `tools/verify-screens.py` produces that table, and it reports the difference by
 value rather than as a fraction: which calls were missed, and which were
@@ -953,17 +953,30 @@ produced *a* placement rather than the *right* one — it read 39/39, 33/33 and
   nothing identified it — and the floor, the lift shaft and the hoist cables
   were simply absent.
 
-**What is left is precision, not recall.** The walk follows every call and has
-no idea which branch the program takes, so it predicts 71 calls on Level 1
-where the program makes 49. Some drawing routines set no position of their own
-— `0x2A03` reads the column and row variables and draws at whatever is already
-there — so the walk hands them whatever position it last computed, on a path
-the program may take in a different order or not at all.
+**A fourth fault, and it was not a limit either.** This document said twice
+that the over-drawing was the price of reading without executing — that the
+walk follows every call and cannot know which branch runs. That was a
+comfortable explanation and it was wrong. The routine reader stopped at `ret`
+and nothing else, so a routine ending in a *tail jump* — which has no `ret` at
+all — ran straight into whatever followed it in the file. `draw_digit` is
+thirteen instructions ending `jmp draw_text`; the reader took sixty-three, the
+last fifty belonging to the high-score screen, and dutifully extracted its
+trophy and its sign into every level.
 
-That part is a limit of reading without executing rather than a defect to be
-tuned out. The earlier version of this document said the whole gap was that,
-and it was wrong: most of it was three bugs, and the comparison is what
-distinguished them.
+Stopping at an unconditional jump unless something already seen branches past
+it — the ordinary end-of-basic-block rule — took precision from 67% to 93%.
+
+**What is left is recall, and it has a name.** The 31 placements still missed
+are almost all from loops whose trip count is a table terminator rather than an
+immediate: `draw_ladder_list` walks a (column, row) list until it reads `0xFF`,
+and the extractor unrolls only what a `mov bl, imm` tells it to. The chains
+hanging from the girders and Level 2's pillars are the visible result. The
+table is in the file and the terminator is in the file, so this is readable —
+it is simply not read yet.
+
+Genuinely unreadable without executing: which arm of a conditional runs. Four
+of Level 1's five spurious placements are that, and it is now the smaller half
+of a small problem.
 
 **Level 1's floors have holes in them, and that is correct.** Its task is to
 fill the gaps in the girders, so it starts incomplete — a sparse screen that
@@ -979,18 +992,16 @@ is what turns these into game screens.
 
 Two things, and both are smaller than the five that used to be here.
 
-- **Precision, not recall.** Recall is 90%, 83% and 76% by level; precision
-  is 63%, 77% and 53%. The reading finds placements the program does not make,
-  because the walk follows every call and cannot know which branch is taken,
-  and because some drawing routines set no position of their own — `0x2A03`
-  reads the column and row variables and draws at whatever is already there,
-  so the walk hands them whatever it last computed on a path the program may
-  never follow.
+- **Recall.** 90%, 83% and 76% by level, against precision of 91%, 95% and
+  90%. Thirty-one placements out of 193 are still missed, and almost all of
+  them come from one cause: a loop whose trip count is a table terminator
+  rather than an immediate. `draw_ladder_list` walks a (column, row) list until
+  it reads `0xFF`; the extractor unrolls only what a `mov bl, imm` tells it to,
+  so it draws the first chain and stops. Both the table and the terminator are
+  in the file, so this is readable and simply not read yet.
 
-  This is the one thing here that is a limit of reading without executing
-  rather than a defect. It is bounded and it is measured: `verify-screens.py`
-  lists every invented placement by value, and twelve of Level 1's twenty-six
-  come from one call site the program does not reach while building a level.
+  The genuinely unreadable part is which arm of a conditional runs, and that is
+  now four placements on Level 1 rather than the whole gap.
 
 - ~~**The two bytes at file `0x0001`.**~~ **Settled, and the entry that used
   to be here was wrong three times over.** The bytes an `EB 02` jumps over are
