@@ -12,7 +12,7 @@ now uses.**
 | `notes/` | ten numbered documents — game logic, pseudocode, a disassembly pass, remake options, debug findings, a file inventory, runtime memory capture, and a progress log |
 | `notes/chatgpt/` | a second, parallel investigation with its own findings folder: function maps, string dumps, disk-check analysis, DOSBox runtime logs |
 | `tools/` | eighteen Python scripts — sprite extractors, disk-image readers, buffer finders, animation probes, comparison harnesses |
-| `web/` | a browser remake, its assets removed |
+| ~~`web/`~~ | **removed on 2026-08-02.** A browser remake whose characters were a *NES* sprite atlas in greyscale, over backgrounds cropped from shadow-buffer dumps — because the DOS sprite decoder never worked (see `notes/10`, §12). Nothing on its screen came from reading `KARATEKA.EXE`, so it was the wrong foundation to build on rather than a partial one. It is in the history if it is ever wanted: `git log -- karateka/prior-attempt/web` |
 
 The extracted sprites, memory dumps, screenshots and Apple II disk images are
 **not here**. They came out of the game and are therefore the game; they are in
