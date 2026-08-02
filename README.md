@@ -77,15 +77,18 @@ format 1990 games actually used. It also carries a folder of work from a session
 that predates the toolkit, kept as hypotheses rather than results — the
 reasoning is in its `prior-attempt/README.md`.
 
-Its own game logic is still barely read, and
-[its documents](oregon-trail/docs/) say so — the interesting result is that by
-1990 **the artwork had become easy and the code had become hard**, which is the
-exact opposite of every game before it here. What *is* read completely is its
-copy protection, which turns out to be a lab licence with no server: the licence
-is the modification timestamp on a file, held for thirty minutes at a time. It
-is also the game that taught this repository the most about being wrong —
-three separate explanations of one emulator run, two of them confident and
-neither correct, all written up beside the answer.
+The interesting result is that by 1990 **the artwork had become easy and the
+code had become hard**, which is the exact opposite of every game before it
+here. Its copy protection is read completely, and turns out to be a lab licence
+with no server: the licence *is* the modification timestamp on a file, held for
+thirty minutes at a time. Its store, its scoring, and every random decision it
+takes are read too — but a byte-identical rebuild is out of reach, because
+22.6% of the program is a commercial library nobody archived.
+
+It is also the game that taught this repository the most about being wrong. One
+emulator run got explained four times, three of them confidently and none of the
+first three correctly, and every wrong answer is still in
+[the documents](oregon-trail/docs/) beside the right one.
 
 Zaxxon is the same: decompiled, documented, not ported. It is the best example
 here of the difference between a rebuild that is exact and a program that is
