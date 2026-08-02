@@ -1898,6 +1898,25 @@ diagrams out of `terrain.pcc`, *"Enter Key … to start or stop walking"*,
 first, then shown by the binary. That is the order this folder is supposed to
 work in.
 
+**Reaching it is not the same as playing it, and the difference is worth
+recording.** The first run to arrive drew the instructions and left again. The
+execution map says so precisely: `0x77F8`, `0x628A`, `0x72DD`, the slot scanner
+`0x5FF9` and the overlap test `0x5ED0` all ran, and so did the exit flush at
+`0x6663` — but `0x6AA3`, the movement step, **never executed**. The hunter never
+took a step.
+
+Doubling the instruction budget from 1.5 to 3 billion changed nothing at all:
+the same 18,900 distinct addresses, the same 103 keyboard reads, the same 8
+keys left over, the same picture. A run that is longer and identical is not a
+run that needs more time — it is a run that has stopped making progress, and
+the budget was the wrong thing to spend.
+
+The cause is in the key sequence rather than the emulator. What followed the
+`8` that entered hunting were the *next* travel round's `N`, `1` and `8`, and
+the field wants none of those. It wants what its own instructions screen says:
+a keypad digit to point, `Enter` to start walking, `Space` to fire, `Escape` to
+stop. `tools/drive-to-hunt.py --play` appends exactly that.
+
 ### Inside the mini-game, as far as it has been read
 
 `0x72DD` is a **nested procedure**: its `[bp+4]` is Turbo Pascal's static link

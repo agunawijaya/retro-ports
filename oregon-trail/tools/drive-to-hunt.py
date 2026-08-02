@@ -77,12 +77,35 @@ def sequence(rounds=8):
     return k
 
 
+# Reaching hunting is not the same as playing it. The first run that got there
+# drew the instructions and left again without the hunter taking a step --
+# 0x6AA3, the movement step, never executed -- because the keys that followed
+# were the next round's N, 1 and 8, none of which the field wants. What it wants
+# is what the instructions screen says: a keypad digit to point, Enter to start
+# walking, Space to fire.
+ESC = 0x011B
+
+
+def play():
+    k = [SPACE]                           # dismiss the instructions
+    k += [DIGIT["6"]]                     # point the rifle east
+    k += [CR]                             # Enter: start walking
+    k += [SPACE] * 6                      # Space: fire, six times
+    k += [DIGIT["2"], DIGIT["4"], DIGIT["8"]]   # and turn, to move the sprite
+    k += [SPACE] * 4
+    k += [ESC]                            # Escape: stop hunting
+    return k
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--rounds", type=int, default=8,
                     help="how many travel-then-ask-to-hunt rounds (default 8)")
+    ap.add_argument("--play", action="store_true",
+                    help="append keys that play the field rather than only "
+                         "reaching it: point, walk, fire, then Escape")
     args = ap.parse_args()
-    keys = sequence(args.rounds)
+    keys = sequence(args.rounds) + (play() if args.play else [])
     print(",".join(f"{k:#06x}" for k in keys))
     print(f"\n{len(keys)} keystrokes."
           "  Remember --poll-patience 200, or the flush loops eat them.")
