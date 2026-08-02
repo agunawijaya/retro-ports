@@ -51,9 +51,15 @@ if ($LASTEXITCODE -ne 0) { throw "nasm rejected the named source" }
 # image, and an MZ is the header plus that. Comparing image.bin against the
 # .EXE is the mistake to avoid -- it is 512 bytes short and looks like a
 # failure that is not one.
-$bytes = [System.IO.File]::ReadAllBytes("recovered\karateka.mzheader") +
-         [System.IO.File]::ReadAllBytes("recovered\image.bin")
-[System.IO.File]::WriteAllBytes("recovered\rebuilt.exe", $bytes)
+#
+# [System.IO.File] resolves a relative path against the .NET process working
+# directory, which PowerShell's Set-Location does not touch. Run this script
+# from anywhere but the game folder and it reads the header from wherever the
+# shell was started. Resolve the paths first.
+$here = (Get-Location).ProviderPath
+$bytes = [System.IO.File]::ReadAllBytes((Join-Path $here "recovered\karateka.mzheader")) +
+         [System.IO.File]::ReadAllBytes((Join-Path $here "recovered\image.bin"))
+[System.IO.File]::WriteAllBytes((Join-Path $here "recovered\rebuilt.exe"), $bytes)
 
 $a = (Get-FileHash recovered\rebuilt.exe -Algorithm SHA256).Hash
 $b = (Get-FileHash $Original          -Algorithm SHA256).Hash

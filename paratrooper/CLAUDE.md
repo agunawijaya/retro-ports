@@ -24,8 +24,13 @@ should the finished state look like", the answer is here.
 ## Source you can rebuild
 
 `recovered/paratrooper.asm` is correct and is not source. `symbols.json` holds the
-reading — 5 routines and 11 globals, each with the evidence for
-its name — and the toolkit's `annotate.py` applies it.
+reading — 30 routines and 107 globals, each with the evidence for
+its name. Every one of the 19 call targets is named, and so is every
+routine the phase table jumps to; every address the listing writes as a bare
+`[0x....]` has a name here, and 56 of the 93 bracketed constants overall —
+the other 37 are displacements into a struct rather than addresses; and
+`_data_spans` accounts for all 11,056 bytes of the data region with no gap
+between spans — and the toolkit's `annotate.py` applies it.
 
 ```powershell
 .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe

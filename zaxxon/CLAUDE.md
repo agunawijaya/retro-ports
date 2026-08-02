@@ -23,8 +23,11 @@ If a port starts, it goes in `web/` and gets documents 05 and 06, following
 ## Source you can rebuild
 
 `recovered/zaxxon.asm` is correct and is not source. `symbols.json` holds the
-reading — 8 routines and 7 globals, each with the evidence for
-its name — and the toolkit's `annotate.py` applies it.
+reading — 119 routines and 105 globals, each with the evidence for
+its name. All 74 call targets are named, plus the scene, fortress and wall
+handlers the three jump tables reach; 47 of the 64 bracketed constants have a
+name, and every one of the remaining 17 is a displacement into a struct
+rather than an address; and `_data_spans` accounts for all 20,736 bytes — and the toolkit's `annotate.py` applies it.
 
 ```powershell
 .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe

@@ -1,90 +1,665 @@
 {
   "_about": [
-    "Names for ParaTrooper's routines and globals, with the evidence for each.",
+    "ParaTrooper, Orion Software, 1982. A .COM whose first seven bytes are",
+    "a far jump: the game proper starts at file 0x2B40 with DS = PSP + 0x11,",
+    "so every address below is its file offset minus 0x10.",
     "",
-    "Addresses are file offsets; add 0x100 for a listing address. **This file has",
-    "a two-base layout**: data sits at the front and the code region is",
-    "0x2B40..0x4010, so a global's address is lower than the code that uses it.",
-    "comrec finds the split from the entry stub without being told.",
+    "All 19 call targets are named, and so is every routine the four-entry",
+    "phase table jumps to. The globals were read from what touches them,",
+    "and then checked against bss_clear_table at 0x1A30 -- the program's own",
+    "list of its variables. All 17 entries land on a name here with the",
+    "matching width.",
     "",
-    "**Not compiled C.** Zero prologues; routines are enumerated by call target."
+    "Three names in the previous version of this file were wrong, and all",
+    "three had been guessed from caller counts: draw_sprite is the random",
+    "number generator, move_actor is the sound queue, spawn is a blitter."
   ],
   "routines": {
-    "0x03235": [
-      "draw_sprite",
-      "5 callers, no callees"
+    "0x2B40": [
+      "start",
+      "the far jump at file 0 lands here with DS = PSP + 0x11, which is why every data address in this listing is its file offset minus 0x10. Checks the BIOS equipment word for a colour adapter, sets mode 4, animates the eleven title letters, plays the 123-note tune, and waits for space or the joystick button"
     ],
-    "0x0365C": [
-      "video_setup",
-      "the only routine using INT 10h and INT 16h"
+    "0x2DB0": [
+      "play_helicopters",
+      "the round loop for waves 0 and 1. Draws the ground line at 0x1DB0 and the gun base, prints the status line, then paces itself on INT 1Ah ticks: move the helicopter lanes, move the falling troopers, step the bullets, redraw the gun"
     ],
-    "0x03E68": [
-      "score_update",
-      "3 callers"
+    "0x3152": [
+      "wave_pause",
+      "phase 1 of the wave table: clear the spawn flags and fall back into the helicopter loop"
     ],
-    "0x039B0": [
-      "move_actor",
-      "2 callers"
+    "0x315F": [
+      "wave_bombers",
+      "phase 2: refuses to start while a trooper is still climbing, then points the sprite pointers at the jets (0xB8E/0xA9E) and enters the bomber loop"
     ],
-    "0x03A6A": [
-      "spawn",
-      "2 callers"
+    "0x3195": [
+      "silence_and_return",
+      "writes a zero divisor to PIT channel 2 and returns from the round -- the one exit the game has"
+    ],
+    "0x319E": [
+      "bomber_pause",
+      "phase 3: stop spawning and keep the bombers flying"
+    ],
+    "0x31A6": [
+      "wave_begin",
+      "phase 0: pick a direction from the RNG, bump the wave counter at 0x1AB5, and scale the difficulty from it -- bomb allowance up to ten, lane geometry from wave*6 until wave 17"
+    ],
+    "0x3223": [
+      "enter_bomber_phase",
+      "forces phase 2 and starts the alarm tone; the only writer of 0x1AE3"
+    ],
+    "0x3235": [
+      "random",
+      "state = state * 0x7781 + 0x64C9. A linear congruential generator, seeded from the INT 1Ah tick count at start-up. It was called draw_sprite because seven routines call it"
+    ],
+    "0x3244": [
+      "trooper_lands",
+      "a falling trooper reached the stack top for its column. Picks the counter by column -- under 0x43 left, under 0x53 the gun base, otherwise right -- increments it, scores five, raises column_stack_top by 0x140, and draws the standing figure. Four at the gun base jumps straight to explode_gun"
+    ],
+    "0x3360": [
+      "play_bombers",
+      "the round loop for waves 2 and 3: the same shape as play_helicopters, but the aircraft drop bombs instead of troopers and a bomb that reaches the ground ends the game"
+    ],
+    "0x365C": [
+      "bullets_step",
+      "steps thirty bullets. Each is erased with INT 10h AH=0Ch colour 0, advanced by the (dx, dy) pair its angle selects from bullet_velocity, redrawn in colour 3, and tested for a hit. Then reads the keyboard, or the joystick if joystick_mode is set. It was called video_setup because it was the only routine holding both INT 10h and INT 16h"
+    ],
+    "0x36FF": [
+      "fire_bullet",
+      "stops the gun rotating, queues the firing tone, takes one point off the score, and claims the first free bullet slot -- the 'each bullet you fire costs you one point' the instructions screen promises"
+    ],
+    "0x3733": [
+      "rotate_gun",
+      "the arrow-key and auto-repeat path: steps gun_angle by two within [0, max_gun_angle]"
+    ],
+    "0x3752": [
+      "explode_gun",
+      "the end of the game. Sets phase 4 for a hundred ticks, then reads the current gun sprite through gun_angle and scatters all 168 of its bytes into the particle array as individual flying pixels"
+    ],
+    "0x3830": [
+      "set_climb_dir",
+      "stores AL into climb_dir and clears climb_active"
+    ],
+    "0x3839": [
+      "climber_step",
+      "the human ladder. Once four troopers are stacked on one side they walk toward the gun: find the shortest neighbouring stack, step onto it, and redraw. Reaching the gun base tail-calls explode_gun"
+    ],
+    "0x3944": [
+      "draw_climber",
+      "eight rows of one byte from climber_sprite_b, bank-interleaved"
+    ],
+    "0x3965": [
+      "erase_climber",
+      "the same eight rows written as zero"
+    ],
+    "0x397E": [
+      "draw_climber_shifted",
+      "picks climber_sprite_a or climber_sprite_c by the low bit of the screen offset -- the two-pixel phase of a four-pixel column"
+    ],
+    "0x39B0": [
+      "sound_tick",
+      "decrements the eight sound timers; the first one still running dispatches through sound_handler. Silent while sound_enabled is negative. It was called move_actor"
+    ],
+    "0x39F1": [
+      "speaker_off",
+      "writes divisor 2 then AH to PIT channel 2 -- the tail every sound handler falls into"
+    ],
+    "0x3A6A": [
+      "blit_clipped",
+      "ten rows of BP bytes from SI, advancing the source by six a row so a six-byte aircraft sprite can be drawn narrower at the screen edges. It was called spawn"
+    ],
+    "0x3A8E": [
+      "bullet_hit_test",
+      "what a bullet ran into. Aircraft first (both lanes, six cells either side, ten points), then bombs if the phase is 2 to 4 (thirty points), then parachutes and falling troopers (five). Every hit shatters the sprite it hit into the particle array"
+    ],
+    "0x3DFE": [
+      "particles_step",
+      "moves the three hundred live particles: erase, add velocity, add 0x8028 of gravity, kill any that leave the 0x19F0/0x39F0 window, redraw"
+    ],
+    "0x3E68": [
+      "score_add",
+      "adds AL to the six-digit score, one decimal digit per byte, then falls into score_draw"
+    ],
+    "0x3E8C": [
+      "score_draw",
+      "renders the six digits right to left from digit_font, sixteen bytes a glyph, suppressing leading zeros by substituting the eleventh glyph"
+    ],
+    "0x3EDE": [
+      "score_decrement",
+      "the same borrow-propagating subtraction of one, and it returns early rather than wrap a score of zero"
+    ],
+    "0x3F12": [
+      "expire_landed",
+      "ten countdown timers; when one reaches zero the standing trooper whose screen offset sits at +0x14 is erased"
+    ],
+    "0x3F41": [
+      "read_joystick",
+      "the analogue path: port 0x201 for the two buttons, then the capacitor-discharge loop counted into CX and divided by seven for the gun angle. Also honours Ctrl-S and Escape"
     ]
   },
   "globals": {
+    "0x0000": [
+      "gun_sprite_table",
+      "21 words, stride 0x68: the gun at 21 angles"
+    ],
+    "0x002A": [
+      "gun_sprites",
+      "21 x 104 bytes, 13 rows of 8"
+    ],
+    "0x08BA": [
+      "aircraft_sprite_left",
+      "set by the wave handlers to 0x9AE or 0xB8E"
+    ],
+    "0x08BC": [
+      "aircraft_sprite_right",
+      "0x8BE or 0xA9E; the pair is read as [di + 0x8BB] with di = +/-1"
+    ],
+    "0x08BE": [
+      "heli_sprites_right",
+      "4 variants x 10 rows x 6 bytes"
+    ],
+    "0x09AE": [
+      "heli_sprites_left",
+      "the same, mirrored"
+    ],
+    "0x0A9E": [
+      "jet_sprites_right",
+      "the wave-2 aircraft"
+    ],
+    "0x0B8E": [
+      "jet_sprites_left",
+      "the same, mirrored"
+    ],
+    "0x0C7E": [
+      "parachute_sprite",
+      "22 rows of 3 bytes; its last 8 rows are the body sprite"
+    ],
+    "0x0CA8": [
+      "falling_trooper_sprite",
+      "8 rows of 3 -- the same bytes as the tail of the parachute"
+    ],
+    "0x0CC0": [
+      "landed_trooper_sprite",
+      "15 rows of 3"
+    ],
+    "0x0CED": [
+      "bomb_sprite",
+      "4 bytes"
+    ],
+    "0x0CF5": [
+      "shuffle_table",
+      "256 bytes, each 0x59 past the last -- how a particle picks its velocity"
+    ],
+    "0x0DF5": [
+      "chute_thresholds",
+      "0x0270, 0x0276, 0x027C ... the RNG cut-offs for opening a parachute"
+    ],
+    "0x0F85": [
+      "title_tune",
+      "123 PIT divisors, one per timer tick"
+    ],
+    "0x1167": [
+      "title_letter_table",
+      "11 pointers at +2..+0x16 into 6 distinct bitmaps -- PARATROOPER has six distinct letters"
+    ],
+    "0x117F": [
+      "title_letters",
+      "6 x 24 rows x 5 bytes, ending exactly where digit_font begins"
+    ],
+    "0x144F": [
+      "digit_font",
+      "11 glyphs of 16 bytes: 7 rows of 2, plus a blank at index 10 for leading zeros"
+    ],
+    "0x14FF": [
+      "title_text",
+      "6 (cursor position, string) pairs -- the author, the copyright, the two ways to play"
+    ],
+    "0x159C": [
+      "replay_text",
+      "3 more of the same, shown after a round"
+    ],
+    "0x1606": [
+      "instructions_text",
+      "the *Your Mission* screen; bytes under 4 are colour changes, 0 ends it"
+    ],
+    "0x1962": [
+      "mono_refused_text",
+      "printed if the player answers N to the adapter question, then the program hangs"
+    ],
+    "0x19F6": [
+      "mono_prompt_text",
+      "'Do you have the Color/Graphics Monitor Adapter(Y/N)?'"
+    ],
+    "0x1A30": [
+      "bss_clear_table",
+      "17 (address, length) pairs -- the game's own account of its variables, and the cross-check for this file"
+    ],
+    "0x1A74": [
+      "status_line",
+      "'SCORE:' then 18 blanks then 'HI-SCORE:' -- 39 characters printed once per round"
+    ],
+    "0x1A7A": [
+      "score_text",
+      "where score_draw's digits land inside status_line"
+    ],
+    "0x1A95": [
+      "high_score_text",
+      "and where the high score's do"
+    ],
+    "0x1A9B": [
+      "high_score",
+      "6 digits, one per byte, compared against score with a reverse repe cmpsb"
+    ],
+    "0x1AB0": [
+      "tick_last",
+      "the INT 1Ah reading the frame loop spins against"
+    ],
     "0x1AB2": [
-      "game_state",
-      "2, 4 or 5; the entry stub sets it and four routines read it"
+      "phase",
+      "0 wave, 1 pause, 2 bombers, 3 pause, 4 dying"
+    ],
+    "0x1AB3": [
+      "phase_ticks",
+      "counts down; zero advances the phase"
+    ],
+    "0x1AB5": [
+      "wave_count",
+      "how many waves have started; the only difficulty input"
+    ],
+    "0x1AB7": [
+      "phase_length",
+      "1500, 100, 750, 100"
+    ],
+    "0x1AC7": [
+      "phase_entry",
+      "wave_begin, wave_pause, wave_bombers, bomber_pause"
+    ],
+    "0x1AD7": [
+      "sprite_variant",
+      "0, 60, 120, 180 -- the four animation frames of an aircraft, 60 bytes apart"
+    ],
+    "0x1ADB": [
+      "rng_state",
+      "seeded from the tick count at start-up"
+    ],
+    "0x1AE3": [
+      "bomber_flag",
+      "set by enter_bomber_phase and read nowhere else in the code region"
+    ],
+    "0x1AE7": [
+      "lane_0_cells",
+      "100 bytes, one per column: which aircraft occupies it"
+    ],
+    "0x1B4B": [
+      "lane_1_cells",
+      "the second flight lane, 100 bytes"
+    ],
+    "0x1BAF": [
+      "fall_offset",
+      "one word per column: the falling trooper's screen offset, sign = parachute open"
+    ],
+    "0x1C4F": [
+      "fall_speed",
+      "the parallel array bullet_hit_test reads as [si - 0xA2]"
+    ],
+    "0x1CEF": [
+      "chute_open",
+      "one byte per column"
     ],
     "0x1D8F": [
-      "wave",
-      "2 or 4"
+      "lane_index",
+      "the loop variable stepping 2, 0 over the two lanes"
+    ],
+    "0x1D91": [
+      "lane_dir",
+      "+1 or -1, copied out of flight_dir"
+    ],
+    "0x1D93": [
+      "lane_cells",
+      "{0x1AE7, 0x1B4B} -- where each lane's cells live"
+    ],
+    "0x1D97": [
+      "lane_screen",
+      "{0, 0x1E0} -- and where each lane draws"
+    ],
+    "0x1D9B": [
+      "lane_row",
+      "recomputed each wave from wave_count"
+    ],
+    "0x1D9D": [
+      "lane_row_2",
+      "the second lane's, capped at 0x6C"
     ],
     "0x1D9F": [
-      "active_flag",
-      "1 or 0xFFFF"
+      "flight_dir",
+      "{-1, +1}: lane 0 flies right to left"
+    ],
+    "0x1DA3": [
+      "edge_step",
+      "{4, -1} indexed by direction"
+    ],
+    "0x1DA7": [
+      "lane_scan_start",
+      "{0x50, -4} -- which end of the lane the walk starts from"
+    ],
+    "0x1DAB": [
+      "spawn_enabled",
+      "cleared during a pause"
     ],
     "0x1DAC": [
-      "paused",
-      "0 or 1"
+      "drop_enabled",
+      "cleared while a climber is on the stack"
+    ],
+    "0x1DAD": [
+      "side_full",
+      "set when a landing made four on one side"
+    ],
+    "0x1DAE": [
+      "column_stack_top",
+      "78 words, all 0x1DB0 at the start -- the ground line. Each landed trooper raises its column by 0x140, which is eight scan lines across the two banks"
+    ],
+    "0x1E4A": [
+      "column_stack_init",
+      "the 78 words copied over it at the start of a game"
+    ],
+    "0x1EE6": [
+      "lane_occupied",
+      "non-zero while any aircraft is still in a lane"
+    ],
+    "0x1EF0": [
+      "bomb_limit",
+      "1 to 10, half the wave count"
+    ],
+    "0x1EF2": [
+      "bomb_age",
+      "10 words; zero means the slot is free"
+    ],
+    "0x1F06": [
+      "bomb_screen",
+      "the parallel array at +0x14"
+    ],
+    "0x1F1A": [
+      "bomb_speed",
+      "at +0x28, gaining 0x8028 of gravity every fourth tick"
+    ],
+    "0x1F2E": [
+      "bomb_x",
+      "at +0x3C"
+    ],
+    "0x1F42": [
+      "bomb_y",
+      "at +0x50"
+    ],
+    "0x1F56": [
+      "joystick_mode",
+      "chosen at the title screen and never changed"
     ],
     "0x1F57": [
-      "actor_slot",
-      "read by three routines"
+      "gun_angle",
+      "0 to 40 in twos; also the index into gun_sprite_table, which is why the draw reads [[gun_angle]]"
+    ],
+    "0x1F59": [
+      "bullet_x",
+      "30 words; zero means the slot is free"
+    ],
+    "0x1F95": [
+      "bullet_y",
+      "at +0x3C"
+    ],
+    "0x1FD1": [
+      "bullet_angle",
+      "at +0x78; the gun angle the shot was fired at"
+    ],
+    "0x200D": [
+      "bullet_velocity",
+      "21 (dx, dy) pairs, indexed by angle x 2"
+    ],
+    "0x2063": [
+      "max_gun_angle",
+      "0x28"
+    ],
+    "0x2065": [
+      "gun_rotate_dir",
+      "non-zero repeats the last arrow key; firing clears it"
+    ],
+    "0x2066": [
+      "particle_spread",
+      "16 words, picked by the low five bits of the RNG"
+    ],
+    "0x2086": [
+      "gun_sprite_copy",
+      "104 bytes; explode_gun shatters this copy, not the original"
     ],
     "0x2130": [
       "landed_left",
-      "paratroopers landed left of the gun, x < 67; see docs/03-the-code.md"
+      "columns below 0x43"
     ],
     "0x2131": [
-      "landed_base",
-      "at the gun base, 67 <= x < 83 -- four of these end the game"
+      "landed_centre",
+      "the eight columns of the gun base; four here ends the game"
     ],
     "0x2132": [
       "landed_right",
-      "right of the gun, x >= 83"
+      "columns from 0x53"
+    ],
+    "0x2133": [
+      "climb_dir",
+      "-1, 0 or +1"
+    ],
+    "0x2134": [
+      "climb_active",
+      ""
+    ],
+    "0x2135": [
+      "climber_screen",
+      "where the climbing figure is drawn"
+    ],
+    "0x2137": [
+      "climber_column",
+      ""
+    ],
+    "0x2139": [
+      "climber_phase",
+      "alternates the two halves of a step"
+    ],
+    "0x213A": [
+      "climb_timer",
+      "reloaded with 3 -- a climber moves every third tick"
+    ],
+    "0x213B": [
+      "climber_sprite_a",
+      "8 bytes, the even-column phase"
+    ],
+    "0x2143": [
+      "climber_sprite_b",
+      "8 bytes, standing"
+    ],
+    "0x214B": [
+      "climber_sprite_c",
+      "8 bytes, the odd-column phase"
+    ],
+    "0x2153": [
+      "sound_timers",
+      "8 countdowns; slot 1 is the bomb, 2 the hit, 3 the shot, 4 the explosion"
+    ],
+    "0x215B": [
+      "sound_handler",
+      "8 code addresses, all ending in speaker_off"
+    ],
+    "0x216B": [
+      "sound_enabled",
+      "negated by Ctrl-S, in four different places"
+    ],
+    "0x216C": [
+      "particle_pixel",
+      "600 bytes; the byte value each flying pixel carries"
+    ],
+    "0x23C4": [
+      "particle_screen",
+      "the parallel array at +0x258"
+    ],
+    "0x261C": [
+      "particle_speed",
+      "at +0x4B0"
+    ],
+    "0x2874": [
+      "particle_column",
+      "at +0x708, killed when it passes 0x50"
+    ],
+    "0x2ACC": [
+      "particle_velocity_large",
+      "8 words, for aircraft debris"
+    ],
+    "0x2ADC": [
+      "particle_velocity_small",
+      "8 words, for troopers and bombs"
+    ],
+    "0x2AEC": [
+      "hit_slot",
+      "the bullet bullet_hit_test is working on"
+    ],
+    "0x2AEE": [
+      "shuffle_cursor",
+      "walks shuffle_table so consecutive particles fly differently"
     ],
     "0x2AF0": [
-      "sprite_w",
-      "36"
+      "shatter_column",
+      ""
+    ],
+    "0x2AF1": [
+      "hit_column",
+      "the bullet's x, divided by four and shifted five left"
+    ],
+    "0x2AF3": [
+      "hit_x",
+      ""
+    ],
+    "0x2AF5": [
+      "hit_y",
+      ""
     ],
     "0x2AF7": [
-      "sprite_ptr",
-      "13,988"
+      "shatter_screen",
+      "walks the sprite being shattered, one byte a step"
     ],
     "0x2AF9": [
-      "screen_ptr",
-      "8,186 and 8,189 -- offsets into a CGA bank"
+      "shatter_bank_step",
+      "alternates +0x1FFA and its complement -- the CGA bank interleave"
+    ],
+    "0x2AFB": [
+      "shatter_drift",
+      "-1, 0 or +1 by which third of the screen the hit was in"
+    ],
+    "0x2B00": [
+      "score",
+      "6 digits, one per byte, least significant first"
+    ],
+    "0x2B06": [
+      "landed_timer",
+      "10 countdowns from 0x19"
+    ],
+    "0x2B1A": [
+      "landed_screen",
+      "the parallel array at +0x14"
+    ],
+    "0x2B2E": [
+      "button_repeat",
+      "reloaded with 3 while the joystick button is held"
     ]
   },
-  "_unnamed": [
-    "28 routines are reachable by a direct call and 5 are named; 103 globals are",
-    "referenced and 11 are named. A 16 KB game from 1982 simply has less to say,",
-    "and most of its globals are touched two or three times.",
-    "",
-    "The three landing counters are the exception and they were worth having:",
-    "they are the game's whole losing condition, and they were read out of the",
-    "code rather than guessed -- 0x2131 counts the ones that reach the gun base,",
-    "and four of those end it."
-  ]
+  "_data_spans": {
+    "_note": [
+      "The data region is file 0x0000..0x2B40, which is 67% of the image.",
+      "Counting named addresses says nothing about the bytes between them,",
+      "so these are the spans, and they are contiguous: every byte of the",
+      "region belongs to exactly one of them."
+    ],
+    "0x0000": [
+      2234,
+      "the gun at 21 angles, table then bitmaps"
+    ],
+    "0x08BA": [
+      4,
+      "the two sprite pointers the wave handlers swap"
+    ],
+    "0x08BE": [
+      960,
+      "four aircraft sprite sets, 4 variants x 10 rows x 6 bytes each"
+    ],
+    "0x0C7E": [
+      119,
+      "the parachute, the falling body, the standing trooper, the bomb"
+    ],
+    "0x0CF5": [
+      256,
+      "the 256-byte shuffle table"
+    ],
+    "0x0DF5": [
+      400,
+      "the parachute thresholds and the space between them and the tune"
+    ],
+    "0x0F85": [
+      482,
+      "the title tune, 123 notes"
+    ],
+    "0x1167": [
+      744,
+      "the title letters and the table that orders them"
+    ],
+    "0x144F": [
+      176,
+      "the digit font"
+    ],
+    "0x14FF": [
+      1329,
+      "every string in the game, including the whole instructions screen"
+    ],
+    "0x1A30": [
+      128,
+      "the bss clear table, the status line, the high score"
+    ],
+    "0x1AB0": [
+      55,
+      "the phase machine and the RNG"
+    ],
+    "0x1AE7": [
+      680,
+      "the two flight lanes and the three per-column falling arrays"
+    ],
+    "0x1D8F": [
+      31,
+      "the lane geometry, two entries wide"
+    ],
+    "0x1DAE": [
+      312,
+      "the column stack tops and the copy they are restored from"
+    ],
+    "0x1EE6": [
+      115,
+      "the bomb arrays"
+    ],
+    "0x1F59": [
+      266,
+      "the bullet arrays and the per-angle velocity table"
+    ],
+    "0x2063": [
+      205,
+      "the gun's angle, its scratch copy, and the particle spread"
+    ],
+    "0x2130": [
+      35,
+      "the landing counters and the climbing figure"
+    ],
+    "0x2153": [
+      25,
+      "the sound queue"
+    ],
+    "0x216C": [
+      2400,
+      "600 particle slots, four arrays of 600 bytes"
+    ],
+    "0x2ACC": [
+      100,
+      "the shatter scratch, the score, the landed-trooper timers"
+    ]
+  }
 }

@@ -17,7 +17,7 @@ rather than guessed at.**
 |---|---|
 | rebuild | byte-identical, rung 1b |
 | level screens drawn from the file alone | **38% / 83% / 58%** of the blits the game actually performs |
-| variables named | 9 of 405 |
+| variables named | 53, covering the two clusters that carry 1,180 of the 1,700 references |
 | bytes with a bucket | 92.4% |
 
 There is no port, and porting was deliberately out of scope.
@@ -28,8 +28,11 @@ If a port starts, it goes in `web/` and gets documents 05 and 06, following
 ## Source you can rebuild
 
 `recovered/hhm.asm` is correct and is not source. `symbols.json` holds the
-reading — 18 routines and 32 globals, each with the evidence for
-its name — and the toolkit's `annotate.py` applies it.
+reading — 35 routines and 53 globals, each with the evidence for
+its name, plus `_data_spans` accounting for all 42,112 bytes. **This game
+is the one that is not finished**: 180 of its 221 call targets have not
+been read, and they are listed in `_unread` rather than given names the
+evidence would not support — and the toolkit's `annotate.py` applies it.
 
 ```powershell
 .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe

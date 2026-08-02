@@ -20,9 +20,41 @@
       "entry",
       "the MZ entry from CS:IP; sets DS once and never again"
     ],
+    "0x0255": [
+      "startup",
+      "detects the display, loads the libraries, then calls main"
+    ],
+    "0x03C7": [
+      "main",
+      "loads allgal and fuji.bcg, then the title and the scene chain"
+    ],
+    "0x0569": [
+      "check_level_exit",
+      "player down, pose 67, or x reached the right wall"
+    ],
+    "0x05AD": [
+      "play_attract",
+      "castle.bcg, then fuji.bcg, scene 0 and cal01 -- the sequence that runs when nobody presses a key"
+    ],
+    "0x05E5": [
+      "show_fuji",
+      "load_backdrop(\"fuji.bcg\", 1500) and nothing else"
+    ],
+    "0x0608": [
+      "set_video_mode",
+      "int 0x10 with AH=0 and AL from its argument"
+    ],
+    "0x0614": [
+      "set_cursor",
+      "int 0x10 AH=2, DL and DH from its two arguments, BH=0"
+    ],
     "0x0629": [
       "random",
       "rand() * (n+1), high word taken -- uniform 0..n with no divide"
+    ],
+    "0x0640": [
+      "draw_sprite_shifted",
+      "the dispatcher's sibling; sets the same stream globals plus the shift"
     ],
     "0x083C": [
       "draw_sprite",
@@ -36,9 +68,25 @@
       "next_pixel_byte",
       "run-length decoder, called once per output byte"
     ],
+    "0x0F52": [
+      "load_backdrop",
+      "called with (\"fuji.bcg\", 1500) and (\"title.bcg\", 0)"
+    ],
+    "0x0FBB": [
+      "show_castle",
+      "loads castle.bcg and runs it through the script player"
+    ],
+    "0x1027": [
+      "load_sprite_set",
+      "indexes the ks*/km* name table at DS:0x0264"
+    ],
     "0x1277": [
       "compile_script",
       "text in, byte code out; called with (name, destination)"
+    ],
+    "0x12EB": [
+      "compile_line",
+      "the compiler's dispatch loop; the fourteen arms are inside it"
     ],
     "0x1364": [
       "compile_set_tune",
@@ -56,6 +104,14 @@
       "compile_end_animation",
       "arm 13; emits 0xFF, the only opcode that is not 2*index"
     ],
+    "0x166D": [
+      "run_script",
+      "walks compiled byte code; polls for a key with AH=06"
+    ],
+    "0x190B": [
+      "play_script",
+      "compile a named script and run it"
+    ],
     "0x1976": [
       "index_blocks",
       "walks a compiled library recording each block's offset; 42 of them, frames 17 bytes"
@@ -64,145 +120,17 @@
       "index_guard_library",
       "the same for the library at 0xCE3E"
     ],
+    "0x19AE": [
+      "load_player_library",
+      "allpal into 0xC428, then index_blocks"
+    ],
     "0x19EE": [
       "index_sections",
       "builds n section tables from a scenery script; n is 1 or 6"
     ],
-    "0x190B": [
-      "play_script",
-      "compile a named script and run it"
-    ],
     "0x1AC2": [
       "load_scene",
       "scene 0..3 -> bal00..bal03 through the pointer table at DS:0x021C"
-    ],
-    "0x1D07": [
-      "pose_handler",
-      "reached from every arm of the pose switch; calls the input layer"
-    ],
-    "0x205E": [
-      "player_choose_move",
-      "the human's chooser; [0x156]==0 selects it"
-    ],
-    "0x228B": [
-      "pose_switch",
-      "sparse (pose, arm) dispatch, seventeen cases, table at 0x2247"
-    ],
-    "0x2324": [
-      "fight_step_player",
-      "advance or restart the player's move"
-    ],
-    "0x246B": [
-      "fight_step_guard",
-      "the same for the guard"
-    ],
-    "0x2605": [
-      "guard_choose_move",
-      "the AI: its pose, the player's pose, the distance"
-    ],
-    "0x2A49": [
-      "demo_choose_move",
-      "plays the attract sequence; computes a distance a keyboard reader would not want"
-    ],
-    "0x3A2D": [
-      "setup_level",
-      "sets the walls and the section index"
-    ],
-    "0x3A8A": [
-      "select_section",
-      "copies section [0xC3A6] out of the three tables"
-    ],
-    "0x3B19": [
-      "spawn_guard",
-      "pose 31, and random(2)*12 for an aggression of 0, 12 or 24"
-    ],
-    "0x3B5C": [
-      "player_scripted_hit",
-      "knock back 4 px and take a point; the scripted kind, not the fight kind"
-    ],
-    "0x3BAE": [
-      "play_sound",
-      "21 call sites"
-    ],
-    "0x40D5": [
-      "rand",
-      "the generator random() scales"
-    ],
-    "0x4149": [
-      "read_intent",
-      "called from inside pose_handler at 0x1D2A and 0x1DAA"
-    ],
-    "0x425E": [
-      "hercules_sync_wait",
-      "port 0x3BA with a counted loop -- display detection, NOT the joystick"
-    ],
-    "0x4273": [
-      "detect_cga",
-      "0x55AA written into video memory and read back"
-    ],
-    "0x42D1": [
-      "detect_hercules",
-      "port 0x3BF, then the sync wait above"
-    ],
-    "0x43AA": [
-      "hit_test",
-      "attacker's pose, distance, target's stance -> 4 for a miss, 2 or 3 for a hit"
-    ],
-    "0x44D3": [
-      "intent_from_input",
-      "turns the stick bitmask into an intent, given the player's pose"
-    ],
-    "0x470D": [
-      "read_buttons",
-      "port 0x201 masked with 0x30"
-    ],
-    "0x4756": [
-      "read_stick",
-      "buttons plus both axes against the calibration bounds"
-    ],
-    "0x5741": [
-      "sscanf",
-      "the compiler's argument parser"
-    ],
-    "0x0255": [
-      "startup",
-      "detects the display, loads the libraries, then calls main"
-    ],
-    "0x03C7": [
-      "main",
-      "loads allgal and fuji.bcg, then the title and the scene chain"
-    ],
-    "0x0569": [
-      "check_level_exit",
-      "player down, pose 67, or x reached the right wall"
-    ],
-    "0x0640": [
-      "draw_sprite_shifted",
-      "the dispatcher's sibling; sets the same stream globals plus the shift"
-    ],
-    "0x0F52": [
-      "load_backdrop",
-      "called with (\"fuji.bcg\", 1500) and (\"title.bcg\", 0)"
-    ],
-    "0x0FBB": [
-      "show_castle",
-      "loads castle.bcg and runs it through the script player"
-    ],
-    "0x1027": [
-      "load_sprite_set",
-      "indexes the ks*/km* name table at DS:0x0264"
-    ],
-    "0x12EB": [
-      "compile_line",
-      "the compiler's dispatch loop; the fourteen arms are inside it"
-    ],
-    "0x166D": [
-      "run_script",
-      "walks compiled byte code; polls for a key with AH=06"
-    ],
-    "0x19AE": [
-      "load_player_library",
-      "allpal into 0xC428, then index_blocks"
     ],
     "0x1B27": [
       "init_fight",
@@ -211,6 +139,10 @@
     "0x1C58": [
       "reset_guard",
       "guard x, pose, cursor and health together"
+    ],
+    "0x1D07": [
+      "pose_handler",
+      "reached from every arm of the pose switch; calls the input layer"
     ],
     "0x1D8A": [
       "poll_intent",
@@ -224,21 +156,85 @@
       "pose_action",
       "switches on player_pose through the table at 0x200A"
     ],
+    "0x205E": [
+      "player_choose_move",
+      "the human's chooser; [0x156]==0 selects it"
+    ],
+    "0x214B": [
+      "pose_arm_stand",
+      "poses 1 and 8; no input becomes move 0, anything else passes through"
+    ],
+    "0x2161": [
+      "pose_arm_low",
+      "poses 2-4; no input becomes 41, anything else is offset by +34"
+    ],
+    "0x217D": [
+      "pose_arm_low_alt",
+      "poses 42-44; the same shape with +37"
+    ],
+    "0x2199": [
+      "pose_arm_strike",
+      "poses 5-7; intents 0x18-0x1A rotate [0x15A] modulo three"
+    ],
+    "0x21DB": [
+      "pose_arm_crouch",
+      "poses 10 and 11; intent 12 in pose 10 stays 12"
+    ],
+    "0x2211": [
+      "pose_arm_locked",
+      "pose 15; `xor ax, ax` and return -- this pose accepts no input at all"
+    ],
+    "0x2218": [
+      "pose_arm_down",
+      "poses 65 and 66; no input becomes move 19"
+    ],
+    "0x2231": [
+      "pose_arm_hurt",
+      "pose 70; no input becomes move 15"
+    ],
+    "0x228B": [
+      "pose_switch",
+      "sparse (pose, arm) dispatch, seventeen cases, table at 0x2247"
+    ],
+    "0x22A4": [
+      "copy_range",
+      "rep movsb from [bp+6] to [bp+4], count = [bp+8]-[bp+6]; 164 calls per run from fight_frame"
+    ],
     "0x22BC": [
       "fight_frame",
       "one frame for both fighters: advance, or choose and start a move"
     ],
-    "0x29E9": [
-      "random_move_2_4",
-      "random(2) + 2 -- one of three strikes"
+    "0x2324": [
+      "fight_step_player",
+      "advance or restart the player's move"
+    ],
+    "0x246B": [
+      "fight_step_guard",
+      "the same for the guard"
+    ],
+    "0x2605": [
+      "guard_choose_move",
+      "the AI: its pose, the player's pose, the distance"
     ],
     "0x2941": [
       "place_guard",
       "random placement between the walls"
     ],
+    "0x29E9": [
+      "random_move_2_4",
+      "random(2) + 2 -- one of three strikes"
+    ],
+    "0x2A0A": [
+      "noop",
+      "push bp / mov bp, sp / pop bp / ret -- five bytes that do nothing. Nothing calls it, so comrec emits it as five `db` bytes with no label and this name is documentation only"
+    ],
     "0x2A0F": [
       "random_move_4_5",
       "random(1) + 4 -- one of two strikes"
+    ],
+    "0x2A49": [
+      "demo_choose_move",
+      "plays the attract sequence; computes a distance a keyboard reader would not want"
     ],
     "0x2B94": [
       "should_attack",
@@ -260,13 +256,197 @@
       "story_step",
       "switches on the pending story event [0xD672]; loads scenes and advances the level"
     ],
+    "0x3A2D": [
+      "setup_level",
+      "sets the walls and the section index"
+    ],
+    "0x3A8A": [
+      "select_section",
+      "copies section [0xC3A6] out of the three tables"
+    ],
     "0x3AD0": [
       "reselect_section",
       "re-reads section_index into the three live pointers"
     ],
+    "0x3B19": [
+      "spawn_guard",
+      "pose 31, and random(2)*12 for an aggression of 0, 12 or 24"
+    ],
+    "0x3B5C": [
+      "player_scripted_hit",
+      "knock back 4 px and take a point; the scripted kind, not the fight kind"
+    ],
+    "0x3BAE": [
+      "play_sound",
+      "21 call sites"
+    ],
+    "0x40D5": [
+      "rand",
+      "the generator random() scales"
+    ],
+    "0x4111": [
+      "srand",
+      "calls rand_state with (1, &local)"
+    ],
+    "0x4123": [
+      "rand_state",
+      "called by rand with (seed, 0xEACE, 0)"
+    ],
+    "0x4149": [
+      "read_intent",
+      "called from inside pose_handler at 0x1D2A and 0x1DAA"
+    ],
+    "0x425E": [
+      "hercules_sync_wait",
+      "port 0x3BA with a counted loop -- display detection, NOT the joystick"
+    ],
+    "0x4273": [
+      "detect_cga",
+      "0x55AA written into video memory and read back"
+    ],
+    "0x42D1": [
+      "detect_hercules",
+      "port 0x3BF, then the sync wait above"
+    ],
+    "0x43AA": [
+      "hit_test",
+      "attacker's pose, distance, target's stance -> 4 for a miss, 2 or 3 for a hit"
+    ],
     "0x4441": [
       "input_layer",
       "installs a vector, reads stick and keyboard, keeps input_mask"
+    ],
+    "0x44D3": [
+      "intent_from_input",
+      "turns the stick bitmask into an intent, given the player's pose"
+    ],
+    "0x46FC": [
+      "calibrate_axis",
+      "AH selects the axis, DI the pair of bounds to fill; called twice"
+    ],
+    "0x470D": [
+      "read_buttons",
+      "port 0x201 masked with 0x30"
+    ],
+    "0x4756": [
+      "read_stick",
+      "buttons plus both axes against the calibration bounds"
+    ],
+    "0x483C": [
+      "fopen",
+      "walks the FILE table at 0xE1B0..0xE2C8, stride 14, for a free slot"
+    ],
+    "0x4883": [
+      "fopen_body",
+      "seen with (name, \"r\" at DS:0xBC83, FILE) -- does the opening"
+    ],
+    "0x4A37": [
+      "file_flush_if_dirty",
+      "tests bit 1 of the FILE flag byte at [si+8] before flushing"
+    ],
+    "0x4A91": [
+      "stdio_flush",
+      "the only unnamed routine that touches the FILE table fopen walks"
+    ],
+    "0x4B0A": [
+      "fgets",
+      "(buffer, 80, FILE); 2,602 calls from compile_script -- one per script line"
+    ],
+    "0x4B7F": [
+      "close_all_files",
+      "loops 0..19 at stride 14 -- every slot of the FILE table"
+    ],
+    "0x4BCE": [
+      "heap_extend",
+      "reads the 32-bit break at [0x65]:[0x67] and asks DOS for more"
+    ],
+    "0x4C73": [
+      "alloc_up",
+      "the same contract growing upward; linked but never called"
+    ],
+    "0x4C99": [
+      "heap_init",
+      "checks the DOS version at [0x0F], then sets the break from [0x5D] and [0x61]"
+    ],
+    "0x4D77": [
+      "stdio_getbuf",
+      "(handle) -> the same buffer address every time"
+    ],
+    "0x4DB9": [
+      "open_file",
+      "handed a filename, returns handle 3; the layer under fopen_body"
+    ],
+    "0x4FB8": [
+      "open_mode_bits",
+      "or 0x301 into the mode word, mask 0x8000 off the handle"
+    ],
+    "0x4FDD": [
+      "fread",
+      "(handle 3, ...); 136 calls from load_backdrop, show_castle and load_sprite_set, ~1,133 writes each"
+    ],
+    "0x52D8": [
+      "fwrite",
+      "the mirror of fread: takes a handle, calls stdio_getbuf"
+    ],
+    "0x5501": [
+      "fail_einval",
+      "sets errno to 22 and returns -1"
+    ],
+    "0x55F9": [
+      "handle_check",
+      "(handle 3, ...); returns 0 on all 48 calls"
+    ],
+    "0x5659": [
+      "remove_body",
+      "version check, then dos_unlink"
+    ],
+    "0x5692": [
+      "remove",
+      "the one-argument wrapper over it"
+    ],
+    "0x56A5": [
+      "rename",
+      "version check, then two path arguments"
+    ],
+    "0x56DE": [
+      "strcpy",
+      "copies until NUL, n ignored; called with strcat from load_sprite_set to build \"ks0\"+\".dat\""
+    ],
+    "0x5706": [
+      "bounded_strcpy",
+      "copies until NUL but no further than n, and NUL-terminates; not quite the strncpy contract, which pads to n. Nothing calls it."
+    ],
+    "0x5741": [
+      "sscanf",
+      "the compiler's argument parser"
+    ],
+    "0x5879": [
+      "scan_getc",
+      "that callback: 16,496 calls, one per character scanned"
+    ],
+    "0x589A": [
+      "scan_token",
+      "walks a string one byte at a time; startup calls it"
+    ],
+    "0x5907": [
+      "scan_cmdline",
+      "the same shape, called once from crt0_main"
+    ],
+    "0x5953": [
+      "crt0_main",
+      "the runtime's entry wrapper; called from the entry stub at 0x1F5"
+    ],
+    "0x5B2E": [
+      "strncmp",
+      "respects n and stops at NUL; called from compile_line to match the command names"
+    ],
+    "0x5B9C": [
+      "strcat",
+      "the four call sites pair with strcpy's, one per name built"
+    ],
+    "0x5BCE": [
+      "strend",
+      "calls strlen and adds the result to the pointer"
     ],
     "0x5C12": [
       "dos_setblock",
@@ -316,97 +496,9 @@
       "dos_rename",
       "AH=0x56"
     ],
-    "0x5953": [
-      "crt0_main",
-      "the runtime's entry wrapper; called from the entry stub at 0x1F5"
-    ],
-    "0x6725": [
-      "dos_readline",
-      "AH=0x0A, buffered console input"
-    ],
-    "0x05AD": [
-      "play_attract",
-      "castle.bcg, then fuji.bcg, scene 0 and cal01 -- the sequence that runs when nobody presses a key"
-    ],
-    "0x4A91": [
-      "stdio_flush",
-      "the only unnamed routine that touches the FILE table fopen walks"
-    ],
-    "0x56DE": [
-      "strcpy",
-      "copies until NUL, n ignored; called with strcat from load_sprite_set to build \"ks0\"+\".dat\""
-    ],
-    "0x5B9C": [
-      "strcat",
-      "the four call sites pair with strcpy's, one per name built"
-    ],
-    "0x66B9": [
-      "strlen",
-      "5 for \"hello\", 3 for \"abc\", 0 for \"\"; strcat's helper"
-    ],
-    "0x6AF4": [
-      "strcmp",
-      "sign correct on four pairs; a third argument changes nothing"
-    ],
-    "0x5B2E": [
-      "strncmp",
-      "respects n and stops at NUL; called from compile_line to match the command names"
-    ],
-    "0x5706": [
-      "bounded_strcpy",
-      "copies until NUL but no further than n, and NUL-terminates; not quite the strncpy contract, which pads to n. Nothing calls it."
-    ],
-    "0x6810": [
-      "malloc",
-      "non-overlapping blocks, refuses 0xF000, grows downward"
-    ],
-    "0x4C73": [
-      "alloc_up",
-      "the same contract growing upward; linked but never called"
-    ],
-    "0x6766": [
-      "strncmp_unused",
-      "respects n and stops at NUL, as 0x5B2E does; nothing calls it"
-    ],
-    "0x483C": [
-      "fopen",
-      "walks the FILE table at 0xE1B0..0xE2C8, stride 14, for a free slot"
-    ],
-    "0x4883": [
-      "fopen_body",
-      "seen with (name, \"r\" at DS:0xBC83, FILE) -- does the opening"
-    ],
-    "0x4DB9": [
-      "open_file",
-      "handed a filename, returns handle 3; the layer under fopen_body"
-    ],
-    "0x4FDD": [
-      "fread",
-      "(handle 3, ...); 136 calls from load_backdrop, show_castle and load_sprite_set, ~1,133 writes each"
-    ],
-    "0x4B0A": [
-      "fgets",
-      "(buffer, 80, FILE); 2,602 calls from compile_script -- one per script line"
-    ],
-    "0x4D77": [
-      "stdio_getbuf",
-      "(handle) -> the same buffer address every time"
-    ],
-    "0x6342": [
-      "fflush",
-      "(FILE); 92 calls, ~1,686 writes each"
-    ],
-    "0x5E33": [
-      "doscan",
-      "sscanf's engine; its second argument is 0x5879, a character-source callback"
-    ],
-    "0x5879": [
-      "scan_getc",
-      "that callback: 16,496 calls, one per character scanned"
-    ],
-    "0x6B84": [
-      "bdos",
-      "AH from [bp+4], DX from [bp+6], AL from [bp+8], int 0x21 -- Lattice's bdos()"
+    "0x5DAB": [
+      "exit",
+      "hands two words to 0x023C, the runtime's terminator"
     ],
     "0x5DBB": [
       "getch",
@@ -432,109 +524,13 @@
       "prn_putc",
       "bdos(AH=0x05), printer output; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_LPUT`"
     ],
-    "0x682D": [
-      "alloc_block",
-      "asked for 0x200 and returns 0xEB20 -- the stdio buffer's block"
+    "0x5E33": [
+      "doscan",
+      "sscanf's engine; its second argument is 0x5879, a character-source callback"
     ],
-    "0x22A4": [
-      "copy_range",
-      "rep movsb from [bp+6] to [bp+4], count = [bp+8]-[bp+6]; 164 calls per run from fight_frame"
-    ],
-    "0x5501": [
-      "fail_einval",
-      "sets errno to 22 and returns -1"
-    ],
-    "0x55F9": [
-      "handle_check",
-      "(handle 3, ...); returns 0 on all 48 calls"
-    ],
-    "0x6954": [
-      "heap_link",
-      "(0xEB20, 0x200, ...) -- block bookkeeping beside alloc_block"
-    ],
-    "0x6974": [
-      "heap_insert",
-      "the same pair of arguments, called by heap_link"
-    ],
-    "0x6BF5": [
-      "heap_walk",
-      "called by alloc_block and heap_insert"
-    ],
-    "0x4123": [
-      "rand_state",
-      "called by rand with (seed, 0xEACE, 0)"
-    ],
-    "0x05E5": [
-      "show_fuji",
-      "load_backdrop(\"fuji.bcg\", 1500) and nothing else"
-    ],
-    "0x0608": [
-      "set_video_mode",
-      "int 0x10 with AH=0 and AL from its argument"
-    ],
-    "0x0614": [
-      "set_cursor",
-      "int 0x10 AH=2, DL and DH from its two arguments, BH=0"
-    ],
-    "0x2A0A": [
-      "noop",
-      "push bp / mov bp, sp / pop bp / ret -- five bytes that do nothing"
-    ],
-    "0x4111": [
-      "srand",
-      "calls rand_state with (1, &local)"
-    ],
-    "0x4A37": [
-      "file_flush_if_dirty",
-      "tests bit 1 of the FILE flag byte at [si+8] before flushing"
-    ],
-    "0x4B7F": [
-      "close_all_files",
-      "loops 0..19 at stride 14 -- every slot of the FILE table"
-    ],
-    "0x4BCE": [
-      "heap_extend",
-      "reads the 32-bit break at [0x65]:[0x67] and asks DOS for more"
-    ],
-    "0x4C99": [
-      "heap_init",
-      "checks the DOS version at [0x0F], then sets the break from [0x5D] and [0x61]"
-    ],
-    "0x4FB8": [
-      "open_mode_bits",
-      "or 0x301 into the mode word, mask 0x8000 off the handle"
-    ],
-    "0x52D8": [
-      "fwrite",
-      "the mirror of fread: takes a handle, calls stdio_getbuf"
-    ],
-    "0x5659": [
-      "remove_body",
-      "version check, then dos_unlink"
-    ],
-    "0x5692": [
-      "remove",
-      "the one-argument wrapper over it"
-    ],
-    "0x56A5": [
-      "rename",
-      "version check, then two path arguments"
-    ],
-    "0x589A": [
-      "scan_token",
-      "walks a string one byte at a time; startup calls it"
-    ],
-    "0x5907": [
-      "scan_cmdline",
-      "the same shape, called once from crt0_main"
-    ],
-    "0x5BCE": [
-      "strend",
-      "calls strlen and adds the result to the pointer"
-    ],
-    "0x5DAB": [
-      "exit",
-      "hands two words to 0x023C, the runtime's terminator"
+    "0x6342": [
+      "fflush",
+      "(FILE); 92 calls, ~1,686 writes each"
     ],
     "0x644E": [
       "putc_buffered",
@@ -544,13 +540,25 @@
       "flush_buffer",
       "tests the FILE's count at [si+0x0A] and bit 3 of its flags"
     ],
+    "0x66B9": [
+      "strlen",
+      "5 for \"hello\", 3 for \"abc\", 0 for \"\"; strcat's helper"
+    ],
     "0x66DF": [
       "fclose",
       "calls fclose_body, then clears the slot"
     ],
+    "0x6725": [
+      "dos_readline",
+      "AH=0x0A, buffered console input"
+    ],
     "0x6731": [
       "seek_pos_copy",
       "copies the 32-bit [0xE4B6]:[0xE4B8] into [0xE4BA]:[0xE4BC]"
+    ],
+    "0x6766": [
+      "strncmp_unused",
+      "respects n and stops at NUL, as 0x5B2E does; nothing calls it"
     ],
     "0x6779": [
       "lseek",
@@ -560,53 +568,45 @@
       "tell_scaled",
       "[0xE4BC] shifted left twice -- a position in 4-byte units"
     ],
-    "0x6A6D": [
+    "0x6810": [
+      "malloc",
+      "non-overlapping blocks, refuses 0xF000, grows downward"
+    ],
+    "0x682D": [
+      "alloc_block",
+      "asked for 0x200 and returns 0xEB20 -- the stdio buffer's block"
+    ],
+    "0x6954": [
+      "heap_link",
+      "(0xEB20, 0x200, ...) -- block bookkeeping beside alloc_block"
+    ],
+    "0x6974": [
+      "heap_insert",
+      "the same pair of arguments, called by heap_link"
+    ],
+    "0x6A66": [
       "heap_find",
-      "walks blocks comparing a request against each block's size"
+      "walks blocks comparing a request against each block's size -- the key said 0x6A6D, where the listing has no label; L_06A66 is the block that does this, and the name had been applying nowhere"
+    ],
+    "0x6AF4": [
+      "strcmp",
+      "sign correct on four pairs; a third argument changes nothing"
+    ],
+    "0x6B3A": [
+      "cxc33",
+      "**confirmed**: Lattice C 2.12's LCD.LIB calls this `CXC33`"
+    ],
+    "0x6B84": [
+      "bdos",
+      "AH from [bp+4], DX from [bp+6], AL from [bp+8], int 0x21 -- Lattice's bdos()"
     ],
     "0x6B96": [
       "fclose_body",
       "tests bit 2 of the FILE flag byte and releases the slot"
     ],
-    "0x214B": [
-      "pose_arm_stand",
-      "poses 1 and 8; no input becomes move 0, anything else passes through"
-    ],
-    "0x2161": [
-      "pose_arm_low",
-      "poses 2-4; no input becomes 41, anything else is offset by +34"
-    ],
-    "0x217D": [
-      "pose_arm_low_alt",
-      "poses 42-44; the same shape with +37"
-    ],
-    "0x2199": [
-      "pose_arm_strike",
-      "poses 5-7; intents 0x18-0x1A rotate [0x15A] modulo three"
-    ],
-    "0x21DB": [
-      "pose_arm_crouch",
-      "poses 10 and 11; intent 12 in pose 10 stays 12"
-    ],
-    "0x2211": [
-      "pose_arm_locked",
-      "pose 15; `xor ax, ax` and return -- this pose accepts no input at all"
-    ],
-    "0x2218": [
-      "pose_arm_down",
-      "poses 65 and 66; no input becomes move 19"
-    ],
-    "0x2231": [
-      "pose_arm_hurt",
-      "pose 70; no input becomes move 15"
-    ],
-    "0x46FC": [
-      "calibrate_axis",
-      "AH selects the axis, DI the pair of bounds to fill; called twice"
-    ],
-    "0x6B3A": [
-      "cxc33",
-      "**confirmed**: Lattice C 2.12's LCD.LIB calls this `CXC33`"
+    "0x6BF5": [
+      "heap_walk",
+      "called by alloc_block and heap_insert"
     ]
   },
   "globals": {

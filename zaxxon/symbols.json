@@ -1,90 +1,1023 @@
 {
   "_about": [
-    "Names for Zaxxon's routines and globals, with the evidence for each.",
+    "Zaxxon, ported by The Duplicators, (c) 1984 Sega. A .COM that",
+    "relocates twice: the code runs at CS + 0x20, and the data segment is",
+    "patched into an immediate at load time to sit 0x5200 bytes further",
+    "on -- past the end of the 20,736-byte file.",
     "",
-    "Addresses are file offsets; a .COM loads at 0x100, so a listing address is",
-    "this plus 0x100. recovered/ is gitignored -- a byte-identical",
-    "reconstruction is the game -- so what is kept is the reading. build.ps1",
-    "applies it and proves the result still rebuilds.",
+    "So the address space is split in two, and the split is the point.",
+    "Anything the program reads is `[cs:...]` and is in the image;",
+    "anything it writes is `[...]` and is in memory the file never",
+    "described. Keys below carry a `cs:` prefix when they mean the first,",
+    "and annotate.py learned to tell them apart for this game.",
     "",
-    "**Not compiled C.** Zero `push bp` prologues, so routines are enumerated by",
-    "call target and probelib.py finds nothing: there is no C runtime here."
+    "All 74 call targets are named, and so are the scene, boss and wall",
+    "handlers the three jump tables reach. Six of the eight names this",
+    "file had before were wrong in the same way ParaTrooper's were: taken",
+    "from how many callers a routine had."
   ],
   "routines": {
-    "0x005D9": [
-      "draw_cell",
-      "12 callers, no callees -- the leaf everything drawing goes through"
+    "0x0000": [
+      "relocate",
+      "pushes CS+0x20 and returns far into it, after patching the data segment into the immediate at file 0x101"
     ],
-    "0x00222": [
-      "level_step",
-      "5 callers"
+    "0x0100": [
+      "start",
+      "sets DS = SS = the patched segment, installs the INT 1Ch handler through the vector at 0:0x70, probes the joystick, and falls into main"
     ],
-    "0x0015E": [
-      "port_write",
-      "the only routine that talks to a port"
+    "0x014C": [
+      "video_init",
+      "mode 4 and two INT 10h AH=0Bh palette calls"
     ],
-    "0x0027A": [
-      "tile_fetch",
-      "4 callers, no callees"
+    "0x015E": [
+      "clear_video",
+      "0x2000 words of zero into ES. It was called port_write"
     ],
-    "0x00600": [
-      "draw_row",
-      "4 callers"
+    "0x0169": [
+      "wait_retrace",
+      "CX vertical retraces off port 0x3DA; nothing in the code region reaches it"
     ],
-    "0x0018C": [
-      "scene_update",
-      "3 callers, 2 callees"
+    "0x017D": [
+      "wait_tick",
+      "spins on INT 1Ah until the low byte of the tick count changes"
     ],
-    "0x00848": [
-      "dispatcher",
-      "the level-script dispatcher; see docs/02-architecture.md"
+    "0x018C": [
+      "score_add",
+      "adds AL to the current player's eight-digit score with AAA, carrying by hand, and sets score_dirty. It was called scene_update"
     ],
-    "0x01FAD": [
-      "hud_update",
-      "4 callers"
+    "0x01CA": [
+      "score_digit_add",
+      "one digit and its carry flag"
+    ],
+    "0x01DD": [
+      "score_draw",
+      "eight digits, leading zeros dropped by scanning for the first non-zero"
+    ],
+    "0x0200": [
+      "put_digit",
+      "adds 0x30 and calls put_char"
+    ],
+    "0x020C": [
+      "print_script",
+      "walks a display script: an attribute byte, a cursor word, a NUL-terminated string, and 0xFF to stop. It was called level_step"
+    ],
+    "0x0222": [
+      "print_string",
+      "the string half of that, at cursor DX"
+    ],
+    "0x0233": [
+      "put_char",
+      "INT 10h AH=2 then AH=9 with the attribute in text_attr -- BIOS character output on a mode 4 screen"
+    ],
+    "0x0247": [
+      "joystick_probe",
+      "counts the discharge on both axes of port 0x201; carry means no stick is attached"
+    ],
+    "0x0266": [
+      "joystick_buttons",
+      "port 0x201 bits 0x30"
+    ],
+    "0x026F": [
+      "key_poll",
+      "INT 16h AH=1 then AH=0; returns with ZF if nothing was waiting"
+    ],
+    "0x027A": [
+      "fill_zero",
+      "fill_range with AL = 0"
+    ],
+    "0x027C": [
+      "fill_range",
+      "DI up to CX with AL, in the data segment"
+    ],
+    "0x0286": [
+      "copy_from_image",
+      "CX bytes from CS:SI to DS:DI -- how every table in the image reaches a variable"
+    ],
+    "0x0291": [
+      "timer_isr",
+      "the INT 1Ch handler. Samples the joystick into joystick_pos if one is attached, then services the four sound channels"
+    ],
+    "0x02C0": [
+      "main",
+      "title screen, attract loop, two-player turn taking, high score. The outer loop the game never leaves"
+    ],
+    "0x0330": [
+      "play_round",
+      "one player's turn: build the playfield, then the frame loop -- controls, objects, scroll, fuel, collision -- until the ship is lost"
+    ],
+    "0x045E": [
+      "award_extra_life",
+      "one more life once the score's fourth digit reaches 2"
+    ],
+    "0x047F": [
+      "crash_frame",
+      "one frame of the death animation, run twenty times with two sprite variants"
+    ],
+    "0x04B4": [
+      "fill_map_empty",
+      "0x80 across the whole tile map: every cell empty and every cell dirty"
+    ],
+    "0x04CA": [
+      "high_score_insert",
+      "compares eight digits and slides the entry in if it beats them"
+    ],
+    "0x04EE": [
+      "title_wait",
+      "0xB4 ticks of waiting for '1', '2', or a joystick button; carry means somebody chose"
+    ],
+    "0x0534": [
+      "draw_stage_number",
+      ""
+    ],
+    "0x0545": [
+      "load_start_map",
+      "copies a 34 x 22 block of tiles over the map -- the ground the round opens on"
+    ],
+    "0x05BA": [
+      "blit_playfield",
+      "the back buffer to the screen: 68 bytes a row, 176 rows, the two CGA banks alternating"
+    ],
+    "0x05D9": [
+      "player_context",
+      "returns BX pointing at this player's six-word context in the image -- score, cursor, lives, stage script position. Thirteen routines call it, which is why it was called draw_cell"
+    ],
+    "0x0600": [
+      "delay_ticks",
+      "CX ticks. It was called draw_row"
+    ],
+    "0x0608": [
+      "new_turn",
+      "prints both scores, both lives counts, and whose turn it is"
+    ],
+    "0x0641": [
+      "draw_lives",
+      "the ship icon once per remaining life"
+    ],
+    "0x0682": [
+      "or_sprite",
+      "16 rows of three words ORed into video with the bank swap in DX"
+    ],
+    "0x06A6": [
+      "choose_control",
+      "'Keyboard Control=K' / 'Joystick Control=J', or the refusal if no stick answered the probe"
+    ],
+    "0x0848": [
+      "stage_dispatch",
+      "jumps through stage_script at the position this player's context holds. It was called dispatcher"
+    ],
+    "0x08B4": [
+      "stage_restart",
+      "rounds the script position down to an entry and reports whether it is one of the two that begin a stage"
+    ],
+    "0x08DD": [
+      "stage_next",
+      "advances the script by one word, wrapping at the 0xFFFF terminator"
+    ],
+    "0x08FC": [
+      "scroll_tick",
+      "the entry every stage script alternates with: world_x down, world_y up, redraw the ship, feed the map"
+    ],
+    "0x0946": [
+      "map_feed",
+      "writes the ship and its shadow into the tile map as the world scrolls under them"
+    ],
+    "0x0A62": [
+      "clear_section",
+      "zeroes the whole 6,912-byte section bitmap"
+    ],
+    "0x0A6B": [
+      "scene_wall",
+      "the first stage: 1000-point bonus, then the wall"
+    ],
+    "0x0AA3": [
+      "scene_space",
+      ""
+    ],
+    "0x0ADD": [
+      "scene_2",
+      "each of these seven sets a level pointer, a stage handler, and a scene kind, then unpacks its level"
+    ],
+    "0x0AED": [
+      "scene_3",
+      ""
+    ],
+    "0x0AFF": [
+      "scene_4",
+      ""
+    ],
+    "0x0B10": [
+      "scene_5",
+      ""
+    ],
+    "0x0B21": [
+      "scene_6",
+      ""
+    ],
+    "0x0B32": [
+      "scene_7",
+      ""
+    ],
+    "0x0B43": [
+      "scene_8",
+      ""
+    ],
+    "0x0B8D": [
+      "unpack_level",
+      "the run-length decoder: 0xFD count value, 0xFE skip, 0xFF finish the row, anything under 0xFC literal. 18 rows of 24 cells into the section bitmap"
+    ],
+    "0x0C1E": [
+      "put_section_cell",
+      "one cell of that, eight rows at stride 48"
+    ],
+    "0x0C28": [
+      "load_scroll_state",
+      "eight bytes over world_x"
+    ],
+    "0x0C31": [
+      "stage_bonus",
+      "clears the screen, prints '1000 Point BONUS', scores it twice, and resets the scroll"
+    ],
+    "0x0C8C": [
+      "object_visible",
+      "the clip test; an object outside the window is marked 0xFF, which frees its slot"
+    ],
+    "0x0CC3": [
+      "object_blit",
+      "picks the bitmap and the blitter for the object's kind out of sprite_table and calls it"
+    ],
+    "0x0CF0": [
+      "blit_masked_24",
+      "24 rows of three words, AND the mask at +0x90 then OR the image"
+    ],
+    "0x0D0F": [
+      "blit_or_16x4",
+      ""
+    ],
+    "0x0D2B": [
+      "blit_or_16x6",
+      ""
+    ],
+    "0x0D4E": [
+      "blit_masked_16x4",
+      "mask at +0x40"
+    ],
+    "0x0D77": [
+      "blit_masked_16x6",
+      "mask at +0x60"
+    ],
+    "0x0D99": [
+      "blit_or_8x2",
+      ""
+    ],
+    "0x0DAD": [
+      "blit_masked_8x2",
+      "mask at +8"
+    ],
+    "0x0DC7": [
+      "blit_and_16",
+      "AND only -- how a shadow darkens what is under it"
+    ],
+    "0x0DE3": [
+      "blit_explosion",
+      "kinds 0xF0 and up: a frame from explosion_frames, mask and image kept in two separate tables that each wrap on themselves"
+    ],
+    "0x0E31": [
+      "map_render",
+      "walks the visible 34 x 22 of the tile map; bit 0x80 means the cell changed, so draw it and clear the bit"
+    ],
+    "0x0E60": [
+      "draw_tile_buffer",
+      "eight rows of a word at stride 0x50"
+    ],
+    "0x0E65": [
+      "draw_tile_section",
+      "the same at stride 0x30, into the section bitmap"
+    ],
+    "0x0E68": [
+      "draw_tile",
+      "what both of those are"
+    ],
+    "0x0E82": [
+      "draw_tile_screen",
+      "straight to video, four double rows with the bank toggled by XOR 0x2000"
+    ],
+    "0x0EB0": [
+      "blit_clip",
+      "copies a rectangle out of the image into the back buffer, clipped on all four sides; the rectangle is the four words at BX"
+    ],
+    "0x0FF0": [
+      "objects_draw",
+      "draws the 29 objects back to front, sorting by depth as it goes, then the ship, then the six slots the wall uses"
+    ],
+    "0x1071": [
+      "objects_move",
+      "adds each object's velocity, chosen from velocity_table by the low three bits of its second byte"
+    ],
+    "0x1098": [
+      "object_draw_one",
+      "clip, blit, then mark the nine or sixteen map cells it covered dirty"
+    ],
+    "0x1110": [
+      "key_wait",
+      "blocks until the keyboard buffer is empty again"
+    ],
+    "0x1120": [
+      "pause",
+      "silence, clear the sound state, and wait for a second Escape"
+    ],
+    "0x113C": [
+      "read_joystick_dir",
+      "the sample the timer interrupt left in joystick_pos, less the centre reading, clamped to 0..7 on each axis and folded to one of nine directions through joystick_dir_map"
+    ],
+    "0x119C": [
+      "clamp_axis",
+      "+0x10, floor at 0, ceiling at 0x1F, then two right shifts"
+    ],
+    "0x11B0": [
+      "read_key_dir",
+      "the arrow keys 0x47..0x51 through key_dir_map; space sets fire_pressed"
+    ],
+    "0x11EE": [
+      "ship_control",
+      "one direction, one move. Clamps X to 6..0x2E and Y to the altitude-dependent band, tracks the shadow, finds a free bullet slot when fire is held"
+    ],
+    "0x13B7": [
+      "fuel_init",
+      "copies the ship's starting state and a full fuel gauge out of the image"
+    ],
+    "0x13E5": [
+      "fuel_draw",
+      "the gauge, one tile per cell"
+    ],
+    "0x13FF": [
+      "fuel_tick",
+      "draws the altimeter, then burns a cell of fuel every fuel_timer ticks. An empty gauge returns carry, and that is one of the ways the round ends"
+    ],
+    "0x14ED": [
+      "object_hit",
+      "what a bullet destroyed: a fuel drum refills the gauge, everything else scores through score_table"
+    ],
+    "0x155F": [
+      "lose_life",
+      ""
+    ],
+    "0x1580": [
+      "spawn_tick",
+      "reads the current stage's spawn list six ticks at a time and drops each entry into the first free object slot"
+    ],
+    "0x173E": [
+      "enemy_fire",
+      "gives the two enemy-shot slots a target: the player's position now, or led ahead of it, depending on what kind of enemy is shooting"
+    ],
+    "0x1843": [
+      "boss_stage",
+      "the fortress: its own small script through boss_script"
+    ],
+    "0x1860": [
+      "boss_appear",
+      ""
+    ],
+    "0x1882": [
+      "boss_spawn",
+      ""
+    ],
+    "0x18E5": [
+      "boss_wait_clear",
+      ""
+    ],
+    "0x18F9": [
+      "boss_done",
+      ""
+    ],
+    "0x1902": [
+      "wall_stage",
+      "the wall between stages, dispatched through wall_script"
+    ],
+    "0x192D": [
+      "wall_approach",
+      ""
+    ],
+    "0x1981": [
+      "wall_hold",
+      ""
+    ],
+    "0x19A4": [
+      "wall_result",
+      ""
+    ],
+    "0x19C4": [
+      "wall_retreat",
+      ""
+    ],
+    "0x19E3": [
+      "wall_clear",
+      ""
+    ],
+    "0x1A6E": [
+      "wall_bonus",
+      "'200 Point BONUS' or '2000 Point BONUS' by whether the gap was found, then rebuild the playfield"
+    ],
+    "0x1B03": [
+      "scene_wall_setup",
+      "loads the wall's scroll state, its six objects and its level, and steps the script"
+    ],
+    "0x1BA7": [
+      "shadow_track",
+      "keeps the ship's shadow on the ground under it while the world scrolls"
+    ],
+    "0x1DC5": [
+      "collisions",
+      "the ship against all fourteen hazards, then each of the six bullets against all of them. A hit on the ship returns carry and ends the round"
+    ],
+    "0x1E88": [
+      "damage_boss",
+      "a bullet in the fortress: 0x36 of them finishes it"
+    ],
+    "0x1EA3": [
+      "overlap",
+      "three units in X, three in Y, and for the kinds that have one, three in altitude"
+    ],
+    "0x1EE9": [
+      "wall_gap_test",
+      "whether the ship is lined up with the gap"
+    ],
+    "0x1F15": [
+      "wall_gap_test_2",
+      "the same test for a bullet"
+    ],
+    "0x1F96": [
+      "depth_of",
+      "an object's position relative to world_x"
+    ],
+    "0x1F9F": [
+      "engine_quiet",
+      ""
+    ],
+    "0x1FAD": [
+      "engine_sound_tick",
+      "the engine hum: while engine_timer runs, a fresh random divisor every call. It was called hud_update"
+    ],
+    "0x1FD1": [
+      "sound_service",
+      "four channels at sound_channels; the first active one dispatches through sound_handler"
+    ],
+    "0x2012": [
+      "sound_shot",
+      ""
+    ],
+    "0x2034": [
+      "sound_explosion",
+      ""
+    ],
+    "0x2063": [
+      "sound_swoop",
+      ""
+    ],
+    "0x2098": [
+      "speaker_stop",
+      "clears bits 3 and 0 of port 0x61"
+    ],
+    "0x209D": [
+      "speaker_off",
+      ""
+    ],
+    "0x20A4": [
+      "speaker_tone",
+      "port 0x43 mode 0xB6, the divisor to 0x42, gate on at 0x61"
+    ],
+    "0x20B7": [
+      "fill_bytes",
+      "CX bytes of CH at BX"
+    ],
+    "0x20BD": [
+      "random",
+      "folds the INT 1Ah tick count into rng_state and returns it modulo 0x51"
     ]
   },
   "globals": {
+    "0x0000": [
+      "flags",
+      "bit 0x0F the player count, 0x10 whose turn, 0x20 a joystick answered the probe, 0x40 the control choice is made"
+    ],
+    "0x0001": [
+      "score_dirty",
+      "set by score_add, tested by the frame loop"
+    ],
+    "0x0002": [
+      "text_attr",
+      "the attribute put_char passes to INT 10h AH=9"
+    ],
+    "0x0003": [
+      "stick_centre_x",
+      "the reading taken before the game started"
+    ],
+    "0x0004": [
+      "stick_centre_y",
+      ""
+    ],
+    "0x0005": [
+      "tick_last",
+      "what wait_tick spins against"
+    ],
+    "0x0006": [
+      "level_tiles",
+      "the image address of the tile set the current scene draws from"
+    ],
+    "0x0008": [
+      "move_axis",
+      "bit 0 vertical, bit 1 horizontal -- which way the stick was pushed this frame"
+    ],
+    "0x0009": [
+      "stage_handler",
+      "called indirectly by collisions; each scene installs its own"
+    ],
     "0x000B": [
-      "mode",
-      "0, 1, 3 or 5; read by 0x1BA7, written by 0x946 and 0x173E"
+      "scene_kind",
+      ""
+    ],
+    "0x000C": [
+      "stage_id",
+      "the script word the current stage came from; two values mean the crash animation is skipped"
+    ],
+    "0x000E": [
+      "p1_lives",
+      ""
+    ],
+    "0x0011": [
+      "p2_lives",
+      ""
+    ],
+    "0x0016": [
+      "wall_cleared",
+      "set when the ship went through the gap"
+    ],
+    "0x001F": [
+      "p1_high_flag",
+      "the fifth word of player 1's context, cleared with the score at the start of a game"
+    ],
+    "0x00F7": [
+      "shot_y",
+      ""
+    ],
+    "0x00FC": [
+      "shot_2_x",
+      "the second enemy shot's, tested so two shots never aim at the same column"
+    ],
+    "0x0191": [
+      "timer_isr_offset",
+      "the code offset start puts in the INT 1Ch vector; the same address as timer_isr"
+    ],
+    "0x0201": [
+      "data_segment_patch",
+      "PSP:0x201 is the immediate of the `mov ax, imm16` at file 0x101. The relocation stub writes the data segment into it before jumping, which is why the listing shows a constant that is never the value the game runs with"
+    ],
+    "0x0021": [
+      "sound_reset",
+      ""
+    ],
+    "0x0023": [
+      "hit_flag",
+      "set by object_hit"
+    ],
+    "0x0025": [
+      "sound_channels",
+      "four two-byte channels; bit 0 of each means playing"
+    ],
+    "0x0027": [
+      "sound_channel_2",
+      ""
+    ],
+    "0x0029": [
+      "sound_channel_3",
+      ""
+    ],
+    "0x002B": [
+      "sound_channel_4",
+      ""
+    ],
+    "0x0033": [
+      "sound_variant",
+      ""
+    ],
+    "0x0038": [
+      "rng_tick",
+      "the last INT 1Ah reading random took"
+    ],
+    "0x003A": [
+      "rng_state",
+      "the byte it folds into"
+    ],
+    "0x003B": [
+      "engine_timer",
+      "counts down; zero silences the engine"
+    ],
+    "0x003E": [
+      "spawn_timer",
+      "six ticks between entries of the spawn list"
+    ],
+    "0x003F": [
+      "fire_pressed",
+      "set by the space bar, cleared when it is used"
+    ],
+    "0x0040": [
+      "wall_timer",
+      ""
+    ],
+    "0x0055": [
+      "joystick_pos",
+      "written by the timer interrupt, read by read_joystick_dir -- the one variable two contexts share"
+    ],
+    "0x0057": [
+      "fuel_gauge",
+      "16 cells; tile 0x55 is full, and the cell reaching 0x5D empties it"
+    ],
+    "0x0066": [
+      "fuel_cells",
+      "how many are left; zero ends the round"
+    ],
+    "0x0067": [
+      "fuel_timer",
+      "0x14 between burns in the air, 3 on the ground"
     ],
     "0x0068": [
-      "draw_flags",
-      "0, 1, 128 or 129 -- a byte with two bits in use"
+      "mode",
+      "0x80 flying over the fortress, 1 in space"
+    ],
+    "0x0069": [
+      "button_last",
+      "the joystick buttons as of the previous frame"
+    ],
+    "0x006A": [
+      "spawn_cursor",
+      "walks the current stage's spawn list"
     ],
     "0x006C": [
-      "draw_flag_b",
-      "0 or 1"
+      "in_flight",
+      ""
+    ],
+    "0x006D": [
+      "spawn_budget",
+      "0x12 at full; enemy_fire spends it"
     ],
     "0x006E": [
-      "draw_flag_c",
-      "0 or 1"
+      "draw_flags",
+      "bit 0 the wall is up, bit 7 it is being drawn"
+    ],
+    "0x006F": [
+      "hide_objects",
+      ""
     ],
     "0x0070": [
-      "scroll_offset",
-      "0xFFD0 among its values; three routines read it"
+      "world_x",
+      "the scroll position; every stage script drives it"
+    ],
+    "0x0072": [
+      "world_y",
+      "and its companion, moving the other way"
+    ],
+    "0x0090": [
+      "p1_score",
+      "eight digits, one per byte"
+    ],
+    "0x0098": [
+      "p2_score",
+      ""
+    ],
+    "0x00A0": [
+      "ship",
+      "kind, spare, x, y, altitude, spare -- the same six-byte shape as every object"
+    ],
+    "0x00A2": [
+      "ship_x",
+      ""
+    ],
+    "0x00A3": [
+      "ship_y",
+      ""
+    ],
+    "0x00A4": [
+      "ship_alt",
+      "0 to 0x14; the altimeter and the Y clamp both read it"
+    ],
+    "0x00A6": [
+      "ship_shadow",
+      "the object slot the shadow occupies, 0xFF when there is nothing under the ship"
+    ],
+    "0x00A8": [
+      "shadow_pos",
+      ""
+    ],
+    "0x00AC": [
+      "objects",
+      "29 slots of six bytes: kind, velocity index, x, y, altitude, damage. 0xFF in the first byte frees the slot"
+    ],
+    "0x00F4": [
+      "enemy_shots",
+      "the two slots at index 8 and 9 that enemy_fire fills"
+    ],
+    "0x00F6": [
+      "shot_x",
+      ""
+    ],
+    "0x0100": [
+      "player_bullets",
+      "six slots from index 14; ship_control claims the first free one"
+    ],
+    "0x0136": [
+      "wall_pieces",
+      "six slots from index 23, used only while the wall is on screen"
+    ],
+    "0x018A": [
+      "back_buffer",
+      "16,000 bytes, 200 rows of 80. Object coordinates are 160 bytes to a Y unit, so a Y unit is two scan lines"
+    ],
+    "0x0910": [
+      "window_origin",
+      "24 rows down and six bytes in -- where blit_playfield starts reading"
     ],
     "0x478A": [
       "section_bitmap",
-      "to 0x628A -- the decompressed wall; see docs/02-architecture.md"
+      "6,912 bytes, 48 wide and 144 tall: the unpacked scenery the scroll slides across"
     ],
     "0x62B2": [
       "tile_map",
-      "to 0x669A -- 40 x 25 cells, one byte each"
+      "40 x 25 cells. Bit 0x80 is the dirty flag, so a cell of 0x80 is an empty cell that still needs clearing"
+    ],
+    "0x632D": [
+      "tile_map_window",
+      "the 34 x 22 of it that map_render walks"
+    ],
+    "cs:0x04E8": [
+      "player_1_context",
+      "score, cursor, stage number, script position, lives, spare"
+    ],
+    "cs:0x04EC": [
+      "p1_score_ptr",
+      "the context's third word: where main clears sixteen bytes of score"
+    ],
+    "cs:0x04EE": [
+      "p1_stage_ptr",
+      ""
+    ],
+    "cs:0x04F0": [
+      "p1_lives_ptr",
+      "the byte main sets to 3, and to 3 again for player 2 one byte further on"
+    ],
+    "cs:0x04F4": [
+      "player_2_context",
+      "the same six words"
+    ],
+    "cs:0x046B": [
+      "start_map",
+      "the 34 x 22 of ground a round opens on"
+    ],
+    "cs:0x05FD": [
+      "msg_keyboard_only",
+      ""
+    ],
+    "cs:0x063A": [
+      "msg_control_choice",
+      ""
+    ],
+    "cs:0x0667": [
+      "hud_script",
+      "1UP, 2UP, TOP, ENEMY PLANES, FUEL -- printed once a turn"
+    ],
+    "cs:0x06A8": [
+      "title_script",
+      "'Z A X X O N' and the 1984 Sega line"
+    ],
+    "cs:0x06D8": [
+      "msg_players",
+      ""
+    ],
+    "cs:0x06F4": [
+      "msg_player_1",
+      ""
+    ],
+    "cs:0x0707": [
+      "msg_player_2",
+      ""
+    ],
+    "cs:0x071A": [
+      "msg_game_over",
+      ""
+    ],
+    "cs:0x075E": [
+      "stage_script",
+      "the whole game as a list of code addresses, a scene alternating with scroll_tick, ended by 0xFFFF"
+    ],
+    "cs:0x0B7B": [
+      "msg_bonus_1000",
+      ""
+    ],
+    "cs:0x0E4D": [
+      "explosion_frames",
+      "twelve (mask, image) pairs"
+    ],
+    "cs:0x0FF5": [
+      "velocity_table",
+      "eight (dx, dy) byte pairs"
+    ],
+    "cs:0x107C": [
+      "joystick_dir_map",
+      "34 bytes: two stick axes folded into one of nine directions"
+    ],
+    "cs:0x10E3": [
+      "key_dir_map",
+      "the eleven scan codes 0x47..0x51"
+    ],
+    "cs:0x12A7": [
+      "direction_delta",
+      "eight (dx, dy) pairs, one per direction"
+    ],
+    "cs:0x1379": [
+      "altitude_bar",
+      "eleven rows of tile numbers, read six at a time with a stride of four"
+    ],
+    "cs:0x13D1": [
+      "ship_initial",
+      "twelve bytes over ship"
+    ],
+    "cs:0x13DD": [
+      "fuel_initial",
+      "sixteen bytes over fuel_gauge"
+    ],
+    "cs:0x144F": [
+      "score_table",
+      "what each object kind is worth; 0xFF means nothing"
+    ],
+    "cs:0x14FE": [
+      "spawn_velocity",
+      "the velocity index each spawned kind starts with"
+    ],
+    "cs:0x150E": [
+      "spawn_position",
+      ""
+    ],
+    "cs:0x1518": [
+      "spawn_lists",
+      "eight, one per stage"
+    ],
+    "cs:0x1754": [
+      "boss_script",
+      ""
+    ],
+    "cs:0x177C": [
+      "boss_object",
+      ""
+    ],
+    "cs:0x17C7": [
+      "boss_shot",
+      ""
+    ],
+    "cs:0x1821": [
+      "wall_script",
+      ""
+    ],
+    "cs:0x194A": [
+      "wall_objects",
+      "the six pieces the wall is built from"
+    ],
+    "cs:0x19E2": [
+      "msg_bonus_200",
+      ""
+    ],
+    "cs:0x19F2": [
+      "msg_bonus_2000",
+      ""
+    ],
+    "cs:0x1A43": [
+      "wall_scroll_state",
+      ""
+    ],
+    "cs:0x1F12": [
+      "sound_handler",
+      "the four channel routines"
+    ],
+    "cs:0x1FDD": [
+      "tile_table",
+      "94 words. Its last entry is the word before cs:0x2099, which is what its first entry points at -- the table ends exactly where the bitmaps begin"
+    ],
+    "cs:0x2099": [
+      "tile_bitmaps",
+      "eight rows of a word each, shared wherever two tiles are the same"
+    ],
+    "cs:0x2613": [
+      "sprite_table",
+      "34 (bitmap, blitter) pairs. Nine different blitters, chosen by the sprite's size and whether it needs a mask"
+    ],
+    "cs:0x261F": [
+      "ship_icon",
+      "the fourth entry's bitmap, read directly for the lives display"
+    ],
+    "cs:0x269B": [
+      "sprite_bitmaps",
+      "everything from cs:0x269B to the end of the file: the sprites, their masks, and the explosion frames"
     ]
   },
-  "_unnamed": [
-    "80 routines are reachable by a direct call and 8 are named; 69 globals are",
-    "referenced and 7 are named. That is thin, and honestly so: only five",
-    "globals are referenced eight times or more, and a global referenced twice",
-    "leaves nothing to reason from.",
-    "",
-    "The two large ones carry the game. The tile map and the section bitmap were",
-    "established by rendering, not by reading -- see docs/02-architecture.md --",
-    "which is why they are the only two here with real extents.",
-    "",
-    "What would move this is watching the values change during a run, the way",
-    "Karateka's were. That has not been done here."
-  ]
+  "_data_spans": {
+    "_note": [
+      "File offsets, contiguous from 0 to the end. Zaxxon has no data",
+      "segment in the file at all, so these spans cover the whole image",
+      "and the split between code and table is the only division there",
+      "is.",
+      "",
+      "The last span is half the file. It earns its single line: nothing",
+      "reaches it except tile_table, sprite_table and explosion_frames,",
+      "and all three end exactly where the bitmaps they index begin."
+    ],
+    "0x0000": [
+      128,
+      "the far jump and the loader's banner"
+    ],
+    "0x0080": [
+      128,
+      "the relocation stub"
+    ],
+    "0x0100": [
+      875,
+      "the primitives: video, timing, score, text, input"
+    ],
+    "0x046B": [
+      335,
+      "start_map, and the code that copies it"
+    ],
+    "0x05BA": [
+      323,
+      "the playfield blit, player context, turn handling"
+    ],
+    "0x06FD": [
+      331,
+      "every message in the game"
+    ],
+    "0x0848": [
+      442,
+      "the stage script and the scroll"
+    ],
+    "0x0A02": [
+      96,
+      "the two scenery patches map_feed stamps"
+    ],
+    "0x0A62": [
+      537,
+      "the scenes, the level decoder, the bonus"
+    ],
+    "0x0C7B": [
+      466,
+      "the nine blitters"
+    ],
+    "0x0E4D": [
+      424,
+      "explosion_frames and the tile drawing"
+    ],
+    "0x0FF5": [
+      391,
+      "the object loops and the two input maps"
+    ],
+    "0x117C": [
+      555,
+      "ship_control"
+    ],
+    "0x13A7": [
+      326,
+      "the fuel gauge, the altimeter, the score table"
+    ],
+    "0x14ED": [
+      277,
+      "hits, lives, and the spawn tables"
+    ],
+    "0x1602": [
+      316,
+      "the eight spawn lists, one per stage"
+    ],
+    "0x173E": [
+      932,
+      "the fortress and the wall"
+    ],
+    "0x1AE2": [
+      1072,
+      "the bonus messages, the shadow, and every collision test"
+    ],
+    "0x1F12": [
+      459,
+      "the sound channels and the random number generator"
+    ],
+    "0x20DD": [
+      188,
+      "the 94-entry tile table"
+    ],
+    "0x2199": [
+      1402,
+      "the tile bitmaps"
+    ],
+    "0x2713": [
+      136,
+      "the 34-entry sprite table"
+    ],
+    "0x279B": [
+      10597,
+      "the sprite bitmaps, their masks, and the explosion frames -- 10,597 bytes, half the file, reached only through those two tables"
+    ]
+  }
 }

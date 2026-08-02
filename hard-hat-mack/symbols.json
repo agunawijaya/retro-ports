@@ -1,93 +1,471 @@
 {
   "_about": [
-    "Names for Hard Hat Mack's routines and globals, with the evidence for each.",
+    "Hard Hat Mack, Electronic Arts, 1983. A 42,112-byte .COM written by",
+    "hand: no compiler prologue anywhere in it, and no library, so",
+    "probelib.py finds nothing -- 0 of 250 entry points, which is a real",
+    "negative result rather than a failure.",
     "",
-    "Same contract as Karateka's: `recovered/` is gitignored because a",
-    "byte-identical reconstruction is the game, so what is kept is the reading.",
-    "Run build.ps1 to apply these to a freshly generated listing and get source",
-    "that still reassembles to the original.",
+    "It keeps its variables next to the code that uses them. 436 addresses",
+    "fall into 132 clusters scattered through the image, and the two that",
+    "carry most of the traffic are the actor block at 0x0B60 (391",
+    "references in 0x21 bytes) and the drawing block at 0x6D97 (789 in",
+    "0x33).",
     "",
-    "Addresses are file offsets. A .COM loads at 0x100, so a listing address is",
-    "this plus 0x100. Globals are the same space -- one segment, no DS bias.",
-    "",
-    "**This game is not compiled C.** It has zero `push bp` prologues and 427",
-    "`cmc` instructions: a mechanical translation of the 6502 original, where",
-    "every borrow has to be inverted because the two processors disagree about",
-    "the carry flag. So routines are enumerated by call target, not by prologue,",
-    "and probelib.py finds nothing here -- 0 of 250, which is a result and not",
-    "an empty run. There is no C runtime to identify."
+    "This file is honest about being unfinished. The routines named below",
+    "were read; the 180-odd that were not are listed in _unread with what",
+    "the profiler could see about each, and none of them has been given a",
+    "name on that evidence alone."
   ],
-
   "routines": {
-    "0x0071": ["keyboard_isr",     "the INT 09h handler; comrec finds it from the vector install"],
-    "0x00DF": ["delay_pair",       "decrements AL twice, branching to two different waits"],
-    "0x0217": ["place_sprite",     "mul 7 by [0x6D9B] for the column, [0x6D9C] for the row, [0x6D97] for the shape; 42 callers"],
-    "0x0268": ["place_pair",       "the same, drawing two shapes at unit column scale"],
-    "0x02B1": ["place_pair_x7",    "two shapes at the seven-pixel column scale"],
-    "0x040A": ["draw_shape",       "what all three placement routines call once they have (col, row, shape)"],
-    "0x09B5": ["set_timer",        "ports 0x43 and 0x40 -- the PIT"],
-    "0x0BB6": ["state_first",      "where the dispatch pointer at [0x0BD9] starts"],
-    "0x14D8": ["draw_level",       "calling it after start-up paints a whole level; see docs/03-the-code.md"],
-    "0x1CEA": ["actor_step",       "7 callers, no callees"],
-    "0x1D86": ["actor_update",     "9 callers"],
-    "0x2428": ["hazard_update",    "9 callers"],
-    "0x2AFC": ["state_run",        "one of the three targets [0x6DAA] selects"],
-    "0x2B05": ["state_die",        "the second"],
-    "0x2B0E": ["state_next",       "the third"],
-    "0x45FB": ["shift_history",    "moves [0x6DDA]/[0x6DDB] into [0x46F5]/[0x46F6] and takes a new value; 16 callers"],
-    "0x592D": ["score_add",        "9 callers, writes the 0x5A2A block"],
-    "0x648A": ["speaker",          "port 0x61 -- the only sound hardware this game touches"]
+    "0x0004": [
+      "start",
+      "CS everywhere, INT 09h hooked through 0:0x24 with the old vector kept at 0x0782, the BIOS equipment word forced to 40-column colour, mode 4, and five added to all 200 scanline_table entries before anything is drawn"
+    ],
+    "0x0060": [
+      "restart",
+      "the same video setup without the vector work"
+    ],
+    "0x0071": [
+      "keyboard_isr",
+      "reads port 0x60, maps the scan code through scan_map, and keeps any entry with the high bit set in key_pressed. Two mapped values are not keys at all: 1 unhooks the vector and returns far to DOS, 2 jumps to the configuration menu"
+    ],
+    "0x00DF": [
+      "delay_pair",
+      "AL times AL of nothing; the only timing the game has"
+    ],
+    "0x00EA": [
+      "note_off",
+      "stops the tone generator and biases BL by 0x80"
+    ],
+    "0x0105": [
+      "joy_button_1",
+      "port 0x201 bit 0x10 rotated into the carry through AH"
+    ],
+    "0x0114": [
+      "joy_button_2",
+      "the same for bit 0x20"
+    ],
+    "0x0123": [
+      "clear_playfield",
+      "0x50 bytes of AL along every one of the 200 scanlines, five bytes in from where scanline_table points -- which is what the five added at start-up is for"
+    ],
+    "0x013E": [
+      "locate_cell",
+      "turns (place_col, place_row) into a screen address: seven bytes to a column, the row through row_table, and the low two bits of the column kept as a shift"
+    ],
+    "0x0199": [
+      "draw_cell",
+      "the inner loop of the three place_ routines"
+    ],
+    "0x01A0": [
+      "draw_cell_row",
+      ""
+    ],
+    "0x01C8": [
+      "fill_tiles",
+      "the rectangle filler: rows fill_row0 to fill_row1, columns fill_col0 to fill_col1, fill_step deciding whether rows advance by one or two"
+    ],
+    "0x0217": [
+      "place_sprite",
+      "multiplies place_col by seven, takes place_row as it stands, and draws shape_select. Forty-seven callers -- the busiest routine in the program"
+    ],
+    "0x0268": [
+      "place_pair",
+      "two shapes at unit column scale"
+    ],
+    "0x02B1": [
+      "place_pair_x7",
+      "two shapes at the seven-pixel column scale"
+    ],
+    "0x036D": [
+      "blit_shape",
+      "what all three placement routines reach"
+    ],
+    "0x03DD": [
+      "blit_shape_masked",
+      ""
+    ],
+    "0x096B": [
+      "note_start",
+      "loads a divisor and gates the speaker"
+    ],
+    "0x09B5": [
+      "set_timer",
+      "programs PIT channel 0 through ports 0x43 and 0x40 -- the only place the tick rate is set"
+    ],
+    "0x0F49": [
+      "actors_step",
+      "the actor loop, 430 instructions over 79 blocks: state, timer, direction and frame for every actor in the actor block, and the four movement routines it dispatches to"
+    ],
+    "0x11F6": [
+      "actor_draw",
+      "actor_x and actor_y into a place_pair"
+    ],
+    "0x14D8": [
+      "draw_level",
+      "one screen: the girders through fill_tiles, then the ladders, the hazards, the rivets, and the actors, dispatched on screen_number through mode_vector"
+    ],
+    "0x1627": [
+      "draw_level_2",
+      "the same shape for the second screen layout"
+    ],
+    "0x1763": [
+      "draw_level_3",
+      "and the third"
+    ],
+    "0x1841": [
+      "draw_floor",
+      "three fill_tiles calls with shapes 0xBD, 0xBE and 0xBF -- the three-row girder every screen stands on"
+    ],
+    "0x1A7E": [
+      "draw_run",
+      "a horizontal run of one shape"
+    ],
+    "0x1CEA": [
+      "actor_step",
+      "one actor's position by its velocity pair"
+    ],
+    "0x1D86": [
+      "actor_update",
+      "clip, locate_cell, draw"
+    ],
+    "0x2169": [
+      "level_init",
+      "sets up a screen: seventeen reads of key_pressed while it waits, the state vector, the hazard table, and the actor block"
+    ],
+    "0x2428": [
+      "hazard_update",
+      "the six-byte hazard record at hazard_slots"
+    ],
+    "0x3A8F": [
+      "score_add",
+      "adds to the five-digit score at score_digits and redraws it, then queues the scoring sound through music_push"
+    ],
+    "0x45FB": [
+      "music_push",
+      "saves the tune position so a sound effect can take the speaker and give it back. Sixteen callers, every one of them an event that makes a noise. It was called shift_history"
+    ],
+    "0x4623": [
+      "music_pop",
+      "puts the saved position back"
+    ],
+    "0x4648": [
+      "music_reset",
+      "back to the default tune at tune_default"
+    ],
+    "0x4661": [
+      "music_tick",
+      "the software synthesiser. Adds the note's phase increment to the accumulator 0x78 times a tick and toggles port 0x61 bit 1 against a duty threshold that itself drifts -- pulse-width modulation on a one-bit speaker"
+    ]
   },
-
   "globals": {
-    "0x042D": ["scanline_table",   "600 words: 0x0000, 0x2000, 0x0050, 0x2050 -- two CGA banks interleaved, one entry per scanline. The start-up code adds 5 to every entry before use."],
-    "0x0781": ["init_flag",        "the entry stub clears it; four routines read it"],
-    "0x0B60": ["actor_x",          "99 references, read and written by the actor routines around 0x1000"],
-    "0x0B65": ["actor_y",          "81 references, the same cluster"],
-    "0x0B69": ["actor_state",      ""],
-    "0x0B6C": ["actor_frame",      ""],
-    "0x0B6D": ["actor_dir",        ""],
-    "0x0B7A": ["actor_timer",      ""],
-    "0x0BD9": ["state_vector",     "`jmp word [0x0BD9]` -- recursive descent stops here; comrec resolves it to 0x0BB6"],
-    "0x15A0": ["level_data",       ""],
-    "0x1B64": ["place_flag_a",     "tested by 0x036D and 0x03DD straight after a placement"],
-    "0x1B65": ["place_flag_b",     ""],
-    "0x1B66": ["place_flag_c",     "the three the placement routine tests before drawing"],
-    "0x1B67": ["place_flag_d",     ""],
-    "0x1B68": ["place_flag_e",     ""],
-    "0x3788": ["hazard_state",     ""],
-    "0x3C2E": ["hazard_timer",     ""],
-    "0x4A3A": ["bonus_state",      ""],
-    "0x594F": ["screen_number",    "written in exactly three places; see docs/02-architecture.md"],
-    "0x5A2A": ["score_digits",     "the score, one digit per byte, through 0x5A2C"],
-    "0x6D97": ["shape_select",     "0, 768, 1024, 1280, 3072, 3328 -- multiples of 256, so a shape table index"],
-    "0x6D9A": ["place_scratch",    ""],
-    "0x6D9B": ["place_col",        "the placement column; the routine multiplies it by seven"],
-    "0x6D9C": ["place_row",        "the placement row, used as-is"],
-    "0x6D9D": ["place_col_2",      "the second shape's column, in the pair routines"],
-    "0x6D9E": ["place_row_2",      ""],
-    "0x6DAA": ["mode_vector",      "`jmp word [0x6DAA]` -- three targets: 0x2AFC, 0x2B05, 0x2B0E"],
-    "0x6DC8": ["anim_cursor",      "111 references, read and written by one cluster around 0x1600"],
-    "0x6DC9": ["anim_frame",       ""],
-    "0x6DDA": ["input_latch",      "shift_history moves it into the history pair"],
-    "0x6DDB": ["input_latch_2",    ""],
-    "0x726B": ["level_table",      "read by three routines, written by none -- a table, not a variable"]
+    "0x0103": [
+      "exit_allowed",
+      "the keyboard ISR refuses to return to DOS unless this is set"
+    ],
+    "0x0410": [
+      "bios_equipment",
+      "0x40:0x10, forced to 40-column colour"
+    ],
+    "0x052D": [
+      "scanline_table",
+      "200 words, one per scanline: 0x0000, 0x2000, 0x0050, 0x2050 -- the two CGA banks interleaved. Start-up adds five to every entry, so the playfield begins five bytes in and clear_playfield writes 0x50 bytes from there"
+    ],
+    "0x072D": [
+      "scan_map",
+      "0x80 bytes: scan code to game action. Values 1 and 2 are the two escapes, anything with the high bit set is a movement key"
+    ],
+    "0x0781": [
+      "key_pressed",
+      "what the ISR left; cleared by whoever consumes it"
+    ],
+    "0x0782": [
+      "old_int09",
+      "the vector the ISR puts back on the way out"
+    ],
+    "0x0786": [
+      "entry_es",
+      "the PSP segment, saved so the far return has one"
+    ],
+    "0x0B60": [
+      "actor_x",
+      "99 references; also the first byte of the 0x21-byte actor block that runs to 0x0B80"
+    ],
+    "0x0B65": [
+      "actor_y",
+      "81"
+    ],
+    "0x0B69": [
+      "actor_state",
+      ""
+    ],
+    "0x0B6C": [
+      "actor_frame",
+      ""
+    ],
+    "0x0B6D": [
+      "actor_dir",
+      ""
+    ],
+    "0x0B7A": [
+      "actor_timer",
+      ""
+    ],
+    "0x0BD9": [
+      "state_vector",
+      "`jmp word [0x0BD9]`; comrec resolves it to 0x0BB6 by following what writes it"
+    ],
+    "0x10E3": [
+      "hazard_vector",
+      "five words, 20 references"
+    ],
+    "0x15A0": [
+      "fill_row0",
+      "the rectangle filler's parameter block, 0x15A0..0x15B1"
+    ],
+    "0x15A1": [
+      "fill_row1",
+      ""
+    ],
+    "0x15A2": [
+      "fill_col0",
+      ""
+    ],
+    "0x15A3": [
+      "fill_col1",
+      ""
+    ],
+    "0x15A4": [
+      "fill_shape",
+      ""
+    ],
+    "0x15B1": [
+      "fill_step",
+      "non-zero makes rows advance in twos"
+    ],
+    "0x1B64": [
+      "place_flag_a",
+      "the five flags place_sprite tests, 129 references"
+    ],
+    "0x1B65": [
+      "place_flag_b",
+      ""
+    ],
+    "0x1B66": [
+      "place_flag_c",
+      ""
+    ],
+    "0x1B67": [
+      "place_flag_d",
+      ""
+    ],
+    "0x1B68": [
+      "place_flag_e",
+      ""
+    ],
+    "0x2500": [
+      "hazard_slots",
+      "six bytes, one per hazard on the screen"
+    ],
+    "0x3788": [
+      "hazard_state",
+      "eight bytes from 0x3788, 54 references"
+    ],
+    "0x3C2E": [
+      "hazard_timer",
+      ""
+    ],
+    "0x46F5": [
+      "tune_saved",
+      "where music_push keeps the interrupted position"
+    ],
+    "0x46F7": [
+      "duty_step",
+      "how fast the pulse width drifts"
+    ],
+    "0x46F8": [
+      "tune_default",
+      "the tune music_reset goes back to"
+    ],
+    "0x4895": [
+      "note_table",
+      "phase increments, two bytes a note"
+    ],
+    "0x4A3A": [
+      "bonus_state",
+      "14 references"
+    ],
+    "0x594F": [
+      "screen_number",
+      "written in exactly three places"
+    ],
+    "0x5A2A": [
+      "score_digits",
+      "five digits, one per byte, 45 references"
+    ],
+    "0x6D97": [
+      "shape_select",
+      "0, 768, 1024, 1280, 3072, 3328 -- multiples of 256, so an index into a shape table"
+    ],
+    "0x6D9A": [
+      "place_scratch",
+      ""
+    ],
+    "0x6D9B": [
+      "place_col",
+      "the column; place_sprite multiplies it by seven"
+    ],
+    "0x6D9C": [
+      "place_row",
+      "the row, used as it stands"
+    ],
+    "0x6D9D": [
+      "place_col_2",
+      "the second shape's, in the pair routines"
+    ],
+    "0x6D9E": [
+      "place_row_2",
+      ""
+    ],
+    "0x6DAA": [
+      "mode_vector",
+      "`jmp word [0x6DAA]`: 0x2AFC, 0x2B05, 0x2B0E"
+    ],
+    "0x6DBB": [
+      "phase_accumulator",
+      "the synthesiser's, two bytes"
+    ],
+    "0x6DC0": [
+      "phase_increment",
+      "the current note's"
+    ],
+    "0x6DC2": [
+      "samples_left",
+      "0x78 per tick"
+    ],
+    "0x6DC3": [
+      "note_ticks",
+      "how long this note still has"
+    ],
+    "0x6DC4": [
+      "duty_threshold",
+      ""
+    ],
+    "0x6DC8": [
+      "anim_cursor",
+      "111 references, read and written by one cluster"
+    ],
+    "0x6DC9": [
+      "anim_frame",
+      ""
+    ],
+    "0x6DDA": [
+      "tune_ptr",
+      "the note stream position. It was called input_latch"
+    ],
+    "0x726B": [
+      "level_table",
+      "read by three routines, written by none"
+    ],
+    "0x726F": [
+      "row_table",
+      "what locate_cell turns a row into"
+    ]
   },
-
-  "_unnamed": [
-    "231 routines are reachable by a direct call and 18 are named. That is a",
-    "much thinner reading than Karateka's, and the reason is worth stating: a",
-    "6502 translation has no calling convention to lean on, no C runtime to",
-    "subtract, and no library whose functions have specifications you can probe",
-    "against. Every name here had to come from what the code does with its",
-    "globals.",
+  "_data_spans": {
+    "_note": [
+      "File offsets, contiguous across the whole 42,112-byte image.",
+      "Hard Hat Mack has no separate data segment: 19,719 bytes are data",
+      "and 5,394 of those are scattered in 646 runs shorter than 64",
+      "bytes, sitting between the routines that own them."
+    ],
+    "0x00000": [
+      1069,
+      "the entry, the keyboard ISR, the three placement routines and the two blitters"
+    ],
+    "0x0042D": [
+      400,
+      "scanline_table, 200 words"
+    ],
+    "0x005BD": [
+      801,
+      "the configuration text and the scan code map"
+    ],
+    "0x008DE": [
+      1573,
+      "the tone generator, the timer, and the first actor code"
+    ],
+    "0x00F03": [
+      70,
+      "a 70-byte table of word pairs the actor loop indexes"
+    ],
+    "0x00F49": [
+      3749,
+      "the actor loop, the level drawing and the fill primitive"
+    ],
+    "0x01DEE": [
+      506,
+      "'BONUS:00000', 'SCORE:00000', 'HI-SCORE:00000' and the digits behind them"
+    ],
+    "0x01FE8": [
+      1330,
+      "the hazards and the rivet logic"
+    ],
+    "0x0251A": [
+      1171,
+      "1,171 bytes of shape rows -- runs of 0x54 and the ascending ladders"
+    ],
+    "0x029AD": [
+      1417,
+      "the per-object placement helpers, one short routine each"
+    ],
+    "0x02F36": [
+      565,
+      "565 bytes of descending and ascending byte ramps: the girder and ladder column patterns"
+    ],
+    "0x0316B": [
+      1900,
+      "the score, the four screens' hazards, the bonus"
+    ],
+    "0x038D7": [
+      117,
+      "117 bytes of table"
+    ],
+    "0x0394C": [
+      3657,
+      "the screen scripts, the collision checks, and the music player"
+    ],
+    "0x04795": [
+      162,
+      "162 bytes the music player indexes"
+    ],
+    "0x04837": [
+      6975,
+      "the remaining screen scripts and the actor variants"
+    ],
+    "0x06376": [
+      276,
+      "'CONFIGURATION MENU' and the key prompts"
+    ],
+    "0x0648A": [
+      2049,
+      "the last of the code, ending where the shape data begins"
+    ],
+    "0x06C8B": [
+      14325,
+      "14,325 bytes of shape data, 42% zero. Every sprite in the game, and the working variables the drawing code keeps at 0x6D97..0x6DC9 sit at the front of it"
+    ]
+  },
+  "_unread": [
+    "180 of the 221 call targets have not been read instruction by",
+    "instruction. Most are short and follow one of two shapes: set",
+    "place_col, place_row and shape_select and call place_sprite (about",
+    "sixty of them), or set a level pointer and fall into the shared game",
+    "loop (about a dozen entries that all reach the same 350-instruction",
+    "tail, which is why the profiler reports them at that size).",
     "",
-    "436 globals are referenced and 32 are named -- but those 32 carry the",
-    "traffic. The placement pair [0x6D9B]/[0x6D9C] alone accounts for 282",
-    "references.",
-    "",
-    "What would move this furthest is the same thing that moved Karateka: watch",
-    "the values change during a run and classify the sequences. That has not",
-    "been done here yet."
+    "They are left unnamed deliberately. Naming a routine `draw_shape_12`",
+    "from its constants would raise the count without adding a fact, and",
+    "the count is not the point."
   ]
 }
