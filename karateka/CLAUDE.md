@@ -109,13 +109,20 @@ of 40 moves changed x by exactly the frame's `inc_x`.
 
 `recovered/karateka.asm` is correct and is not source: ten thousand
 instructions under labels named after their own addresses. `symbols.json` holds
-the reading — **all 120 routines and 134 globals**, each with the evidence
+the reading — **all 120 routines and 214 globals**, each with the evidence
 for its name — and the toolkit's `annotate.py` applies them.
 
 **Every routine is named; the data is not.** 120 of 120 routine prologues, plus
-18 interior labels. Globals are the unfinished half: **127 of the 312
-data-segment addresses the code touches**, which is 41% of the addresses but
-**77% of the references**, because what is left is mostly touched once or twice.
+18 interior labels. Globals: **199 of the 312 data-segment addresses the code
+touches** — 64% of the addresses and **90% of the references**, because what is
+left is thin.
+
+**The finding that moved this most was not a naming technique.** `DS:0x0337` is
+a 16,000-byte off-screen CGA frame, 200 rows of 80, ending at `0x4217` exactly
+where the blitter's own globals begin. Forty addresses that looked like separate
+variables were rows inside it — which is why they were only ever written with
+`0x5555` and `0x2055`. Those are pixels. **A `[di + 0x337]` in the listing is
+not a global with a displacement; it is the screen.**
 
 A routine has an entry point, callers and behaviour you can probe. A global has
 only its uses, and a global used twice leaves almost nothing to reason from.

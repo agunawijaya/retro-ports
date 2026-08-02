@@ -999,8 +999,8 @@
       ""
     ],
     "0x0337": [
-      "screen_rows",
-      "a table base, not a variable: [di + 0x337] is a scanline"
+      "screen_buffer",
+      "16,000 bytes, 200 rows of 80 -- an off-screen CGA frame the blitter draws into. It ends at 0x4217, exactly where the blitter's own globals begin."
     ],
     "0x4234": [
       "edge_masks",
@@ -1039,8 +1039,8 @@
       "draw_sprite and draw_sprite_shifted both keep it"
     ],
     "0x4230": [
-      "blit_column",
-      "the same pair; the outer loop's counter"
+      "blit_col_index",
+      "the outer loop's column counter; renamed off blit_column, which is the routine"
     ],
     "0xBB2A": [
       "redraw_all",
@@ -1105,6 +1105,326 @@
     "0xE4BC": [
       "heap_cursor",
       "the allocator's current block; every heap routine touches it"
+    ],
+    "0x0338": [
+      "screen_r0c1",
+      "the off-screen buffer, row 0 column 1 (+1)"
+    ],
+    "0x0977": [
+      "screen_r20c0",
+      "the off-screen buffer, row 20 column 0 (+1600)"
+    ],
+    "0x0D37": [
+      "screen_r32c0",
+      "the off-screen buffer, row 32 column 0 (+2560)"
+    ],
+    "0x169C": [
+      "screen_r62c5",
+      "the off-screen buffer, row 62 column 5 (+4965)"
+    ],
+    "0x1917": [
+      "screen_r70c0",
+      "the off-screen buffer, row 70 column 0 (+5600)"
+    ],
+    "0x1B01": [
+      "screen_r76c10",
+      "the off-screen buffer, row 76 column 10 (+6090)"
+    ],
+    "0x1C37": [
+      "screen_r80c0",
+      "the off-screen buffer, row 80 column 0 (+6400)"
+    ],
+    "0x1D8D": [
+      "screen_r84c22",
+      "the off-screen buffer, row 84 column 22 (+6742)"
+    ],
+    "0x1D92": [
+      "screen_r84c27",
+      "the off-screen buffer, row 84 column 27 (+6747)"
+    ],
+    "0x1F57": [
+      "screen_r90c0",
+      "the off-screen buffer, row 90 column 0 (+7200)"
+    ],
+    "0x2009": [
+      "screen_r92c18",
+      "the off-screen buffer, row 92 column 18 (+7378)"
+    ],
+    "0x20B6": [
+      "screen_r94c31",
+      "the off-screen buffer, row 94 column 31 (+7551)"
+    ],
+    "0x2287": [
+      "screen_r100c16",
+      "the off-screen buffer, row 100 column 16 (+8016)"
+    ],
+    "0x228B": [
+      "screen_r100c20",
+      "the off-screen buffer, row 100 column 20 (+8020)"
+    ],
+    "0x2457": [
+      "screen_r106c0",
+      "the off-screen buffer, row 106 column 0 (+8480)"
+    ],
+    "0x24FF": [
+      "screen_r108c8",
+      "the off-screen buffer, row 108 column 8 (+8648)"
+    ],
+    "0x26D7": [
+      "screen_r114c0",
+      "the off-screen buffer, row 114 column 0 (+9120)"
+    ],
+    "0x2777": [
+      "screen_r116c0",
+      "the off-screen buffer, row 116 column 0 (+9280)"
+    ],
+    "0x3357": [
+      "screen_r154c0",
+      "the off-screen buffer, row 154 column 0 (+12320)"
+    ],
+    "0x3CB7": [
+      "screen_r184c0",
+      "the off-screen buffer, row 184 column 0 (+14720)"
+    ],
+    "0x3F87": [
+      "hud_row",
+      "row 193 of the buffer: the status line the health bars are drawn on"
+    ],
+    "0x3F88": [
+      "screen_r193c1",
+      "the off-screen buffer, row 193 column 1 (+15441)"
+    ],
+    "0x3F8B": [
+      "screen_r193c4",
+      "the off-screen buffer, row 193 column 4 (+15444)"
+    ],
+    "0x3FD1": [
+      "screen_r193c74",
+      "the off-screen buffer, row 193 column 74 (+15514)"
+    ],
+    "0x3FD4": [
+      "screen_r193c77",
+      "the off-screen buffer, row 193 column 77 (+15517)"
+    ],
+    "0x3FD7": [
+      "screen_r194c0",
+      "the off-screen buffer, row 194 column 0 (+15520)"
+    ],
+    "0x421C": [
+      "blit_rows_left",
+      "counts 60 down to 54 and reloads"
+    ],
+    "0x4232": [
+      "blit_cursor",
+      "rises by one per byte written; the destination pointer"
+    ],
+    "0xBB33": [
+      "palette_byte",
+      "200 or 255 -- the two values written to the CGA palette"
+    ],
+    "0xBB31": [
+      "draw_layer_min",
+      "always 0 in a full run"
+    ],
+    "0xBCD1": [
+      "script_pc",
+      "rises in steps of three; run_script's position"
+    ],
+    "0xBCE2": [
+      "script_arg",
+      "2 to 1347; the value the current command carries"
+    ],
+    "0xBCE4": [
+      "script_wait",
+      "counts 24 down to 19; the `wait` command's timer"
+    ],
+    "0xD5A8": [
+      "sprite_base",
+      "constant 47971 for the whole run"
+    ],
+    "0xD5B2": [
+      "draw_y",
+      "51 or 55"
+    ],
+    "0xD650": [
+      "hit_flash",
+      "0 or 13"
+    ],
+    "0xD670": [
+      "guard_active",
+      "0 or 1"
+    ],
+    "0xD700": [
+      "tune_step",
+      "1, 2, 3 or 255"
+    ],
+    "0xD701": [
+      "tune_pos_lo",
+      "rises to 226 and wraps"
+    ],
+    "0xD702": [
+      "tune_pos_hi",
+      ""
+    ],
+    "0xD703": [
+      "tune_note",
+      "19 distinct values 0..255"
+    ],
+    "0xD704": [
+      "tune_ticks_lo",
+      "counts down every frame"
+    ],
+    "0xD705": [
+      "tune_ticks_hi",
+      ""
+    ],
+    "0xD709": [
+      "tune_repeat",
+      "counts down 1,657 times in a run"
+    ],
+    "0xD6FD": [
+      "tune_cursor_2",
+      "moves in small steps from 55096"
+    ],
+    "0xDBB1": [
+      "sfx_slot",
+      "0..14"
+    ],
+    "0xDBB2": [
+      "sfx_phase",
+      "counts 2 down to 0"
+    ],
+    "0xDBB4": [
+      "sfx_ticks",
+      "counts down 264 times"
+    ],
+    "0xDF42": [
+      "adapter_kind",
+      "13, 54 or 98 -- one per display type detect_cga and detect_hercules can report"
+    ],
+    "0x00F0": [
+      "restricted_mode",
+      "guard_choose_move takes a three-answer branch when it is 1"
+    ],
+    "0xBCD0": [
+      "wipe_pending",
+      "0 or 1; run_script sets it, draw_sprite honours it"
+    ],
+    "0xC3A0": [
+      "section_scenery",
+      "the live section's scenery pointer, from section_table_a"
+    ],
+    "0xC3A2": [
+      "section_actors",
+      "its actor list, from the table init_sections builds beside it"
+    ],
+    "0xC3A4": [
+      "section_extra",
+      "the third of the three the section tables carry"
+    ],
+    "0xC3C4": [
+      "section_table_c",
+      "the third table index_sections fills, seven slots"
+    ],
+    "0xC3E2": [
+      "move_recoil",
+      "index[?] read by resolve_strikes to start the flinch"
+    ],
+    "0xC3EC": [
+      "move_enter",
+      "read by resolve_strikes and story_step"
+    ],
+    "0xC3FA": [
+      "move_ready",
+      "the pose init_fight starts the player in"
+    ],
+    "0xC40C": [
+      "move_collapse",
+      "player move 28; read wherever the player goes down"
+    ],
+    "0xD64C": [
+      "guard_beaten",
+      "guard_choose_move sets it to 1 and nothing reads it here"
+    ],
+    "0xD676": [
+      "story_gate_a",
+      "0 or 1, story_step's own"
+    ],
+    "0xD67A": [
+      "story_gate_b",
+      "0 or 1"
+    ],
+    "0xD67C": [
+      "story_branch",
+      "3 or 10"
+    ],
+    "0xD67E": [
+      "story_once",
+      "story_step guards a one-time beat with it"
+    ],
+    "0xD6F8": [
+      "sound_channel",
+      "play_sound reads and writes it"
+    ],
+    "0xDF44": [
+      "sound_enabled",
+      "0 or 1; four routines set it, play_sound and startup read it"
+    ],
+    "0xDF48": [
+      "video_segment",
+      "read by read_intent; the screen segment detect_cga chose"
+    ],
+    "0xE1A4": [
+      "input_down",
+      "the fourth direction bit, beside up, left and right"
+    ],
+    "0xE1AC": [
+      "key_left",
+      "handle_key writes it, input_layer reads it"
+    ],
+    "0xE1AD": [
+      "key_right",
+      ""
+    ],
+    "0xE1AE": [
+      "key_fire",
+      ""
+    ],
+    "0xE43E": [
+      "crt0_flag",
+      "crt0_main's own, cleared at start-up"
+    ],
+    "0x005F": [
+      "block_paras",
+      "dos_setblock's paragraph count"
+    ],
+    "0xCE06": [
+      "guard_move_hit",
+      "an entry of the guard's move index; story_step starts it directly"
+    ],
+    "0xD708": [
+      "tune_voice",
+      "play_sound's, cleared to 0"
+    ],
+    "0xD70D": [
+      "tune_flags",
+      "play_sound reads and writes it"
+    ],
+    "0xE1BE": [
+      "token_start",
+      "scan_token's own cursor pair with 0xE1C2"
+    ],
+    "0xE1C2": [
+      "token_end",
+      ""
+    ],
+    "0xE5C8": [
+      "stdout_file",
+      "read by crt0_main, fclose and flush_buffer -- the standard stream"
+    ],
+    "0xE5CC": [
+      "file_slots_end",
+      "read by close_all_files, open_file and stdio_getbuf"
     ]
   },
   "_unnamed": [
@@ -1133,5 +1453,23 @@
     "firmer claim than one called close_all_files because it loops twenty times",
     "at stride fourteen over a table whose stride is fourteen. Both are evidence.",
     "They are not the same evidence."
+  ],
+  "_globals_note": [
+    "199 of the 312 data-segment addresses the code names are named above --",
+    "64% of them, and 89% of every reference, because what is left is thin.",
+    "",
+    "113 remain and 94 are referenced twice or fewer. Two uses give two data",
+    "points and no shape: not enough to tell a flag from a counter, let alone",
+    "what it counts. Naming them would produce names the next reader believes,",
+    "which this project has had to undo three times already.",
+    "",
+    "The single finding that moved this most was not a naming technique at all.",
+    "DS:0x0337 is a 16,000-byte off-screen CGA frame -- 200 rows of 80 -- and it",
+    "ends at 0x4217, exactly where the blitter's own globals begin. Forty of the",
+    "addresses that looked like separate variables were rows inside it, which is",
+    "why they were only ever written with 0x5555 and 0x2055: those are pixels.",
+    "",
+    "A `[di + 0x337]` in the listing is not a global with a displacement. It is",
+    "the screen."
   ]
 }
