@@ -818,6 +818,32 @@ the rest of a real one.
 
 The 259 bytes left are about half inter-unit alignment padding.
 
+### And the listing checked against the running game
+
+Static and dynamic evidence are independent, so the disassembly can be checked
+against an execution trace. `comrun.py --exec-map` records every image offset
+the program actually executes; driving it through the title, the outfitting and
+into Matt's store gives 11,315 distinct addresses, 3,370 of them inside MECC's
+own code.
+
+| | |
+|---|---|
+| executed **and** decoded | 3,358 |
+| executed but **not** decoded | 12 |
+
+The twelve are one contiguous block at `0x130FE`, and that is the address
+`comrun` names as the packed file's entry point — they are LZEXE's decompressor,
+which runs before the program exists and has no counterpart in the unpacked
+image the listing describes. Excluding them, **every address the game executed
+is an address the listing had already decoded.**
+
+The other direction is the interesting one: 23,566 decoded instructions were
+*not* executed on that run. That is not a discrepancy — it is hunting, the
+river crossings, the events, the ending, all the code one playthrough of six
+minutes never touches. It is also a reminder of what each method is for.
+Running the program proves what it does along one path; reading it covers every
+path and can prove nothing about any of them. Neither is a substitute.
+
 That is the honest analogue of Zaxxon's byte-identical rebuild: weaker, because
 nothing here re-assembles, but checkable, which is the property that matters.
 
