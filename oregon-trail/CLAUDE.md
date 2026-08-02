@@ -28,9 +28,10 @@ shorter working reference you come back to.
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
-| hunting | **traced** — `0x005ED0`; `terrain.pcc` is its background, mini-game at `0x72DD`, meat = raw div 2 |
-| river crossings | **traced** — `0x0042D0`; ford, float and ferry, five `Random` sites mapped |
-| game logic as code | **most of the model is out** — miles, food, the health term, the illness die, every store price, 29 `Random` sites, the casualty routine. The health *update* is **not** traced |
+| hunting | **traced, and reached under emulation** — `0x005ED0`; a BGI 320×200 field, 17 objects of 9 bytes (kind, x, y, w, h) tested as bounding boxes, input is the joystick converted to keypad digits by `ui:0x15A0` |
+| river crossings | **traced** — `0x0042D0`; the menu is assembled at run time and its option numbers are recomputed by the dispatcher, so the rule exists twice |
+| events | **traced** — 15 slots at `DS:0x188E`, all zero in the file because the odds are rewritten daily; dispatcher at `0x2BD7`, slot 2 has no handler |
+| game logic as code | **the model is out** — miles, food, the health term and its update at `0x14055`, the illness die, every store price, 29 `Random` sites, the casualty routine. Runs as `tools/model.pas` |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | the output | `recovered/oregon.asm` — 26,935 instructions, **99.8%** of MECC's code region accounted for, 0 phase conflicts |
 | documents | [four](docs/), written from the above |

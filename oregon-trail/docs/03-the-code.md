@@ -1950,12 +1950,38 @@ upward, and the copy is `System.Move` of exactly nine bytes:
 0007498  mov byte es:[di], 2                 ; and mark it kind 2
 ```
 
-Within a record, `+1` and `+3` are read as a coordinate pair and `+7` as a
-length: the drawing is `Line(x, y, x, y + h)` through `Graph:0x1670` — a
-vertical stroke — guarded by `shr al, 1` on the low byte of `+1`, so only every
-other value draws. **[inferred]** that this is the object's own animation
-phase; the record's field meanings beyond the coordinate pair have not been
-confirmed against a running frame.
+The record's layout is **established, and it did not need a running frame** — an
+earlier draft of this section said it would, and that was wrong. The overlap
+test at `0x5ED0` builds two rectangles out of one, and the arithmetic names
+every field:
+
+```nasm
+0005EF4  mov ax, es:[di+1]                    ; left
+0005F02  mov ax, es:[di+1] / add ax, es:[di+5]   ; right  = x + width
+0005F17  mov ax, es:[di+3]                    ; top
+0005F25  mov ax, es:[di+3] / add ax, es:[di+7]   ; bottom = y + height
+```
+
+| offset | | |
+|---|---|---|
+| `+0` | byte | kind — **0 means the slot is free** |
+| `+1` | word | x |
+| `+3` | word | y |
+| `+5` | word | width |
+| `+7` | word | height |
+
+Nine bytes exactly, and the test is an **axis-aligned bounding box** — the
+cheapest overlap there is, and the one that plays best, because a player reads
+a near miss as the game cheating and a rectangle is generous at the corners.
+
+There are **seventeen** slots, from the bound in the scanner at `0x5FF9`
+(`cmp word [bp-4], 0x10`, and the caller passes `0x11`). Allocation for one
+class starts at slot 7, so 0…6 and 7…16 are two populations sharing one array.
+
+Drawing is `Line(x, y, x, y + h)` through `Graph:0x1670` — a vertical stroke —
+guarded by `shr al, 1` on the low byte of `+1`, so only every other x draws.
+**[inferred]** that this is a dither rather than an animation phase, on the
+grounds that it keys off the coordinate and not off time.
 
 **How it reads the keypad, which is not where it looks.** The hunt unit's only
 `Crt.ReadKey` is at `0x666C`, and it is another **flush** — `while KeyPressed do
@@ -2263,15 +2289,175 @@ comparison, which is the same move `emuverify.py` makes for C and the same move
 that settled the compiler version. It is the obvious next step for anyone
 continuing this, and it is why the compiler is worth keeping.
 
+## The river crossing, whose menu numbers are computed twice
+
+The river unit begins at image `0x42D0`, and finding its code needed the
+address trap this repository keeps hitting: its strings sit at image `0x5A8F`
+and upward, but the code refers to them as `0x17BF` and upward, because a
+`mov di, offset` is relative to **the unit's own segment**, `0x142D`. Searching
+the unit for `0x5A8F` finds nothing at all, and the natural conclusion — that
+the menu text is unreferenced — is wrong for the third time in this repository.
+
+The menu is **assembled at run time**, and that is why two of its lines start
+with a bare full stop:
+
+```
+0005A99  '1. attempt to ford the river\2. caulk the wagon and float it across'
+0005ADD  '3. take a ferry across'
+0005AF4  '3. hire an Indian to help'
+0005B0E  '. wait to see if conditions improve'
+0005B32  '. get more information'
+```
+
+Options 1 and 2 are always offered. A ferry is added when `[bp-0x22A]` is set,
+an Indian guide when `[bp-0x22B]` is, and then the *next* digit is worked out
+and prepended:
+
+```nasm
+0005D4F  cmp byte [bp-0x22A], 0
+0005D54  jne 0x5D5D
+0005D56  cmp byte [bp-0x22B], 0
+0005D5B  je  0x5D64
+0005D5D  mov byte [bp-0x229], 0x34    ; '4' -- something was added above
+0005D64  mov byte [bp-0x229], 0x33    ; '3' -- nothing was
+0005D94  inc al                       ; and the next line is one higher
+```
+
+So the same option can be numbered 3, 4 or 5 depending on where the party is.
+The dispatcher then has to undo that, and it does the arithmetic **a second
+time** rather than remembering it:
+
+| choice | what it runs |
+|---|---|
+| 1 | `0x4587` — ford |
+| 2 | `0x4956` — caulk the wagon and float |
+| 3 | `0x4CA8` if a ferry is offered, else `0x50DD` if a guide is, else `0x5339` — wait |
+| 4 | `0x5339` — wait, if either was offered; otherwise `0x5510` |
+| 5 | `0x5510` — get more information |
+
+Two copies of one rule, forty bytes apart, that must agree. Nothing enforces
+it, and a port that keeps the shape should compute the numbering once and pass
+it — not because the original is buggy, but because this is the sort of
+duplication that becomes a bug the moment someone adds an option.
+
+The menu itself is drawn and read through the same pair as the travel screen,
+with the same menu record at `DS:0x158C`: `ui:0x0D24` to draw and `ui:0x1747`
+to read. And on the way out, at `0x55BA`:
+
+```nasm
+0005EB5  mov word [0x1882], 1
+0005EBB  mov byte [0x199D], 0        ; no longer at a settlement
+```
+
+which is the same `[0x199D]` that decides whether menu option 8 is *Hunt for
+food* or *Talk to people*. Crossing a river is one of the things that puts the
+party back on the trail, and therefore back within reach of hunting.
+
+## The events, and the table that is not a table
+
+The events were the last thing on the unread list, and the reason they stayed
+there is that searching for their table finds nothing: at `DS:0x188E` the image
+holds fifteen `Real`s and every one of them is **zero**. Nothing is stored. The
+odds are written by code, every day, from the party's state — which is why a
+search of the file for a plausible probability comes back empty, the same shape
+of mistake as
+[the illness table indexed from three](#the-illnesses-which-are-a-list-of-six).
+
+The dispatcher is at `0x2BD7`, and it is fifteen independent trials rather than
+one weighted draw:
+
+```nasm
+0002BD7  mov byte [bp-1], 0            ; event number
+0002BE2  shl di, 1 / mov si, di
+0002BE6  shl di, 1 / add di, si        ; × 6 -- the size of a Real
+0002BEA  mov ax, [di+0x188E]           ; this event's probability
+0002BF9  lcall System:0x0CAA           ; a random Real
+0002C01  lcall System:0x0C6A           ;   compared against it
+0002C06  jb 0x2C0B                     ; below -> the event happens
+...
+0002CCA  inc ax / mov [bp-1], al       ; otherwise try the next one
+0002CCE  cmp byte [0x188D], 0          ;   until something sets the flag
+0002CD3  jne 0x2CDE                    ;   immediately below the table
+```
+
+`[0x188D]` is the byte immediately before the table — set by a handler that has
+fired, and the only thing that stops the walk. So more than one event can happen
+in a day unless one of them says otherwise, and the order in the chain is the
+priority.
+
+Fifteen handlers, all in the program's own segment, named from their own first
+line of text:
+
+| # | handler | what it is |
+|---|---|---|
+| 0 | `0x114E` | *"… has a snakebite."* |
+| 1 | `0x11D5` | *"You pass a gravesite. Would you like to look closer"* |
+| 2 | — | **no handler at all**; the slot is tested and falls through |
+| 3 | `ui:0x3794` | the only one outside this segment |
+| 4 | `0x1292` | *"Indians help find food."* |
+| 5 | `0x1357` | *"Rough trail"* |
+| 6 | `0x205D` | *"Find wild fruit."* |
+| 7 | `0x1F4C` | *"blizzard"* |
+| 8 | `0x1EE7` | *"Heavy fog"*, *"Hail storm"*, *"Severe thunderstorm"* |
+| 9 | `0x141B` | *"A fire in the wagon results in the loss of:"* |
+| 10 | `0x13B0` | *"Lose trail"* |
+| 11 | `0x22A3` | *"You find an abandoned wagon"* |
+| 12 | `0x16F3` | *"One of the oxen …"* |
+| 13 | `0x28C2` | *"Bad Water"* — and the thief at `0x23FC` hangs off it |
+| 14 | `0x29C3` | no text of its own |
+
+Slot 2 is worth keeping: it is tested against a probability like the others and
+then does nothing. **[inferred]** an event that was cut, with its slot left
+rather than renumbering the fourteen below it.
+
+Two kinds of entry go into the table. Some are genuine odds:
+
+```nasm
+0002B6B  mov word [0x18AC], 0xCD7C     ; event 5, Rough trail:  p = 0.05
+0002BC5  mov word [0x18B2], 0x9A7E     ; event 6, wild fruit:   p = 0.15
+```
+
+and the rest are switches — `81 00 00 00 00 00` is exactly `1.0`, and all-zeros
+is `0.0`, so a condition is written as a certainty or an impossibility:
+
+```nasm
+0002A3A  mov cx, 0x85 / xor si, si / mov di, 0x7000   ; the literal 30
+0002A42  lcall System:0x0C6A                          ; against [0x1867]
+0002A47  jbe 0x2A5D
+0002A49  mov word [0x188E], 0x81                      ;   above 30 -> 1.0
+0002A5D  mov word [0x188E], 0                         ;   at or below -> 0.0
+```
+
+`[0x1867]` is itself a six-byte `Real` accumulator, and `0x141E4` updates it
+each day by multiplying by a constant near `0.97` and adding `[0x19AE]`.
+**[inferred]** that this is a decaying pressure — risk that builds while a
+condition holds and fades when it stops — which is a more interesting mechanism
+than a fixed die and is the reason the odds could not be read out of the file.
+What `[0x19AE]` measures is **not** established.
+
+Similarly `[0x18A6]` (event 4, the Indians) is enabled only when `[0x19B9] > 0`
+and one of two frame bytes is set, and event 6's `0.15` applies only when
+`[0x19A4] < 2` — otherwise the slot is zeroed at `0x2BB0`. So the wild fruit
+that saves a starving party is gated on a counter that has to be small.
+
 ## What has not been read
 
-Most of the program: 137,712 bytes across ten segments. Specifically the trail
-simulation, the store, the river crossings, the hunting screen, the illness
-model and the event tables — the 66,592 bytes in segments `0x00000` and
-`0x007B6`.
+The list is now short, and each item says what would close it.
 
-`prior-attempt/src/` contains a 17-unit Pascal reconstruction covering exactly
-those topics. On the evidence of this document it should be read as a set of
+- **`[0x19AE]` and `[0x1867]`** — the events' pressure term. The arithmetic is
+  read; what it measures is not. A watch on `[0x1867]` across a driven run
+  would settle it, and the run now exists.
+- **Which branch of `DS:0x1583`** selects the keyboard rather than the
+  joystick in `ui:0x15A0`. Both paths are read; which flag value picks which is
+  not.
+- **What the two populations in the object array are** — slots 0…6 against
+  7…16. The split is established from the allocator's starting index; what
+  lives in the lower seven is not.
+- **A byte-identical rebuild**, which is blocked for a measured reason rather
+  than an unknown one: 22.6% of the image is a Genus library nobody archived.
+
+`prior-attempt/src/` contains a 17-unit Pascal reconstruction covering these
+topics. On the evidence of this document it should be read as a set of
 hypotheses: the one claim from it that was tested had the right address and the
 wrong meaning, which is roughly the outcome this repository expects from careful
 reading that has never met an oracle.
