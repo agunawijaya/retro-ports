@@ -9,7 +9,7 @@ brief: what the objective is and what would enrich the toolkit. This file is the
 shorter working reference you come back to.
 
 **The objective is the toolkit, not the game.** What this program produced for
-`dos-decompiler` matters more than what it produced about wagons.
+`DOS-Decompiler` matters more than what it produced about wagons.
 
 ## State of the work
 
@@ -20,7 +20,7 @@ shorter working reference you come back to.
 | entry point | **done, authoritative** — `0x10A`, from LZEXE's own header, not guessed |
 | compiler | **Turbo Pascal 5.0** — matched against Borland's own `TURBO.TPL` |
 | `prior-attempt/src/` | **tested: it is not the original source** — needs TP 6.0/7.0 syntax |
-| module structure | **done** — 11 segments, all named, third-party split measured |
+| module structure | **done** — 17 segments, all named, third-party split measured |
 | artwork | **done and verified against the running game** — LOGO.004 matches the drawn frame 17,600/17,600 pixels |
 | data files | **done** — `DIALOGS.REC` is 51 records of 286 bytes, exactly |
 | the trail | **done** — 17 landmarks, distances and map coordinates, at `0x23D32` |
@@ -146,7 +146,7 @@ unpacked image        : 201,184 bytes
 compiler    : Turbo Pascal  [System unit init at 0x219f0]
 DGROUP      : 0x3348  -> data starts at 0x23480
 code / data : 144,512 bytes of code, 56,672 bytes of data and stack
-units       : 14 code segments carrying 3,084 far calls
+units       : 17 code segments carrying 3,087 far calls
   (four restored by their string references -- 0x0bea, 0x0c54, 0x0cfa, 0x0f30)
 runtime     : segment 0x219f -- 6,800 bytes, 1,500 far calls (48% of all calls)
 
@@ -576,6 +576,6 @@ refuse on a local disk, so there is nothing there to explain.
   `git status` — never `git add -A`.
 - Nothing in `work/` is worth committing; a 105 MB DOSBox trace and a 6.7 MB
   Ghidra project were deleted from this folder once already.
-- **Someone else works in `dos-decompiler`.** Read its `git log` before
+- **Someone else works in `DOS-Decompiler`.** Read its `git log` before
   starting and commit only your own files.
 - Every figure in every document must match what the tools print today.

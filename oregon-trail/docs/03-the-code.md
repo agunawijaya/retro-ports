@@ -1898,6 +1898,141 @@ diagrams out of `terrain.pcc`, *"Enter Key … to start or stop walking"*,
 first, then shown by the binary. That is the order this folder is supposed to
 work in.
 
+### Inside the mini-game, as far as it has been read
+
+`0x72DD` is a **nested procedure**: its `[bp+4]` is Turbo Pascal's static link
+to the enclosing `Hunting` frame, which is why every variable in it is written
+`ss:[di - N]` rather than as a local. Nothing in it is addressable without that
+link, and that alone explains why the routine cannot be entered from outside.
+
+It is a tick function with **two independent timers** over the parent's frame:
+
+```nasm
+0007338  mov ax, ss:[di-0x28] / dec ax      ; the fast one, period 5
+0007347  cmp word ss:[di-0x28], 0
+000734F  jne 0x738D
+0007351  call 0x6DD0                        ;   every 5 ticks
+0007368  cmp word ss:[di-0x36], 0           ;   and while a counter lasts
+0007372  call 0x6C2B
+0007387  mov word ss:[di-0x28], 5           ;   reload
+0007390  mov ax, ss:[di-0x26] / dec ax      ; the slow one, reloaded from
+00073AD  mov ss:[di-0x26], ax               ;   ss:[di-0x30]
+```
+
+The field is a **BGI 320×200 screen**, and the bound is in the movement step at
+`0x6AA3`:
+
+```nasm
+0006AB9  mov ax, ss:[di-0x13] / add ax, ss:[di-0x16]   ; x += dx
+0006ACE  mov ax, ss:[di-0x11] / add ax, ss:[di-0x18]   ; y += dy
+0006AE3  cmp word ss:[di-0x13], 0      / jl  stop
+0006AED  cmp word ss:[di-0x13], 0x13E  / jg  stop      ; 318
+0006AF8  cmp word ss:[di-0x11], 1      / jl  stop
+0006B02  cmp word ss:[di-0x11], 0xC7   / jg  stop      ; 199
+0006B0D  mov byte ss:[di-0x0B], 0                      ; walking = false
+```
+
+so walking off any edge stops the hunter rather than wrapping or clamping. The
+rest of the game works in text rows and 8-pixel columns; this screen does not,
+and that is the same fact as the BGI driver above — hunting is the only part of
+The Oregon Trail that uses Borland's graphics library.
+
+Objects on the field are **nine-byte records** in an array indexed off the
+parent frame at `ss:[di - 0xFA + 9i]`, with a parallel byte array at
+`ss:[di - 0x57 + i]`. Allocation is a linear scan for a free slot from index 7
+upward, and the copy is `System.Move` of exactly nine bytes:
+
+```nasm
+000742E  mov word [bp-2], 6
+0007433  inc word [bp-2]                     ; from slot 7
+0007447  cmp byte ss:[di-0xFA], 0 / jne 0x7433   ; first free one
+0007479  lcall 0x319F, 0x025D                ; Move(src, dst, 9)
+0007498  mov byte es:[di], 2                 ; and mark it kind 2
+```
+
+Within a record, `+1` and `+3` are read as a coordinate pair and `+7` as a
+length: the drawing is `Line(x, y, x, y + h)` through `Graph:0x1670` — a
+vertical stroke — guarded by `shr al, 1` on the low byte of `+1`, so only every
+other value draws. **[inferred]** that this is the object's own animation
+phase; the record's field meanings beyond the coordinate pair have not been
+confirmed against a running frame.
+
+**How it reads the keypad, which is not where it looks.** The hunt unit's only
+`Crt.ReadKey` is at `0x666C`, and it is another **flush** — `while KeyPressed do
+ReadKey` on the way *out* of hunting, clearing `[0x16BF]`, `[0x16C0]` and two
+frame bytes before returning. The mini-game does not read a key anywhere in its
+own unit. Two of the three routines that look like candidates are not:
+
+| | |
+|---|---|
+| `ui:0x007D`, called **13 times** — more than anything else | `Random`: `System:0x0C94`, then fold `> 0x7FFF` back into range. The animals. |
+| `Crt:0x02C6` at `0x6C12` and `Crt:0x02F3` at `0x6C20` | `Sound` and `NoSound` — `1193181 / f` into the PIT, port `0x61`, `0x43` with `0xB6`. The rifle. |
+
+The input is `ui:0x15A0` (image `0x119C0`), and it is a **direction** reader
+rather than a key reader:
+
+```nasm
+00119CD  cmp byte [0x1583], 0      ; which device
+00119D2  je  0x119D7               ;   one path ...
+00119D4  jmp 0x11A9C               ;   ... or the other
+00119EF  call 0x11537              ; four out-parameters
+00119F2  mov ax, [0x16B6]          ; against calibration bounds
+00119F5  cmp ax, [0x16B8]
+```
+
+`[0x16B6]` and `[0x16B8]` are the calibration pair, `[0x16BF]` and `[0x16C0]`
+the two hunting clears on the way out, and the game writes port `0x201` and
+opens `JOYCAL.REC` — so this is the joystick, with `DS:0x1583` selecting between
+it and the keyboard. That is why the instructions screen offers two diagrams,
+*"(novice hunters)"* and *"(expert hunters)"*: they are two mappings onto the
+same eight directions.
+
+And the other branch, `0x11A9C`, is the part worth having. It does not read the
+keyboard at all — it **turns the joystick into keystrokes**, and the constant
+gives it away:
+
+```nasm
+0011AAD  cmp word [bp-2], 0xC8     ; column, and row below -- both < 200
+0011AB4  cmp word [bp-4], 0xC8
+0011ABE  cmp ax, [0x16C2]          ; unchanged since last poll? then nothing
+0011ACD  mov ax, [bp-4] / mov cx, 3 / imul cx
+0011AD7  mov ax, 0x37              ; '7'
+0011ADA  sub ax, dx                ;   - 3 * row
+0011ADC  add ax, [bp-2]            ;   + column
+0011ADF  les di, [bp+6] / mov es:[di], al
+```
+
+`0x37` is the character `7`, and with row and column each in 0…2 the expression
+`'7' - 3·row + column` enumerates
+
+```
+7 8 9
+4 5 6
+1 2 3
+```
+
+— the numeric keypad, which is the diagram printed on the instructions screen.
+The two buttons follow the same idea:
+
+```nasm
+0011AF1  cmp byte [bp-6], 0        ; button one, and not held from last time
+0011AF7  cmp byte [0x16C0], 0
+0011B01  mov byte es:[di], 0x0D    ;   -> Enter   : start or stop walking
+0011B0B  cmp byte [bp-5], 0        ; button two
+0011B11  cmp byte [0x16BF], 0
+0011B1B  mov byte es:[di], 0x20    ;   -> Space   : fire the rifle
+```
+
+`[0x16BF]` and `[0x16C0]` are the previous button states, held for edge
+detection so a held button fires once — and they are exactly the two bytes
+hunting clears on its way out at `0x6676`, which is what that flush is really
+for. `[0x16C2]` and `[0x16C4]` do the same job for the stick.
+
+So there is **one** input vocabulary in the hunting screen, not two: the keypad
+digits, `Enter` and `Space` that the instructions name. A joystick is converted
+into them before anything else sees it, which is why the screen can describe
+itself entirely in keys.
+
 ## Where the artwork is loaded from
 
 Not traced in the code — but the file format is fully read, and
