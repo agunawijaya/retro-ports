@@ -516,9 +516,38 @@ exactly. It is navigable:
   `annotate.py`. All 221 call targets and 604 variables are named, and every
   name carries the evidence for itself.
 
-What remains unmeasured is the gap between what a static reading of a level
-produces and what the game actually blits — 38%, 83% and 58% across the three
-screens.
+The gap between a static reading and what the game actually draws used to be
+the honest limit here, quoted as 38%, 83% and 58% and never checked against
+anything. It is checked now. `tools/verify-screens.py` runs the game under the
+toolkit's `comrun.py`, hooks the four routines that put anything on screen, and
+compares the calls the program makes with the calls the reading predicts —
+by value, not by eye.
+
+| | drawing calls reproduced | pixels identical |
+|---|---|---|
+| Level 1 | 43 of 49 — **87%** | 95% |
+| Level 2 | 87 of 104 — **83%** | 93% |
+| Level 3 | 25 of 33 — **75%** | 95% |
+
+Three faults in the extractor came out of that comparison, and all three had
+been invisible because the old metric counted calls that produced *a*
+placement rather than the *right* one — it read 39/39, 33/33, 44/44 throughout.
+
+* **A selector is not always its high byte.** `shape_lookup` adds the two
+  bytes of `shape_select` together, and only one of the three drawing routines
+  masks the low one off first. The low byte is where a per-iteration delta
+  lands, so reading the high byte alone gave every girder in a run the same
+  shape: right place, wrong picture.
+* **The delta was being resolved too early**, using the loop counter's value
+  on the first pass, which made it a constant. The whole point of a
+  per-iteration delta is that it varies.
+* **`fill_line` was invisible.** It draws a run of pixels and closes no
+  placement triple, so nothing identified it as a drawing routine at all. The
+  floor, the lift shaft and the hoist cables were simply absent.
+
+What is left is over-unrolling: the reading predicts 71 calls on Level 1 where
+the program makes 49, because a loop bound it cannot pin down is guessed high.
+That is a smaller and better-understood problem than the one it replaced.
 
 ---
 

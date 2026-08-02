@@ -37,6 +37,14 @@ from pathlib import Path
 # docs/02-architecture.md.
 BUILDERS = [("Level 1", 0x14D8), ("Level 2", 0x1763), ("Level 3", 0x1627)]
 
+# fill_line at 0x01C8 draws a run of pixels rather than a sprite, so
+# find_drawers cannot see it: there is no sprite pointer to close a triple on.
+# Its five parameters are declared here instead. Equal column bounds mean it
+# walks the row instead of the column, which is how one routine draws both the
+# floor (three horizontal lines) and the lift shaft (one vertical).
+FILLERS = {0x01C8: (0x15A0, 0x15A1, 0x15A2, 0x15A3, 0x15B1)}
+PIXEL = 3                   # plot_pixel XORs both bits of the two-bit pixel
+
 SPRITE_TABLE = 0x6D10       # pointers to the sprite bitmaps
 FONT_TABLE = 0x716F         # pointers to the character glyphs
 HUD = [0x1DEE, 0x1E19, 0x1E35]      # the score line and the two edge markers
@@ -141,7 +149,7 @@ def main():
 
     panels = []
     for name, builder in BUILDERS:
-        ex = placements.Extractor(rec, drawers)
+        ex = placements.Extractor(rec, drawers, fillers=FILLERS)
         places = ex.walk(builder)
         got, reached, _ = ex.coverage()
 
@@ -162,6 +170,18 @@ def main():
                                row - img.height + 1), img)
             drawn += 1
 
+        # The runs, one pixel each. A column is a pixel column, so the byte
+        # it lands in is col // 4 and the pixel inside it col % 4 -- which is
+        # exactly what plot_pixel does with the mask table at 0x02C4.
+        lit = 0
+        cpx = canvas.load()
+        for r in ex.runs:
+            for col, row in r.points():
+                x, y = col + ORIGIN_X, row
+                if 0 <= x < W and 0 <= y < H:
+                    cpx[x, y] = pal[PIXEL]
+                    lit += 1
+
         for head in HUD:
             for col, row, text in text_records(data, head):
                 for k, ch in enumerate(text):
@@ -177,11 +197,13 @@ def main():
         panel.paste(big, (0, 44))
         d = ImageDraw.Draw(panel)
         d.text((10, 8), f"Hard Hat Mack — {name}", fill=(255, 233, 168))
-        d.text((10, 26), f"{drawn} sprites, every position read from the "
-                         f"binary. {got}/{reached} placement calls explained. "
-                         f"Never executed.", fill=(150, 155, 180))
+        d.text((10, 26), f"{drawn} sprites and {lit} run pixels, every "
+                         f"position read from the binary. {got}/{reached} "
+                         f"drawing calls explained. Never executed.",
+               fill=(150, 155, 180))
         panels.append(panel)
-        print(f"{name}: {drawn} sprites drawn, {got}/{reached} calls explained")
+        print(f"{name}: {drawn} sprites, {len(ex.runs)} runs ({lit} pixels), "
+              f"{got}/{reached} calls explained")
 
     out = Image.new("RGB", (panels[0].width, sum(p.height + 8 for p in panels)),
                     (8, 8, 12))
