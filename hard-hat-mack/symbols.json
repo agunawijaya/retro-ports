@@ -58,6 +58,10 @@
       "start",
       "CS into every segment, INT 09h hooked through 0:0x24 with the old vector kept, the BIOS equipment word forced to 40-column colour, mode 4, and five added to all 200 scanline_table entries"
     ],
+    "0x00057": [
+      "start_tail",
+      "the three registers cleared and the jump into main; restart_video rejoins here so the vector work is not repeated"
+    ],
     "0x0060": [
       "restart_video",
       "the same video setup without the vector work; reached when the configuration menu returns"
@@ -166,17 +170,37 @@
       "main",
       "sets state_vector and loops: new_life, handle_key, then jump through the vector into whichever screen was chosen"
     ],
+    "0x00AA8": [
+      "main_loop",
+      "the outer loop: new_life, handle_key, and round again until a key arrives"
+    ],
+    "0x00ABC": [
+      "main_dispatch",
+      "clears the per-round flags and jumps through state_vector into whichever screen was chosen"
+    ],
     "0x0ADB": [
       "screen_1",
       "the girder screen. Draws it, then the per-frame call list: input, hazards, holes, rivets, collision, music"
+    ],
+    "0x00ADE": [
+      "screen_1_replay",
+      "screen 1 without the respawn call -- where a lost life re-enters"
     ],
     "0x0BB6": [
       "screen_2",
       "the elevator screen, and the one main starts on"
     ],
+    "0x00BB9": [
+      "screen_2_replay",
+      "reached only by a tail jump from outside the routine it sits in"
+    ],
     "0x0C72": [
       "screen_3",
       "the cement screen"
+    ],
+    "0x00C75": [
+      "screen_3_replay",
+      "reached only by a tail jump from outside the routine it sits in"
     ],
     "0x0D52": [
       "reset_round",
@@ -218,6 +242,10 @@
       "mack_up",
       "can_climb, then two rows up and the climbing frame from shape_up; sets mack_facing to 1"
     ],
+    "0x01088": [
+      "mack_climb_frame",
+      "the shared tail of mack_up and mack_down: the climbing shape, then clamp and draw"
+    ],
     "0x10A5": [
       "mack_down",
       "the same downward, facing 3"
@@ -242,6 +270,10 @@
       "can_walk_right",
       "the same with the span tested from the other end"
     ],
+    "0x0137C": [
+      "allow_move",
+      "sets move_allowed and returns; both can_walk_ routines end here"
+    ],
     "0x138C": [
       "can_climb",
       "the five ladder rows; row 0xA7 on screen 3 is the exception"
@@ -253,6 +285,14 @@
     "0x141C": [
       "wrap_x",
       "mack_x past 0xFB wraps to 0, and mack_y past 0xBD clamps to 0xBC"
+    ],
+    "0x01431": [
+      "wrap_to_left",
+      "mack_x past 0xFB becomes 0"
+    ],
+    "0x01445": [
+      "clamp_done",
+      "the bare return three clamp paths share"
     ],
     "0x144E": [
       "wrap_jump",
@@ -526,6 +566,26 @@
       "fall_check",
       "is Mack standing over an unplugged hole. If he is, walk him down two rows at a time with a rising tone, then lose_life"
     ],
+    "0x03405": [
+      "fall_from_hoist",
+      "the hoist's own drop: the bottom row comes from hoist_y rather than a girder"
+    ],
+    "0x03428": [
+      "fall_to_floor",
+      "the bottom row is the floor at 0xBD"
+    ],
+    "0x03433": [
+      "fall_begin",
+      "the entry every faller uses once fall_x and fall_bottom are set"
+    ],
+    "0x034A8": [
+      "die_and_reset",
+      "the fall animation, then lose_life"
+    ],
+    "0x034D1": [
+      "die_long",
+      "the longer death, with the three extra shapes; walk_off jumps straight here"
+    ],
     "0x352C": [
       "draw_mack_frame",
       "one frame of Mack falling: position into all four place_pair variables, draw, then a full 0xFF delay"
@@ -601,6 +661,10 @@
     "0x3DDE": [
       "bonus_subtract",
       "four digits with a borrow"
+    ],
+    "0x03E11": [
+      "bonus_redraw",
+      "clears the six pending digits and redraws the bonus"
     ],
     "0x3E30": [
       "bonus_draw",
@@ -682,6 +746,10 @@
       "death_frame",
       "the death frame index doubled into death_shapes, which holds (shape, shape) pairs"
     ],
+    "0x044C3": [
+      "death_frame_done",
+      "reached only by a tail jump from outside the routine it sits in"
+    ],
     "0x44C4": [
       "draw_death",
       "place_pair at Mack's position with the death frame, then hotkeys so the restart key still answers"
@@ -714,9 +782,17 @@
       "music_tick",
       "the synthesiser: a phase increment added to a 16-bit accumulator 0x78 times a tick, and port 0x61 bit 1 toggled against a duty threshold that itself drifts. Pulse-width modulation on a one-bit speaker"
     ],
+    "0x046F7": [
+      "pwm_loop",
+      "the sample loop: accumulator plus increment, speaker against the duty threshold"
+    ],
     "0x4714": [
       "music_tick_alt",
       "a second modulation loop nothing in the code region reaches"
+    ],
+    "0x04770": [
+      "pwm_tail",
+      "the duty threshold's own drift, and the sample countdown"
     ],
     "0x4837": [
       "respawn_pits",
@@ -898,6 +974,10 @@
       "hit_small",
       "an 18 by 8 box around Mack"
     ],
+    "0x05985": [
+      "hit_miss",
+      "clears hit_result; every failing branch of both box tests lands here"
+    ],
     "0x598F": [
       "hit_large",
       "16 by 24 -- what the holes use"
@@ -933,6 +1013,10 @@
     "0x5EB3": [
       "draw_level_number",
       "the tens digit at column 0x26, row 0x70"
+    ],
+    "0x05EC8": [
+      "draw_level_ones",
+      "the units digit at column 0x27; next_level jumps in when the tens did not change"
     ],
     "0x5ED6": [
       "draw_digit",

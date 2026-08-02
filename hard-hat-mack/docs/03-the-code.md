@@ -513,8 +513,9 @@ exactly. It is navigable:
 - **`db` lines with a comment** are instructions pinned to a fixed encoding —
   they execute, they are just spelled in bytes.
 - **Names** come from `symbols.json`, applied by the toolkit's
-  `annotate.py`. All 221 call targets and 604 variables are named, and every
-  name carries the evidence for itself.
+  `annotate.py`. All 221 call targets, every jump-table and tail-call entry,
+  and all 605 variables are named, and every name carries the evidence for
+  itself.
 
 The gap between a static reading and what the game actually draws used to be
 the honest limit here, quoted as 38%, 83% and 58% and never checked against

@@ -53,6 +53,14 @@
       "score_draw",
       "eight digits, leading zeros dropped by scanning for the first non-zero"
     ],
+    "0x001EB": [
+      "score_digit_loop",
+      "walks the eight digits, skipping leading zeros"
+    ],
+    "0x001F7": [
+      "score_digit_emit",
+      "the inner loop once the first non-zero has been found"
+    ],
     "0x0200": [
       "put_digit",
       "adds 0x30 and calls put_char"
@@ -100,6 +108,10 @@
     "0x02C0": [
       "main",
       "title screen, attract loop, two-player turn taking, high score. The outer loop the game never leaves"
+    ],
+    "0x002C6": [
+      "attract_loop",
+      "the title screen and the attract round, repeated until somebody chooses"
     ],
     "0x0330": [
       "play_round",
@@ -220,6 +232,18 @@
     "0x0B43": [
       "scene_8",
       "handler 0x3AB3, scene_kind 1"
+    ],
+    "0x00B51": [
+      "scene_install",
+      "steps the stage, reads the handler out of the scene's table, and unpacks its level. Seven scenes jump here"
+    ],
+    "0x00B5F": [
+      "scene_unpack",
+      "the same without the handler, for the two scenes that set their own"
+    ],
+    "0x00B84": [
+      "scene_default_tiles",
+      "level_tiles to 0x902 and the default level"
     ],
     "0x0B8D": [
       "unpack_level",
@@ -504,6 +528,10 @@
     "0x2063": [
       "sound_swoop",
       "channel 3: di 0x4B0 over four steps, each 0xFFC4 further on"
+    ],
+    "0x02096": [
+      "sound_advance",
+      "the divisor step and the countdown all three channel routines end on"
     ],
     "0x2098": [
       "speaker_stop",

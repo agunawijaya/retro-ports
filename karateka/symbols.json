@@ -20,6 +20,10 @@
       "entry",
       "the MZ entry from CS:IP; sets DS once and never again"
     ],
+    "0x00220": [
+      "abort_with_message",
+      "the load-failure path: SP back to the saved top, then INT 21h AH=9 on the message at 0xC7. Three places jump here"
+    ],
     "0x0023C": [
       "dos_version_check",
       "INT 21h for the version, then the heap flag -- the tail of the C start-up"
@@ -64,9 +68,37 @@
       "draw_sprite",
       "takes an id, sets both stream pointers from two tables"
     ],
+    "0x0093F": [
+      "draw_sprite_row",
+      "one row of the sprite; the column loop at 0x00A6F jumps back to it"
+    ],
+    "0x00957": [
+      "draw_sprite_clip",
+      "the clipped entry: draw_sprite jumps here when the sprite crosses an edge and the row loop has to start part-way in"
+    ],
+    "0x00A1E": [
+      "draw_sprite_body",
+      "the draw proper, once the caller has decided there is something to draw. blit_column tail-jumps in"
+    ],
+    "0x00A69": [
+      "draw_sprite_done",
+      "pop bp and return -- the shared exit both halves reach"
+    ],
+    "0x00A6B": [
+      "draw_sprite_reload",
+      "reloads the sprite cursor from 0x421E before the next column"
+    ],
+    "0x00A9F": [
+      "draw_sprite_next",
+      "advances to the next column and re-enters the row loop"
+    ],
     "0x0AE7": [
       "blit_column",
       "one byte per scanline, add di 0x50"
+    ],
+    "0x00B1E": [
+      "blit_column_body",
+      "reloads SI from the sprite cursor and walks the mask table at 0x443C"
     ],
     "0x00B4E": [
       "clear_frame",
@@ -151,6 +183,14 @@
     "0x162D": [
       "compile_end_animation",
       "arm 13; emits 0xFF, the only opcode that is not 2*index"
+    ],
+    "0x0165A": [
+      "compile_dispatch",
+      "bounds the command against 0x0E and jumps through animation_dispatch"
+    ],
+    "0x01668": [
+      "compile_done",
+      "drops the 0x12-byte frame and returns; every compile_ routine ends here"
     ],
     "0x166D": [
       "run_script",
@@ -304,9 +344,17 @@
       "fight_step_player",
       "advance or restart the player's move"
     ],
+    "0x02461": [
+      "fight_step_choose",
+      "one comparison on the phase decides whether the player or the guard moves next"
+    ],
     "0x246B": [
       "fight_step_guard",
       "the same for the guard"
+    ],
+    "0x025CD": [
+      "fight_step_guard_body",
+      "the guard's half, entered directly when the phase says so"
     ],
     "0x2605": [
       "guard_choose_move",
@@ -804,9 +852,17 @@
       "heap_insert",
       "the same pair of arguments, called by heap_link"
     ],
+    "0x069DF": [
+      "heap_insert_body",
+      "a null block short-circuits straight to heap_find's tail"
+    ],
     "0x6A66": [
       "heap_find",
       "walks blocks comparing a request against each block's size -- the key said 0x6A6D, where the listing has no label; L_06A66 is the block that does this, and the name had been applying nowhere"
+    ],
+    "0x06AD9": [
+      "heap_write_header",
+      "writes the block header both callers finish by writing"
     ],
     "0x6AF4": [
       "strcmp",

@@ -23,6 +23,10 @@
       "play_helicopters",
       "the round loop for waves 0 and 1. Draws the ground line at 0x1DB0 and the gun base, prints the status line, then paces itself on INT 1Ah ticks: move the helicopter lanes, move the falling troopers, step the bullets, redraw the gun"
     ],
+    "0x02E10": [
+      "frame_loop",
+      "the head of the helicopter round's frame loop -- past the screen setup, so the wave handlers can rejoin without redrawing it"
+    ],
     "0x3152": [
       "wave_pause",
       "phase 1 of the wave table: clear the spawn flags and fall back into the helicopter loop"

@@ -24,7 +24,7 @@ accounted for *by byte*.
 | the data segment **by byte** | 59,670 of 59,670 — **100%**, in 58 contiguous spans with no gap |
 
 **Quote the third row whenever you quote the second.** "312 of 312 addresses"
-was true and read as completeness for a while, and it is a fact about
+was true when it was written and read as completeness, and it is a fact about
 *references* — it says nothing about the 59,670 bytes between them, which were
 40% accounted for at the time. Half the data segment is a 24,260-byte arena of
 zeroes that files are read into; empty is finished, unread is work, and only
@@ -43,7 +43,7 @@ own library and came back right.
 | the animation system | a 14-command **compiler**, opcode = 2 × command index |
 | the fighting | choreography read — 150 moves in three plain-text libraries |
 | the fight AI | **found and read** — `0x2605`, a tree over pose, pose and distance |
-| the reading | 204 routines — **every one of the 165 call targets** — 338 named addresses, **100% of the data segment by byte** |
+| the reading | 218 routines — **every call target and every tail-call entry** — 338 named addresses, **100% of the data segment by byte** |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |
@@ -126,7 +126,7 @@ of 40 moves changed x by exactly the frame's `inc_x`.
 
 `recovered/karateka.asm` is correct and is not source: ten thousand
 instructions under labels named after their own addresses. `symbols.json` holds
-the reading — **204 routines and 338 globals**, each with the evidence
+the reading — **218 routines and 338 globals**, each with the evidence
 for its name — and the toolkit's `annotate.py` applies them.
 
 **Everything is named**, and it is worth saying against which denominator.

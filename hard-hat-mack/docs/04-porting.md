@@ -118,7 +118,7 @@ ctx.drawImage(sheet, sx, sy, 16, 16, x, y, 16 * S, 16 * S);
 
 **Against:**
 - One language for everything, including the parts JavaScript is weakest at.
-- 405 variables and 222 routines is a lot of program to keep honest without
+- 605 variables and 273 routines is a lot of program to keep honest without
   types. **Use TypeScript** if the port goes past a prototype.
 - Audio needs a user gesture before it will start. Every browser, no exceptions.
 
@@ -147,7 +147,7 @@ not code.
 ### 3. Rust + macroquad
 
 **For:** the compiler catches the class of bug this game is full of — an index
-into the wrong table, a byte where a word was meant. With 405 variables that is
+into the wrong table, a byte where a word was meant. With 605 variables that is
 a real safety net. Single binary out, WebAssembly target available.
 
 **Against:** the borrow checker and a game loop full of mutable shared state are
@@ -162,7 +162,7 @@ something move. The sprite decoder is fifteen lines. Ideal for *verifying your
 understanding* — which is exactly what the tooling in this repository already
 does in Python.
 
-**Against:** distribution is genuinely painful, and 222 routines of per-frame
+**Against:** distribution is genuinely painful, and 273 routines of per-frame
 logic in CPython will need care. Not the right answer for a port people are
 meant to play.
 
@@ -199,7 +199,7 @@ install win for a game people are meant to try; the browser's frame clock and
 audio are better than what the original had; and the sprites decode from the
 binary at load time so there is no asset pipeline to maintain.
 
-The addition is the 405 variables. ParaTrooper's port is plain JavaScript and
+The addition is the 605 variables. ParaTrooper's port is plain JavaScript and
 that was the right call for 47 variables and 19 routines. At this size, plain
 JavaScript will let you write `state.macX` where you meant `state.mackX` and
 find out three levels later. TypeScript costs an afternoon of setup and repays

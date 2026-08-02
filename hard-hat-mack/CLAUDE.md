@@ -16,8 +16,8 @@ instruction, and the numbers below are counts rather than estimates.
 | | |
 |---|---|
 | rebuild | byte-identical, rung 1b, `FD70BAB8…` |
-| routines named | 252 — all 221 call targets, plus every jump-table entry |
-| variables named | 604 |
+| routines named | 273 — all 221 call targets, every jump-table entry, and every tail-call entry |
+| variables named | 605 |
 | bracketed constants covered | 567 of 573; the other six are not addresses (see `_not_addresses`) |
 | bytes in a named span | 42,112 of 42,112 |
 | level screens drawn from the file alone | **87% / 83% / 75%** of the drawing calls the program makes, reproduced exactly — and **94%** of the pixels |
@@ -32,7 +32,7 @@ If a port starts, it goes in `web/` and gets documents 05 and 06, following
 ## Source you can rebuild
 
 `recovered/hhm.asm` is correct and is not source. `symbols.json` holds the
-reading — 252 routines and 604 globals, each with the evidence for
+reading — 273 routines and 605 globals, each with the evidence for
 its name, plus `_data_spans` accounting for all 42,112 bytes — and the toolkit's `annotate.py` applies it.
 
 ```powershell

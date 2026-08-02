@@ -577,7 +577,7 @@ these buckets:
 | the HUD text records | 370 | 0.9% | **proven** — the routine that walks them is at `0x1D86` |
 | the scanline table's clamp | 192 | 0.5% | **proven** — see below |
 | the font pointer table | 128 | 0.3% | **proven** — 64 entries |
-| **still unidentified** | **3,192** | **7.6%** | — |
+| **still unidentified** | **3,192** | **7.6%** | superseded — see below |
 
 *The `code` row was measured before a later toolkit change stopped the gap
 sweep from claiming runs of zero padding as instructions — 34 runs, 68 bytes,
@@ -610,6 +610,12 @@ The table as a whole is the same trade. Rather than compute a row's address on
 every blit, the game looks it up: 596 bytes spent to avoid a shift, an AND and a
 multiply, on every single sprite. Trading memory for arithmetic is the oldest
 optimisation there is, and here it buys a free bounds check as well.
+
+**This table has been superseded by `_data_spans` in `symbols.json`.** It
+classifies bytes into kinds; the spans give every one of the 42,112 bytes a
+named extent and a reason, contiguously and with no gap. The row below is kept
+because the reasoning that produced it is worth reading, and because it records
+what was true before the whole code region had been read.
 
 ### What the 7.6% is
 
@@ -903,16 +909,16 @@ dumps the framebuffer, and the two pictures are compared pixel by pixel:
 
 | | pixels the game draws | covered by the static render | drawn but not in the game |
 |---|---|---|---|
-| Level 1 | 10,104 | **85.6%** | 28.7% |
-| Level 2 | 12,550 | **87.1%** | 24.5% |
-| Level 3 | 8,685 | **82.6%** | 34.7% |
+| Level 1 | 10,125 | **92.6%** | 20.0% |
+| Level 2 | 12,571 | **93.2%** | 15.2% |
+| Level 3 | 8,706 | **89.1%** | 19.6% |
 
 Both columns are needed. A renderer that draws nothing scores 0% and 0%; one
 that fills the screen scores 100% and enormously.
 
 The static render is still what is produced without running anything. The
 emulator is only the referee, and it is the referee that found the Level 2
-collapse: 54.1% covered before, 87.1% after.
+collapse: 54.1% covered before, 93.2% after.
 
 ### And a harder number, which is the true one
 
@@ -921,23 +927,43 @@ in roughly the right place covers a great many pixels while getting the
 placement wrong. Comparing the **placements themselves** — every blit the game
 performs, against every placement the static reading produces — does not:
 
-| | blits the game makes | placements read from the file | recall | precision |
+| | drawing calls the game makes | calls read from the file | recall | precision |
 |---|---|---|---|---|
-| Level 1 | 47 | 68 | **38.3%** | 26.5% |
-| Level 2 | 102 | 117 | **83.3%** | 72.6% |
-| Level 3 | 33 | 49 | **57.6%** | 38.8% |
+| Level 1 | 49 | 71 | **87.8%** | 60.6% |
+| Level 2 | 104 | 120 | **83.7%** | 72.5% |
+| Level 3 | 33 | 54 | **75.8%** | 46.3% |
 
-That is the honest state of the level extraction, and it is a long way from the
-100% that counting explained call sites reported.
+`tools/verify-screens.py` produces that table, and it reports the difference by
+value rather than as a fraction: which calls were missed, and which were
+invented. That is what made them fixable.
 
-**Why, and it is not the tables.** The static walk follows every call and has no
-idea which branch the program takes. Worse, some drawing routines set no
-position of their own — `0x2A03` reads the column and row variables and draws
-at whatever is already there — so the walk hands them whatever position it last
-computed, on a path the program takes in a different order or not at all.
+**Three faults, all invisible to the old metric**, which counted calls that
+produced *a* placement rather than the *right* one — it read 39/39, 33/33 and
+44/44 throughout:
 
-That is a limit of reading without executing, not a defect to be tuned out. It
-can be narrowed, and it cannot be closed by better pattern-matching.
+* **A selector is not always its high byte.** `shape_lookup` adds the two bytes
+  of `shape_select` together, and only one of the three drawing routines masks
+  the low one off first. The low byte is where a per-iteration delta lands, so
+  reading the high byte alone gave every girder in a run the same shape.
+* **The delta was resolved too early**, at the instruction rather than at
+  emission, so it used the loop counter's first-pass value and became a
+  constant.
+* **`fill_line` was not a drawing routine at all**, as far as the extractor was
+  concerned. It draws a run of pixels and closes no placement triple, so
+  nothing identified it — and the floor, the lift shaft and the hoist cables
+  were simply absent.
+
+**What is left is precision, not recall.** The walk follows every call and has
+no idea which branch the program takes, so it predicts 71 calls on Level 1
+where the program makes 49. Some drawing routines set no position of their own
+— `0x2A03` reads the column and row variables and draws at whatever is already
+there — so the walk hands them whatever position it last computed, on a path
+the program may take in a different order or not at all.
+
+That part is a limit of reading without executing rather than a defect to be
+tuned out. The earlier version of this document said the whole gap was that,
+and it was wrong: most of it was three bugs, and the comparison is what
+distinguished them.
 
 **Level 1's floors have holes in them, and that is correct.** Its task is to
 fill the gaps in the girders, so it starts incomplete — a sparse screen that
@@ -951,48 +977,48 @@ is what turns these into game screens.
 
 ## What is still unknown
 
-Five things, stated plainly:
+Two things, and both are smaller than the five that used to be here.
 
-- **A quarter to a third of what the static render draws is not on the game's
-  screen.** 28.7%, 24.5% and 34.7% by level. Some of it is the HUD, which the
-  game fills in at run time — it prints `LEVEL 01`, the file says `LEVEL 0` —
-  but not all of it, and the rest is not yet explained.
-- **The other four placement calls.** Eighty-five of the eighty-nine are now
-  reachable, once the dispatch pointer is followed. Four are not, and they are
-  reached by a route this analysis does not see.
-- **What the in-game drawing draws.** Reachable is not the same as read. The
-  forty-nine calls outside the level builders belong to Mack, the hazards and
-  the animation; they can now be walked to, and have not been.
-- **Whether the placements that were found are in the right places.** The
-  fraction cannot answer this; only comparison with the real game can, and the
-  only comparison made so far is by eye. One error of exactly this kind was
-  found and fixed while the fraction sat at 100%.
-- **The 405 variables.** Nine are named. Seven came from the routines that
-  consume them — the column, row and selector pairs the drawing routines read,
-  plus the level number and the loop counter. Two more came from running the
-  game: `[0x0781]` holds the last key, with its top bit set to mean *unread*
-  (every consumer clears it with `and byte [0x781], 0x7f`), and `[0x0B62]` is
-  the flag that ends the title loop, set when the key is `0xA0` — the space
-  bar, through the game's own translation table.
+- **Precision, not recall.** The static reading predicts 71 drawing calls on
+  Level 1 where the program makes 49; it lights 20% more pixels than the game
+  does. The walk follows every call and cannot know which branch the program
+  takes, and some drawing routines set no position of their own — `0x2A03`
+  reads the column and row variables and draws at whatever is already there —
+  so the walk hands them whatever it last computed. This is the part that is a
+  limit of reading without executing.
 
-  **And a negative result, which is the interesting part.** The obvious way to
-  name the rest is to correlate: play the game, and see which byte follows a
-  sprite's position. Forty frames were captured with the whole 42 KB image
-  frozen *at the instant each sprite was drawn*, so there is no timing skew to
-  explain a miss. The moving characters range across 112 pixels — and **no
-  single byte of the image holds their position at the moment they are drawn**.
-
-  So the position is not simply stored. It is computed, or held as a word, or
-  reached through a table this comparison did not model. That is a much better
-  question than "405 variables are unnamed", and it is one the harness can now
-  be pointed at.
 - **The two bytes at file `0x0001`.** The program's first instruction jumps
   over `FF FC`, and **nothing in the program ever reads them** — checked, zero
   references to addresses `0x100`–`0x103`. What they meant is not recoverable
   from this file; it would take the loader or the build tool that put them
   there.
 
+### What used to be here, and what closed it
+
+- *"A quarter to a third of what the static render draws is not on the game's
+  screen."* Now a fifth: 20.0%, 15.2% and 19.6%. Three extractor faults
+  accounted for most of the difference, and `tools/verify-screens.py` names the
+  remainder call by call.
+- *"The other four placement calls."* All 221 call targets are named, and so is
+  every jump-table and tail-call entry. The whole 22,393-byte code region was
+  read.
+- *"What the in-game drawing draws."* Read. Mack, the hazards, the hoist, the
+  conveyor, the chute and the animation are in `symbols.json` with the evidence
+  for each.
+- *"Whether the placements that were found are in the right places."* Answered,
+  and by comparison rather than by eye: the game runs under `comrun.py`, the
+  four drawing routines are hooked, and the call lists are diffed by value.
+- *"The 405 variables. Nine are named."* 605 are named. The negative result
+  that paragraph reported is still worth keeping, though, because it was right
+  and it was the reason the naming eventually worked: **no single byte of the
+  image holds a moving character's position at the moment it is drawn.** Forty
+  frames were captured with the image frozen at each blit, and the correlation
+  found nothing. The position is not simply stored — it is computed from
+  `mack_x` and `mack_y` into the six variables at `0x6D9B` and consumed there.
+  Chasing the bytes was the wrong instrument; reading the code was the right
+  one.
+
 None of this affects the reconstruction. `recovered/hhm.asm` rebuilds the file
 byte for byte regardless of how much of it is *understood* — the correctness of
 the rebuild and the completeness of the reading are two different things, and
-only the first is finished.
+now both are finished except for the two entries above.
