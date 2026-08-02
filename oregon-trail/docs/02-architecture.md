@@ -785,6 +785,24 @@ It also explains why this game was never going to end like Zaxxon. Zaxxon is
 account for. This program is 38.4% other people's code, and you cannot
 reconstruct what you were never given.
 
+### What it does leave behind
+
+Not source, but not nothing. `tools/listing.py` writes
+`recovered/oregon.asm`: 28,493 instructions across MECC's nine units, every
+exported procedure labelled from the far-call graph, 412 string constants
+resolved against their own unit's base, and 2,690 runtime calls named from the
+differential-compilation table.
+
+The figure worth quoting from it is **not** the 99.5% of bytes decoded — a
+linear sweep decodes everything it is handed, right or wrong, so that number
+measures nothing at all. It is that **1,852 of 2,054 internal branch targets
+(90.17%) land on the first byte of a decoded instruction.** A disassembly that
+had drifted out of phase would not do that, and the 202 that miss are exactly
+where data is embedded in the instruction stream.
+
+That is the honest analogue of Zaxxon's byte-identical rebuild: weaker, because
+nothing here re-assembles, but checkable, which is the property that matters.
+
 ## What changed between 1983 and 1990
 
 This is the most useful thing this program has to say, because it is a

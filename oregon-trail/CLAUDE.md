@@ -30,6 +30,7 @@ shorter working reference you come back to.
 | runtime call offsets | **established by differential compilation**, not guessed |
 | game logic as code | **most of the model is out** — miles, food, the health term, the illness die, every store price, 29 `Random` sites, the casualty routine. The health *update* is **not** traced |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
+| the output | `recovered/oregon.asm` — 28,493 instructions, 90.2% of internal branches self-consistent |
 | documents | [four](docs/), written from the above |
 
 Five things went back into the toolkit: `unpack.py` now reads LZEXE's stated
@@ -43,16 +44,51 @@ the vector table rather than by executing `int`, so an emulator with a zeroed
 table sends the program to `0000:0000` without raising anything anyone could
 see. That cost this folder three wrong explanations before it was found.
 
-## The model, which is the closest thing to an output
+## What this decompilation actually outputs
 
-There is **no `recovered/` folder for this game and there never will be** — no
-`.pas`, no `.asm`. `comrec.py` reconstructs `.COM` files to assembly and this is
-an MZ; no tool here recovers Pascal from object code; and a byte-identical
-rebuild is blocked anyway by 22.6% of the image being a library nobody archived.
+Two files, and the distinction between them matters.
+
+**`recovered/oregon.asm` — the disassembly.** 906 KB, 28,493 instructions,
+every MECC unit labelled, every exported procedure a label, 412 string
+constants resolved inline against their own unit's base, 2,690 runtime calls
+named (`System.RandomReal`, `Dos.FindFirst`). Regenerate with:
+
+```powershell
+python tools\listing.py --image work\unpacked.exe --units work\units.json `
+                        --out recovered\oregon.asm
+```
+
+```
+instructions          28,493
+code decoded          75,553 bytes
+data identified       13,014 bytes
+accounted for         88,567 of 89,008 (99.5%)   -- a linear sweep, see below
+internal branches     2,054 land inside decoded code
+on an instruction     1,852 (90.17%)  <- the figure that can fail
+mid-instruction         202
+```
+
+**Read the second figure, not the first.** Coverage is near 100% for any linear
+sweep whether it is right or wrong, so it measures nothing. What can fail is
+self-consistency: a correct decode has its internal jumps landing on the first
+byte of an instruction. 90.17% do. The 202 that do not are where data sits
+inside the instruction stream, and the listing names them rather than hiding
+them. Raising that number is the obvious next piece of work.
+
+Like every other game here, `recovered/` is **gitignored** — the listing is
+derived from a copyrighted binary. The tool is committed; its output is not.
+
+**`tools/model.pas` — the rules.** The disassembly says what the program *does*;
+this says what it *means*, in a form that runs. Neither substitutes for the
+other.
+
+**What there is not, and cannot be: Pascal source.** No tool here recovers
+Pascal from object code, and a byte-identical rebuild is blocked regardless by
+22.6% of the image being a library nobody archived.
 [Document two](docs/02-architecture.md#could-this-be-rebuilt-byte-identically)
 has the measured verdict.
 
-What stands in its place is [`tools/model.pas`](tools/model.pas): every rule
+[`tools/model.pas`](tools/model.pas) holds every rule
 recovered from the binary, written as Turbo Pascal 5.0 and compiled with the
 game's own compiler. It is **our** code, not MECC's — nothing in it came from
 decompiling anything — and it is committed rather than gitignored for exactly
