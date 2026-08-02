@@ -18,11 +18,17 @@ which `build.ps1` checks and refuses to report success without.
 | [hard-hat-mack](hard-hat-mack/) | 273 | 605 | `FD70BAB8…` |
 | [paratrooper](paratrooper/) | 31 | 134 | `D709DDEC…` |
 | [zaxxon](zaxxon/) | 134 | 105 | `A9214CCE…` |
+| [tapper](tapper/) | 583 | 182 | `EC85DB55…` |
 
-For every one of them: every call target, every tail-call entry and every
+For the first four: every call target, every tail-call entry and every
 bracketed constant in the listing is named or explicitly accounted for, every
 byte of every data region is inside a named span, and every name carries the
-evidence for itself. `annotate.py` checks all of that on each build and prints
+evidence for itself.
+
+**Tapper is the exception and is newer here.** It rebuilds byte-identically and
+all 77 of its call targets are named, but 133 addresses the listing references
+still have none — see [tapper/CLAUDE.md](tapper/CLAUDE.md). It arrived from a
+separate repository on 2026-08-02, where nothing counted them. `annotate.py` checks all of that on each build and prints
 it — **read that output, not the symbol file's own prose about itself.**
 
 ### The one thing still open

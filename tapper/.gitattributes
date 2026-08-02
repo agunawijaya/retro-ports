@@ -1,0 +1,8 @@
+# Normalisasi akhir baris di repo, tapi jangan sampai merusak skrip.
+* text=auto
+
+# Skrip shell harus LF -- dengan CRLF ia gagal dijalankan di Linux/macOS.
+*.sh text eol=lf
+
+# Skrip batch Windows harus CRLF.
+*.cmd text eol=crlf

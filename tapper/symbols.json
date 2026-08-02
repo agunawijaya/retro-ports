@@ -1,0 +1,3170 @@
+{
+  "_about": [
+    "Derived from src/tapper.asm, not written by hand -- Tapper's names live",
+    "in its source rather than in a symbol file, so this is a second view of",
+    "one reading. **If the two disagree, the source is right.**",
+    "",
+    "`why` is the prose comment above each label there -- separator rules",
+    "and xref lists are formatting and are dropped. **122 of the 576 labels",
+    "have one**; the rest are block markers their author did not annotate,",
+    "and an empty `why` says so rather than inventing one. The `equ` entries",
+    "carry none either, for the same reason.",
+    "",
+    "Addresses are runtime addresses (.COM, 0x100 already added), taken from",
+    "the address each instruction line carries in its trailing comment --",
+    "not from assembling, because src/tapper.asm does not assemble with NASM",
+    "2.16.03: `loop short` is rejected in six places, `loop` being short",
+    "already. BUILD.md promises 2.x or 3.x, so that is worth fixing there.",
+    "",
+    "Moved into retro-ports on 2026-08-02. Two things changed in the move.",
+    "",
+    "comrec's labels are and a key in the wrong coordinate substitutes nowhere",
+    "and says nothing about it.",
+    "",
+    "And the reconstruction is no longer stored. src/tapper.asm assembled to a",
+    "byte-identical copy of TAPPER.COM -- the same SHA-256 -- which makes it",
+    "the game in source form, and this repository does not carry the game.",
+    "build.ps1 regenerates it into recovered/ from a copy you own.",
+    "Routine keys are file offsets, because that is what comrec labels are.",
+    "Global keys are addresses, because that is how a .COM listing writes a",
+    "memory operand. Getting the two the same way round substituted one",
+    "global in a hundred and seventy-six, silently."
+  ],
+  "routines": {
+    "0x00014": [
+      "start",
+      "Real program entry, reached after the crack's title screen. Sets up the stack, opens TAPPER.DAT and stores the handle, then jumps to init."
+    ],
+    "0x00025": [
+      "store_dat_handle",
+      ""
+    ],
+    "0x00035": [
+      "int80_disk_shim",
+      "INT 80h handler -- floppy emulation added by the crack. The original game read raw disk sectors through BIOS INT 13h. This handler takes the same register conventions and turns them into a seek + read"
+    ],
+    "0x00403": [
+      "save_regs_and_dispatch",
+      "pushes AX, BX, CX and SI before the shim's inner dispatch; the one call target inside int80_disk_shim that is entered directly"
+    ],
+    "0x0042A": [
+      "load_asset_read_chunk",
+      ""
+    ],
+    "0x0043B": [
+      "load_asset_setup_read",
+      ""
+    ],
+    "0x00446": [
+      "load_asset_reset_retries",
+      ""
+    ],
+    "0x0044B": [
+      "load_asset_do_read",
+      ""
+    ],
+    "0x00465": [
+      "load_asset_read_ok",
+      ""
+    ],
+    "0x0046B": [
+      "load_asset_advance_buffer",
+      ""
+    ],
+    "0x0047B": [
+      "load_asset_done",
+      ""
+    ],
+    "0x00483": [
+      "load_asset_disk_error",
+      ""
+    ],
+    "0x0048A": [
+      "disk_error_print",
+      ""
+    ],
+    "0x0048D": [
+      "disk_error_hang",
+      ""
+    ],
+    "0x00540": [
+      "init",
+      "Initialisation: set the video mode, then install the INT 80h vector pointing at int80_disk_shim. CS:06E9 is a machine test, not a speed test. ES is loaded with 0xFFFF and byte [es:0x0E] read, which la"
+    ],
+    "0x00580": [
+      "init_vectors_and_video",
+      ""
+    ],
+    "0x005F8": [
+      "store_is_pcjr",
+      ""
+    ],
+    "0x00631": [
+      "init_pick_mode",
+      ""
+    ],
+    "0x00647": [
+      "select_display_mode",
+      "Pick the display configuration and wire up the mode-specific hooks. Two sets of values are selected on a single flag: AL == 0        AL != 0 display_mode     0xFF           0 screen script    0x3C18  "
+    ],
+    "0x00656": [
+      "init_after_mode_select",
+      "Load every asset table, then start the attract loop. The branch at CS:0776 is the one that used to be misread as a screen-script terminator. It compares screen_script_ptr + 1 with 0x3C13, i.e. asks wh"
+    ],
+    "0x0067C": [
+      "load_tables_mode0",
+      ""
+    ],
+    "0x006C8": [
+      "load_tables_other",
+      ""
+    ],
+    "0x006FB": [
+      "load_common_tables",
+      ""
+    ],
+    "0x0073E": [
+      "fill_frame_ptrs_40bc",
+      ""
+    ],
+    "0x00750": [
+      "fill_frame_ptrs_40c6",
+      ""
+    ],
+    "0x00764": [
+      "fill_frame_ptrs_40b0",
+      ""
+    ],
+    "0x00778": [
+      "fill_frame_ptrs_40b6",
+      ""
+    ],
+    "0x0078C": [
+      "init_entity_slots",
+      "Hand the sixteen entity slots out to the four bars, round robin. DI starts at 0x4590 and steps by 0x10, the entity record size, so the two bytes written each pass are +0x0C and +0x0D of successive rec"
+    ],
+    "0x007B5": [
+      "reset_disk_and_timer",
+      ""
+    ],
+    "0x007C8": [
+      "attract_score_page",
+      ""
+    ],
+    "0x007F9": [
+      "attract_check_key",
+      ""
+    ],
+    "0x007FD": [
+      "mode_wait_for_start",
+      ""
+    ],
+    "0x00813": [
+      "mode_attract_step",
+      ""
+    ],
+    "0x00830": [
+      "attract_config_screen",
+      ""
+    ],
+    "0x00855": [
+      "menu_draw_markers",
+      ""
+    ],
+    "0x0085E": [
+      "menu_marker_row",
+      ""
+    ],
+    "0x00881": [
+      "menu_marker_offset",
+      ""
+    ],
+    "0x00891": [
+      "menu_marker_write",
+      ""
+    ],
+    "0x00899": [
+      "menu_wait_key",
+      ""
+    ],
+    "0x008A5": [
+      "menu_check_start",
+      ""
+    ],
+    "0x008AC": [
+      "menu_check_f1",
+      ""
+    ],
+    "0x008B3": [
+      "menu_check_joystick",
+      ""
+    ],
+    "0x008CD": [
+      "menu_restart",
+      ""
+    ],
+    "0x008D0": [
+      "menu_lookup_option",
+      "Find which menu option a keypress belongs to, and toggle it. menu_key_table is four rows of scancodes separated by 0xFF, one row per option. The scan walks it keeping two counters: DI is the row and D"
+    ],
+    "0x008DC": [
+      "menu_scan_row",
+      ""
+    ],
+    "0x008E9": [
+      "menu_next_row",
+      ""
+    ],
+    "0x008FD": [
+      "menu_apply_option",
+      ""
+    ],
+    "0x0091A": [
+      "menu_marker_addr",
+      ""
+    ],
+    "0x00933": [
+      "menu_marker_halve",
+      ""
+    ],
+    "0x00936": [
+      "load_and_show_screen",
+      "Load a screen asset and put it on the draw target. The asset index comes from the stream at screen_script_ptr via load_asset_from_stream. A word is then read out of the loaded data at offset 0x4000 an"
+    ],
+    "0x0097F": [
+      "update_high_score",
+      "Beat the high score? Compare three BCD bytes, most significant first, and stop at the first difference. The three-way branch is the whole routine: `jb` means the stored score is smaller, so jump away "
+    ],
+    "0x00987": [
+      "high_score_compare_loop",
+      ""
+    ],
+    "0x0098F": [
+      "high_score_next_digit",
+      ""
+    ],
+    "0x00993": [
+      "high_score_store",
+      ""
+    ],
+    "0x0099F": [
+      "reset_all_scores",
+      ""
+    ],
+    "0x009C1": [
+      "new_game_capture_on",
+      ""
+    ],
+    "0x009C9": [
+      "new_game_capture_off",
+      ""
+    ],
+    "0x009CE": [
+      "new_game_reset",
+      ""
+    ],
+    "0x00A28": [
+      "seed_from_bios_clock",
+      "Seed the game from the BIOS clock, and refuse a zero. `xor ah, ah` / `int 0x1a` returns the tick count since midnight, and the loop repeats while DX is zero. Since the count only passes through zero a"
+    ],
+    "0x00A5D": [
+      "apply_difficulty",
+      "Difficulty ladder, run at the start of a game. A cascade rather than a switch: the defaults are written first, then each tier falls through to add its own changes. all tiers   lives = 4, next_bonus_sc"
+    ],
+    "0x00AC1": [
+      "apply_sound_setting",
+      "Apply the sound menu choice, then chime to confirm it. Two bits of sound_flags, read in order: bit 0 is sound on or off at all, and only if it is set does bit 1 choose the device -- sound_enable_pcjr "
+    ],
+    "0x00AD4": [
+      "enable_pcjr_chip",
+      ""
+    ],
+    "0x00AD7": [
+      "sound_ready_chime",
+      ""
+    ],
+    "0x00ADE": [
+      "disable_sound",
+      ""
+    ],
+    "0x00AE3": [
+      "next_round_entry",
+      ""
+    ],
+    "0x00AE8": [
+      "show_next_page",
+      "Head of the page loop: announce the next bar, then start it. call clear_text_screen mov si, str_get_ready              ; \"GET READY TO SERVE\" mov di, [page_index] cmp byte [di + next_page_screen], 0 j"
+    ],
+    "0x00AFE": [
+      "page_wrap_check",
+      ""
+    ],
+    "0x00B0D": [
+      "page_count_screens",
+      ""
+    ],
+    "0x00B13": [
+      "page_count_next",
+      ""
+    ],
+    "0x00B20": [
+      "page_advance",
+      ""
+    ],
+    "0x00B2B": [
+      "load_page_screen",
+      ""
+    ],
+    "0x00B4C": [
+      "page_screen_compare",
+      ""
+    ],
+    "0x00B62": [
+      "page_screen_load",
+      ""
+    ],
+    "0x00B86": [
+      "page_screen_wait",
+      ""
+    ],
+    "0x00B8F": [
+      "page_screen_variant",
+      ""
+    ],
+    "0x00BA5": [
+      "page_screen_transform",
+      ""
+    ],
+    "0x00BD2": [
+      "transform_screen_rows",
+      ""
+    ],
+    "0x00BEA": [
+      "on_player_death",
+      ""
+    ],
+    "0x00BF1": [
+      "death_pause_1",
+      ""
+    ],
+    "0x00BF3": [
+      "death_pause_2",
+      ""
+    ],
+    "0x00C10": [
+      "restart_round_after_death",
+      "Lost a life: say GET READY again and replay the same bar. Prints str_get_ready, decrements lives, reloads the page's screen through load_page_screen, and jumps to CS:0D84 -- which is inside begin_roun"
+    ],
+    "0x00C27": [
+      "reload_round_screen",
+      ""
+    ],
+    "0x00C2C": [
+      "show_game_over",
+      ""
+    ],
+    "0x00C41": [
+      "game_over_message",
+      "Game over for one player is not game over for the game. After the message and the wait, two_player_flag decides. In a one player game control goes straight back to attract_score_page. In a two player "
+    ],
+    "0x00C4C": [
+      "game_over_wait",
+      ""
+    ],
+    "0x00C5D": [
+      "game_over_try_other_player",
+      ""
+    ],
+    "0x00C6A": [
+      "game_over_other_continues",
+      ""
+    ],
+    "0x00C6C": [
+      "begin_round",
+      "Start a round: advance the counters, then rebuild every bar. inc round_param_index / inc round_number   ; unless first entry copy the loaded screen to both page buffers print \"PLAYER n\" when two_playe"
+    ],
+    "0x00C84": [
+      "start_round_screen",
+      "Seed both work buffers, announce the player, then stock the bars. The screen is established by two 0x2000-word copies out of staging_segment, one into text_target_segment and one into draw_target_segm"
+    ],
+    "0x00CBF": [
+      "show_player_banner",
+      ""
+    ],
+    "0x00CDE": [
+      "banner_wait",
+      ""
+    ],
+    "0x00CE5": [
+      "init_entity_defaults",
+      ""
+    ],
+    "0x00CF2": [
+      "init_entity_field7",
+      ""
+    ],
+    "0x00D00": [
+      "init_entity_state",
+      ""
+    ],
+    "0x00D1A": [
+      "seed_bar_entities",
+      ""
+    ],
+    "0x00D38": [
+      "seed_entity_velocity",
+      ""
+    ],
+    "0x00D63": [
+      "place_entity_on_bar",
+      ""
+    ],
+    "0x00D97": [
+      "store_entity_column",
+      ""
+    ],
+    "0x00DF6": [
+      "setup_bar_geometry",
+      "Per-bar geometry setup: fill the runtime tables for one bar. Populates several parallel tables indexed by bar number, all from static sources: bar_row_top    <- running screen offset bar_row_bottom <-"
+    ],
+    "0x00E1C": [
+      "bar_geometry_offset",
+      ""
+    ],
+    "0x00E23": [
+      "read_page_param",
+      "Read this page's theme and fold it into the sprite selector. mov si, [page_index] mov ah, [si + page_theme_table] shl ah, 1 / shl ah, 1          ; scaled by 4 The 27 entries of page_theme_table are 0."
+    ],
+    "0x00E4D": [
+      "store_overlay_offset",
+      "Where a carried mug is drawn, relative to the customer. overlay_offset_table gets 0xA0, or 0xA0 + 2 when bar_direction is zero. 0xA0 is 160 bytes, and at 80 bytes a scanline that is two rows down with"
+    ],
+    "0x00E60": [
+      "init_player_position",
+      ""
+    ],
+    "0x00EA3": [
+      "init_free_list",
+      "Build the free list: 32 nodes of 8 bytes, chained head to tail. mov word [free_list_head], 0x46C3   ; head = start of the pool mov di, 0x46CB                      ; pool + 8 mov cx, 0x20              "
+    ],
+    "0x00EAF": [
+      "link_free_node",
+      ""
+    ],
+    "0x00ED1": [
+      "store_theme_table_ptr",
+      ""
+    ],
+    "0x00F08": [
+      "print_round_number",
+      "Print the round number, and derive the round's difficulty from it. The display is one-based: every read here is `round_number` + 1, so the counter stored at 0x44C7 is zero for the round the player see"
+    ],
+    "0x00F14": [
+      "set_round_cursor",
+      ""
+    ],
+    "0x00F25": [
+      "round_tens_loop",
+      ""
+    ],
+    "0x00F34": [
+      "print_round_units",
+      ""
+    ],
+    "0x00F42": [
+      "set_pickup_budget",
+      ""
+    ],
+    "0x00F50": [
+      "clamp_spawn_high",
+      ""
+    ],
+    "0x00F56": [
+      "store_spawn_countdown",
+      ""
+    ],
+    "0x00F71": [
+      "theme_base_wrap",
+      ""
+    ],
+    "0x00F75": [
+      "store_theme_base",
+      ""
+    ],
+    "0x00F8D": [
+      "halve_late_rounds",
+      ""
+    ],
+    "0x00F96": [
+      "store_intro_delay",
+      ""
+    ],
+    "0x00F99": [
+      "tick_bar_phase",
+      ""
+    ],
+    "0x00FBD": [
+      "check_pause",
+      "Pause: print the message and spin until any key is pressed. There is no dedicated pause flag. The loop at CS:10CC spins while swallow_next_key is non-zero, and the keyboard ISR at CS:33B8 clears that "
+    ],
+    "0x00FCC": [
+      "pause_wait_key",
+      ""
+    ],
+    "0x00FD4": [
+      "tick_popup_divider",
+      ""
+    ],
+    "0x00FDE": [
+      "reload_popup_divider",
+      ""
+    ],
+    "0x00FF2": [
+      "check_popup_timer",
+      ""
+    ],
+    "0x00FFD": [
+      "draw_popup",
+      ""
+    ],
+    "0x01007": [
+      "tick_pickup_popup",
+      "Tick the pickup score popup and clear it when it expires. cmp byte [pickup_popup_timer], 0 je  nothing_shown dec byte [pickup_popup_timer] jne still_showing call sub_227F                  ; expired: e"
+    ],
+    "0x0102D": [
+      "clear_entity_serve_bit",
+      ""
+    ],
+    "0x01039": [
+      "draw_popup_frame",
+      ""
+    ],
+    "0x01051": [
+      "popup_row_even",
+      ""
+    ],
+    "0x01062": [
+      "popup_row_odd",
+      ""
+    ],
+    "0x0106E": [
+      "advance_popup_frame",
+      ""
+    ],
+    "0x01084": [
+      "popup_frame_toggle",
+      ""
+    ],
+    "0x01086": [
+      "store_popup_frame",
+      ""
+    ],
+    "0x0108A": [
+      "erase_bar_entities",
+      ""
+    ],
+    "0x010B1": [
+      "erase_entity_check",
+      ""
+    ],
+    "0x010BA": [
+      "erase_entity_16x16",
+      "Erase one entity by copying 16x16 of background back, unrolled. Eight `mov ax, [di]` / `stosw` pairs with `add di, 0x4c` between them, then the whole thing again at DI xor 0x2000. Four bytes per row i"
+    ],
+    "0x0114E": [
+      "erase_entity_next",
+      ""
+    ],
+    "0x01158": [
+      "update_entity_states",
+      "Per-frame state machine for the four entity slots of a bar. Loads the state bits at +0x06 into DH and branches on them; bit 3 gates the whole update, bit 0 splits active from inactive. Slots that pass"
+    ],
+    "0x01160": [
+      "entity_state_dispatch",
+      "The entity state machine, dispatched entirely from the +6 byte. DH is loaded once and every branch below tests a bit of it. What each bit gates is now readable from the sites that use it, so the byte "
+    ],
+    "0x0116B": [
+      "entity_check_active",
+      ""
+    ],
+    "0x01173": [
+      "entity_check_moving",
+      ""
+    ],
+    "0x01180": [
+      "entity_tick_expired",
+      ""
+    ],
+    "0x0118F": [
+      "entity_check_flags",
+      ""
+    ],
+    "0x011A7": [
+      "entity_emit_sprite",
+      ""
+    ],
+    "0x011AF": [
+      "step_entity_animation",
+      "Step an entity's animation. dec [bp+0x07]              ; animation counter mov si, [bp+0x07] mov al, [si + anim_frame_table] dec al add al, [bp+0x0B]          ; + the entity's base sprite index call s"
+    ],
+    "0x011CE": [
+      "entity_set_return_timer",
+      ""
+    ],
+    "0x011D6": [
+      "entity_tick_frame",
+      ""
+    ],
+    "0x011EB": [
+      "advance_entity_position",
+      "Advance an entity's position and test it against the bar bound. mov al, [bp+0x0E]        ; velocity add [bp+0x08], al        ; low position component add [bp+0x04], ax        ; screen offset sar ax, 1"
+    ],
+    "0x01210": [
+      "entity_at_bound",
+      "A customer that reaches the end of the bar kills the player. The bound comes from bar_bound_table, adjusted by one in the direction of travel, and is compared against the entity's column at +8. Reachi"
+    ],
+    "0x01219": [
+      "entity_no_action",
+      ""
+    ],
+    "0x0121C": [
+      "entity_bound_forward",
+      ""
+    ],
+    "0x01223": [
+      "entity_past_bound",
+      ""
+    ],
+    "0x0122C": [
+      "apply_knockback",
+      "Reverse an entity and halve its speed -- the knockback. mov al, [bp+0x0E]   ; velocity neg al              ; reverse direction sar al, 1           ; halve the magnitude State bits 0 and 5 are then cle"
+    ],
+    "0x01260": [
+      "knockback_store_timer",
+      ""
+    ],
+    "0x012A2": [
+      "knockback_apply",
+      ""
+    ],
+    "0x012D3": [
+      "knockback_score",
+      "Catching a returned mug scores 0x150. The knockback path ends here: DX is loaded with 0x150 and handed to add_score, which is also where the extra-life carry test lives. Small and frequent, against 0x"
+    ],
+    "0x012DA": [
+      "player_death_sequence",
+      "The player loses: play the death sequence, then give up a life. Reached from CS:1329, the branch taken when a customer that has reached the player does not have state bit 5 set -- the case apply_knock"
+    ],
+    "0x01333": [
+      "death_place_player",
+      ""
+    ],
+    "0x01379": [
+      "death_clear_velocities",
+      ""
+    ],
+    "0x0138A": [
+      "death_redraw_bar",
+      ""
+    ],
+    "0x013C3": [
+      "death_erase_entities",
+      ""
+    ],
+    "0x013CD": [
+      "death_erase_entity",
+      ""
+    ],
+    "0x01461": [
+      "death_next_entity",
+      ""
+    ],
+    "0x0146B": [
+      "death_restore_ds",
+      ""
+    ],
+    "0x01470": [
+      "update_moving_entities",
+      "Advance and redraw the four entity slots of the selected bar. Entities are 16 bytes each. entity_array_ptr points at a group of four of them -- 64 bytes -- and CS:1194 computes that pointer as entity_"
+    ],
+    "0x01478": [
+      "move_entity_slot",
+      ""
+    ],
+    "0x014A0": [
+      "move_entity_next",
+      ""
+    ],
+    "0x014F2": [
+      "death_copy_screen_row",
+      ""
+    ],
+    "0x0151D": [
+      "death_copy_delay",
+      ""
+    ],
+    "0x01532": [
+      "death_hand_off",
+      ""
+    ],
+    "0x01541": [
+      "tick_drink_timer",
+      "The customer drinks: countdown at +0x0C, then hand the mug back. Reached only when state bit 1 is set, so this is the exit from entity_enter_carry. When the counter expires, finish_drink clears bit 1 "
+    ],
+    "0x01549": [
+      "drink_reload_base",
+      ""
+    ],
+    "0x01555": [
+      "drink_check_multiple",
+      ""
+    ],
+    "0x0155C": [
+      "drink_mod20_loop",
+      ""
+    ],
+    "0x01564": [
+      "store_drink_timer",
+      ""
+    ],
+    "0x01570": [
+      "finish_drink",
+      ""
+    ],
+    "0x0157E": [
+      "alloc_node_to_bar_list",
+      "Take a node from the free list and put it on this bar's list. mov si, [free_list_head] mov ax, [cs:si]              ; the node's next pointer mov [free_list_head], ax     ; pop mov bx, bar_index_x2 ad"
+    ],
+    "0x015B0": [
+      "init_new_node_fields",
+      ""
+    ],
+    "0x015F4": [
+      "spawn_pickup",
+      "Spawn the pickup, positioned relative to the customer who drops it. Three gates have to pass first: the countdown at pickup_spawn_countdown must expire, pickup_popup_timer must be clear so the score p"
+    ],
+    "0x0161E": [
+      "entity_state_done",
+      ""
+    ],
+    "0x01620": [
+      "step_entity_frame",
+      ""
+    ],
+    "0x0163F": [
+      "entity_enter_carry",
+      "Customer picks up a mug: state bit 5 off, bit 1 on. Bit 1 is the one draw_entity_loop tests at CS:1E13 before drawing an 8x8 sprite at the entity's position plus overlay_offset_table. That overlay is "
+    ],
+    "0x01665": [
+      "store_entity_frame_list",
+      ""
+    ],
+    "0x0166A": [
+      "entity_enter_return",
+      ""
+    ],
+    "0x01683": [
+      "update_entity_next",
+      ""
+    ],
+    "0x0168D": [
+      "update_served_mugs",
+      "Walk the bar_list_heads_a chain, then fall through into the b chain. Same shape as update_returning_mugs and the same misnamed history: erasing is the opening, not the job. Per node: erase the rectang"
+    ],
+    "0x01696": [
+      "served_mug_next",
+      ""
+    ],
+    "0x016A0": [
+      "erase_served_mug",
+      ""
+    ],
+    "0x01712": [
+      "advance_node_position",
+      ""
+    ],
+    "0x0172B": [
+      "node_check_active",
+      ""
+    ],
+    "0x01740": [
+      "resolve_node_collision",
+      "Test a list node against an entity and resolve a hit. cmp byte [cs:bx + 7], dl   ; node position against a window jl  skip add dl, 3                  ; window is 3 wide cmp byte [cs:bx + 7], dl jg  sk"
+    ],
+    "0x01770": [
+      "collision_next_entity",
+      ""
+    ],
+    "0x017A0": [
+      "served_mug_continue",
+      ""
+    ],
+    "0x017A5": [
+      "switch_to_mug_list",
+      ""
+    ],
+    "0x017AE": [
+      "update_returning_mugs",
+      "Walk the bar_list_heads_b chain: erase, advance, then decide the node's fate. Two outcomes, and both are game rules that were not written down anywhere before this routine was read. For each node it e"
+    ],
+    "0x017B8": [
+      "erase_mug_node",
+      ""
+    ],
+    "0x0183F": [
+      "check_player_catch",
+      ""
+    ],
+    "0x01879": [
+      "mug_bound_check",
+      ""
+    ],
+    "0x0189A": [
+      "mug_bound_left",
+      ""
+    ],
+    "0x018A3": [
+      "mug_falls",
+      ""
+    ],
+    "0x018BB": [
+      "mug_fall_sprite",
+      ""
+    ],
+    "0x018BE": [
+      "mug_fall_frame",
+      ""
+    ],
+    "0x018E5": [
+      "mug_fall_delay",
+      ""
+    ],
+    "0x018F1": [
+      "mug_list_next",
+      ""
+    ],
+    "0x018F6": [
+      "mug_list_done",
+      ""
+    ],
+    "0x0192C": [
+      "erase_player_both_halves",
+      ""
+    ],
+    "0x0195A": [
+      "check_player_bar",
+      "Only the player's own bar reads the controls. player_bar is doubled and compared against bar_index_x2, and a mismatch jumps straight out. The per-bar update loop therefore runs this same code four tim"
+    ],
+    "0x0196D": [
+      "read_move_input",
+      ""
+    ],
+    "0x01985": [
+      "joy_check_down",
+      ""
+    ],
+    "0x0198E": [
+      "store_joy_dir",
+      ""
+    ],
+    "0x0199E": [
+      "joystick_axis_to_direction",
+      "Turn a joystick axis reading into a direction of -1, 0 or +1. cmp [joystick_low], bl / jb  -> al = 0xFF   ; below the low bound cmp [joystick_high], bl / ja -> al = 1      ; above the high bound ; bet"
+    ],
+    "0x019A7": [
+      "store_player_velocity",
+      ""
+    ],
+    "0x019BC": [
+      "player_input_done",
+      ""
+    ],
+    "0x019DC": [
+      "move_entity_along_bar",
+      "Move an entity along its bar, stopping at the bar's end. The direction in AL (+1 or -1) is folded into a table index: cbw / mov bx, ax / sar bx, 1 / neg bx   ; -> 0 or 1 add bx, bar_index_x2          "
+    ],
+    "0x01A09": [
+      "entity_bound_left",
+      ""
+    ],
+    "0x01A10": [
+      "entity_step",
+      ""
+    ],
+    "0x01A1A": [
+      "entity_step_copy",
+      ""
+    ],
+    "0x01A29": [
+      "entity_trail_row",
+      ""
+    ],
+    "0x01A3D": [
+      "entity_activate",
+      ""
+    ],
+    "0x01A55": [
+      "entity_sprite_direction",
+      ""
+    ],
+    "0x01A6B": [
+      "check_serve_input",
+      ""
+    ],
+    "0x01A7E": [
+      "serve_capture_mode",
+      ""
+    ],
+    "0x01A8E": [
+      "check_serve_key",
+      ""
+    ],
+    "0x01A99": [
+      "serve_check_state",
+      ""
+    ],
+    "0x01AA2": [
+      "start_serve",
+      ""
+    ],
+    "0x01B08": [
+      "advance_frame_cursor",
+      "Walk frame_list_cursor through frame_list_table. The cursor is seeded with the table base at CS:1ADC and CS:1C6B, and advanced with `add word [frame_list_cursor], 2` -- one word entry per step. move_s"
+    ],
+    "0x01B16": [
+      "serve_cursor_offset",
+      ""
+    ],
+    "0x01B22": [
+      "serve_step_frame",
+      ""
+    ],
+    "0x01B4A": [
+      "serve_step_done",
+      ""
+    ],
+    "0x01B4D": [
+      "serve_release",
+      ""
+    ],
+    "0x01B56": [
+      "serve_release_step",
+      ""
+    ],
+    "0x01B6B": [
+      "spawn_mug",
+      "Release a mug down the bar -- the payoff of the serve animation. The serve state is torn down first: state bit 4 is cleared, the player's frame base at +0x0A/+0x0B is reset to the standing sprite (1 +"
+    ],
+    "0x01BC2": [
+      "mug_sprite_chosen",
+      ""
+    ],
+    "0x01C1E": [
+      "animate_player",
+      "Advance the player's two-frame walk cycle. The player is a 32x32 figure built from two stacked 32x16 sprites in consecutive 0x10-byte records; every path through here ends at draw_player_lower with BP"
+    ],
+    "0x01C36": [
+      "animate_player_tick",
+      ""
+    ],
+    "0x01C46": [
+      "animate_player_frame",
+      ""
+    ],
+    "0x01C4A": [
+      "player_frame_advance",
+      ""
+    ],
+    "0x01C55": [
+      "animate_player_reset",
+      ""
+    ],
+    "0x01C5E": [
+      "set_player_frame_pair",
+      ""
+    ],
+    "0x01C6C": [
+      "draw_player_lower",
+      ""
+    ],
+    "0x01C6F": [
+      "collect_pickup",
+      "Collect the pending pickup if the player has reached it. mov ax, [pickup_ptr]     ; 0 means nothing is pending or  ax, ax / je done cmp byte [pickup_pos], al ja  done                 ; not there yet c"
+    ],
+    "0x01CBA": [
+      "entity_random_step",
+      "Per-entity random step: give each slot a chance to change state. Walks the entity group with `add bp, 0x10`. For a slot whose flags pass the bit 0 / bits 1 and 5 tests, it calls advance_rng, mixes the"
+    ],
+    "0x01CE0": [
+      "entity_random_next",
+      ""
+    ],
+    "0x01CE5": [
+      "render_frame",
+      "Draw one frame: entities, pickup, bar furniture, then the player. Everything is drawn twice, once per CGA bank, with the destination toggled by `xor di, 0x2000`. That is not double buffering -- it is "
+    ],
+    "0x01CE8": [
+      "draw_entities_setup",
+      ""
+    ],
+    "0x01CF5": [
+      "draw_entity_loop",
+      ""
+    ],
+    "0x01D41": [
+      "draw_entity_pop",
+      ""
+    ],
+    "0x01D42": [
+      "draw_entity_next",
+      ""
+    ],
+    "0x01D63": [
+      "draw_bar_contents",
+      ""
+    ],
+    "0x01D90": [
+      "draw_player_now",
+      ""
+    ],
+    "0x01DB5": [
+      "flush_bar_band",
+      "Copy the finished bar band from the work buffer to the screen. Only one bar is refreshed per frame, and only 22 scanlines of it: AX counts 11 passes, each copying 0x28 words (= 80 bytes = one scanline"
+    ],
+    "0x01DD2": [
+      "flush_bar_row",
+      ""
+    ],
+    "0x01E11": [
+      "poll_frame_input",
+      ""
+    ],
+    "0x01E4D": [
+      "tighten_difficulty",
+      "Tighten the pace at fixed progress milestones -- the difficulty ramp. A counter reached in AL is compared against a short ladder, and each milestone loosens a different limit: AL == 3   cycle_reload ="
+    ],
+    "0x01E5B": [
+      "difficulty_cycle_fast",
+      ""
+    ],
+    "0x01E63": [
+      "difficulty_delay_boost",
+      "Difficulty step 7: pad the entity timer instead of the tick rate. entity_delay_boost is only consulted at CS:135B, and only when entity_tick_reload has already dropped to 2 or less -- that is, once en"
+    ],
+    "0x01E69": [
+      "check_round_complete",
+      "Is the round over? Ask the entity table, not a counter. There is no 'customers remaining' variable. CS:1F7F walks all sixteen entity records looking for one with state bit 0 set, and the first hit jum"
+    ],
+    "0x01E7F": [
+      "scan_active_entity",
+      ""
+    ],
+    "0x01E8A": [
+      "round_cleared",
+      ""
+    ],
+    "0x01EA6": [
+      "round_clear_flash",
+      ""
+    ],
+    "0x01EB7": [
+      "round_clear_pause",
+      ""
+    ],
+    "0x01EBC": [
+      "select_next_mode",
+      "Choose which of the two top-level modes runs next, then jump to it. mov bx, 0x913              ; default cmp cs:[0x4488], 0x3B      ; was scancode 0x3B (F1) recorded? mov bx, 0x8FD              ; if s"
+    ],
+    "0x01ECA": [
+      "mode_check_capture",
+      ""
+    ],
+    "0x01ED5": [
+      "mode_jump",
+      ""
+    ],
+    "0x01EE6": [
+      "player_read_move_input",
+      "Turn whatever the player is holding into one move, or no move. Two sources, chosen on input_enabled: joystick  joy_move_dir and joy_move_prev are read as one word, the current value is copied down int"
+    ],
+    "0x01F04": [
+      "player_move_from_keys",
+      ""
+    ],
+    "0x01F0E": [
+      "player_move_check",
+      ""
+    ],
+    "0x01F15": [
+      "player_start_move",
+      ""
+    ],
+    "0x01F2C": [
+      "advance_player_bar",
+      "Advance the player to the next bar, keeping the previous one. mov ah, [player_bar] add al, ah and al, 3            ; wraps 0..3 -- four bars mov [player_bar], al mov [player_bar_prev], ah Readers doub"
+    ],
+    "0x01F7D": [
+      "player_bar_install",
+      ""
+    ],
+    "0x02002": [
+      "erase_pickup",
+      "Erase the pickup by copying its rectangle back from the clean page. Does nothing when pickup_ptr is zero. Three rows of two words each, then the same three again in the other CGA bank -- so a 16 x 6 r"
+    ],
+    "0x02043": [
+      "erase_pickup_done",
+      ""
+    ],
+    "0x02044": [
+      "mug_crash_animation",
+      "The mug smashes -- three frames, and then the player dies. Both callers are the same shape: CS:189A in update_served_mugs and CS:19EB in update_returning_mugs each free the node with free_mug_and_repa"
+    ],
+    "0x02069": [
+      "restore_16x16_background",
+      ""
+    ],
+    "0x02072": [
+      "restore_16x16_row",
+      ""
+    ],
+    "0x02090": [
+      "draw_node_16x16",
+      ""
+    ],
+    "0x020A8": [
+      "free_mug_and_repaint",
+      ""
+    ],
+    "0x020B3": [
+      "repaint_playfield",
+      "Repaint the whole playfield, not just the active bar's band. This is the expensive counterpart to flush_bar_band. Where normal play refreshes one 22-scanline strip, this rebuilds all four bars and eve"
+    ],
+    "0x020E1": [
+      "repaint_entity_loop",
+      ""
+    ],
+    "0x02100": [
+      "repaint_entity_next",
+      ""
+    ],
+    "0x02105": [
+      "repaint_bars",
+      ""
+    ],
+    "0x0210F": [
+      "repaint_bar_loop",
+      ""
+    ],
+    "0x02146": [
+      "repaint_to_screen",
+      ""
+    ],
+    "0x02167": [
+      "repaint_player_bottom",
+      ""
+    ],
+    "0x02173": [
+      "repaint_check_popup",
+      ""
+    ],
+    "0x0217E": [
+      "repaint_done",
+      ""
+    ],
+    "0x0217F": [
+      "copy_popup_rect",
+      ""
+    ],
+    "0x02186": [
+      "copy_popup_row_even",
+      ""
+    ],
+    "0x02194": [
+      "copy_popup_bank_odd",
+      ""
+    ],
+    "0x0219B": [
+      "copy_popup_row_odd",
+      ""
+    ],
+    "0x021AA": [
+      "copy_all_bar_bands",
+      ""
+    ],
+    "0x021B4": [
+      "copy_bar_band_loop",
+      ""
+    ],
+    "0x021C4": [
+      "copy_bar_band_row",
+      ""
+    ],
+    "0x021EB": [
+      "draw_mugs_for_bar",
+      ""
+    ],
+    "0x021F4": [
+      "draw_bar_list_b",
+      "Walk this bar's list-B objects and draw each one. mov al, 7 cmp byte [cs:bx + 6], 0   ; node field +6, signed test inc al                    ; sprite index 7 or 8 cmp byte [cycle_countdown], 2 add al,"
+    ],
+    "0x021FE": [
+      "mug_sprite_select",
+      ""
+    ],
+    "0x02209": [
+      "mug_sprite_cycle",
+      ""
+    ],
+    "0x02213": [
+      "mug_draw",
+      ""
+    ],
+    "0x0221D": [
+      "mug_draw_row",
+      ""
+    ],
+    "0x02243": [
+      "mug_draw_row_bank2",
+      ""
+    ],
+    "0x02263": [
+      "draw_served_mugs",
+      ""
+    ],
+    "0x0226C": [
+      "served_mug_draw_next",
+      ""
+    ],
+    "0x02276": [
+      "served_mug_draw",
+      ""
+    ],
+    "0x02281": [
+      "served_mug_draw_row",
+      ""
+    ],
+    "0x022A7": [
+      "served_mug_draw_row_bank2",
+      ""
+    ],
+    "0x022C7": [
+      "draw_mugs_done",
+      ""
+    ],
+    "0x022C8": [
+      "blit_sprite_8x8",
+      ""
+    ],
+    "0x022CB": [
+      "blit_8x8_row",
+      ""
+    ],
+    "0x022DC": [
+      "blit_pickup_sprite",
+      ""
+    ],
+    "0x022DF": [
+      "blit_pickup_row",
+      ""
+    ],
+    "0x022FB": [
+      "delay_busy_loop",
+      "Busy-wait delay: 0x8000 iterations, or 0x4000 when is_pcjr is set. With ten call sites this is the most-used member of the halving family -- the same 2:1 ratio as entity_tick_reload, the drink timer r"
+    ],
+    "0x02309": [
+      "delay_spin",
+      ""
+    ],
+    "0x0230C": [
+      "bonus_round_entry",
+      ""
+    ],
+    "0x02355": [
+      "bonus_intro_delay",
+      ""
+    ],
+    "0x02360": [
+      "bonus_pick_loop",
+      ""
+    ],
+    "0x02366": [
+      "reroll_distinct_pick",
+      "Draw five distinct values from 0..7, rerolling on collision. bonus_answer starts at 0xC0, so bits 6 and 7 are pre-marked and the draw effectively runs over 0..5. Each pass takes advance_rng modulo 8, "
+    ],
+    "0x0239F": [
+      "reveal_animation_step",
+      "Reveal animation: redraw with a growing number of rows. reveal_row_count starts at 0, is incremented each pass and handed to the blitter as CX -- the row count -- so successive frames draw one row mor"
+    ],
+    "0x023DA": [
+      "reveal_delay_1",
+      "The shake: sprites 0x0D and 0x0E alternated with timed pauses. Five `loop $` delays in this routine all load CX with 0x4448, and all five drop it to 0x2224 -- exactly half -- when is_pcjr is set. Betw"
+    ],
+    "0x0241B": [
+      "reveal_delay_2",
+      ""
+    ],
+    "0x0243E": [
+      "reveal_delay_3",
+      ""
+    ],
+    "0x02461": [
+      "reveal_delay_4",
+      ""
+    ],
+    "0x02497": [
+      "reveal_scroll_row",
+      ""
+    ],
+    "0x024DF": [
+      "reveal_delay_5",
+      ""
+    ],
+    "0x02503": [
+      "bitmap_to_answer_index",
+      "Turn the five-of-six bitmap into the bonus round's answer index. CS:2466 marked five distinct bits of bonus_answer, leaving exactly one of bits 0..5 clear. This rotates right counting positions until "
+    ],
+    "0x02509": [
+      "find_clear_bit_loop",
+      ""
+    ],
+    "0x02527": [
+      "bonus_reveal_loop",
+      ""
+    ],
+    "0x0256E": [
+      "bonus_reveal_delay",
+      ""
+    ],
+    "0x02576": [
+      "bonus_pair_setup",
+      ""
+    ],
+    "0x02579": [
+      "bonus_pair_loop",
+      ""
+    ],
+    "0x0257F": [
+      "reroll_spaced_pick",
+      "Draw a position at random, excluding its immediate neighbours. Like reroll_distinct_pick, but a candidate is also rejected when the bit on either side of it is already set, so chosen positions are nev"
+    ],
+    "0x025BC": [
+      "bonus_store_pair",
+      ""
+    ],
+    "0x025CE": [
+      "bonus_adjust_marker",
+      ""
+    ],
+    "0x025D7": [
+      "bonus_next_of_pair",
+      ""
+    ],
+    "0x025E2": [
+      "bonus_swap_frame",
+      "One frame of the bonus round's can shuffle. bonus_slot_index counts 1..8 and is the frame number; the loop at CS:27B5 comes back here until CS:27AD sees it pass 8. Each frame erases both cans of the p"
+    ],
+    "0x025ED": [
+      "bonus_draw_swap",
+      ""
+    ],
+    "0x02663": [
+      "bonus_redraw_can",
+      ""
+    ],
+    "0x026A6": [
+      "bonus_frame_delay",
+      ""
+    ],
+    "0x026B8": [
+      "bonus_shuffle_next",
+      ""
+    ],
+    "0x026BF": [
+      "bonus_prompt_pick",
+      ""
+    ],
+    "0x026CD": [
+      "bonus_prompt_show",
+      ""
+    ],
+    "0x026F7": [
+      "bonus_selection_draw",
+      ""
+    ],
+    "0x02728": [
+      "bonus_wait_input",
+      ""
+    ],
+    "0x0272B": [
+      "bonus_wait_delay",
+      ""
+    ],
+    "0x02743": [
+      "bonus_poll_input",
+      ""
+    ],
+    "0x02759": [
+      "bonus_check_key",
+      ""
+    ],
+    "0x02764": [
+      "bonus_judge_choice",
+      "Judge the bonus round and play out the consequence. One comparison decides it: bonus_choice against bonus_answer. The two paths are very different in length, which is the tell for which one the game c"
+    ],
+    "0x02778": [
+      "bonus_wrong_choice",
+      ""
+    ],
+    "0x027DB": [
+      "bonus_shake_left",
+      ""
+    ],
+    "0x027DD": [
+      "bonus_shake_left_row",
+      ""
+    ],
+    "0x02814": [
+      "bonus_shake_right",
+      ""
+    ],
+    "0x02816": [
+      "bonus_shake_right_row",
+      ""
+    ],
+    "0x02886": [
+      "bonus_spray_loop",
+      ""
+    ],
+    "0x028AF": [
+      "bonus_right_choice",
+      ""
+    ],
+    "0x028FD": [
+      "bonus_end_pause",
+      ""
+    ],
+    "0x028FF": [
+      "bonus_pause_1",
+      ""
+    ],
+    "0x02901": [
+      "bonus_pause_2",
+      ""
+    ],
+    "0x02903": [
+      "bonus_pause_3",
+      ""
+    ],
+    "0x02905": [
+      "bonus_pause_4",
+      ""
+    ],
+    "0x0290C": [
+      "bonus_read_stick",
+      ""
+    ],
+    "0x02922": [
+      "bonus_stick_left",
+      ""
+    ],
+    "0x0292E": [
+      "bonus_read_keys",
+      ""
+    ],
+    "0x02932": [
+      "bonus_apply_move",
+      ""
+    ],
+    "0x02939": [
+      "bonus_move_cursor",
+      "Move the bonus cursor, wrapping around six positions. The cursor index in bonus_choice and its screen position in player_top_pos are moved together: one step is 1 and 8 bytes, and a wrap is 5 and 0x30"
+    ],
+    "0x0294D": [
+      "bonus_cursor_left",
+      ""
+    ],
+    "0x02953": [
+      "bonus_cursor_wrap",
+      ""
+    ],
+    "0x0295C": [
+      "bonus_cursor_right",
+      ""
+    ],
+    "0x02964": [
+      "draw_bonus_row",
+      ""
+    ],
+    "0x0296A": [
+      "draw_bonus_item",
+      ""
+    ],
+    "0x02985": [
+      "check_bonus_abort",
+      "Bonus-round abort check, called between steps of the animation. wait while swallow_next_key is set captured_scancode set   -> clear it, jump to mode_attract_step abort_sequence_flag set -> clear it, j"
+    ],
+    "0x0299E": [
+      "check_abort_flag",
+      ""
+    ],
+    "0x029AF": [
+      "bonus_abort_none",
+      ""
+    ],
+    "0x029B0": [
+      "blit_sprite_12x16",
+      "12x16 masked sprite, one bank. See blit_sprite_32x16."
+    ],
+    "0x029B3": [
+      "blit_12x16_row",
+      "One masked row, and the arithmetic proof of the mask rule. Every blitter's inner loop is this shape: `and` the screen word with the mask, `or` in the data, store, advance BP by the bytes just consumed"
+    ],
+    "0x029CE": [
+      "copy_status_area",
+      ""
+    ],
+    "0x029D5": [
+      "copy_status_row",
+      ""
+    ],
+    "0x02A03": [
+      "copy_16px_unmasked",
+      "Unmasked 16-pixel-wide block copy, fully unrolled. Reads DS:DI and writes ES:DI at the same offset, so it moves a column between two buffers rather than compositing."
+    ],
+    "0x02A96": [
+      "draw_player_32x32",
+      "Draw the player as two 32x16 halves, four blits in all. The upper half goes to both banks, then SI advances 0x280 and BP 0x80 and the lower half does the same. 0x280 is 640 bytes = eight scanlines wit"
+    ],
+    "0x02AC4": [
+      "erase_player_32x32",
+      ""
+    ],
+    "0x02AE8": [
+      "blit_sprite_32x22",
+      "32x22 masked sprite, one bank. See blit_sprite_32x16."
+    ],
+    "0x02AEB": [
+      "blit_32x22_row",
+      ""
+    ],
+    "0x02B21": [
+      "warm_reboot",
+      ""
+    ],
+    "0x02B3E": [
+      "print_string",
+      "Print a control-coded string from CS:SI until a 0 byte. 0x00        end of string 0x01..0x07  set text_colour 0xFF        next word is a cursor position (INT 10h AH=02h) otherwise   emit via BIOS tele"
+    ],
+    "0x02B4E": [
+      "print_check_cursor_code",
+      "The string format: three kinds of byte, decided in this order. 0x00        end of string 0x01..0x07  set text_colour and keep going 0xFF        the next *word* is a cursor position for INT 10h/2 anyth"
+    ],
+    "0x02B5E": [
+      "print_emit_char",
+      ""
+    ],
+    "0x02B69": [
+      "print_string_done",
+      ""
+    ],
+    "0x02B6A": [
+      "copy_32px_unmasked",
+      "Unmasked 32-pixel-wide block copy, fully unrolled. The no-mask counterpart of blit_sprite_32x16; used where a region is replaced outright instead of blended."
+    ],
+    "0x02BE0": [
+      "draw_sprite_32x16",
+      "Draw one 32x16 masked sprite. Takes a pointer to a small descriptor: word 0 is the sprite base, word 4 the destination offset. Calls the row blitter twice with `xor di, 0x2000` between, once per CGA s"
+    ],
+    "0x02BFF": [
+      "blit_sprite_32x16",
+      "Blit one CGA bank of a 32x16 masked sprite (8 rows of 8 bytes). dst = (dst AND mask) OR data The AND/OR work bit by bit rather than per pixel pair, so a sprite's appearance depends on what is undernea"
+    ],
+    "0x02C02": [
+      "blit_32x16_row",
+      ""
+    ],
+    "0x02C04": [
+      "blit_32x16_word",
+      ""
+    ],
+    "0x02C1A": [
+      "blit_sprite_16x16",
+      "16x16 masked sprite, one bank. See blit_sprite_32x16."
+    ],
+    "0x02C1D": [
+      "blit_16x16_row",
+      ""
+    ],
+    "0x02C39": [
+      "blit_sprite_24x22",
+      "24x22 masked sprite, one bank. See blit_sprite_32x16."
+    ],
+    "0x02C3C": [
+      "blit_24x22_row",
+      ""
+    ],
+    "0x02C66": [
+      "load_asset_from_stream",
+      "Read an asset index byte from CS:SI and load that asset. Thin wrapper that lets asset loads sit inline in a data stream."
+    ],
+    "0x02C6F": [
+      "set_video_mode",
+      "Program the CGA mode and colour registers, and the PCjr if present. The mode byte is assembled from flags rather than stored: 0x2A is the base, bit 2 of BL adds 0x04 and bit 4 of BL adds 0x10, then it"
+    ],
+    "0x02C8D": [
+      "cga_mode_add_bit4",
+      ""
+    ],
+    "0x02C94": [
+      "cga_mode_write",
+      ""
+    ],
+    "0x02CA5": [
+      "pcjr_video_setup",
+      ""
+    ],
+    "0x02CB5": [
+      "unpack_screen",
+      "Unpack a screen asset into a CGA page. RLE, and fully legible. si = 0x4012                 ; stream starts 0x12 into the load al = [0x4001]               ; high byte of screen_config test al, 8       "
+    ],
+    "0x02CCD": [
+      "unpack_switch_bank",
+      ""
+    ],
+    "0x02CD0": [
+      "unpack_next_token",
+      ""
+    ],
+    "0x02CE6": [
+      "unpack_fill_run",
+      ""
+    ],
+    "0x02CEE": [
+      "unpack_verbatim",
+      ""
+    ],
+    "0x02CF3": [
+      "unpack_done",
+      ""
+    ],
+    "0x02CF4": [
+      "lookup_bar_sprite",
+      ""
+    ],
+    "0x02CFE": [
+      "lookup_bar_sprite_table",
+      ""
+    ],
+    "0x02D0A": [
+      "lookup_bar_sprite_bounds",
+      ""
+    ],
+    "0x02D1B": [
+      "lookup_bar_sprite_done",
+      ""
+    ],
+    "0x02D1E": [
+      "lookup_ptr_pair",
+      "Resolve an index into a pair of pointers stored at [bp] and [bp+2]. Bit 7 of the index selects between ptr_table_a and ptr_table_b; the remaining bits are bounds-checked against the count word at the "
+    ],
+    "0x02D34": [
+      "lookup_ptr_pair_bounds",
+      ""
+    ],
+    "0x02D4F": [
+      "lookup_ptr_pair_done",
+      ""
+    ],
+    "0x02D53": [
+      "set_entity_sprite",
+      "Resolve a sprite index and store the pointer into the entity at +0x00. Third member of the relative-offset-table family, alongside lookup_ptr_pair and select_sprite_ptr. All three share the layout -- "
+    ],
+    "0x02D64": [
+      "sprite_index_in_range",
+      ""
+    ],
+    "0x02D76": [
+      "sprite_lookup_done",
+      ""
+    ],
+    "0x02D7A": [
+      "sprite_ptr_from_index",
+      ""
+    ],
+    "0x02D88": [
+      "sprite_ptr_lookup",
+      ""
+    ],
+    "0x02D95": [
+      "sprite_ptr_done",
+      ""
+    ],
+    "0x02D96": [
+      "select_sprite_ptr",
+      "Select a sprite by index and leave its address in BP, which is what the blitters take as their data base. Same relative-offset table layout as lookup_ptr_pair: count word at the head, entries relative"
+    ],
+    "0x02DAF": [
+      "select_sprite_ptr_done",
+      ""
+    ],
+    "0x02DB3": [
+      "free_list_splice",
+      "Splice a node into the free list. mov di, cs:[bx]          ; the node's next pointer mov cs:[si], di          ; relink the predecessor past it mov di, cs:[free_list_head] mov cs:[free_list_head], bx f"
+    ],
+    "0x02DC9": [
+      "remap_table_bytes",
+      "Copy a table, passing every byte through indirect_call_vector. `push cx` then `mov bp, sp` makes the saved CX a scratch variable at [bp] -- a local on the stack, in a program that otherwise has none. "
+    ],
+    "0x02DD4": [
+      "remap_copy_header",
+      ""
+    ],
+    "0x02DED": [
+      "remap_byte_loop",
+      ""
+    ],
+    "0x02E0F": [
+      "display_variant_a",
+      ""
+    ],
+    "0x02E22": [
+      "display_variant_b",
+      ""
+    ],
+    "0x02E2D": [
+      "print_string_at",
+      "Read a cursor position word from CS:SI, move the cursor there, then fall into print_string for the rest of the stream."
+    ],
+    "0x02E44": [
+      "putchar_bios",
+      "Emit one character via BIOS teletype (INT 10h AH=0Eh)."
+    ],
+    "0x02E4C": [
+      "advance_rng",
+      "Step the pseudo-random number generator. A 16-bit linear feedback shift register: AND the state with the tap mask 0xD598, take the parity of the result as the incoming bit, and rotate it into rng_stat"
+    ],
+    "0x02E57": [
+      "rng_shift_in",
+      "A 16-bit LFSR that gets its feedback bit from the parity flag. and ax, 0xd598     ; keep only the tap bits jnp short $ + 3    ; even parity -> leave CF clear stc                ; odd parity  -> CF = 1"
+    ],
+    "0x02E5E": [
+      "read_key",
+      "Read a key, or a joystick button standing in for one. The routine opens with a test that can never pass: cmp word [cs:alt_isr_slot], 0x32EA je  short (return AL = 0x13) 0x32EA is alt_keyboard_isr and "
+    ],
+    "0x02E68": [
+      "read_key_wait",
+      "Read one scancode from the keyboard ring buffer. Spins while kbd_head equals kbd_tail, i.e. while the buffer is empty. The buffer holds 16 entries and wraps via `and di, 0xf`; int09_keyboard_isr is wh"
+    ],
+    "0x02E71": [
+      "read_key_poll",
+      ""
+    ],
+    "0x02E81": [
+      "read_key_check_button",
+      ""
+    ],
+    "0x02E95": [
+      "read_key_buffer_check",
+      ""
+    ],
+    "0x02EA9": [
+      "read_key_return",
+      ""
+    ],
+    "0x02EAB": [
+      "read_key_auto_r",
+      ""
+    ],
+    "0x02EAE": [
+      "clear_text_screen",
+      "Clear the text screen (INT 10h AH=06h over 25x80) and home the cursor."
+    ],
+    "0x02EC4": [
+      "swap_player_context",
+      "Swap the active player's progress block with the other player's save slot. This routine is what settles the layout. mov di, p1_saved_block          ; 0x44D6 or al, al / add di, 0x0F        ; al = curr"
+    ],
+    "0x02EDA": [
+      "save_live_block",
+      "Swap players by moving 15 bytes, twice. The live state starts at round_number and runs 0x0F bytes. This copies it out to the current player's slot, then copies the other player's slot back in over the"
+    ],
+    "0x02EE9": [
+      "load_other_block",
+      ""
+    ],
+    "0x02EFB": [
+      "draw_score_display",
+      "Redraw the on-screen score. With two_player_flag set, the score of the player who is *not* at the controls is drawn too: current_player selects between p1_saved_score and p2_saved_score, which are the"
+    ],
+    "0x02F11": [
+      "draw_score_row",
+      ""
+    ],
+    "0x02F17": [
+      "draw_current_score",
+      ""
+    ],
+    "0x02F1D": [
+      "draw_score_digits",
+      ""
+    ],
+    "0x02F2C": [
+      "score_digit_loop",
+      ""
+    ],
+    "0x02F3F": [
+      "score_digit_advance",
+      ""
+    ],
+    "0x02F54": [
+      "draw_score_digits_done",
+      ""
+    ],
+    "0x02F55": [
+      "redraw_changed_digits",
+      ""
+    ],
+    "0x02F68": [
+      "score_compare_loop",
+      ""
+    ],
+    "0x02F7F": [
+      "score_compare_next",
+      ""
+    ],
+    "0x02F88": [
+      "score_compare_step",
+      ""
+    ],
+    "0x02F9D": [
+      "score_shadow_update",
+      ""
+    ],
+    "0x02FAE": [
+      "suppress_leading_zeros",
+      "Suppress leading zeros while drawing a number. or  al, al                       ; is this digit zero? jne draw cmp byte [leading_digit_seen], 0 ; and nothing significant yet? jne draw ret             "
+    ],
+    "0x02FBB": [
+      "draw_digit_at",
+      ""
+    ],
+    "0x02FD7": [
+      "draw_score_and_lives",
+      "Draw the score digits and the row of lives icons beside them. SI points at a player block, so the two fields it reads are that block's own: [si+8] is lives, capped at 5 for display, and [si+6] is scor"
+    ],
+    "0x02FFA": [
+      "lives_icon_setup",
+      ""
+    ],
+    "0x0300E": [
+      "lives_icon_origin",
+      ""
+    ],
+    "0x03014": [
+      "lives_icon_loop",
+      ""
+    ],
+    "0x0302D": [
+      "draw_score_and_lives_done",
+      ""
+    ],
+    "0x03036": [
+      "blit_sprite_16x12",
+      "16x12 masked sprite -- the seventh blitter, and the one the sprite catalogue missed. mov cx, 6            ; 6 rows per CGA bank mov dl, 2            ; 2 words = 4 bytes = 16 pixels per row and ax, [bp"
+    ],
+    "0x03039": [
+      "blit_16x12_row",
+      ""
+    ],
+    "0x0303B": [
+      "blit_16x12_word",
+      ""
+    ],
+    "0x03050": [
+      "add_score",
+      "Award DX points to the current player, then handle the bonus life. The score is 6 BCD digits held little-end-first across score_bcd_hi / _mid / _lo, and DX carries the award in the same BCD form, so e"
+    ],
+    "0x03084": [
+      "check_bonus_life",
+      "Extra life, awarded by watching for a carry out of BCD. The score is added with `daa`, and next_bonus_score is added on top; the extra life falls out of whether that second addition carries. No compar"
+    ],
+    "0x0309B": [
+      "score_redraw",
+      ""
+    ],
+    "0x030A2": [
+      "add_score_done",
+      ""
+    ],
+    "0x030A3": [
+      "calibrate_joystick",
+      "Calibrate the joystick, or report that there is none. mov byte [joystick_sample_count], 0xFF call read_joystick_axes cmp bl, 0xFF / jb ok        ; still saturated -> no stick ...print the string at 0x"
+    ],
+    "0x030BE": [
+      "no_joystick_wait",
+      ""
+    ],
+    "0x030C6": [
+      "joystick_prompt_screen",
+      ""
+    ],
+    "0x03130": [
+      "converge_joystick_low",
+      "Converge joystick_low a quarter of the way toward a new reading. cmp byte [joystick_low], bl   ; reject readings outside a window cmp byte [joystick_low], bh add bl, 8 / add bh, 8 sub bx, word [joysti"
+    ],
+    "0x03158": [
+      "converge_joystick_high",
+      ""
+    ],
+    "0x03161": [
+      "store_sample_count",
+      ""
+    ],
+    "0x03167": [
+      "joystick_setup_failed",
+      ""
+    ],
+    "0x03175": [
+      "setup_error_wait",
+      ""
+    ],
+    "0x0317F": [
+      "print_prompt_lines",
+      ""
+    ],
+    "0x0319E": [
+      "wait_for_button",
+      ""
+    ],
+    "0x031AC": [
+      "wait_button_press",
+      ""
+    ],
+    "0x031BB": [
+      "wait_button_key_abort",
+      ""
+    ],
+    "0x031C2": [
+      "read_joystick_axes",
+      "Read both joystick axes off the game port. mov dx, 0x201 / out dx, al        ; fire the one-shots mov cx, [joystick_sample_count] in al, dx / accumulate bits 0 and 1 into BX / loop The standard PC gam"
+    ],
+    "0x031CF": [
+      "joystick_sample_loop",
+      "Read the joystick by counting how long the one-shot stays high. Writing anything to port 0x201 fires the card's monostables; the axis position is then the *time* each bit takes to fall, so this loop s"
+    ],
+    "0x031DF": [
+      "print_decimal_digit",
+      ""
+    ],
+    "0x032A5": [
+      "int09_keyboard_isr",
+      "INT 09h -- keyboard interrupt handler (IRQ1). Reads the scancode from port 0x60 and appends it to kbd_buffer. Installed by writing the interrupt vector table directly, which is why no call site reache"
+    ],
+    "0x032C7": [
+      "key_capture_policy",
+      "Scancode capture policy inside the keyboard ISR. When key_capture_mode is 1 any scancode is stored straight into captured_scancode; otherwise only specific keys qualify. That is how 'press any key' sc"
+    ],
+    "0x032D9": [
+      "key_capture_store",
+      ""
+    ],
+    "0x032DC": [
+      "key_capture_done",
+      ""
+    ],
+    "0x032DF": [
+      "key_crtc_adjust",
+      ""
+    ],
+    "0x032F5": [
+      "key_crtc_store",
+      ""
+    ],
+    "0x032FB": [
+      "key_scan_make",
+      ""
+    ],
+    "0x03305": [
+      "dispatch_key_action",
+      "Per-key dispatch inside the keyboard ISR. Two numbers come out of the same CX left by `repne scasb` over key_scan_table, and they are not the same number: bx  = (14 - cx) * 4      ; entry in key_actio"
+    ],
+    "0x0331F": [
+      "key_release_filter",
+      ""
+    ],
+    "0x0334F": [
+      "key_store_scancode",
+      ""
+    ],
+    "0x03365": [
+      "key_action_done",
+      ""
+    ],
+    "0x0337D": [
+      "key_restore_and_return",
+      "pops ES, DS, DI and DX -- the tail every key handler exits through"
+    ],
+    "0x0338B": [
+      "key_action_down",
+      "Down-key action: raise input_flag_down. Reached from key_action_table for scancode 0x50 (Down) and 0x2C ('Z')."
+    ],
+    "0x03399": [
+      "key_action_right",
+      "Right-key action: set the player moving right. Reached from key_action_table for scancode 0x4D (Right) and 0x27 (';'), the two movement sets the game accepts. The variable this writes used to be calle"
+    ],
+    "0x033A7": [
+      "key_release_right",
+      ""
+    ],
+    "0x033C3": [
+      "key_action_left",
+      ""
+    ],
+    "0x033CF": [
+      "key_left_done",
+      ""
+    ],
+    "0x033D2": [
+      "key_release_left",
+      ""
+    ],
+    "0x033EC": [
+      "key_release_left_done",
+      ""
+    ],
+    "0x033EF": [
+      "key_action_up",
+      ""
+    ],
+    "0x033FD": [
+      "key_down_check_input",
+      ""
+    ],
+    "0x03409": [
+      "key_down_done",
+      ""
+    ],
+    "0x0340C": [
+      "key_action_escape",
+      ""
+    ],
+    "0x03412": [
+      "check_ctrl_alt_del",
+      ""
+    ],
+    "0x0341E": [
+      "check_reset_guard",
+      ""
+    ],
+    "0x03428": [
+      "do_ctrl_alt_del_reset",
+      ""
+    ],
+    "0x0342B": [
+      "reset_via_bios",
+      "the warm boot: SP from 0x4495, then the keyboard controller strobed through port 0x61"
+    ],
+    "0x03442": [
+      "key_action_numlock",
+      ""
+    ],
+    "0x0344A": [
+      "key_action_space",
+      ""
+    ],
+    "0x03454": [
+      "key_space_done",
+      ""
+    ],
+    "0x034BF": [
+      "key_space_restart",
+      ""
+    ],
+    "0x03658": [
+      "int1c_timer_isr",
+      "INT 1Ch -- BIOS timer tick handler, the game's timebase. timer_reentry_guard stops a second tick from entering while one is still in progress. Each tick advances the RNG, polls the joystick on port 0x"
+    ],
+    "0x03681": [
+      "timer_after_pcjr_check",
+      ""
+    ],
+    "0x036AE": [
+      "joystick_debounce",
+      ""
+    ],
+    "0x036BB": [
+      "joystick_store_buttons",
+      ""
+    ],
+    "0x036DB": [
+      "timer_check_swallow",
+      ""
+    ],
+    "0x036E3": [
+      "timer_tick_voices",
+      ""
+    ],
+    "0x03702": [
+      "timer_isr_exit",
+      ""
+    ],
+    "0x0370B": [
+      "sound_enable_speaker",
+      ""
+    ],
+    "0x0372C": [
+      "sound_speaker_gate",
+      ""
+    ],
+    "0x03731": [
+      "sound_enable_pcjr",
+      ""
+    ],
+    "0x03753": [
+      "sound_disable",
+      ""
+    ],
+    "0x03768": [
+      "sound_disable_gate",
+      ""
+    ],
+    "0x0376C": [
+      "sound_toggle",
+      ""
+    ],
+    "0x03789": [
+      "sound_toggle_gate",
+      ""
+    ],
+    "0x0378D": [
+      "sound_chip_silence",
+      ""
+    ],
+    "0x03796": [
+      "sound_chip_silence_all",
+      ""
+    ],
+    "0x037AB": [
+      "sound_chip_settle",
+      ""
+    ],
+    "0x037B0": [
+      "sound_stop_all",
+      ""
+    ],
+    "0x037D0": [
+      "start_sound_effect",
+      "Start sound effect number AL (1-based). Indexes sound_table_ptr, whose first byte is the entry count and whose entries are relative offsets starting at +1. Walks up to three chained descriptors at str"
+    ],
+    "0x0380B": [
+      "start_sound_effect_done",
+      ""
+    ],
+    "0x03812": [
+      "play_voice",
+      "Handle one voice descriptor for start_sound_effect. Skips the voice unless bit 1 of sound_flags is set."
+    ],
+    "0x03820": [
+      "play_voice_select",
+      ""
+    ],
+    "0x0382F": [
+      "play_voice_use_slot1",
+      ""
+    ],
+    "0x03834": [
+      "play_voice_use_slot2",
+      ""
+    ],
+    "0x03837": [
+      "voice_use_slot2",
+      "marks the second slot in use and copies the sample pointer into it"
+    ],
+    "0x0383B": [
+      "play_voice_install",
+      ""
+    ],
+    "0x0387C": [
+      "voice_slot_ready",
+      "tests BL from the slot record and takes the ready path"
+    ],
+    "0x0387F": [
+      "tick_sound_voice",
+      "Advance one sound voice by a tick. Byte 0 of the descriptor is the voice state; 0 means idle. Non-zero states dispatch through voice_state_table, whose six words are 0000, voice_note_on, 3ACC, 3AF1, v"
+    ],
+    "0x03885": [
+      "voice_dispatch",
+      ""
+    ],
+    "0x0389C": [
+      "voice_hold_speaker",
+      ""
+    ],
+    "0x038A7": [
+      "voice_hold_5",
+      "the same for hold value 5"
+    ],
+    "0x038AB": [
+      "voice_hold_reload",
+      ""
+    ],
+    "0x038B4": [
+      "voice_hold_retrigger",
+      ""
+    ],
+    "0x038CD": [
+      "speaker_write_period",
+      ""
+    ],
+    "0x038D5": [
+      "voice_tick_done",
+      ""
+    ],
+    "0x038D6": [
+      "sound_chip_tone",
+      ""
+    ],
+    "0x038ED": [
+      "voice_release",
+      ""
+    ],
+    "0x038F8": [
+      "voice_release_silence",
+      ""
+    ],
+    "0x03905": [
+      "voice_next_event",
+      ""
+    ],
+    "0x03914": [
+      "voice_store_cursor",
+      ""
+    ],
+    "0x03923": [
+      "voice_go_idle",
+      ""
+    ],
+    "0x03924": [
+      "voice_sustain",
+      ""
+    ],
+    "0x03939": [
+      "voice_volume_step",
+      ""
+    ],
+    "0x03945": [
+      "sound_chip_volume",
+      ""
+    ],
+    "0x03961": [
+      "sound_chip_done",
+      ""
+    ],
+    "0x03962": [
+      "voice_note_on",
+      ""
+    ],
+    "0x0399E": [
+      "voice_speaker_started",
+      ""
+    ],
+    "0x0399F": [
+      "voice_chip_note",
+      ""
+    ],
+    "0x039BE": [
+      "voice_chip_halve",
+      ""
+    ],
+    "0x039C0": [
+      "voice_chip_program",
+      ""
+    ],
+    "0x039DA": [
+      "voice_attack_step",
+      "Attack phase of the SN76496 volume envelope. The level at +0x0C is raised by the step at +8 each call and saturates rather than wrapping: `jae` skips the `mov al, 0xff`, so a carry pins the level at f"
+    ],
+    "0x039E6": [
+      "voice_attack_check",
+      ""
+    ],
+    "0x039EE": [
+      "voice_attack_emit",
+      ""
+    ],
+    "0x03A1E": [
+      "play_rom_noise",
+      "Crash noise, generated by reading bytes out of ROM. Called from CS:1635 and CS:215A -- the two death paths -- this is the sound of a mug hitting the floor. It does not use the PIT at all. `and al, 0xf"
+    ],
+    "0x03A2B": [
+      "rom_noise_setup",
+      ""
+    ],
+    "0x03A38": [
+      "rom_noise_begin",
+      ""
+    ],
+    "0x03A48": [
+      "rom_noise_next_burst",
+      ""
+    ],
+    "0x03A58": [
+      "rom_noise_run_burst",
+      ""
+    ],
+    "0x03A5D": [
+      "rom_noise_burst",
+      ""
+    ],
+    "0x03A63": [
+      "rom_noise_toggle",
+      ""
+    ],
+    "0x03A65": [
+      "rom_noise_delay",
+      ""
+    ],
+    "0x03A78": [
+      "rom_noise_bit_low",
+      ""
+    ],
+    "0x03A7A": [
+      "rom_noise_out",
+      ""
+    ],
+    "0x03A81": [
+      "rom_noise_finish",
+      ""
+    ],
+    "0x03A94": [
+      "rom_noise_done",
+      ""
+    ],
+    "0x03A96": [
+      "noise_silent_delay",
+      ""
+    ],
+    "0x03AA3": [
+      "noise_silent_spin",
+      ""
+    ],
+    "0x04580": [
+      "load_pic_file",
+      "the branch that skips the 'Tapper.Pic' filename stored in line and then uses it"
+    ],
+    "0x04590": [
+      "crack_intro_screen",
+      ""
+    ],
+    "0x045A7": [
+      "crack_intro_loaded",
+      "The crack group's intro screen. It runs before every game. This was once documented here as an unreachable developer tool. That was wrong, and the entry point says so directly: 0100  EB 0E        jmp "
+    ],
+    "0x045F6": [
+      "false_target_in_filename",
+      ""
+    ]
+  },
+  "globals": {
+    "0x00102": [
+      "str_tapper_dat",
+      ""
+    ],
+    "0x00130": [
+      "dat_file_handle",
+      ""
+    ],
+    "0x00598": [
+      "str_disk_error",
+      ""
+    ],
+    "0x005A3": [
+      "req_sector_count",
+      ""
+    ],
+    "0x005A5": [
+      "io_retry_count",
+      ""
+    ],
+    "0x005B1": [
+      "asset_table",
+      ""
+    ],
+    "0x03557": [
+      "alt_key_scan_table",
+      ""
+    ],
+    "0x03565": [
+      "key_scan_table",
+      ""
+    ],
+    "0x03573": [
+      "key_action_table",
+      ""
+    ],
+    "0x035AB": [
+      "kbd_head",
+      ""
+    ],
+    "0x035AD": [
+      "kbd_tail",
+      ""
+    ],
+    "0x035AF": [
+      "kbd_buffer",
+      ""
+    ],
+    "0x03731": [
+      "voice_slot_1",
+      ""
+    ],
+    "0x0373E": [
+      "voice_slot_2",
+      ""
+    ],
+    "0x0374B": [
+      "voice_slot_3",
+      ""
+    ],
+    "0x03990": [
+      "voice_state_table",
+      ""
+    ],
+    "0x03BAC": [
+      "rom_noise_script",
+      ""
+    ],
+    "0x03BC0": [
+      "speaker_period_table",
+      ""
+    ],
+    "0x03BDC": [
+      "chip_period_table",
+      ""
+    ],
+    "0x03C12": [
+      "screen_script_mode0",
+      ""
+    ],
+    "0x03C18": [
+      "screen_script_mode1",
+      ""
+    ],
+    "0x03C21": [
+      "screen_aux_mode0",
+      ""
+    ],
+    "0x03C28": [
+      "screen_aux_mode1",
+      ""
+    ],
+    "0x03C80": [
+      "overlay_buffer",
+      ""
+    ],
+    "0x03D7C": [
+      "menu_key_table",
+      ""
+    ],
+    "0x03D89": [
+      "menu_marker_table",
+      ""
+    ],
+    "0x03DAD": [
+      "str_player",
+      ""
+    ],
+    "0x03DB8": [
+      "str_game_over",
+      ""
+    ],
+    "0x03ED5": [
+      "str_get_ready",
+      ""
+    ],
+    "0x03EEB": [
+      "row_offset_table",
+      ""
+    ],
+    "0x03EF3": [
+      "prompt_colour_table",
+      ""
+    ],
+    "0x03EFC": [
+      "str_joystick_prompts",
+      ""
+    ],
+    "0x03FDE": [
+      "str_setup_error",
+      ""
+    ],
+    "0x04014": [
+      "str_no_joystick",
+      ""
+    ],
+    "0x0403A": [
+      "bar_bound_source",
+      ""
+    ],
+    "0x0404A": [
+      "bar_limit_source",
+      ""
+    ],
+    "0x0405A": [
+      "anim_frame_table",
+      ""
+    ],
+    "0x040AE": [
+      "frame_list_table",
+      ""
+    ],
+    "0x040CE": [
+      "page_screen_table",
+      ""
+    ],
+    "0x040CF": [
+      "next_page_screen",
+      ""
+    ],
+    "0x040EA": [
+      "page_theme_table",
+      ""
+    ],
+    "0x04105": [
+      "round_spawn_table",
+      ""
+    ],
+    "0x041AD": [
+      "entity_init_table",
+      ""
+    ],
+    "0x04450": [
+      "alt_isr_slot",
+      ""
+    ],
+    "0x04452": [
+      "orig_int09_vector",
+      ""
+    ],
+    "0x04456": [
+      "orig_int1c_vector",
+      ""
+    ],
+    "0x0445A": [
+      "high_score_bcd",
+      ""
+    ],
+    "0x04487": [
+      "abort_sequence_flag",
+      ""
+    ],
+    "0x04488": [
+      "captured_scancode",
+      ""
+    ],
+    "0x04489": [
+      "joystick_sample_count",
+      ""
+    ],
+    "0x0448A": [
+      "timer_reentry_guard",
+      ""
+    ],
+    "0x0448B": [
+      "input_enabled",
+      ""
+    ],
+    "0x0448C": [
+      "two_player_flag",
+      ""
+    ],
+    "0x0448D": [
+      "difficulty",
+      ""
+    ],
+    "0x0448E": [
+      "sound_flags",
+      ""
+    ],
+    "0x0448F": [
+      "staging_segment",
+      ""
+    ],
+    "0x04491": [
+      "text_target_segment",
+      ""
+    ],
+    "0x04493": [
+      "draw_target_segment",
+      ""
+    ],
+    "0x04497": [
+      "screen_aux_ptr",
+      ""
+    ],
+    "0x04499": [
+      "indirect_call_vector",
+      ""
+    ],
+    "0x0449B": [
+      "keys_down_bitmap",
+      ""
+    ],
+    "0x0449C": [
+      "keys_down_hi",
+      ""
+    ],
+    "0x0449D": [
+      "rng_state",
+      ""
+    ],
+    "0x0449F": [
+      "sprite_table_alt_ptr",
+      ""
+    ],
+    "0x044A1": [
+      "ptr_table_a",
+      ""
+    ],
+    "0x044A3": [
+      "ptr_table_b",
+      ""
+    ],
+    "0x044A5": [
+      "bar_sprite_table",
+      ""
+    ],
+    "0x044A7": [
+      "popup_table_a",
+      ""
+    ],
+    "0x044A9": [
+      "popup_table_b",
+      ""
+    ],
+    "0x044AB": [
+      "sprite_table_ptr",
+      ""
+    ],
+    "0x044AD": [
+      "sound_table_ptr",
+      ""
+    ],
+    "0x044AF": [
+      "screen_config",
+      ""
+    ],
+    "0x044B1": [
+      "joystick_low",
+      ""
+    ],
+    "0x044B2": [
+      "joystick_y_low",
+      ""
+    ],
+    "0x044B3": [
+      "joystick_centre",
+      ""
+    ],
+    "0x044B5": [
+      "joystick_high",
+      ""
+    ],
+    "0x044B6": [
+      "joystick_y_high",
+      ""
+    ],
+    "0x044B7": [
+      "joystick_buttons",
+      ""
+    ],
+    "0x044B8": [
+      "joystick_prev",
+      ""
+    ],
+    "0x044B9": [
+      "joy_move_dir",
+      ""
+    ],
+    "0x044BA": [
+      "joy_move_prev",
+      ""
+    ],
+    "0x044BB": [
+      "screen_script_ptr",
+      ""
+    ],
+    "0x044BD": [
+      "display_mode",
+      ""
+    ],
+    "0x044BE": [
+      "screen_index_flags",
+      ""
+    ],
+    "0x044C0": [
+      "current_player",
+      ""
+    ],
+    "0x044C1": [
+      "swallow_next_key",
+      ""
+    ],
+    "0x044C2": [
+      "tick_countdown",
+      ""
+    ],
+    "0x044C3": [
+      "key_pending",
+      ""
+    ],
+    "0x044C4": [
+      "key_capture_mode",
+      ""
+    ],
+    "0x044C5": [
+      "text_colour",
+      ""
+    ],
+    "0x044C6": [
+      "is_pcjr",
+      ""
+    ],
+    "0x044C7": [
+      "round_number",
+      ""
+    ],
+    "0x044C8": [
+      "score_bcd_hi",
+      ""
+    ],
+    "0x044C9": [
+      "score_bcd_mid",
+      ""
+    ],
+    "0x044CA": [
+      "score_bcd_lo",
+      ""
+    ],
+    "0x044CB": [
+      "score_shadow",
+      ""
+    ],
+    "0x044CD": [
+      "score_shadow_lo",
+      ""
+    ],
+    "0x044CE": [
+      "score_column",
+      ""
+    ],
+    "0x044D0": [
+      "lives",
+      ""
+    ],
+    "0x044D1": [
+      "page_index",
+      ""
+    ],
+    "0x044D3": [
+      "round_param_index",
+      ""
+    ],
+    "0x044D5": [
+      "next_bonus_score",
+      ""
+    ],
+    "0x044D6": [
+      "p1_saved_block",
+      ""
+    ],
+    "0x044D7": [
+      "p1_saved_score",
+      ""
+    ],
+    "0x044D9": [
+      "p1_saved_score_lo",
+      ""
+    ],
+    "0x044E5": [
+      "p2_saved_block",
+      ""
+    ],
+    "0x044E6": [
+      "p2_saved_score",
+      ""
+    ],
+    "0x044E8": [
+      "p2_saved_score_lo",
+      ""
+    ],
+    "0x044EE": [
+      "p2_saved_lives",
+      ""
+    ],
+    "0x044EF": [
+      "p2_saved_page_index",
+      ""
+    ],
+    "0x044F1": [
+      "p2_saved_round_param",
+      ""
+    ],
+    "0x044F3": [
+      "p2_saved_bonus",
+      ""
+    ],
+    "0x044F4": [
+      "bar_phase",
+      ""
+    ],
+    "0x044F6": [
+      "bar_index_x2",
+      ""
+    ],
+    "0x044F8": [
+      "entity_array_ptr",
+      ""
+    ],
+    "0x044FC": [
+      "cur_direction",
+      ""
+    ],
+    "0x044FE": [
+      "bonus_slot_index",
+      ""
+    ],
+    "0x04500": [
+      "reveal_row_count",
+      ""
+    ],
+    "0x04502": [
+      "bonus_pick_slots",
+      ""
+    ],
+    "0x04506": [
+      "popup_frame_index",
+      ""
+    ],
+    "0x04508": [
+      "serve_target_pos",
+      ""
+    ],
+    "0x0450A": [
+      "frame_list_cursor",
+      ""
+    ],
+    "0x0450C": [
+      "cycle_countdown",
+      ""
+    ],
+    "0x0450D": [
+      "cycle_reload",
+      ""
+    ],
+    "0x0450E": [
+      "pickup_ptr",
+      ""
+    ],
+    "0x04510": [
+      "pickup_spawn_countdown",
+      ""
+    ],
+    "0x04511": [
+      "pickup_spawn_reload",
+      ""
+    ],
+    "0x04516": [
+      "intro_delay_count",
+      ""
+    ],
+    "0x0451A": [
+      "theme_table_ptr",
+      ""
+    ],
+    "0x0451C": [
+      "leading_digit_seen",
+      ""
+    ],
+    "0x0451D": [
+      "pickup_bar",
+      ""
+    ],
+    "0x0451E": [
+      "pickup_pos",
+      ""
+    ],
+    "0x0451F": [
+      "pickup_budget",
+      ""
+    ],
+    "0x04520": [
+      "entity_tick_reload",
+      ""
+    ],
+    "0x04521": [
+      "input_flag_down",
+      ""
+    ],
+    "0x04522": [
+      "player_bar",
+      ""
+    ],
+    "0x04523": [
+      "player_bar_prev",
+      ""
+    ],
+    "0x04524": [
+      "move_step_count",
+      ""
+    ],
+    "0x04525": [
+      "slow_move_divider",
+      ""
+    ],
+    "0x04527": [
+      "last_random_pick",
+      ""
+    ],
+    "0x04528": [
+      "bonus_answer",
+      ""
+    ],
+    "0x04529": [
+      "bonus_choice",
+      ""
+    ],
+    "0x0452A": [
+      "bonus_key_mirror",
+      ""
+    ],
+    "0x0452B": [
+      "theme_sprite_base",
+      ""
+    ],
+    "0x0452C": [
+      "pickup_popup_timer",
+      ""
+    ],
+    "0x0452D": [
+      "popup_tick_divider",
+      ""
+    ],
+    "0x0452E": [
+      "entity_delay_boost",
+      ""
+    ],
+    "0x0452F": [
+      "difficulty_milestone",
+      ""
+    ],
+    "0x04530": [
+      "death_bar_index_x2",
+      ""
+    ],
+    "0x04531": [
+      "free_list_head",
+      ""
+    ],
+    "0x04533": [
+      "bar_list_heads_a",
+      ""
+    ],
+    "0x0453B": [
+      "bar_list_heads_b",
+      ""
+    ],
+    "0x04543": [
+      "bar_bound_table",
+      ""
+    ],
+    "0x0454B": [
+      "bar_row_top",
+      ""
+    ],
+    "0x0454D": [
+      "bar_row_bottom",
+      ""
+    ],
+    "0x0455B": [
+      "bar_direction",
+      ""
+    ],
+    "0x0455C": [
+      "bar_byte_table",
+      ""
+    ],
+    "0x04563": [
+      "overlay_offset_table",
+      ""
+    ],
+    "0x0456B": [
+      "bar_sprite_pos",
+      ""
+    ],
+    "0x04573": [
+      "bar_sprite_ptr",
+      ""
+    ],
+    "0x0457B": [
+      "bar_limit_table",
+      ""
+    ],
+    "0x04583": [
+      "entity_table",
+      ""
+    ],
+    "0x04682": [
+      "str_tapper_pic",
+      ""
+    ],
+    "0x04683": [
+      "player_top",
+      ""
+    ],
+    "0x04687": [
+      "player_top_pos",
+      ""
+    ],
+    "0x04689": [
+      "player_top_flags",
+      ""
+    ],
+    "0x0468B": [
+      "player_column",
+      ""
+    ],
+    "0x04691": [
+      "player_velocity",
+      ""
+    ],
+    "0x04693": [
+      "player_bottom",
+      ""
+    ],
+    "0x04697": [
+      "player_bottom_pos",
+      ""
+    ],
+    "0x046A3": [
+      "player_prev_top",
+      ""
+    ],
+    "0x046A9": [
+      "player_prev_top_flags",
+      ""
+    ],
+    "0x046B3": [
+      "player_prev_bottom",
+      ""
+    ],
+    "0x046B9": [
+      "player_prev_bottom_flags",
+      ""
+    ],
+    "0x046C3": [
+      "free_list_pool",
+      ""
+    ],
+    "0x047C3": [
+      "sprite_table_default",
+      ""
+    ],
+    "es:0x000E": [
+      "int03_vector",
+      "0000:000E -- the INT 3 vector slot"
+    ],
+    "es:0x0024": [
+      "int09_vector",
+      "0000:0024, the keyboard interrupt. The game exchanges it at start-up and puts it back on the way out"
+    ],
+    "es:0x0026": [
+      "int09_vector_seg",
+      ""
+    ],
+    "es:0x0070": [
+      "int1c_vector",
+      "0000:0070, the BIOS timer tick -- comrec finds the handler at file 0x3658 from this write"
+    ],
+    "es:0x0072": [
+      "int1c_vector_seg",
+      ""
+    ],
+    "es:0x0410": [
+      "bios_equipment_word",
+      "0040:0010"
+    ]
+  },
+  "_displacements": {
+    "_note": [
+      "16 bracketed constants are displacements, not addresses:",
+      "each appears only with a base register, never on its own, and every",
+      "one is under 0x400 -- a field inside a record the base points at."
+    ],
+    "0x000A": [
+      "bp",
+      "di"
+    ],
+    "0x000B": [
+      "bp",
+      "di",
+      "si"
+    ],
+    "0x000C": [
+      "bp",
+      "di",
+      "si"
+    ],
+    "0x000D": [
+      "bp"
+    ],
+    "0x000E": [
+      "bp",
+      "bx",
+      "si"
+    ],
+    "0x0010": [
+      "bp"
+    ],
+    "0x0014": [
+      "bp"
+    ],
+    "0x0018": [
+      "bp"
+    ],
+    "0x0024": [
+      "bp"
+    ],
+    "0x0026": [
+      "bp"
+    ],
+    "0x0030": [
+      "bp"
+    ],
+    "0x0034": [
+      "bp"
+    ],
+    "0x0040": [
+      "bp",
+      "bx + di",
+      "bx + si"
+    ],
+    "0x0080": [
+      "bp"
+    ],
+    "0x0084": [
+      "bp"
+    ],
+    "0x00B0": [
+      "bp"
+    ]
+  },
+  "_not_named": [
+    "133 addresses the listing references have no name.",
+    "They are Tapper's own variables, and they are left unnamed rather than",
+    "guessed. This game arrived from a separate repository where nothing",
+    "counted them; the other five here have none.",
+    "",
+    "Run build.ps1 and read what annotate.py prints -- it lists them, and the",
+    "list is the work queue."
+  ]
+}
