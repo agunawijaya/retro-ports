@@ -28,7 +28,7 @@ shorter working reference you come back to.
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
-| game logic as code | **not read** — the routines in `0x00000` and `0x007B6` |
+| game logic as code | **the chance model is open** — all 29 `Random` sites located, the casualty routine traced; the store, illness inputs and pace/rations are not |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | documents | [four](docs/), written from the above |
 
@@ -116,6 +116,37 @@ Image offsets.
 | `0x24156` | the six illnesses: exhaustion, typhoid, cholera, measles, dysentery, a fever |
 | `0x0C0A7` | the health scale: `good\fair\poor\very poor` |
 | `0x0E793` | Matt's General Store and its five departments |
+| `0x134D6` | the casualty routine — takes the odds as a `Real`, five callers |
+
+Data-segment offsets (add `0x23480` for an image offset):
+
+| | |
+|---|---|
+| `DS:0x17FE` | the party — 11-byte records, a `string[10]` name each; member 0 is the player |
+| `DS:0x183F` | food in pounds — scored at one point per 25 |
+| `DS:0x1842` | bullets — one point per 50 **[inferred]** |
+| `DS:0x1847` | cash, a 6-byte `Real` — one point per $5 **[inferred]** |
+| `DS:0x16B2` | the timer tick counter, a 32-bit `LongInt` |
+| `DS:0x1020` | the network licence timeout, in minutes: 30 |
+
+### Turbo Pascal 5.0 runtime calls, established by body-matching
+
+Offsets shift between programs, so these are **this program's** and were found
+by compiling probes and matching 24-byte routine bodies, not by a table.
+
+| | |
+|---|---|
+| `System+0x00D8` | `Halt` |
+| `System+0x0207` | `IOResult` |
+| `System+0x020E` | the automatic `{$I+}` check after every I/O statement |
+| `System+0x0C48` `0x0C4E` `0x0C5A` `0x0C60` | `Real` add, subtract, multiply, divide |
+| `System+0x0C6A` | `Real` compare |
+| `System+0x0C6E` | `LongInt` → `Real` |
+| `System+0x0C72` | `Trunc` |
+| `System+0x0C94` | `Random(n)` |
+| `System+0x0CAA` | `Random : Real` |
+| `System+0x03B5` | `MemAvail` |
+| `System+0x1714` `0x1742` `0x174B` `0x17C3` `0x17F7` `0x17FE` | `Assign`, `Reset`, `Rewrite`, `Close`, `Read`, `Write` |
 
 ### The eleven segments, named
 

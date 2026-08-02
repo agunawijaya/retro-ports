@@ -812,12 +812,142 @@ A banker gets no multiplier and no sentence. That is the whole difficulty
 setting: choosing the profession that starts with the least money multiplies
 your score the most.
 
-**What is still open, and how to attack it.** The illness model, the store's
-prices, the odds on a river crossing and the way pace combines with rations are
-still unread, in 66,592 bytes across two segments. But the route in is now
-short: find the strings a subsystem prints, look at the code immediately before
-them, and decode the `Real` constants. Every rule in this game is a number that
-gets printed near the text that explains it.
+### Naming the arithmetic, without trusting an address
+
+Those constants are useless until you know which operation consumes them —
+50 could be a divisor or a threshold, and the difference is the whole meaning.
+The obvious move is to look up `System+0x0C60` in a table of Turbo Pascal
+runtime offsets. There is no such table, and
+[the section above](#naming-runtime-calls-by-compiling-something-else) explains
+why: smart-linking moves everything.
+
+So match the **code** instead of the address. Compile a probe that uses every
+`Real` operation once, find each helper in the probe by its call, take 24 bytes
+of its body, and search for those bytes in the game:
+
+```
+probe System+0x0525  ->  game System+0x0C48    Real add
+probe System+0x052B  ->  game System+0x0C4E    Real subtract
+probe System+0x0537  ->  game System+0x0C5A    Real multiply
+probe System+0x053D  ->  game System+0x0C60    Real divide
+probe System+0x0547  ->  game System+0x0C6A    Real compare
+probe System+0x054B  ->  game System+0x0C6E    LongInt -> Real
+probe System+0x054F  ->  game System+0x0C72    Trunc
+```
+
+Byte-for-byte identical bodies, so this holds regardless of where either
+program put them. And there is a free check on it: the gaps between the probe's
+offsets are 6, 12, 6 — and the gaps between the game's are 6, 12, 6. The whole
+dispatch block is laid out identically in both, which is what you would expect
+of a table the linker emits as a unit, and is not something two unrelated
+readings would agree on by accident.
+
+That makes the scoring constants readable at last: `0x0C60` is **divide**, so
+bullets ÷ 50 and food ÷ 25 and cash ÷ 5 really are rates rather than thresholds.
+
+### Every random decision in the game
+
+The same technique locates `Random`, which is the key to the whole simulation:
+
+```
+game System+0x0CAA    Random : Real        (0 <= r < 1)
+game System+0x0C94    Random(n) : Integer
+```
+
+Search the image for calls to those two and you have **every chance the game
+takes**: 29 calls to `Random`, and 2 to `Random(n)`.
+
+Turbo Pascal emits `if Random < p` as a call, then the six-byte literal in
+`CX:SI:DI`, then the comparison — so **the probability sits exactly five bytes
+after the call**, and it can be read straight off. Where it does:
+
+| where | odds | what it decides |
+|---|---|---|
+| `0x09107` | `Random < 0.95` | whether anyone will trade with you today |
+| `0x091E3` | `Random < 0.67` | *"He / She will trade you …"* |
+| `0x01EEE` | `Random < 0.33` | in the travelling code |
+| `0x029C6` | `Random < 0.20` | in the travelling code |
+| `0x0B1EA` | `Random < 0.04` | in the scoring segment |
+| `0x13EAA` | `Random < 0.30` | in the events code |
+
+and nine more compare against `0.5`. The remaining calls scale `Random` by a
+*variable* rather than a constant, which is the interesting half — those are the
+decisions whose odds depend on the state of your party.
+
+### One routine kills people, and it takes the odds as an argument
+
+The clearest thing found so far, and the one a port would need first.
+
+At `ui+0x30B6` (image `0x134D6`) there is a procedure that takes a `Real` and
+does this:
+
+```
+n := HowManyInTheParty
+for i := n - 1 downto (1 if n > 1 else 0) do
+    if Random < p then
+        ... afflict member i ...
+```
+
+Two details make it worth reading closely.
+
+**The party is an array of eleven-byte records**, and the code says so:
+
+```nasm
+0013547  mov ax, [bp-0x106]        ; the member's index
+001354B  mov dx, 0x000B            ; times eleven
+001354E  mul dx
+0013550  mov di, ax
+0013552  add di, 0x17FE            ; plus the base of the array
+```
+
+Eleven bytes is a Pascal `string[10]` exactly — a length byte and ten
+characters. So a party member *is* a name and nothing else; the health and
+illness state must live in parallel arrays elsewhere.
+
+**The loop counts down to 1, not 0, when there is more than one person.** Member
+zero is skipped. That is the player — the one whose name you typed — and the
+game will not take them with this routine. Whatever kills the leader is
+somewhere else, which is a real design decision sitting in a `jle`.
+
+Five places call it, and the probability is not a constant in any of them:
+
+```nasm
+004871  mov cx, 0x82 / xor si, si / mov di, 0x2000     ; the literal 2.5
+004879  lcall System+0x0C4E                            ; subtract
+004881  lcall System+0x0C60                            ; divide
+004889  lcall ui+0x30B6                                ; and use that as p
+```
+
+so the odds are `(something − 2.5) / somethingElse` at one call site and
+`(something − 3.0) / somethingElse` at another. **The chance of losing someone
+is computed from the state of the party**, not drawn from a table — which is why
+searching for a table of death probabilities finds nothing.
+
+Two of the five callers are identifiable from what they print, and they are the
+rafting section:
+
+```
+The raft has hit a rock.
+The raft has hit the shore.
+The raft has missed the landing.
+  The raft is destroyed; everything has been lost.
+```
+
+The other three are in the travelling code and print nothing nearby, because the
+message comes from the illness table at `0x24156` rather than from a literal.
+
+**What transfers.** Notice the shape: one routine, one probability argument,
+five callers. The game does not have a drowning system and a disease system and
+an accident system — it has *one* casualty system that everything hands a number
+to. That is the same instinct as the sprite table in Zaxxon and the tile
+dispatch in Hard Hat Mack, and it is the single most reliable thing to look for
+in a game of this era: **the place where many different situations become one
+number.** Find that and you have found the design.
+
+**What is still open.** The store's prices, the illness model's inputs, and how
+pace combines with rations. The route in is the one used above — find the
+strings a subsystem prints, read the code before them, decode the `Real`
+constants, and check which of the seven arithmetic helpers consumes each one.
 
 ## Where the artwork is loaded from
 
