@@ -512,8 +512,70 @@ exactly. It is navigable:
 - **Labels** are `L_xxxxx`, named after the position in the file.
 - **`db` lines with a comment** are instructions pinned to a fixed encoding —
   they execute, they are just spelled in bytes.
-- The honest limits are at the end of
-  [02-architecture.md](02-architecture.md#what-is-still-unknown), and they have
-  changed as the measurements got sharper. What remains is the 398 unnamed
-  variables, 7.6% of the file with no bucket, and the gap between what the
-  static reading of a level produces and what the game actually blits.
+- **Names** come from `symbols.json`, applied by the toolkit's
+  `annotate.py`. All 221 call targets and 604 variables are named, and every
+  name carries the evidence for itself.
+
+What remains unmeasured is the gap between what a static reading of a level
+produces and what the game actually blits — 38%, 83% and 58% across the three
+screens.
+
+---
+
+## 7. It is not 8086 code
+
+Reading it as 8086 written by a person makes every routine look worse than it
+is. It is 6502 code that a program translated, off the Apple II original.
+
+| marker | Hard Hat Mack | the other three games here |
+|---|---|---|
+| `cmc` immediately after `cmp` | **93%** | 0% |
+| `mov al, X` / `inc al` / `dec al` | **511** | 0 |
+| carry parked in `ah` round an `and` | **42** | 0–3 |
+| instructions touching `al` | **51%** | 4–13% |
+| 16-bit arithmetic | **0%** | 5–11% |
+| register push/pop | **0%** | 1–8% |
+
+The 6502's `CMP` sets carry when A ≥ M; the 8086's sets it when the subtraction
+borrowed. A translator that wants `BCS` to keep meaning what it meant has to
+invert the flag after every comparison — so it does, 287 times. `LDA` sets N and
+Z; `mov` sets nothing, hence the increment-then-decrement. `AND` leaves carry
+alone on a 6502 and clears it on an 8086, hence the `rcl ah, 1` … `rcr ah, 1`
+wrapped round logic operations.
+
+So: **AL is the accumulator, BL and CL are X and Y**, every variable is a fixed
+address because that is where a 6502 assembler's `.byte` would have put it, and
+a routine that looks pointlessly small is one `JSR` target.
+
+It explains the rest of the program too. The 200-word scanline table is there
+because the Apple II hi-res screen is interleaved past the point of arithmetic.
+`plot_pixel` XORs a single pixel through a four-entry mask, which is `HPLOT`.
+And the interpreter at `0x1A7E` is Applesoft's shape-table mechanism carried
+across: nine opcodes that step a pen one pixel and optionally plot it.
+`tools/decode-vectors.py` runs the eight programs still in the file — five
+conveyor segments, two pendulum chains, one spark.
+
+## 8. One bit of audio, three octaves
+
+`music_tick` at `0x4661` has no sound chip to write to. It advances a 16-bit
+phase accumulator by the current note's increment 0x78 times per call, and sets
+port 0x61 bit 1 from whether the accumulator's high byte has passed a duty
+threshold — pulse-width modulation. The threshold is not fixed: `duty_step`
+adds 4 to it every sample, so the pulse width sweeps its whole range every 64
+samples and the timbre moves under the note.
+
+The note table at `0x4895` is a twelve-tone equal-tempered chromatic scale,
+36 semitones, and it measures **+1.00 semitones a step from end to end**. Solve
+for the sample rate that puts note 19 on concert A:
+
+    440 Hz x 65536 / 0x101C = 6,992 samples a second
+    6,992 / 0x78 samples a call = 58.27 calls a second
+
+So the game was written expecting 58.27 frames a second, and at that rate note 0
+lands on 146.81 Hz against D3's 146.83 — two hundredths of a hertz out, across
+three octaves. `tools/decode-sound.py` prints the table and renders every one
+of the thirteen note streams to a `.wav`.
+
+There is a second, plainer engine: `play_tune` at `0x648A` takes (divisor,
+length) pairs and toggles the speaker in a counted loop. It gets the seven
+jingles between screens, where nothing else needs the processor.

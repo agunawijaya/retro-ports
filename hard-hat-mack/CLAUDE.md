@@ -21,6 +21,7 @@ instruction, and the numbers below are counts rather than estimates.
 | bracketed constants covered | 567 of 573; the other six are not addresses (see `_not_addresses`) |
 | bytes in a named span | 42,112 of 42,112 |
 | level screens drawn from the file alone | **38% / 83% / 58%** of the blits the game actually performs |
+| what it actually is | a mechanical **6502 to 8086 translation** of the Apple II original — see [knowledge/14](../../dos-decompiler/knowledge/14-translated-binaries.md) |
 
 There is no port, and porting was deliberately out of scope.
 [docs/04-porting.md](docs/04-porting.md) is the decision that comes before one.
