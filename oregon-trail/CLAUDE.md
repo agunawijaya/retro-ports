@@ -225,9 +225,17 @@ lands in the quantity field. `1 3 CR 2 9 0 0 CR` asks for 13 yoke and answers
 people` at a settlement, `1-8` with `8. Hunt for food` on the trail, chosen by
 `cmp byte [0x199d], 0` at `0x4109`. Travel first.
 
-`tools/drive-to-hunt.py` builds the 111-key sequence and prints the command.
-Budget **3,000,000,000** and expect tens of minutes. The check is the execution
-map, not the picture:
+**Use the saved game.** `ZOP12.GAM` ships in `original/`, and answering `Y` to
+*"continue a saved game?"* lands the party at South Pass with supplies —
+**19 keystrokes and 29,904,635 instructions to reach hunting**, against 111 and
+about 1.5 billion by the front door. Fifty times cheaper, and the difference
+between a probe you can iterate on and one you cannot. The prompt that eats a
+key on the way is the trail fork at South Pass, *"1. head for Green River
+crossing"*.
+
+`tools/drive-to-hunt.py --saved --play` builds it. `--timer-isr 1c` is required
+once you are inside, or the mini-game waits for ever. The check is the
+execution map, not the picture:
 
 | | |
 |---|---|

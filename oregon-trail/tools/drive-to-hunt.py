@@ -7,14 +7,28 @@ work, so each step below carries the reason it is shaped the way it is.
 
 Run it for the command line, then run that:
 
-    python tools/drive-to-hunt.py
+    python tools/drive-to-hunt.py --saved --play
     python <toolkit>/tools/comrun.py original/OREGON.EXE --files original \
-        --budget 3000000000 --poll-patience 200 --keys <what this prints> \
+        --budget 60000000 --poll-patience 200 --timer-isr 1c \
+        --keys <what this prints> --stop-at 0x6aa3 --stop-after 40 \
         --png hunt.png --exec-map hunt.txt
 
+Three flags matter and none is optional:
+
+  * `--saved` uses `ZOP12.GAM`, which ships with the game. Nineteen keystrokes
+    and 30 million instructions instead of 111 and 1.5 billion.
+  * `--poll-patience 200`, or the `while KeyPressed do ReadKey` flush at the
+    head of every screen swallows the queue.
+  * `--timer-isr 1c`, or the mini-game waits for ever on a counter its own
+    handler increments and the hunter never takes a step.
+
 Check the execution map, not the picture: 0x4093, 0x4104, 0x4109, 0x77F8,
-0x628A and 0x72DD must all appear. A screenshot can be a half-drawn frame; the
-map cannot be misread.
+0x628A, 0x72DD and — if you passed `--play` — 0x6AA3 must all appear. A
+screenshot can be a half-drawn frame; the map cannot be misread.
+
+And for the field itself, prefer `tools/render-hunting.py`: it draws the same
+screen from the file, which is the deliverable this folder asks for. What is
+below is the referee.
 """
 import argparse
 
@@ -30,6 +44,37 @@ LETTER = {"A": 0x1E41, "N": 0x314E, "Y": 0x1579}
 def digits(text):
     """A multi-digit answer is one keystroke per character, then Enter."""
     return [DIGIT[c] for c in text] + [CR]
+
+
+def from_saved_game():
+    """The short way in, and it was in the box the whole time.
+
+    `ZOP12.GAM` ships with the game -- 144 bytes, in `original/` beside the
+    executable -- and answering `Y` to *"Would you like to continue a saved
+    game?"* lands the party at South Pass on 13 May 1848 with supplies. No
+    profession, no five names, no month, no store, no Independence.
+
+    South Pass is a landmark, so its menu is `1-9` with *8. Talk to people*;
+    one leg of trail is enough for `[0x199D]` to clear and option 8 to become
+    *Hunt for food*. The trail also divides there -- *"1. head for Green River
+    crossing"* -- which is the prompt that ate the key on four earlier
+    attempts and is answered explicitly below.
+
+    Nineteen keystrokes and **29,904,635 instructions** to reach `0x77F8`,
+    against roughly 1.5 billion by the front door. Fifty times cheaper, and
+    the difference between a probe you can iterate on and one you cannot.
+    """
+    k = [DIGIT["1"], CR]                  # 1. Travel the trail
+    k += [LETTER["Y"], CR]                # continue a saved game?  yes
+    k += [DIGIT["1"], CR]                 # which saved game
+    k += [SPACE, SPACE, CR]               # the arrival screens
+    k += [DIGIT["1"], CR]                 # 1. Continue on trail
+    k += [DIGIT["1"], CR]                 # "The trail divides here"
+    k += [SPACE]                          # whatever the leg ran into
+    k += [DIGIT["1"], CR]                 # 1. Continue on trail, again
+    k += [SPACE]
+    k += [DIGIT["8"], CR]                 # 8. Hunt for food -- now on offer
+    return k
 
 
 def sequence(rounds=8):
@@ -101,11 +146,17 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--rounds", type=int, default=8,
                     help="how many travel-then-ask-to-hunt rounds (default 8)")
+    ap.add_argument("--saved", action="store_true",
+                    help="use ZOP12.GAM instead of playing from the title "
+                         "screen: 19 keystrokes and 30 million instructions "
+                         "rather than 111 and 1.5 billion")
     ap.add_argument("--play", action="store_true",
                     help="append keys that play the field rather than only "
                          "reaching it: point, walk, fire, then Escape")
     args = ap.parse_args()
-    keys = sequence(args.rounds) + (play() if args.play else [])
+    keys = (from_saved_game() if args.saved
+            else sequence(args.rounds))
+    keys += play() if args.play else []
     print(",".join(f"{k:#06x}" for k in keys))
     print(f"\n{len(keys)} keystrokes."
           "  Remember --poll-patience 200, or the flush loops eat them.")
