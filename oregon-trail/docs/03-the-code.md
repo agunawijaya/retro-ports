@@ -2536,7 +2536,13 @@ The list is now short, and each item says what would close it.
   not.
 - **What the two populations in the object array are** — slots 0…6 against
   7…16. The split is established from the allocator's starting index; what
-  lives in the lower seven is not.
+  lives in the lower seven is not. Partly answered since: slot 0 is the hunter
+  and the scenery goes into 3 and up, both placed by `hunt:0x6310`, which has
+  exactly two callers. Animals are *not* placed by it.
+- **The wave logic in `hunt:0x72DD`** — how many animals a hunt gets and which
+  species. Their *entry* is read (`hunt:0x71F0`: an edge, `Random(199 - h)`,
+  reject on overlap) and `tools/render-hunting.py` draws them with it, but the
+  count and the species are supplied by hand and labelled as such.
 - **A byte-identical rebuild**, which is blocked for a measured reason rather
   than an unknown one: 22.6% of the image is a Genus library nobody archived.
 
