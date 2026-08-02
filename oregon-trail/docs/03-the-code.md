@@ -1532,9 +1532,28 @@ takes no arguments.
 
 Two things worth pulling out.
 
-**`terrain.pcc` is the hunting background**, not travel scenery — this document
-assumed otherwise while drawing pictures with it, and the load at `0x785E` is
-the correction. And **`[0x16B2]` is the tick counter** that the `INT 1Ch`
+**`terrain.pcc` is the hunting screen's sheet**, not travel scenery — this
+document assumed otherwise while drawing pictures with it, and the load at
+`0x785E` is the correction. `0x628A`, which the load is followed by, is not a
+terrain draw at all: it paints the **instructions screen**, and its three
+strings settle what the sheet is for:
+
+```
+Hunting Instructions
+
+Enter Key      To start or stop walking
+Space Bar      To fire the rifle
+   (diagram)   To point the rifle (novice hunters)
+   (diagram)   To point the rifle (expert hunters)
+Escape Key     To stop hunting
+```
+
+The two blank key columns are where the **numeric-keypad diagrams** go — the
+3×3 grid of keys with arrows that sits in `TERRAIN.PCC` and that this folder
+earlier called "a movement diagram, deliberately not scenery" while using the
+rest of the same sheet as trees along the trail. It is the hunting screen's
+own artwork from end to end: the keypads for the instructions, the scrub and
+trees for the field. And **`[0x16B2]` is the tick counter** that the `INT 1Ch`
 handler increments, zeroed immediately before the mini-game and with the game's
 handler installed only for its duration. The timer traced
 [earlier](#the-clock-which-is-nine-lines-long) exists for this.
@@ -1570,10 +1589,12 @@ all recorded rather than replaced with a drawing:
   takes `SEG:OFF` and pushes a far return frame.
 - With that fixed the routine ran four instructions and returned, correctly:
   `cmp word [0x1842], 0` with no bullets. comrun now has `--poke`.
-- With 100 bullets poked it runs 200,064 instructions and reaches `0x786E` —
-  the call that draws the terrain — then leaves the image into heap-resident
-  code and faults. Calling into the middle of a program skips state its own
-  path would have set up.
+- With 100 bullets poked it runs 200,064 instructions, reaches `0x628A` and
+  gets 25 instructions into the instructions screen before leaving the image.
+  The last thing it does is `lcall ui:0x1789` — the multi-line text routine —
+  with *"To start or stop walking…"*. That call goes into heap-resident code
+  and faults there. The same routine draws the main menu without trouble, so
+  what breaks is particular to this path, and it has not been isolated.
 - Driving the game to the hunting screen by injected keystrokes did not
   converge in four runs; it gets as far as buying oxen and stops at the store.
 
