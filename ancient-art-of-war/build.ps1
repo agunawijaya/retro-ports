@@ -24,12 +24,14 @@ New-Item -ItemType Directory -Force recovered | Out-Null
 
 Write-Host "1/3  reconstructing" -ForegroundColor Cyan
 python (Join-Path $Toolkit "tools\comrec.py") $Original `
+    --max-relocations 128 `
     --out recovered\ancient-art-of-war.asm --map recovered\ancient-art-of-war.map --nasm $Nasm
 if ($LASTEXITCODE -ne 0) { throw "comrec.py failed" }
 
 Write-Host "2/3  applying names" -ForegroundColor Cyan
 python (Join-Path $Toolkit "tools\annotate.py") `
-    --asm recovered\ancient-art-of-war.asm --out recovered\ancient-art-of-war-named.asm --symbols symbols.json
+    --asm recovered\ancient-art-of-war.asm `
+    --out recovered\ancient-art-of-war-named.asm --symbols symbols.json
 if ($LASTEXITCODE -ne 0) { throw "annotate.py failed" }
 
 Write-Host "3/3  rebuilding from the named source" -ForegroundColor Cyan

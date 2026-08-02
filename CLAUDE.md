@@ -40,15 +40,23 @@ Each brief names the one thing to do first.
 | [dam-busters](dam-busters/) | `D3657960…` | 12.3% | 124 bytes past the load image; the build drops them unless it is told not to |
 | [jungle-hunt](jungle-hunt/) | `ECF3BD75…` | 8.8% | `hunt.com` is a PTL Club **crack loader**; the game is `hunt.ptl` |
 | [moon-patrol](moon-patrol/) | `FF12627C…` | **0.5%** | control leaves the entry almost at once and the walk cannot follow |
-| [alley-cat](alley-cat/) | **no** | — | 9 relocations |
-| [ancient-art-of-war](ancient-art-of-war/) | **no** | 61% flat | 67 relocations, and a declared load image of 12 KB in a 100 KB file |
+| [alley-cat](alley-cat/) | `4979C886…` | 41.4% | 9 relocations — one over a threshold set for Karateka |
+| [ancient-art-of-war](ancient-art-of-war/) | `B26326CE…` | 73.2% | 67 relocations; a 12 KB load image with 87 KB behind it |
 
-**The line is relocations.** comrec takes the `.COM` route through an MZ only
-when there are none — one segment, so the image is a flat `.COM` and the header
-goes back on at the end. The two MZ files with zero relocations rebuild exactly;
-the two with relocations do not, and nothing here has ever been reconstructed
-through a relocation-aware path. That is the most valuable missing capability
-in the toolkit, and `knowledge/07-extended-reconstruction.md` has the ladder.
+All seven rebuild. The last two only after a correction worth keeping.
+
+They were first written up here as *"comrec takes the `.COM` route only when
+there are no relocations"*. That was an inference from four games, and the code
+says something else: the limit was `nreloc > 8`, chosen when Karateka's four
+was the only example. **Alley Cat missed it by one relocation.** Raising the
+limit, both rebuild byte-identically and decode 41% and 73%.
+
+`comrec.py` now takes `--max-relocations N`, raised per game in its own
+`build.ps1` rather than widened for everyone — because the guard protects
+against something real. **A byte-identical rebuild does not prove the address
+base was right.** Frogger rebuilds exactly while reading half its code from the
+wrong segment, and the only symptom is a decode rate that stays low for no
+visible reason. Hash first, decode rate second, and neither alone is enough.
 
 For the other five: every call target, every tail-call entry and every
 bracketed constant in the listing is named or explicitly accounted for, and

@@ -2,7 +2,7 @@
 
 Bill Williams for Synapse Software, published by Datasoft.
 
-**It does not rebuild yet.** comrec's `.COM` route through an MZ needs a file with no relocations, and this one has them. See [BRIEF.md](BRIEF.md); that is the work. **Nothing here has been read yet.** What exists is the triage and the
+**It rebuilds byte-identically** from a copy you own — checked on every run, once `comrec.py` was given a `--max-relocations` flag. See [BRIEF.md](BRIEF.md). **Nothing here has been read yet.** What exists is the triage and the
 scaffolding: a `build.ps1` that reconstructs the game from a copy you own and
 checks the result byte for byte, an empty `symbols.json`, and
 [BRIEF.md](BRIEF.md) with what the triage found and where to start.

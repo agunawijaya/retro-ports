@@ -21,23 +21,29 @@ yet. Karateka is an MZ, but a single-segment one that takes the `.COM` route.
 This is the first that may genuinely need relocations applied, and finding
 that out is the first job.
 
-## Tested on 2026-08-02 — and it does not build yet
+## Tested on 2026-08-02
 
-`build.ps1` **fails**, and the failure is the finding.
+`build.ps1` reports **BYTE-IDENTICAL**, `4979C886…`, at **41.4% decoded** —
+and only after the tool was changed, which is the part worth reading.
 
-comrec takes the `.COM` route through an MZ only when the file has **no
-relocations**: no relocations means one segment, and one segment means the
-image can be treated as a flat `.COM` and the header put back on the way out.
-This file has nine. comrec writes no `.mzheader`, and the build stops with a
-message saying so.
+The first attempt failed with "comrec.py did not write an MZ header", and that
+was written up here as *"the .COM route needs a file with no relocations, and
+this one has nine."* **That was wrong.** The rule in `comrec.py` was
+`if nreloc > 8: return None` — not zero, eight. Alley Cat missed it **by one
+relocation**, against a threshold picked when Karateka (four relocations) was
+the only example anybody had.
 
-Of the four MZ games set up in this session, the two with zero relocations
-(The Dam Busters, Rampage) rebuild byte-identically through that route and the
-two with relocations (this and The Ancient Art of War) do not. **That is the
-line, measured.** Nothing in this collection has been reconstructed through a
-relocation-aware path, and building one is the interesting work here —
-knowledge/07-extended-reconstruction.md is where the ladder for it is written
-down.
+Raising the limit and running it: byte-identical, 41.4%. The nine relocations
+were never the obstacle.
+
+`comrec.py` now takes `--max-relocations N`, and `build.ps1` here passes 16.
+The limit is raised per game and on purpose rather than widened for everyone,
+because the guard is protecting against something real: **a byte-identical
+rebuild does not prove the address base was right.** Frogger rebuilds exactly
+while addressing half its code from the wrong segment, and the only symptom is
+a decode rate that stays low for no visible reason. 41.4% is plausible for a
+55 KB game; if it had come out at 5%, the hash would still have matched and the
+reading would still have been wrong.
 
 ## The first thing to do
 

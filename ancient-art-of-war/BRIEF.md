@@ -25,19 +25,30 @@ There is also an EGA version in the collection
 is a shortcut worth remembering: whatever differs between them is display
 code, and whatever matches is everything else.
 
-## Tested on 2026-08-02 — and it does not build yet
+## Tested on 2026-08-02
 
-`build.ps1` **fails**: 67 relocations, so comrec writes no `.mzheader` and the
-`.COM` route does not apply. Same line as Alley Cat — zero relocations go
-through, anything else does not.
+`build.ps1` reports **BYTE-IDENTICAL**, `B26326CE…`, and decodes **73.2% of the
+12,256-byte load image** — plus the 87,072 trailing bytes put back on the end,
+which the build now says out loud when it does it.
 
-**But it decoded 61% of the file anyway**, 60,942 of 99,840 bytes, reading it
-flat. That is worth pausing on, because the triage above says the declared load
-image is only 12,256 bytes. If nearly two thirds of the whole file disassembles
-as plausible instructions, then the 87 KB of "trailing data" is **mostly code**
-— overlays or paged segments, not artwork. My own guess in the section above
-said levels and scenario data. The measurement disagrees with the guess, and
-the measurement wins.
+This took two corrections, both of them mine.
+
+**First**, the failure was written up as "67 relocations, so the `.COM` route
+does not apply". The actual rule was `nreloc > 8`, a threshold set when
+Karateka's four was the only data point. `comrec.py` takes
+`--max-relocations N` now and this build passes 128.
+
+**Second**, and worse: when the route was refused, comrec fell back to reading
+the whole 99,840-byte file flat and decoded 61% of it. That was written up here
+as evidence that *"the 87 KB of trailing data is mostly code, not artwork"* —
+correcting an earlier guess with a measurement. But the 61% came from reading
+the file at the wrong base, over a region DOS never loads. It measured nothing
+about the trailing data. **The correction was as unfounded as the guess it
+replaced**, and it read as more authoritative for having a number attached.
+
+What is actually known: the load image is 12,256 bytes and 73.2% of it comes
+back as instructions. What the other 87,072 bytes are is **open**, and the way
+to find out is to read the 12 KB and see how it reaches them.
 
 ## The first thing to do
 

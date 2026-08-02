@@ -24,6 +24,7 @@ New-Item -ItemType Directory -Force recovered | Out-Null
 
 Write-Host "1/3  reconstructing" -ForegroundColor Cyan
 python (Join-Path $Toolkit "tools\comrec.py") $Original `
+    --max-relocations 16 `
     --out recovered\alley-cat.asm --map recovered\alley-cat.map --nasm $Nasm
 if ($LASTEXITCODE -ne 0) { throw "comrec.py failed" }
 
