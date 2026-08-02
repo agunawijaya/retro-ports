@@ -28,7 +28,7 @@ shorter working reference you come back to.
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
-| game logic as code | **the chance model is open** — all 29 `Random` sites located, the casualty routine traced; the store, illness inputs and pace/rations are not |
+| game logic as code | **chance model and store done** — 29 `Random` sites located, the casualty routine traced, every store price read; illness inputs and pace/rations are not |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | documents | [four](docs/), written from the above |
 
@@ -305,9 +305,22 @@ obvious guess, since they are contiguous, but the first address is not in the
 program as a literal either. **How the store's text is addressed is genuinely
 unknown**, and it is the most concrete unsolved thing in the folder.
 
-Known store numbers, all from the running game rather than the code: oxen
-**$40 a yoke** (two animals), food **$0.20 a pound** capped at 2,000, the ferry
-**$5.00**. Clothing, ammunition and spare parts are three keystrokes away.
+**The store is fully priced**, and it was never hidden — the game states every
+price in the shopkeeper's dialogue, which walks straight out of the file from
+`0x0DE5C`:
+
+| | | |
+|---|---|---|
+| oxen | $40 a yoke, 2 oxen per yoke | max 20 oxen |
+| food | 20 cents a pound | max 2,000 pounds |
+| clothing | $10.00 a set | — |
+| ammunition | $2.00 a box of 20 bullets | — |
+| spare parts | wheel, axle, tongue, $10 each | max 3 |
+
+The ferry, elsewhere, is $5.00. Only food's price is *also* a `Real` constant in
+the code (`0.2` at `0x0E210`); the other four are integer arithmetic, which is
+why searching for a price table finds nothing — there is no table, there are
+five routines. Oxen and food were confirmed against the running game.
 
 **Redirection does not work on this program.** `OREGON.EXE > OUT.TXT` produces
 an empty file every time, because `uses Crt` replaces the driver behind `Output`

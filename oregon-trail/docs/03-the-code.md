@@ -1047,11 +1047,46 @@ visible: a fact (the strings exist), a stronger fact (nothing references them
 the usual way), a demonstration that the conclusion cannot be "they are unused"
 (the screen appears), and a hypothesis that has not been tested.
 
-**What is still open.** Clothing, ammunition and spare-part prices; how the
-store's text is addressed; the illness model's inputs; and how pace combines
-with rations. Both routes are open, and the cheap one is the emulator — extend
-the key sequence in [the game's CLAUDE.md](../CLAUDE.md) and photograph the
-answer.
+### And then the shopkeeper simply tells you
+
+The prices were never hidden. Walking the block forward from the oxen sentence,
+treating each byte as a length and reading that many characters, the whole store
+falls out of the file — because **the game states every price in its own
+dialogue**:
+
+| department | price | limit |
+|---|---|---|
+| **Oxen** | `$40 a yoke`, and *"There are 2 oxen in a yoke"* | `You may only take 20 oxen` |
+| **Food** | `20 cents a pound` | `Your wagon may only carry 2000 pounds of food` |
+| **Clothing** | `Each set is $10.00` | — |
+| **Ammunition** | `boxes of 20 bullets. Each box costs $2.00` | — |
+| **Spare parts** | wheel, axle and tongue, `$10 each` | `Your wagon may only carry 3 wagon …` |
+
+with the shopkeeper's advice attached to each: at least 3 yoke of oxen, 200
+pounds of food per person, 2 sets of clothes per person, and *"I see that you
+have 5 people in all."*
+
+Two things are worth taking from that.
+
+**The recommendation is not the rule.** *"I recommend at least 3 yoke"* is
+advice; the limit is 20 oxen. A modern game would enforce the recommendation or
+grey out the choice. This one lets you leave Independence with one yoke and a
+hundred pounds of flour, and the consequences arrive later, on the trail. That
+is a design decision about where difficulty lives, and it is the reason the
+game is remembered.
+
+**Only the food price is also a constant in the code.** The `0.2` at `0x0E210`
+duplicates what the text says. The others do not appear as `Real` literals at
+all, which means the arithmetic for them is integer — dollars are whole numbers
+for oxen, clothing, ammunition and parts, and only food needs a fraction of one.
+That is why the search for a price table found nothing: there is no table,
+there are five separate routines, and four of them never touch floating point.
+
+Cross-checked against the running game for two of the five — oxen and food —
+which is the pair the emulator was driven far enough to see.
+
+**What is still open.** How the store's text is addressed, the illness model's
+inputs, and how pace combines with rations.
 
 ## Where the artwork is loaded from
 

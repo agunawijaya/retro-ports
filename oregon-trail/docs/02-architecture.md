@@ -816,7 +816,10 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    constants are read off, and the routine that decides who dies —
    `ui+0x30B6`, one procedure taking the odds as an argument, five callers — is
    traced ([document three](03-the-code.md#one-routine-kills-people-and-it-takes-the-odds-as-an-argument)).
-   The party is an array of eleven-byte records at `DS:0x17FE`. The scoring is partly read —
+   The party is an array of eleven-byte records at `DS:0x17FE`. **The store is
+   fully priced** — oxen $40 a yoke, food 20¢ a pound, clothing $10 a set,
+   ammunition $2 a box of 20, spare parts $10 each — because the game states
+   every price in its own dialogue. The scoring is partly read —
    the rates are one point per 50 bullets, per 25 pounds of food and per $5,
    and the profession multiplier is in the strings
    ([document three](03-the-code.md#the-first-numbers-out-of-the-simulation)).
