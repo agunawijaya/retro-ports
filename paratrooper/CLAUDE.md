@@ -28,8 +28,7 @@ reading — 5 routines and 11 globals, each with the evidence for
 its name — and the toolkit's `annotate.py` applies it.
 
 ```powershell
-.uild.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path	o
-asm.exe
+.\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
 ```
 
 Three steps: reconstruct, name, **rebuild and compare**. Names go in as
