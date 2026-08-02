@@ -37,7 +37,7 @@
     ],
     "0x00025": [
       "store_dat_handle",
-      ""
+      "2 instructions; 0 callers; touches dat_file_handle"
     ],
     "0x00035": [
       "int80_disk_shim",
@@ -49,43 +49,43 @@
     ],
     "0x0042A": [
       "load_asset_read_chunk",
-      ""
+      "7 instructions; 0 callers; touches req_sector_count"
     ],
     "0x0043B": [
       "load_asset_setup_read",
-      ""
+      "4 instructions; 0 callers; touches read_retries"
     ],
     "0x00446": [
       "load_asset_reset_retries",
-      ""
+      "1 instructions; 0 callers; touches io_retry_count"
     ],
     "0x0044B": [
       "load_asset_do_read",
-      ""
+      "13 instructions; 0 callers; INT 0x13, 0x80; touches io_retry_count, read_retries"
     ],
     "0x00465": [
       "load_asset_read_ok",
-      ""
+      "2 instructions; 0 callers; touches req_sector_count"
     ],
     "0x0046B": [
       "load_asset_advance_buffer",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x0047B": [
       "load_asset_done",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x00483": [
       "load_asset_disk_error",
-      ""
+      "3 instructions; 0 callers; INT 0x10"
     ],
     "0x0048A": [
       "disk_error_print",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x0048D": [
       "disk_error_hang",
-      ""
+      "5 instructions; 0 callers; INT 0x10"
     ],
     "0x00540": [
       "init",
@@ -93,15 +93,15 @@
     ],
     "0x00580": [
       "init_vectors_and_video",
-      ""
+      "35 instructions; 0 callers; touches int09_vector, int1c_vector, crtc_value, kbd_head; calls sound_enable_speaker"
     ],
     "0x005F8": [
       "store_is_pcjr",
-      ""
+      "17 instructions; 0 callers; INT 0x10; port dx; touches is_pcjr, bios_equipment_word, joystick_buttons, keys_down_bitmap"
     ],
     "0x00631": [
       "init_pick_mode",
-      ""
+      "8 instructions; 0 callers; touches display_mode"
     ],
     "0x00647": [
       "select_display_mode",
@@ -113,31 +113,31 @@
     ],
     "0x0067C": [
       "load_tables_mode0",
-      ""
+      "33 instructions; 0 callers; touches ptr_table_b, sprite_table_alt_ptr, ptr_table_a, popup_table_a; calls load_asset_from_stream, remap_table_bytes"
     ],
     "0x006C8": [
       "load_tables_other",
-      ""
+      "17 instructions; 0 callers; touches sprite_table_alt_ptr, ptr_table_a, ptr_table_b, popup_table_a; calls load_asset_from_stream"
     ],
     "0x006FB": [
       "load_common_tables",
-      ""
+      "24 instructions; 0 callers; touches bar_sprite_table, sprite_table_ptr, sound_table_ptr, text_target_segment; calls load_asset_from_stream"
     ],
     "0x0073E": [
       "fill_frame_ptrs_40bc",
-      ""
+      "7 instructions; 0 callers; calls select_sprite_ptr"
     ],
     "0x00750": [
       "fill_frame_ptrs_40c6",
-      ""
+      "8 instructions; 0 callers; calls select_sprite_ptr"
     ],
     "0x00764": [
       "fill_frame_ptrs_40b0",
-      ""
+      "8 instructions; 0 callers; calls select_sprite_ptr"
     ],
     "0x00778": [
       "fill_frame_ptrs_40b6",
-      ""
+      "8 instructions; 0 callers; calls select_sprite_ptr"
     ],
     "0x0078C": [
       "init_entity_slots",
@@ -145,63 +145,63 @@
     ],
     "0x007B5": [
       "reset_disk_and_timer",
-      ""
+      "9 instructions; 0 callers; INT 0x13; port 0x40; calls reset_all_scores"
     ],
     "0x007C8": [
       "attract_score_page",
-      ""
+      "17 instructions; 0 callers; touches key_capture_mode, screen_index_flags; calls read_key, update_high_score"
     ],
     "0x007F9": [
       "attract_check_key",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x007FD": [
       "mode_wait_for_start",
-      ""
+      "9 instructions; 0 callers; touches key_capture_mode; calls load_and_show_screen, read_key"
     ],
     "0x00813": [
       "mode_attract_step",
-      ""
+      "9 instructions; 0 callers; touches screen_index_flags, joy_move_dir, display_mode; calls sound_stop_all"
     ],
     "0x00830": [
       "attract_config_screen",
-      ""
+      "11 instructions; 0 callers; touches screen_config, key_capture_mode, draw_target_segment, is_pcjr; calls clear_text_screen, print_string_at, set_video_mode"
     ],
     "0x00855": [
       "menu_draw_markers",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x0085E": [
       "menu_marker_row",
-      ""
+      "14 instructions; 0 callers; touches is_pcjr"
     ],
     "0x00881": [
       "menu_marker_offset",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x00891": [
       "menu_marker_write",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x00899": [
       "menu_wait_key",
-      ""
+      "5 instructions; 0 callers; calls read_key"
     ],
     "0x008A5": [
       "menu_check_start",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x008AC": [
       "menu_check_f1",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x008B3": [
       "menu_check_joystick",
-      ""
+      "9 instructions; 0 callers; touches input_enabled, joystick_sample_count; calls calibrate_joystick"
     ],
     "0x008CD": [
       "menu_restart",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x008D0": [
       "menu_lookup_option",
@@ -209,23 +209,23 @@
     ],
     "0x008DC": [
       "menu_scan_row",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x008E9": [
       "menu_next_row",
-      ""
+      "9 instructions; 0 callers; touches is_pcjr"
     ],
     "0x008FD": [
       "menu_apply_option",
-      ""
+      "8 instructions; 0 callers; touches input_enabled; calls menu_marker_addr"
     ],
     "0x0091A": [
       "menu_marker_addr",
-      ""
+      "9 instructions; 1 caller; touches menu_marker_table"
     ],
     "0x00933": [
       "menu_marker_halve",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x00936": [
       "load_and_show_screen",
@@ -237,31 +237,31 @@
     ],
     "0x00987": [
       "high_score_compare_loop",
-      ""
+      "5 instructions; 0 callers"
     ],
     "0x0098F": [
       "high_score_next_digit",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x00993": [
       "high_score_store",
-      ""
+      "5 instructions; 0 callers; touches high_score_bcd, high_score_digit"
     ],
     "0x0099F": [
       "reset_all_scores",
-      ""
+      "7 instructions; 2 callers; touches score_bcd_hi, score_bcd_lo, p1_saved_score, p2_saved_score"
     ],
     "0x009C1": [
       "new_game_capture_on",
-      ""
+      "2 instructions; 0 callers; touches key_capture_mode"
     ],
     "0x009C9": [
       "new_game_capture_off",
-      ""
+      "1 instructions; 0 callers; touches key_capture_mode"
     ],
     "0x009CE": [
       "new_game_reset",
-      ""
+      "18 instructions; 0 callers; touches p2_saved_round_param, p2_saved_page_index, p2_saved_block, current_player; calls reset_all_scores"
     ],
     "0x00A28": [
       "seed_from_bios_clock",
@@ -277,19 +277,19 @@
     ],
     "0x00AD4": [
       "enable_pcjr_chip",
-      ""
+      "1 instructions; 0 callers; calls sound_enable_pcjr"
     ],
     "0x00AD7": [
       "sound_ready_chime",
-      ""
+      "3 instructions; 0 callers; calls start_sound_effect"
     ],
     "0x00ADE": [
       "disable_sound",
-      ""
+      "2 instructions; 0 callers; calls sound_disable"
     ],
     "0x00AE3": [
       "next_round_entry",
-      ""
+      "3 instructions; 0 callers; calls sound_stop_all"
     ],
     "0x00AE8": [
       "show_next_page",
@@ -297,59 +297,59 @@
     ],
     "0x00AFE": [
       "page_wrap_check",
-      ""
+      "5 instructions; 0 callers; touches page_index"
     ],
     "0x00B0D": [
       "page_count_screens",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x00B13": [
       "page_count_next",
-      ""
+      "4 instructions; 0 callers; touches round_param_index"
     ],
     "0x00B20": [
       "page_advance",
-      ""
+      "4 instructions; 0 callers; touches page_index; calls load_page_screen"
     ],
     "0x00B2B": [
       "load_page_screen",
-      ""
+      "10 instructions; 2 callers; touches key_pending, tick_countdown, page_index, page_screen_table"
     ],
     "0x00B4C": [
       "page_screen_compare",
-      ""
+      "7 instructions; 0 callers; touches screen_index_flags"
     ],
     "0x00B62": [
       "page_screen_load",
-      ""
+      "11 instructions; 0 callers; touches screen_aux_ptr, staging_segment, asset_buffer, screen_config; calls load_asset_from_stream, unpack_screen"
     ],
     "0x00B86": [
       "page_screen_wait",
-      ""
+      "3 instructions; 0 callers; touches key_pending"
     ],
     "0x00B8F": [
       "page_screen_variant",
-      ""
+      "9 instructions; 0 callers; touches display_mode, screen_index_flags"
     ],
     "0x00BA5": [
       "page_screen_transform",
-      ""
+      "18 instructions; 0 callers; touches staging_segment; calls transform_screen_rows"
     ],
     "0x00BD2": [
       "transform_screen_rows",
-      ""
+      "11 instructions; 1 caller; touches indirect_call_vector"
     ],
     "0x00BEA": [
       "on_player_death",
-      ""
+      "4 instructions; 0 callers; calls sound_stop_all"
     ],
     "0x00BF1": [
       "death_pause_1",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x00BF3": [
       "death_pause_2",
-      ""
+      "9 instructions; 0 callers; touches lives, two_player_flag; calls swap_player_context"
     ],
     "0x00C10": [
       "restart_round_after_death",
@@ -357,11 +357,11 @@
     ],
     "0x00C27": [
       "reload_round_screen",
-      ""
+      "2 instructions; 0 callers; calls load_page_screen"
     ],
     "0x00C2C": [
       "show_game_over",
-      ""
+      "7 instructions; 0 callers; touches two_player_flag, current_player; calls print_string_at, putchar_bios"
     ],
     "0x00C41": [
       "game_over_message",
@@ -369,15 +369,15 @@
     ],
     "0x00C4C": [
       "game_over_wait",
-      ""
+      "5 instructions; 0 callers; touches key_pending, two_player_flag"
     ],
     "0x00C5D": [
       "game_over_try_other_player",
-      ""
+      "4 instructions; 0 callers; touches lives; calls swap_player_context"
     ],
     "0x00C6A": [
       "game_over_other_continues",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x00C6C": [
       "begin_round",
@@ -389,39 +389,39 @@
     ],
     "0x00CBF": [
       "show_player_banner",
-      ""
+      "9 instructions; 0 callers; touches two_player_flag, current_player, key_pending, tick_countdown; calls print_string_at, putchar_bios"
     ],
     "0x00CDE": [
       "banner_wait",
-      ""
+      "2 instructions; 0 callers; touches key_pending"
     ],
     "0x00CE5": [
       "init_entity_defaults",
-      ""
+      "4 instructions; 0 callers; touches two_player_flag"
     ],
     "0x00CF2": [
       "init_entity_field7",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x00D00": [
       "init_entity_state",
-      ""
+      "10 instructions; 0 callers; touches round_param_index"
     ],
     "0x00D1A": [
       "seed_bar_entities",
-      ""
+      "15 instructions; 0 callers; touches round_spawn_table"
     ],
     "0x00D38": [
       "seed_entity_velocity",
-      ""
+      "19 instructions; 0 callers; touches int03_vector, bar_direction, cur_direction"
     ],
     "0x00D63": [
       "place_entity_on_bar",
-      ""
+      "23 instructions; 0 callers; touches bar_row_offset, bar_geometry, cur_direction"
     ],
     "0x00D97": [
       "store_entity_column",
-      ""
+      "40 instructions; 0 callers; touches cur_direction, entity_init_table, bar_limit_source, bar_limit_table; calls set_entity_sprite"
     ],
     "0x00DF6": [
       "setup_bar_geometry",
@@ -429,7 +429,7 @@
     ],
     "0x00E1C": [
       "bar_geometry_offset",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x00E23": [
       "read_page_param",
@@ -441,7 +441,7 @@
     ],
     "0x00E60": [
       "init_player_position",
-      ""
+      "23 instructions; 0 callers; touches player_start_x, player_top_pos, player_start_y, player_bottom_pos; calls lookup_ptr_pair"
     ],
     "0x00EA3": [
       "init_free_list",
@@ -449,11 +449,11 @@
     ],
     "0x00EAF": [
       "link_free_node",
-      ""
+      "11 instructions; 0 callers; touches page_index, page_theme_table, is_pcjr"
     ],
     "0x00ED1": [
       "store_theme_table_ptr",
-      ""
+      "13 instructions; 0 callers; touches entity_tick_reload, theme_table_ptr, player_prev_top_flags, player_prev_bottom_flags"
     ],
     "0x00F08": [
       "print_round_number",
@@ -461,47 +461,47 @@
     ],
     "0x00F14": [
       "set_round_cursor",
-      ""
+      "8 instructions; 0 callers; INT 0x10; touches round_number"
     ],
     "0x00F25": [
       "round_tens_loop",
-      ""
+      "8 instructions; 0 callers; calls print_decimal_digit"
     ],
     "0x00F34": [
       "print_round_units",
-      ""
+      "6 instructions; 0 callers; touches round_number; calls print_decimal_digit"
     ],
     "0x00F42": [
       "set_pickup_budget",
-      ""
+      "6 instructions; 0 callers; touches pickup_budget, round_number"
     ],
     "0x00F50": [
       "clamp_spawn_high",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x00F56": [
       "store_spawn_countdown",
-      ""
+      "11 instructions; 0 callers; touches pickup_spawn_countdown, page_index, page_theme_table"
     ],
     "0x00F71": [
       "theme_base_wrap",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x00F75": [
       "store_theme_base",
-      ""
+      "8 instructions; 0 callers; touches theme_sprite_base, is_pcjr; calls draw_score_display, start_sound_effect"
     ],
     "0x00F8D": [
       "halve_late_rounds",
-      ""
+      "3 instructions; 0 callers; touches round_number"
     ],
     "0x00F96": [
       "store_intro_delay",
-      ""
+      "1 instructions; 0 callers; touches intro_delay_count"
     ],
     "0x00F99": [
       "tick_bar_phase",
-      ""
+      "9 instructions; 0 callers; touches bar_phase, cycle_countdown, cycle_reload"
     ],
     "0x00FBD": [
       "check_pause",
@@ -509,23 +509,23 @@
     ],
     "0x00FCC": [
       "pause_wait_key",
-      ""
+      "2 instructions; 0 callers; touches swallow_next_key"
     ],
     "0x00FD4": [
       "tick_popup_divider",
-      ""
+      "3 instructions; 0 callers; touches popup_tick_divider"
     ],
     "0x00FDE": [
       "reload_popup_divider",
-      ""
+      "4 instructions; 0 callers; touches popup_tick_divider, is_pcjr"
     ],
     "0x00FF2": [
       "check_popup_timer",
-      ""
+      "3 instructions; 0 callers; touches pickup_popup_timer"
     ],
     "0x00FFD": [
       "draw_popup",
-      ""
+      "2 instructions; 0 callers; touches draw_target_segment, text_target_segment"
     ],
     "0x01007": [
       "tick_pickup_popup",
@@ -533,39 +533,39 @@
     ],
     "0x0102D": [
       "clear_entity_serve_bit",
-      ""
+      "5 instructions; 0 callers"
     ],
     "0x01039": [
       "draw_popup_frame",
-      ""
+      "8 instructions; 0 callers; touches popup_frame_index, popup_frames, theme_sprite_base; calls sprite_ptr_from_index"
     ],
     "0x01051": [
       "popup_row_even",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x01062": [
       "popup_row_odd",
-      ""
+      "5 instructions; 0 callers"
     ],
     "0x0106E": [
       "advance_popup_frame",
-      ""
+      "8 instructions; 0 callers; touches popup_frame_index, theme_sprite_base"
     ],
     "0x01084": [
       "popup_frame_toggle",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x01086": [
       "store_popup_frame",
-      ""
+      "1 instructions; 0 callers; touches popup_frame_index"
     ],
     "0x0108A": [
       "erase_bar_entities",
-      ""
+      "12 instructions; 0 callers; touches staging_segment, text_target_segment, bar_index_x2, entity_array_ptr"
     ],
     "0x010B1": [
       "erase_entity_check",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x010BA": [
       "erase_entity_16x16",
@@ -573,7 +573,7 @@
     ],
     "0x0114E": [
       "erase_entity_next",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x01158": [
       "update_entity_states",
@@ -585,23 +585,23 @@
     ],
     "0x0116B": [
       "entity_check_active",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x01173": [
       "entity_check_moving",
-      ""
+      "5 instructions; 0 callers"
     ],
     "0x01180": [
       "entity_tick_expired",
-      ""
+      "5 instructions; 0 callers; touches entity_tick_reload"
     ],
     "0x0118F": [
       "entity_check_flags",
-      ""
+      "9 instructions; 0 callers"
     ],
     "0x011A7": [
       "entity_emit_sprite",
-      ""
+      "3 instructions; 0 callers; calls set_entity_sprite"
     ],
     "0x011AF": [
       "step_entity_animation",
@@ -609,11 +609,11 @@
     ],
     "0x011CE": [
       "entity_set_return_timer",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x011D6": [
       "entity_tick_frame",
-      ""
+      "7 instructions; 0 callers; touches bar_index_x2"
     ],
     "0x011EB": [
       "advance_entity_position",
@@ -625,15 +625,15 @@
     ],
     "0x01219": [
       "entity_no_action",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x0121C": [
       "entity_bound_forward",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x01223": [
       "entity_past_bound",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x0122C": [
       "apply_knockback",
@@ -641,11 +641,11 @@
     ],
     "0x01260": [
       "knockback_store_timer",
-      ""
+      "24 instructions; 0 callers; touches bar_index_x2, bar_direction, bar_geometry"
     ],
     "0x012A2": [
       "knockback_apply",
-      ""
+      "18 instructions; 0 callers; touches page_index, page_theme_table; calls set_entity_sprite"
     ],
     "0x012D3": [
       "knockback_score",
@@ -657,31 +657,31 @@
     ],
     "0x01333": [
       "death_place_player",
-      ""
+      "27 instructions; 0 callers; touches bar_row_top, bar_row_bottom, int03_vector, entity_array_ptr; calls repaint_playfield"
     ],
     "0x01379": [
       "death_clear_velocities",
-      ""
+      "5 instructions; 0 callers; touches int03_vector, player_velocity"
     ],
     "0x0138A": [
       "death_redraw_bar",
-      ""
+      "17 instructions; 0 callers; touches staging_segment, text_target_segment, entity_array_ptr; calls copy_32px_unmasked"
     ],
     "0x013C3": [
       "death_erase_entities",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x013CD": [
       "death_erase_entity",
-      ""
+      "81 instructions; 0 callers"
     ],
     "0x01461": [
       "death_next_entity",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x0146B": [
       "death_restore_ds",
-      ""
+      "1 instructions; 0 callers; touches text_target_segment"
     ],
     "0x01470": [
       "update_moving_entities",
@@ -689,23 +689,23 @@
     ],
     "0x01478": [
       "move_entity_slot",
-      ""
+      "13 instructions; 0 callers; touches int03_vector; calls blit_sprite_16x16"
     ],
     "0x014A0": [
       "move_entity_next",
-      ""
+      "25 instructions; 0 callers; touches death_bar_index_x2, int03_vector, bar_sprite_pos, bar_sprite_ptr; calls blit_sprite_24x22, draw_sprite_32x16"
     ],
     "0x014F2": [
       "death_copy_screen_row",
-      ""
+      "15 instructions; 0 callers; touches is_pcjr"
     ],
     "0x0151D": [
       "death_copy_delay",
-      ""
+      "8 instructions; 0 callers; touches bar_bound_table"
     ],
     "0x01532": [
       "death_hand_off",
-      ""
+      "4 instructions; 0 callers; touches key_capture_mode; calls play_rom_noise, repaint_playfield"
     ],
     "0x01541": [
       "tick_drink_timer",
@@ -713,23 +713,23 @@
     ],
     "0x01549": [
       "drink_reload_base",
-      ""
+      "4 instructions; 0 callers; touches is_pcjr"
     ],
     "0x01555": [
       "drink_check_multiple",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x0155C": [
       "drink_mod20_loop",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x01564": [
       "store_drink_timer",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x01570": [
       "finish_drink",
-      ""
+      "4 instructions; 0 callers; calls set_entity_sprite"
     ],
     "0x0157E": [
       "alloc_node_to_bar_list",
@@ -737,7 +737,7 @@
     ],
     "0x015B0": [
       "init_new_node_fields",
-      ""
+      "18 instructions; 0 callers; touches pickup_spawn_countdown, pickup_budget, pickup_spawn_reload, pickup_popup_timer; calls erase_pickup"
     ],
     "0x015F4": [
       "spawn_pickup",
@@ -745,11 +745,11 @@
     ],
     "0x0161E": [
       "entity_state_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x01620": [
       "step_entity_frame",
-      ""
+      "11 instructions; 0 callers; touches frames_per_entity; calls set_entity_sprite"
     ],
     "0x0163F": [
       "entity_enter_carry",
@@ -757,15 +757,15 @@
     ],
     "0x01665": [
       "store_entity_frame_list",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x0166A": [
       "entity_enter_return",
-      ""
+      "8 instructions; 0 callers; touches entity_tick_reload; calls start_sound_effect"
     ],
     "0x01683": [
       "update_entity_next",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x0168D": [
       "update_served_mugs",
@@ -773,19 +773,19 @@
     ],
     "0x01696": [
       "served_mug_next",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x016A0": [
       "erase_served_mug",
-      ""
+      "61 instructions; 0 callers"
     ],
     "0x01712": [
       "advance_node_position",
-      ""
+      "8 instructions; 0 callers; touches entity_array_ptr"
     ],
     "0x0172B": [
       "node_check_active",
-      ""
+      "8 instructions; 0 callers"
     ],
     "0x01740": [
       "resolve_node_collision",
@@ -793,15 +793,15 @@
     ],
     "0x01770": [
       "collision_next_entity",
-      ""
+      "17 instructions; 0 callers; touches bar_index_x2, bar_bound_table; calls free_mug_and_repaint, mug_crash_animation"
     ],
     "0x017A0": [
       "served_mug_continue",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x017A5": [
       "switch_to_mug_list",
-      ""
+      "2 instructions; 0 callers; touches bar_index_x2"
     ],
     "0x017AE": [
       "update_returning_mugs",
@@ -809,47 +809,47 @@
     ],
     "0x017B8": [
       "erase_mug_node",
-      ""
+      "67 instructions; 0 callers; touches cycle_countdown"
     ],
     "0x0183F": [
       "check_player_catch",
-      ""
+      "18 instructions; 0 callers; touches player_bar, bar_index_x2, player_column, player_velocity; calls add_score, free_list_splice"
     ],
     "0x01879": [
       "mug_bound_check",
-      ""
+      "12 instructions; 0 callers; touches bar_index_x2, bar_bound_table"
     ],
     "0x0189A": [
       "mug_bound_left",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x018A3": [
       "mug_falls",
-      ""
+      "8 instructions; 0 callers; touches bar_index_x2, bar_direction; calls free_mug_and_repaint"
     ],
     "0x018BB": [
       "mug_fall_sprite",
-      ""
+      "1 instructions; 0 callers; calls select_sprite_ptr"
     ],
     "0x018BE": [
       "mug_fall_frame",
-      ""
+      "13 instructions; 0 callers; touches is_pcjr; calls blit_sprite_16x16"
     ],
     "0x018E5": [
       "mug_fall_delay",
-      ""
+      "6 instructions; 0 callers; calls mug_crash_animation"
     ],
     "0x018F1": [
       "mug_list_next",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x018F6": [
       "mug_list_done",
-      ""
+      "19 instructions; 0 callers; touches player_bar_prev, bar_index_x2, text_target_segment, draw_target_segment; calls draw_sprite_32x16"
     ],
     "0x0192C": [
       "erase_player_both_halves",
-      ""
+      "15 instructions; 0 callers; touches draw_target_segment; calls copy_32px_unmasked"
     ],
     "0x0195A": [
       "check_player_bar",
@@ -857,15 +857,15 @@
     ],
     "0x0196D": [
       "read_move_input",
-      ""
+      "8 instructions; 0 callers; touches input_enabled, joystick_y_low; calls read_joystick_axes"
     ],
     "0x01985": [
       "joy_check_down",
-      ""
+      "3 instructions; 0 callers; touches joystick_y_high"
     ],
     "0x0198E": [
       "store_joy_dir",
-      ""
+      "5 instructions; 0 callers; touches joy_move_dir, joystick_low"
     ],
     "0x0199E": [
       "joystick_axis_to_direction",
@@ -873,11 +873,11 @@
     ],
     "0x019A7": [
       "store_player_velocity",
-      ""
+      "6 instructions; 0 callers; touches int03_vector, key_capture_mode, captured_scancode"
     ],
     "0x019BC": [
       "player_input_done",
-      ""
+      "11 instructions; 0 callers; touches draw_target_segment, int03_vector; calls copy_32px_unmasked"
     ],
     "0x019DC": [
       "move_entity_along_bar",
@@ -885,47 +885,47 @@
     ],
     "0x01A09": [
       "entity_bound_left",
-      ""
+      "2 instructions; 0 callers; touches bar_limit_table"
     ],
     "0x01A10": [
       "entity_step",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x01A1A": [
       "entity_step_copy",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x01A29": [
       "entity_trail_row",
-      ""
+      "8 instructions; 0 callers"
     ],
     "0x01A3D": [
       "entity_activate",
-      ""
+      "8 instructions; 0 callers"
     ],
     "0x01A55": [
       "entity_sprite_direction",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x01A6B": [
       "check_serve_input",
-      ""
+      "5 instructions; 0 callers; touches input_enabled, joystick_buttons"
     ],
     "0x01A7E": [
       "serve_capture_mode",
-      ""
+      "4 instructions; 0 callers; touches key_capture_mode, captured_scancode"
     ],
     "0x01A8E": [
       "check_serve_key",
-      ""
+      "4 instructions; 0 callers; touches keys_down_hi"
     ],
     "0x01A99": [
       "serve_check_state",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x01AA2": [
       "start_serve",
-      ""
+      "34 instructions; 0 callers; touches bar_index_x2, bar_columns, move_step_count, slow_move_divider; calls copy_32px_unmasked, lookup_ptr_pair"
     ],
     "0x01B08": [
       "advance_frame_cursor",
@@ -933,23 +933,23 @@
     ],
     "0x01B16": [
       "serve_cursor_offset",
-      ""
+      "4 instructions; 0 callers; touches serve_target_pos"
     ],
     "0x01B22": [
       "serve_step_frame",
-      ""
+      "11 instructions; 0 callers; touches move_step_count, frame_list_cursor, slow_move_divider; calls lookup_ptr_pair"
     ],
     "0x01B4A": [
       "serve_step_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x01B4D": [
       "serve_release",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x01B56": [
       "serve_release_step",
-      ""
+      "7 instructions; 0 callers; touches move_step_count; calls lookup_ptr_pair"
     ],
     "0x01B6B": [
       "spawn_mug",
@@ -957,7 +957,7 @@
     ],
     "0x01BC2": [
       "mug_sprite_chosen",
-      ""
+      "39 instructions; 0 callers; touches bar_index_x2, bar_bound_table; calls draw_sprite_32x16, select_sprite_ptr"
     ],
     "0x01C1E": [
       "animate_player",
@@ -965,27 +965,27 @@
     ],
     "0x01C36": [
       "animate_player_tick",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x01C46": [
       "animate_player_frame",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x01C4A": [
       "player_frame_advance",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x01C55": [
       "animate_player_reset",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x01C5E": [
       "set_player_frame_pair",
-      ""
+      "5 instructions; 0 callers; calls lookup_ptr_pair"
     ],
     "0x01C6C": [
       "draw_player_lower",
-      ""
+      "1 instructions; 0 callers; calls draw_sprite_32x16"
     ],
     "0x01C6F": [
       "collect_pickup",
@@ -997,7 +997,7 @@
     ],
     "0x01CE0": [
       "entity_random_next",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x01CE5": [
       "render_frame",
@@ -1005,27 +1005,27 @@
     ],
     "0x01CE8": [
       "draw_entities_setup",
-      ""
+      "3 instructions; 0 callers; touches entity_array_ptr, text_target_segment"
     ],
     "0x01CF5": [
       "draw_entity_loop",
-      ""
+      "22 instructions; 0 callers; touches bar_index_x2, overlay_offset_table; calls blit_sprite_16x16, blit_sprite_8x8"
     ],
     "0x01D41": [
       "draw_entity_pop",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x01D42": [
       "draw_entity_next",
-      ""
+      "12 instructions; 0 callers; touches pickup_ptr; calls blit_pickup_sprite, select_sprite_ptr"
     ],
     "0x01D63": [
       "draw_bar_contents",
-      ""
+      "12 instructions; 0 callers; touches bar_sprite_pos, bar_index_x2, bar_sprite_ptr; calls blit_sprite_24x22, draw_mugs_for_bar, draw_sprite_32x16"
     ],
     "0x01D90": [
       "draw_player_now",
-      ""
+      "12 instructions; 0 callers; touches frame_list_cursor, serve_target_pos; calls blit_sprite_8x8, draw_sprite_32x16"
     ],
     "0x01DB5": [
       "flush_bar_band",
@@ -1033,11 +1033,11 @@
     ],
     "0x01DD2": [
       "flush_bar_row",
-      ""
+      "19 instructions; 0 callers; touches slow_move_divider, is_pcjr, move_step_count, frame_list_cursor"
     ],
     "0x01E11": [
       "poll_frame_input",
-      ""
+      "18 instructions; 0 callers; touches difficulty_milestone, key_pending, input_phase"
     ],
     "0x01E4D": [
       "tighten_difficulty",
@@ -1045,7 +1045,7 @@
     ],
     "0x01E5B": [
       "difficulty_cycle_fast",
-      ""
+      "2 instructions; 0 callers; touches cycle_reload"
     ],
     "0x01E63": [
       "difficulty_delay_boost",
@@ -1057,19 +1057,19 @@
     ],
     "0x01E7F": [
       "scan_active_entity",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x01E8A": [
       "round_cleared",
-      ""
+      "9 instructions; 0 callers; touches abort_sequence_flag; calls add_score, redraw_changed_digits, sound_stop_all and 1 more"
     ],
     "0x01EA6": [
       "round_clear_flash",
-      ""
+      "9 instructions; 0 callers; calls delay_busy_loop, repaint_playfield"
     ],
     "0x01EB7": [
       "round_clear_pause",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x01EBC": [
       "select_next_mode",
@@ -1077,11 +1077,11 @@
     ],
     "0x01ECA": [
       "mode_check_capture",
-      ""
+      "3 instructions; 0 callers; touches key_capture_mode"
     ],
     "0x01ED5": [
       "mode_jump",
-      ""
+      "4 instructions; 0 callers; touches captured_scancode, screen_index_flags; calls sound_stop_all"
     ],
     "0x01EE6": [
       "player_read_move_input",
@@ -1089,15 +1089,15 @@
     ],
     "0x01F04": [
       "player_move_from_keys",
-      ""
+      "2 instructions; 0 callers; touches input_flag_down"
     ],
     "0x01F0E": [
       "player_move_check",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x01F15": [
       "player_start_move",
-      ""
+      "4 instructions; 0 callers; touches frame_list_cursor, move_step_count, staging_segment, text_target_segment"
     ],
     "0x01F2C": [
       "advance_player_bar",
@@ -1105,7 +1105,7 @@
     ],
     "0x01F7D": [
       "player_bar_install",
-      ""
+      "41 instructions; 0 callers; touches int09_vector_seg, player_top_flags, int09_vector, bar_row_top; calls copy_32px_unmasked, lookup_ptr_pair"
     ],
     "0x02002": [
       "erase_pickup",
@@ -1113,7 +1113,7 @@
     ],
     "0x02043": [
       "erase_pickup_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02044": [
       "mug_crash_animation",
@@ -1121,19 +1121,19 @@
     ],
     "0x02069": [
       "restore_16x16_background",
-      ""
+      "3 instructions; 1 caller"
     ],
     "0x02072": [
       "restore_16x16_row",
-      ""
+      "11 instructions; 0 callers"
     ],
     "0x02090": [
       "draw_node_16x16",
-      ""
+      "10 instructions; 1 caller; calls blit_sprite_16x16, select_sprite_ptr"
     ],
     "0x020A8": [
       "free_mug_and_repaint",
-      ""
+      "6 instructions; 2 callers; calls free_list_splice, repaint_playfield"
     ],
     "0x020B3": [
       "repaint_playfield",
@@ -1141,67 +1141,67 @@
     ],
     "0x020E1": [
       "repaint_entity_loop",
-      ""
+      "9 instructions; 0 callers; calls blit_sprite_16x16"
     ],
     "0x02100": [
       "repaint_entity_next",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x02105": [
       "repaint_bars",
-      ""
+      "2 instructions; 0 callers; touches bar_index_x2"
     ],
     "0x0210F": [
       "repaint_bar_loop",
-      ""
+      "16 instructions; 0 callers; touches bar_index_x2, bar_sprite_pos, bar_sprite_ptr; calls blit_sprite_24x22, draw_mugs_for_bar, draw_sprite_32x16"
     ],
     "0x02146": [
       "repaint_to_screen",
-      ""
+      "10 instructions; 0 callers; touches draw_target_segment; calls copy_32px_unmasked, copy_all_bar_bands"
     ],
     "0x02167": [
       "repaint_player_bottom",
-      ""
+      "4 instructions; 0 callers; calls draw_sprite_32x16"
     ],
     "0x02173": [
       "repaint_check_popup",
-      ""
+      "3 instructions; 0 callers; touches pickup_popup_timer; calls copy_popup_rect"
     ],
     "0x0217E": [
       "repaint_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x0217F": [
       "copy_popup_rect",
-      ""
+      "3 instructions; 2 callers"
     ],
     "0x02186": [
       "copy_popup_row_even",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x02194": [
       "copy_popup_bank_odd",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x0219B": [
       "copy_popup_row_odd",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x021AA": [
       "copy_all_bar_bands",
-      ""
+      "2 instructions; 2 callers; touches bar_index_x2"
     ],
     "0x021B4": [
       "copy_bar_band_loop",
-      ""
+      "5 instructions; 0 callers; touches bar_index_x2, row_offset_table"
     ],
     "0x021C4": [
       "copy_bar_band_row",
-      ""
+      "15 instructions; 0 callers; touches bar_index_x2"
     ],
     "0x021EB": [
       "draw_mugs_for_bar",
-      ""
+      "2 instructions; 2 callers; touches bar_index_x2"
     ],
     "0x021F4": [
       "draw_bar_list_b",
@@ -1209,63 +1209,63 @@
     ],
     "0x021FE": [
       "mug_sprite_select",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x02209": [
       "mug_sprite_cycle",
-      ""
+      "3 instructions; 0 callers; touches cycle_countdown"
     ],
     "0x02213": [
       "mug_draw",
-      ""
+      "3 instructions; 0 callers; calls select_sprite_ptr"
     ],
     "0x0221D": [
       "mug_draw_row",
-      ""
+      "17 instructions; 0 callers"
     ],
     "0x02243": [
       "mug_draw_row_bank2",
-      ""
+      "16 instructions; 0 callers"
     ],
     "0x02263": [
       "draw_served_mugs",
-      ""
+      "2 instructions; 0 callers; touches bar_index_x2"
     ],
     "0x0226C": [
       "served_mug_draw_next",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x02276": [
       "served_mug_draw",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x02281": [
       "served_mug_draw_row",
-      ""
+      "17 instructions; 0 callers"
     ],
     "0x022A7": [
       "served_mug_draw_row_bank2",
-      ""
+      "16 instructions; 0 callers"
     ],
     "0x022C7": [
       "draw_mugs_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x022C8": [
       "blit_sprite_8x8",
-      ""
+      "1 instructions; 2 callers"
     ],
     "0x022CB": [
       "blit_8x8_row",
-      ""
+      "9 instructions; 0 callers"
     ],
     "0x022DC": [
       "blit_pickup_sprite",
-      ""
+      "1 instructions; 1 caller"
     ],
     "0x022DF": [
       "blit_pickup_row",
-      ""
+      "15 instructions; 0 callers"
     ],
     "0x022FB": [
       "delay_busy_loop",
@@ -1273,19 +1273,19 @@
     ],
     "0x02309": [
       "delay_spin",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x0230C": [
       "bonus_round_entry",
-      ""
+      "22 instructions; 0 callers; touches text_target_segment, entity_table, draw_target_segment; calls draw_bonus_row, draw_player_32x32, draw_score_display and 5 more"
     ],
     "0x02355": [
       "bonus_intro_delay",
-      ""
+      "3 instructions; 0 callers; touches bonus_answer"
     ],
     "0x02360": [
       "bonus_pick_loop",
-      ""
+      "2 instructions; 0 callers; touches bonus_answer"
     ],
     "0x02366": [
       "reroll_distinct_pick",
@@ -1301,23 +1301,23 @@
     ],
     "0x0241B": [
       "reveal_delay_2",
-      ""
+      "12 instructions; 0 callers; touches is_pcjr; calls blit_sprite_32x22, select_sprite_ptr"
     ],
     "0x0243E": [
       "reveal_delay_3",
-      ""
+      "12 instructions; 0 callers; touches is_pcjr; calls blit_sprite_32x22, select_sprite_ptr"
     ],
     "0x02461": [
       "reveal_delay_4",
-      ""
+      "21 instructions; 0 callers; touches reveal_row_count; calls blit_sprite_12x16, check_bonus_abort, copy_16px_unmasked and 2 more"
     ],
     "0x02497": [
       "reveal_scroll_row",
-      ""
+      "25 instructions; 0 callers; touches entity_table, reveal_row_count, is_pcjr; calls blit_16x16_row"
     ],
     "0x024DF": [
       "reveal_delay_5",
-      ""
+      "17 instructions; 0 callers; touches reveal_row_count; calls check_bonus_abort"
     ],
     "0x02503": [
       "bitmap_to_answer_index",
@@ -1325,23 +1325,23 @@
     ],
     "0x02509": [
       "find_clear_bit_loop",
-      ""
+      "10 instructions; 0 callers; touches bonus_answer, text_target_segment"
     ],
     "0x02527": [
       "bonus_reveal_loop",
-      ""
+      "25 instructions; 0 callers; touches text_target_segment, entity_table, draw_target_segment, staging_segment; calls blit_sprite_16x16, copy_16px_unmasked, copy_status_area and 1 more"
     ],
     "0x0256E": [
       "bonus_reveal_delay",
-      ""
+      "4 instructions; 0 callers; calls check_bonus_abort"
     ],
     "0x02576": [
       "bonus_pair_setup",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02579": [
       "bonus_pair_loop",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x0257F": [
       "reroll_spaced_pick",
@@ -1349,15 +1349,15 @@
     ],
     "0x025BC": [
       "bonus_store_pair",
-      ""
+      "7 instructions; 0 callers; touches bonus_answer"
     ],
     "0x025CE": [
       "bonus_adjust_marker",
-      ""
+      "3 instructions; 0 callers; touches bonus_answer"
     ],
     "0x025D7": [
       "bonus_next_of_pair",
-      ""
+      "3 instructions; 0 callers; touches bonus_slot_index"
     ],
     "0x025E2": [
       "bonus_swap_frame",
@@ -1365,47 +1365,47 @@
     ],
     "0x025ED": [
       "bonus_draw_swap",
-      ""
+      "47 instructions; 0 callers; touches bonus_slot_index, staging_segment, row_stride, text_target_segment; calls blit_sprite_12x16, copy_16px_unmasked, select_sprite_ptr"
     ],
     "0x02663": [
       "bonus_redraw_can",
-      ""
+      "26 instructions; 0 callers; touches bonus_slot_index, row_stride, draw_target_segment, intro_delay_count; calls blit_sprite_12x16, copy_status_area, select_sprite_ptr"
     ],
     "0x026A6": [
       "bonus_frame_delay",
-      ""
+      "5 instructions; 0 callers; touches bonus_slot_index"
     ],
     "0x026B8": [
       "bonus_shuffle_next",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x026BF": [
       "bonus_prompt_pick",
-      ""
+      "4 instructions; 0 callers; touches input_enabled"
     ],
     "0x026CD": [
       "bonus_prompt_show",
-      ""
+      "12 instructions; 0 callers; touches key_pending, bonus_key_mirror, tick_countdown; calls lookup_ptr_pair, print_string_at, sound_stop_all and 1 more"
     ],
     "0x026F7": [
       "bonus_selection_draw",
-      ""
+      "14 instructions; 0 callers; touches text_target_segment, bonus_choice, staging_segment, draw_target_segment; calls copy_status_area, draw_bonus_row, draw_player_32x32 and 1 more"
     ],
     "0x02728": [
       "bonus_wait_input",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x0272B": [
       "bonus_wait_delay",
-      ""
+      "8 instructions; 0 callers; touches bonus_key_mirror, key_pending; calls delay_busy_loop"
     ],
     "0x02743": [
       "bonus_poll_input",
-      ""
+      "6 instructions; 0 callers; touches input_enabled, joystick_buttons; calls check_bonus_abort"
     ],
     "0x02759": [
       "bonus_check_key",
-      ""
+      "3 instructions; 0 callers; touches keys_down_hi"
     ],
     "0x02764": [
       "bonus_judge_choice",
@@ -1413,67 +1413,67 @@
     ],
     "0x02778": [
       "bonus_wrong_choice",
-      ""
+      "33 instructions; 0 callers; touches player_top, bonus_scratch, shake_saved, staging_segment; calls lookup_ptr_pair"
     ],
     "0x027DB": [
       "bonus_shake_left",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x027DD": [
       "bonus_shake_left_row",
-      ""
+      "24 instructions; 0 callers; touches shake_source, bonus_scratch; calls delay_busy_loop, draw_player_32x32"
     ],
     "0x02814": [
       "bonus_shake_right",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02816": [
       "bonus_shake_right_row",
-      ""
+      "44 instructions; 0 callers; INT 0x10; touches text_target_segment, shake_source, bonus_answer, staging_segment; calls copy_16px_unmasked, draw_bonus_row, draw_player_32x32 and 2 more"
     ],
     "0x02886": [
       "bonus_spray_loop",
-      ""
+      "19 instructions; 0 callers; calls blit_sprite_12x16, copy_16px_unmasked, delay_busy_loop and 2 more"
     ],
     "0x028AF": [
       "bonus_right_choice",
-      ""
+      "26 instructions; 0 callers; INT 0x10; touches staging_segment, text_target_segment, draw_target_segment; calls add_score, copy_16px_unmasked, copy_status_area and 5 more"
     ],
     "0x028FD": [
       "bonus_end_pause",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x028FF": [
       "bonus_pause_1",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02901": [
       "bonus_pause_2",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02903": [
       "bonus_pause_3",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02905": [
       "bonus_pause_4",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x0290C": [
       "bonus_read_stick",
-      ""
+      "7 instructions; 0 callers; touches input_enabled, joystick_low; calls read_joystick_axes"
     ],
     "0x02922": [
       "bonus_stick_left",
-      ""
+      "4 instructions; 0 callers; touches joystick_high"
     ],
     "0x0292E": [
       "bonus_read_keys",
-      ""
+      "1 instructions; 0 callers; touches player_velocity"
     ],
     "0x02932": [
       "bonus_apply_move",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x02939": [
       "bonus_move_cursor",
@@ -1481,23 +1481,23 @@
     ],
     "0x0294D": [
       "bonus_cursor_left",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x02953": [
       "bonus_cursor_wrap",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x0295C": [
       "bonus_cursor_right",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x02964": [
       "draw_bonus_row",
-      ""
+      "2 instructions; 4 callers"
     ],
     "0x0296A": [
       "draw_bonus_item",
-      ""
+      "12 instructions; 0 callers; calls blit_sprite_12x16, select_sprite_ptr"
     ],
     "0x02985": [
       "check_bonus_abort",
@@ -1505,11 +1505,11 @@
     ],
     "0x0299E": [
       "check_abort_flag",
-      ""
+      "4 instructions; 0 callers; touches abort_sequence_flag"
     ],
     "0x029AF": [
       "bonus_abort_none",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x029B0": [
       "blit_sprite_12x16",
@@ -1521,11 +1521,11 @@
     ],
     "0x029CE": [
       "copy_status_area",
-      ""
+      "3 instructions; 4 callers"
     ],
     "0x029D5": [
       "copy_status_row",
-      ""
+      "18 instructions; 0 callers; calls copy_16px_unmasked"
     ],
     "0x02A03": [
       "copy_16px_unmasked",
@@ -1537,7 +1537,7 @@
     ],
     "0x02AC4": [
       "erase_player_32x32",
-      ""
+      "13 instructions; 2 callers; calls copy_32px_unmasked"
     ],
     "0x02AE8": [
       "blit_sprite_32x22",
@@ -1545,11 +1545,11 @@
     ],
     "0x02AEB": [
       "blit_32x22_row",
-      ""
+      "27 instructions; 0 callers"
     ],
     "0x02B21": [
       "warm_reboot",
-      ""
+      "10 instructions; 0 callers; touches warm_boot_flag; calls print_string, sound_stop_all"
     ],
     "0x02B3E": [
       "print_string",
@@ -1561,11 +1561,11 @@
     ],
     "0x02B5E": [
       "print_emit_char",
-      ""
+      "4 instructions; 0 callers; INT 0x10; touches text_colour"
     ],
     "0x02B69": [
       "print_string_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02B6A": [
       "copy_32px_unmasked",
@@ -1581,11 +1581,11 @@
     ],
     "0x02C02": [
       "blit_32x16_row",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02C04": [
       "blit_32x16_word",
-      ""
+      "11 instructions; 0 callers"
     ],
     "0x02C1A": [
       "blit_sprite_16x16",
@@ -1593,7 +1593,7 @@
     ],
     "0x02C1D": [
       "blit_16x16_row",
-      ""
+      "15 instructions; 2 callers"
     ],
     "0x02C39": [
       "blit_sprite_24x22",
@@ -1601,7 +1601,7 @@
     ],
     "0x02C3C": [
       "blit_24x22_row",
-      ""
+      "21 instructions; 0 callers"
     ],
     "0x02C66": [
       "load_asset_from_stream",
@@ -1613,15 +1613,15 @@
     ],
     "0x02C8D": [
       "cga_mode_add_bit4",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x02C94": [
       "cga_mode_write",
-      ""
+      "8 instructions; 0 callers; port dx; touches is_pcjr"
     ],
     "0x02CA5": [
       "pcjr_video_setup",
-      ""
+      "6 instructions; 0 callers; INT 0x10; touches screen_config"
     ],
     "0x02CB5": [
       "unpack_screen",
@@ -1629,39 +1629,39 @@
     ],
     "0x02CCD": [
       "unpack_switch_bank",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02CD0": [
       "unpack_next_token",
-      ""
+      "10 instructions; 0 callers"
     ],
     "0x02CE6": [
       "unpack_fill_run",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x02CEE": [
       "unpack_verbatim",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x02CF3": [
       "unpack_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02CF4": [
       "lookup_bar_sprite",
-      ""
+      "5 instructions; 1 caller"
     ],
     "0x02CFE": [
       "lookup_bar_sprite_table",
-      ""
+      "5 instructions; 0 callers; touches bar_sprite_table"
     ],
     "0x02D0A": [
       "lookup_bar_sprite_bounds",
-      ""
+      "8 instructions; 0 callers; touches bar_sprite_ptr"
     ],
     "0x02D1B": [
       "lookup_bar_sprite_done",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x02D1E": [
       "lookup_ptr_pair",
@@ -1669,11 +1669,11 @@
     ],
     "0x02D34": [
       "lookup_ptr_pair_bounds",
-      ""
+      "11 instructions; 0 callers"
     ],
     "0x02D4F": [
       "lookup_ptr_pair_done",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x02D53": [
       "set_entity_sprite",
@@ -1681,23 +1681,23 @@
     ],
     "0x02D64": [
       "sprite_index_in_range",
-      ""
+      "8 instructions; 0 callers"
     ],
     "0x02D76": [
       "sprite_lookup_done",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x02D7A": [
       "sprite_ptr_from_index",
-      ""
+      "5 instructions; 1 caller; touches popup_table_a, popup_table_b"
     ],
     "0x02D88": [
       "sprite_ptr_lookup",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x02D95": [
       "sprite_ptr_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02D96": [
       "select_sprite_ptr",
@@ -1705,7 +1705,7 @@
     ],
     "0x02DAF": [
       "select_sprite_ptr_done",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x02DB3": [
       "free_list_splice",
@@ -1717,19 +1717,19 @@
     ],
     "0x02DD4": [
       "remap_copy_header",
-      ""
+      "15 instructions; 0 callers"
     ],
     "0x02DED": [
       "remap_byte_loop",
-      ""
+      "20 instructions; 0 callers; touches indirect_call_vector"
     ],
     "0x02E0F": [
       "display_variant_a",
-      ""
+      "11 instructions; 0 callers"
     ],
     "0x02E22": [
       "display_variant_b",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x02E2D": [
       "print_string_at",
@@ -1757,23 +1757,23 @@
     ],
     "0x02E71": [
       "read_key_poll",
-      ""
+      "6 instructions; 0 callers; touches key_pending"
     ],
     "0x02E81": [
       "read_key_check_button",
-      ""
+      "6 instructions; 0 callers; touches input_enabled, joystick_buttons"
     ],
     "0x02E95": [
       "read_key_buffer_check",
-      ""
+      "6 instructions; 0 callers; touches kbd_tail, kbd_buffer, kbd_head"
     ],
     "0x02EA9": [
       "read_key_return",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x02EAB": [
       "read_key_auto_r",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x02EAE": [
       "clear_text_screen",
@@ -1789,7 +1789,7 @@
     ],
     "0x02EE9": [
       "load_other_block",
-      ""
+      "8 instructions; 0 callers; touches current_player"
     ],
     "0x02EFB": [
       "draw_score_display",
@@ -1797,47 +1797,47 @@
     ],
     "0x02F11": [
       "draw_score_row",
-      ""
+      "2 instructions; 0 callers; calls draw_score_and_lives, draw_score_digits"
     ],
     "0x02F17": [
       "draw_current_score",
-      ""
+      "2 instructions; 0 callers; calls draw_score_and_lives"
     ],
     "0x02F1D": [
       "draw_score_digits",
-      ""
+      "4 instructions; 2 callers; touches leading_digit_seen"
     ],
     "0x02F2C": [
       "score_digit_loop",
-      ""
+      "8 instructions; 0 callers; calls suppress_leading_zeros"
     ],
     "0x02F3F": [
       "score_digit_advance",
-      ""
+      "8 instructions; 0 callers; touches leading_digit_seen; calls draw_digit_at"
     ],
     "0x02F54": [
       "draw_score_digits_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x02F55": [
       "redraw_changed_digits",
-      ""
+      "5 instructions; 4 callers; touches leading_digit_seen, score_column"
     ],
     "0x02F68": [
       "score_compare_loop",
-      ""
+      "9 instructions; 0 callers; calls suppress_leading_zeros"
     ],
     "0x02F7F": [
       "score_compare_next",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x02F88": [
       "score_compare_step",
-      ""
+      "8 instructions; 0 callers; touches leading_digit_seen; calls draw_digit_at"
     ],
     "0x02F9D": [
       "score_shadow_update",
-      ""
+      "5 instructions; 0 callers; touches score_bcd_hi, score_shadow, score_bcd_lo, score_shadow_lo"
     ],
     "0x02FAE": [
       "suppress_leading_zeros",
@@ -1845,7 +1845,7 @@
     ],
     "0x02FBB": [
       "draw_digit_at",
-      ""
+      "14 instructions; 2 callers; INT 0x10; touches leading_digit_seen"
     ],
     "0x02FD7": [
       "draw_score_and_lives",
@@ -1853,19 +1853,19 @@
     ],
     "0x02FFA": [
       "lives_icon_setup",
-      ""
+      "8 instructions; 0 callers"
     ],
     "0x0300E": [
       "lives_icon_origin",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x03014": [
       "lives_icon_loop",
-      ""
+      "11 instructions; 0 callers; calls blit_sprite_16x12, select_sprite_ptr"
     ],
     "0x0302D": [
       "draw_score_and_lives_done",
-      ""
+      "9 instructions; 0 callers"
     ],
     "0x03036": [
       "blit_sprite_16x12",
@@ -1873,11 +1873,11 @@
     ],
     "0x03039": [
       "blit_16x12_row",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x0303B": [
       "blit_16x12_word",
-      ""
+      "11 instructions; 0 callers"
     ],
     "0x03050": [
       "add_score",
@@ -1889,11 +1889,11 @@
     ],
     "0x0309B": [
       "score_redraw",
-      ""
+      "5 instructions; 0 callers; calls draw_score_display"
     ],
     "0x030A2": [
       "add_score_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x030A3": [
       "calibrate_joystick",
@@ -1901,11 +1901,11 @@
     ],
     "0x030BE": [
       "no_joystick_wait",
-      ""
+      "3 instructions; 0 callers; touches key_pending"
     ],
     "0x030C6": [
       "joystick_prompt_screen",
-      ""
+      "36 instructions; 0 callers; touches joystick_centre, joystick_high, joystick_low, joystick_present; calls clear_text_screen, print_prompt_lines, print_string_at and 2 more"
     ],
     "0x03130": [
       "converge_joystick_low",
@@ -1913,35 +1913,35 @@
     ],
     "0x03158": [
       "converge_joystick_high",
-      ""
+      "4 instructions; 0 callers; touches joystick_high"
     ],
     "0x03161": [
       "store_sample_count",
-      ""
+      "3 instructions; 0 callers; touches joystick_sample_count"
     ],
     "0x03167": [
       "joystick_setup_failed",
-      ""
+      "4 instructions; 0 callers; touches key_pending; calls clear_text_screen, print_string_at"
     ],
     "0x03175": [
       "setup_error_wait",
-      ""
+      "3 instructions; 0 callers; touches key_pending"
     ],
     "0x0317F": [
       "print_prompt_lines",
-      ""
+      "14 instructions; 1 caller; touches text_colour; calls print_string_at"
     ],
     "0x0319E": [
       "wait_for_button",
-      ""
+      "5 instructions; 1 caller; touches captured_scancode, joystick_buttons"
     ],
     "0x031AC": [
       "wait_button_press",
-      ""
+      "6 instructions; 0 callers; touches captured_scancode, joystick_buttons"
     ],
     "0x031BB": [
       "wait_button_key_abort",
-      ""
+      "3 instructions; 0 callers; touches captured_scancode"
     ],
     "0x031C2": [
       "read_joystick_axes",
@@ -1953,7 +1953,7 @@
     ],
     "0x031DF": [
       "print_decimal_digit",
-      ""
+      "90 instructions; 2 callers; INT 0x10; port al, dx; touches keys_down_bitmap, crtc_value, key_action_table, print_suppressed"
     ],
     "0x032A5": [
       "int09_keyboard_isr",
@@ -1965,23 +1965,23 @@
     ],
     "0x032D9": [
       "key_capture_store",
-      ""
+      "1 instructions; 0 callers; touches captured_scancode"
     ],
     "0x032DC": [
       "key_capture_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x032DF": [
       "key_crtc_adjust",
-      ""
+      "11 instructions; 0 callers; port dx; touches crtc_value"
     ],
     "0x032F5": [
       "key_crtc_store",
-      ""
+      "3 instructions; 0 callers; port dx; touches crtc_value"
     ],
     "0x032FB": [
       "key_scan_make",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x03305": [
       "dispatch_key_action",
@@ -1989,15 +1989,15 @@
     ],
     "0x0331F": [
       "key_release_filter",
-      ""
+      "21 instructions; 0 callers; touches keys_down_bitmap, key_action_table"
     ],
     "0x0334F": [
       "key_store_scancode",
-      ""
+      "7 instructions; 0 callers; touches kbd_tail, kbd_buffer, kbd_head"
     ],
     "0x03365": [
       "key_action_done",
-      ""
+      "16 instructions; 0 callers; port 0x20, 0x61, al"
     ],
     "0x0337D": [
       "key_restore_and_return",
@@ -2013,51 +2013,51 @@
     ],
     "0x033A7": [
       "key_release_right",
-      ""
+      "8 instructions; 0 callers; touches player_velocity, input_enabled, key_capture_mode"
     ],
     "0x033C3": [
       "key_action_left",
-      ""
+      "3 instructions; 0 callers; touches input_enabled, player_velocity"
     ],
     "0x033CF": [
       "key_left_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x033D2": [
       "key_release_left",
-      ""
+      "7 instructions; 0 callers; touches player_velocity, input_enabled, key_capture_mode"
     ],
     "0x033EC": [
       "key_release_left_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x033EF": [
       "key_action_up",
-      ""
+      "5 instructions; 0 callers; touches key_capture_mode"
     ],
     "0x033FD": [
       "key_down_check_input",
-      ""
+      "3 instructions; 0 callers; touches input_enabled, input_flag_down"
     ],
     "0x03409": [
       "key_down_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x0340C": [
       "key_action_escape",
-      ""
+      "2 instructions; 0 callers; calls sound_toggle"
     ],
     "0x03412": [
       "check_ctrl_alt_del",
-      ""
+      "5 instructions; 0 callers; touches keys_down_hi"
     ],
     "0x0341E": [
       "check_reset_guard",
-      ""
+      "3 instructions; 0 callers; touches print_suppressed"
     ],
     "0x03428": [
       "do_ctrl_alt_del_reset",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x0342B": [
       "reset_via_bios",
@@ -2065,19 +2065,19 @@
     ],
     "0x03442": [
       "key_action_numlock",
-      ""
+      "2 instructions; 0 callers; touches swallow_next_key"
     ],
     "0x0344A": [
       "key_action_space",
-      ""
+      "3 instructions; 0 callers; touches key_capture_mode"
     ],
     "0x03454": [
       "key_space_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x034BF": [
       "key_space_restart",
-      ""
+      "1 instructions; 1 caller"
     ],
     "0x03658": [
       "int1c_timer_isr",
@@ -2085,71 +2085,71 @@
     ],
     "0x03681": [
       "timer_after_pcjr_check",
-      ""
+      "18 instructions; 0 callers; port al; touches timer_reentry_guard, joystick_prev; calls advance_rng"
     ],
     "0x036AE": [
       "joystick_debounce",
-      ""
+      "6 instructions; 0 callers"
     ],
     "0x036BB": [
       "joystick_store_buttons",
-      ""
+      "8 instructions; 0 callers; touches tick_countdown, key_pending, joystick_buttons"
     ],
     "0x036DB": [
       "timer_check_swallow",
-      ""
+      "2 instructions; 0 callers; touches swallow_next_key"
     ],
     "0x036E3": [
       "timer_tick_voices",
-      ""
+      "11 instructions; 0 callers; touches timer_reentry_guard; calls voice_slot_ready"
     ],
     "0x03702": [
       "timer_isr_exit",
-      ""
+      "9 instructions; 0 callers"
     ],
     "0x0370B": [
       "sound_enable_speaker",
-      ""
+      "13 instructions; 2 callers; port 0x43, al; touches sound_flags, is_pcjr; calls sound_chip_silence"
     ],
     "0x0372C": [
       "sound_speaker_gate",
-      ""
+      "4 instructions; 0 callers; port 0x61"
     ],
     "0x03731": [
       "sound_enable_pcjr",
-      ""
+      "15 instructions; 1 caller; port 0x61, al; touches is_pcjr, sound_flags; calls sound_chip_silence"
     ],
     "0x03753": [
       "sound_disable",
-      ""
+      "7 instructions; 1 caller; port al; touches sound_flags, is_pcjr"
     ],
     "0x03768": [
       "sound_disable_gate",
-      ""
+      "3 instructions; 0 callers; port 0x61"
     ],
     "0x0376C": [
       "sound_toggle",
-      ""
+      "9 instructions; 1 caller; port al; touches sound_flags, is_pcjr"
     ],
     "0x03789": [
       "sound_toggle_gate",
-      ""
+      "3 instructions; 0 callers; port 0x61"
     ],
     "0x0378D": [
       "sound_chip_silence",
-      ""
+      "3 instructions; 3 callers; touches is_pcjr"
     ],
     "0x03796": [
       "sound_chip_silence_all",
-      ""
+      "11 instructions; 0 callers; port 0xc0"
     ],
     "0x037AB": [
       "sound_chip_settle",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x037B0": [
       "sound_stop_all",
-      ""
+      "12 instructions; 10 callers; port 0x61, al; touches voice_slot_1, voice_slot_2, voice_slot_3; calls sound_chip_silence"
     ],
     "0x037D0": [
       "start_sound_effect",
@@ -2157,7 +2157,7 @@
     ],
     "0x0380B": [
       "start_sound_effect_done",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x03812": [
       "play_voice",
@@ -2165,15 +2165,15 @@
     ],
     "0x03820": [
       "play_voice_select",
-      ""
+      "7 instructions; 0 callers"
     ],
     "0x0382F": [
       "play_voice_use_slot1",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x03834": [
       "play_voice_use_slot2",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x03837": [
       "voice_use_slot2",
@@ -2181,7 +2181,7 @@
     ],
     "0x0383B": [
       "play_voice_install",
-      ""
+      "22 instructions; 0 callers; touches voice_slot_1, voice_slot_2, voice_slot_3"
     ],
     "0x0387C": [
       "voice_slot_ready",
@@ -2193,11 +2193,11 @@
     ],
     "0x03885": [
       "voice_dispatch",
-      ""
+      "4 instructions; 0 callers; touches voice_state_table"
     ],
     "0x0389C": [
       "voice_hold_speaker",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x038A7": [
       "voice_hold_5",
@@ -2205,79 +2205,79 @@
     ],
     "0x038AB": [
       "voice_hold_reload",
-      ""
+      "3 instructions; 0 callers"
     ],
     "0x038B4": [
       "voice_hold_retrigger",
-      ""
+      "9 instructions; 0 callers; touches sound_flags"
     ],
     "0x038CD": [
       "speaker_write_period",
-      ""
+      "5 instructions; 0 callers; port 0x42"
     ],
     "0x038D5": [
       "voice_tick_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x038D6": [
       "sound_chip_tone",
-      ""
+      "14 instructions; 1 caller; port 0xc0"
     ],
     "0x038ED": [
       "voice_release",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x038F8": [
       "voice_release_silence",
-      ""
+      "4 instructions; 0 callers; touches sound_flags; calls sound_chip_volume"
     ],
     "0x03905": [
       "voice_next_event",
-      ""
+      "5 instructions; 0 callers; touches sound_table_ptr"
     ],
     "0x03914": [
       "voice_store_cursor",
-      ""
+      "4 instructions; 0 callers"
     ],
     "0x03923": [
       "voice_go_idle",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x03924": [
       "voice_sustain",
-      ""
+      "10 instructions; 0 callers; port 0x61, al; touches sound_flags"
     ],
     "0x03939": [
       "voice_volume_step",
-      ""
+      "5 instructions; 0 callers"
     ],
     "0x03945": [
       "sound_chip_volume",
-      ""
+      "13 instructions; 1 caller; port 0xc0"
     ],
     "0x03961": [
       "sound_chip_done",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x03962": [
       "voice_note_on",
-      ""
+      "23 instructions; 0 callers; port 0x42, 0x61, al; touches sound_flags, speaker_period_table"
     ],
     "0x0399E": [
       "voice_speaker_started",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x0399F": [
       "voice_chip_note",
-      ""
+      "14 instructions; 0 callers; touches chip_period_table"
     ],
     "0x039BE": [
       "voice_chip_halve",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x039C0": [
       "voice_chip_program",
-      ""
+      "8 instructions; 0 callers; calls sound_chip_tone"
     ],
     "0x039DA": [
       "voice_attack_step",
@@ -2285,11 +2285,11 @@
     ],
     "0x039E6": [
       "voice_attack_check",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x039EE": [
       "voice_attack_emit",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x03A1E": [
       "play_rom_noise",
@@ -2297,55 +2297,55 @@
     ],
     "0x03A2B": [
       "rom_noise_setup",
-      ""
+      "5 instructions; 0 callers; port 0x61, al; touches sound_flags"
     ],
     "0x03A38": [
       "rom_noise_begin",
-      ""
+      "7 instructions; 0 callers; port 0x61, al"
     ],
     "0x03A48": [
       "rom_noise_next_burst",
-      ""
+      "8 instructions; 0 callers"
     ],
     "0x03A58": [
       "rom_noise_run_burst",
-      ""
+      "2 instructions; 0 callers; calls rom_noise_burst"
     ],
     "0x03A5D": [
       "rom_noise_burst",
-      ""
+      "2 instructions; 1 caller"
     ],
     "0x03A63": [
       "rom_noise_toggle",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x03A65": [
       "rom_noise_delay",
-      ""
+      "8 instructions; 0 callers; port al"
     ],
     "0x03A78": [
       "rom_noise_bit_low",
-      ""
+      "1 instructions; 0 callers"
     ],
     "0x03A7A": [
       "rom_noise_out",
-      ""
+      "4 instructions; 0 callers; port 0x61"
     ],
     "0x03A81": [
       "rom_noise_finish",
-      ""
+      "8 instructions; 0 callers; port 0x61, al; touches sound_flags"
     ],
     "0x03A94": [
       "rom_noise_done",
-      ""
+      "2 instructions; 0 callers"
     ],
     "0x03A96": [
       "noise_silent_delay",
-      ""
+      "3 instructions; 0 callers; touches key_pending, tick_countdown"
     ],
     "0x03AA3": [
       "noise_silent_spin",
-      ""
+      "3 instructions; 0 callers; touches key_pending"
     ],
     "0x04580": [
       "load_pic_file",
@@ -2353,7 +2353,7 @@
     ],
     "0x04590": [
       "crack_intro_screen",
-      ""
+      "11 instructions; 0 callers; INT 0x10, 0x20, 0x21"
     ],
     "0x045A7": [
       "crack_intro_loaded",
@@ -2361,713 +2361,1325 @@
     ],
     "0x045F6": [
       "false_target_in_filename",
-      ""
+      "3 instructions; 0 callers"
     ]
   },
   "globals": {
     "0x00102": [
       "str_tapper_dat",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x00130": [
       "dat_file_handle",
-      ""
+      "written by store_dat_handle; read by int80_disk_shim"
+    ],
+    "0x00472": [
+      "warm_boot_flag",
+      "0x1234 goes here immediately before `ljmp 0xFFFF:0`, which is the BIOS reset. That value at 0x0040:0x0072 means warm boot -- but the write carries no segment prefix and DS is CS, set two instructions earlier by `push cs / pop ds`, so it lands in the program's own memory and the machine cold-boots instead"
     ],
     "0x00598": [
       "str_disk_error",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x005A3": [
       "req_sector_count",
-      ""
+      "written by load_asset_read_ok and save_regs_and_dispatch; read by load_asset_read_chunk"
+    ],
+    "0x005A4": [
+      "read_retries",
+      "set to 3 by load_asset_setup_read and decremented by load_asset_do_read -- three attempts at a sector"
     ],
     "0x005A5": [
       "io_retry_count",
-      ""
+      "written by load_asset_do_read and load_asset_reset_retries; holds 4"
     ],
     "0x005B1": [
       "asset_table",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03557": [
       "alt_key_scan_table",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03565": [
       "key_scan_table",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03573": [
       "key_action_table",
-      ""
+      "written by dispatch_key_action, key_release_filter and print_decimal_digit"
     ],
     "0x035AB": [
       "kbd_head",
-      ""
+      "written by init_vectors_and_video and read_key_buffer_check; read by key_store_scancode and read_key_wait; holds 0"
     ],
     "0x035AD": [
       "kbd_tail",
-      ""
+      "written by init_vectors_and_video and key_store_scancode; read by key_store_scancode and read_key_buffer_check; holds 0"
     ],
     "0x035AF": [
       "kbd_buffer",
-      ""
+      "written by key_store_scancode; read by read_key_buffer_check"
     ],
     "0x03731": [
       "voice_slot_1",
-      ""
+      "written by sound_stop_all; read by play_voice_install; holds 0"
     ],
     "0x0373E": [
       "voice_slot_2",
-      ""
+      "written by sound_stop_all; read by play_voice_install; holds 0"
     ],
     "0x0374B": [
       "voice_slot_3",
-      ""
+      "written by sound_stop_all; read by play_voice_install; holds 0"
     ],
     "0x03990": [
       "voice_state_table",
-      ""
+      "written by voice_dispatch"
     ],
     "0x03BAC": [
       "rom_noise_script",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03BC0": [
       "speaker_period_table",
-      ""
+      "read by voice_note_on"
     ],
     "0x03BDC": [
       "chip_period_table",
-      ""
+      "read by voice_chip_note"
     ],
     "0x03C12": [
       "screen_script_mode0",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03C18": [
       "screen_script_mode1",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03C21": [
       "screen_aux_mode0",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03C28": [
       "screen_aux_mode1",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03C80": [
       "overlay_buffer",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03D7C": [
       "menu_key_table",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03D89": [
       "menu_marker_table",
-      ""
+      "read by menu_marker_addr"
     ],
     "0x03DAD": [
       "str_player",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03DB8": [
       "str_game_over",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03ED5": [
       "str_get_ready",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03EEB": [
       "row_offset_table",
-      ""
+      "read by copy_bar_band_loop, flush_bar_band and move_entity_next"
     ],
     "0x03EF3": [
       "prompt_colour_table",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03EFC": [
       "str_joystick_prompts",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x03FDE": [
       "str_setup_error",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
+    ],
+    "0x04000": [
+      "asset_buffer",
+      "read as `[es:0x4000]` by both screen loaders, after BX is set to the same value: the offset a .PIC lands at"
     ],
     "0x04014": [
       "str_no_joystick",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
+    ],
+    "0x0402A": [
+      "bar_geometry",
+      "byte pairs -- 0x15 0x37, 0x0E 0x3E, 0x08 0x44, 0x02 0x4A -- indexed by bar number; place_entity_on_bar and knockback_store_timer read it"
+    ],
+    "0x04032": [
+      "bar_columns",
+      "0x34 0x14, 0x3A 0x0E, 0x40 0x08, 0x46 0x02: the same four bars from the other end, read by store_entity_column and start_serve"
     ],
     "0x0403A": [
       "bar_bound_source",
-      ""
+      "read by setup_bar_geometry"
     ],
     "0x0404A": [
       "bar_limit_source",
-      ""
+      "read by store_entity_column"
     ],
     "0x0405A": [
       "anim_frame_table",
-      ""
+      "read by step_entity_animation"
+    ],
+    "0x04063": [
+      "frames_per_entity",
+      "four sevens; step_entity_frame indexes it by entity kind"
+    ],
+    "0x04067": [
+      "popup_frames",
+      "00 01 00 80 81 80 -- draw_popup_frame's sequence"
+    ],
+    "0x0406F": [
+      "row_stride",
+      "0x00A0, 0x00F0, 0x0140, 0x0140 -- added to SI by the two bonus drawing routines, so 160, 240 and 320 bytes to a row"
     ],
     "0x040AE": [
       "frame_list_table",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x040CE": [
       "page_screen_table",
-      ""
+      "read by load_page_screen"
     ],
     "0x040CF": [
       "next_page_screen",
-      ""
+      "read by show_next_page"
     ],
     "0x040EA": [
       "page_theme_table",
-      ""
+      "read by knockback_apply, link_free_node and 3 others"
     ],
     "0x04105": [
       "round_spawn_table",
-      ""
+      "read by seed_bar_entities"
     ],
     "0x041AD": [
       "entity_init_table",
-      ""
+      "read by store_entity_column"
+    ],
+    "0x041AE": [
+      "bar_row_offset",
+      "added to DL by place_entity_on_bar, indexed by BX+SI"
+    ],
+    "0x0444F": [
+      "print_suppressed",
+      "compared against zero by print_decimal_digit and check_reset_guard, and written by nothing in the decoded region -- so it is always zero unless something outside it writes it"
     ],
     "0x04450": [
       "alt_isr_slot",
-      ""
+      "read by read_key"
     ],
     "0x04452": [
       "orig_int09_vector",
-      ""
+      "written by init_vectors_and_video"
+    ],
+    "0x04454": [
+      "program_segment",
+      "`mov word [cs:0x4454], ds` at start-up. DS is CS in a .COM, so this is the program's own segment, kept for building far pointers"
     ],
     "0x04456": [
       "orig_int1c_vector",
-      ""
+      "written by init_vectors_and_video"
+    ],
+    "0x04458": [
+      "program_segment_2",
+      "the second copy, written in the same breath"
     ],
     "0x0445A": [
       "high_score_bcd",
-      ""
+      "written by high_score_store"
+    ],
+    "0x0445C": [
+      "high_score_digit",
+      "the byte high_score_store writes"
+    ],
+    "0x0445D": [
+      "screen_loaded_flag",
+      "0xFF once load_and_show_screen has run"
+    ],
+    "0x0445E": [
+      "screen_id",
+      "0xFFFF alongside it"
     ],
     "0x04487": [
       "abort_sequence_flag",
-      ""
+      "written by check_abort_flag and round_cleared; read by check_abort_flag and check_round_complete; holds 0"
     ],
     "0x04488": [
       "captured_scancode",
-      ""
+      "written by check_bonus_abort, key_capture_store and 4 others; read by check_bonus_abort, check_round_complete and 3 others; holds 0, 0x39, 0xff"
     ],
     "0x04489": [
       "joystick_sample_count",
-      ""
+      "written by calibrate_joystick and store_sample_count; read by menu_check_joystick and read_joystick_axes; holds 0xff"
     ],
     "0x0448A": [
       "timer_reentry_guard",
-      ""
+      "written by timer_after_pcjr_check and timer_tick_voices; read by timer_after_pcjr_check; holds 0, 1"
     ],
     "0x0448B": [
       "input_enabled",
-      ""
+      "written by init_entity_slots, menu_apply_option and menu_check_joystick; read by bonus_poll_input, bonus_prompt_pick and 12 others; holds 0, 1"
     ],
     "0x0448C": [
       "two_player_flag",
-      ""
+      "written by begin_round, init_entity_defaults and 2 others; read by death_pause_2, draw_score_display and 4 others; holds 0"
     ],
     "0x0448D": [
       "difficulty",
-      ""
+      "written by init_entity_slots; read by add_score and apply_difficulty; holds 0"
     ],
     "0x0448E": [
       "sound_flags",
-      ""
+      "written by sound_disable, sound_enable_pcjr and 2 others; read by apply_sound_setting, play_rom_noise and 8 others; holds 1, 3"
     ],
     "0x0448F": [
       "staging_segment",
-      ""
+      "written by init_after_mode_select and load_common_tables; read by bonus_draw_swap, bonus_reveal_loop and 13 others"
     ],
     "0x04491": [
       "text_target_segment",
-      ""
+      "written by load_common_tables; read by bonus_draw_swap, bonus_reveal_loop and 16 others"
     ],
     "0x04493": [
       "draw_target_segment",
-      ""
+      "written by store_is_pcjr; read by advance_player_bar, attract_config_screen and 17 others; holds 0xb800"
+    ],
+    "0x04495": [
+      "saved_sp",
+      "SP is stored here at start-up and restored from it by start_round_screen and reset_via_bios -- the stack unwind both use instead of returning"
     ],
     "0x04497": [
       "screen_aux_ptr",
-      ""
+      "written by init_after_mode_select; read by page_screen_load"
     ],
     "0x04499": [
       "indirect_call_vector",
-      ""
+      "written by init_after_mode_select, remap_byte_loop and transform_screen_rows"
     ],
     "0x0449B": [
       "keys_down_bitmap",
-      ""
+      "written by dispatch_key_action, key_release_filter and 2 others; read by dispatch_key_action and print_decimal_digit; holds 0"
     ],
     "0x0449C": [
       "keys_down_hi",
-      ""
+      "read by bonus_check_key, check_ctrl_alt_del and 2 others"
     ],
     "0x0449D": [
       "rng_state",
-      ""
+      "written by seed_from_bios_clock; read by advance_rng"
     ],
     "0x0449F": [
       "sprite_table_alt_ptr",
-      ""
+      "written by load_tables_mode0 and load_tables_other; read by set_entity_sprite"
     ],
     "0x044A1": [
       "ptr_table_a",
-      ""
+      "written by load_tables_mode0 and load_tables_other; read by lookup_ptr_pair"
     ],
     "0x044A3": [
       "ptr_table_b",
-      ""
+      "written by load_tables_mode0 and load_tables_other; read by load_tables_mode0 and lookup_ptr_pair"
     ],
     "0x044A5": [
       "bar_sprite_table",
-      ""
+      "written by load_common_tables; read by lookup_bar_sprite_table"
     ],
     "0x044A7": [
       "popup_table_a",
-      ""
+      "written by load_tables_mode0 and load_tables_other; read by sprite_ptr_from_index"
     ],
     "0x044A9": [
       "popup_table_b",
-      ""
+      "written by load_tables_mode0 and load_tables_other; read by sprite_ptr_from_index"
     ],
     "0x044AB": [
       "sprite_table_ptr",
-      ""
+      "written by load_common_tables; read by select_sprite_ptr"
     ],
     "0x044AD": [
       "sound_table_ptr",
-      ""
+      "written by load_common_tables; read by start_sound_effect and voice_next_event"
     ],
     "0x044AF": [
       "screen_config",
-      ""
+      "written by attract_config_screen, load_and_show_screen and page_screen_load; read by pcjr_video_setup and set_video_mode"
     ],
     "0x044B1": [
       "joystick_low",
-      ""
+      "written by converge_joystick_low and joystick_prompt_screen; read by bonus_read_stick, converge_joystick_low and store_joy_dir"
     ],
     "0x044B2": [
       "joystick_y_low",
-      ""
+      "read by read_move_input"
     ],
     "0x044B3": [
       "joystick_centre",
-      ""
+      "written by joystick_prompt_screen; read by joystick_prompt_screen"
+    ],
+    "0x044B4": [
+      "joystick_present",
+      "compared against BH by joystick_prompt_screen"
     ],
     "0x044B5": [
       "joystick_high",
-      ""
+      "written by joystick_prompt_screen; read by bonus_stick_left, converge_joystick_high and joystick_axis_to_direction"
     ],
     "0x044B6": [
       "joystick_y_high",
-      ""
+      "read by joy_check_down"
     ],
     "0x044B7": [
       "joystick_buttons",
-      ""
+      "written by joystick_store_buttons and store_is_pcjr; read by bonus_poll_input, check_serve_input and 3 others; holds 0x3030"
     ],
     "0x044B8": [
       "joystick_prev",
-      ""
+      "written by timer_after_pcjr_check"
     ],
     "0x044B9": [
       "joy_move_dir",
-      ""
+      "written by mode_attract_step and store_joy_dir; read by player_read_move_input; holds 0"
     ],
     "0x044BA": [
       "joy_move_prev",
-      ""
+      "written by player_read_move_input"
     ],
     "0x044BB": [
       "screen_script_ptr",
-      ""
+      "written by init_after_mode_select; read by init_after_mode_select and load_and_show_screen"
     ],
     "0x044BD": [
       "display_mode",
-      ""
+      "written by init_pick_mode and select_display_mode; read by mode_attract_step and page_screen_variant; holds 0, 0xff"
     ],
     "0x044BE": [
       "screen_index_flags",
-      ""
+      "written by attract_score_page, mode_attract_step and 3 others; read by begin_round, page_screen_compare and 2 others; holds 0xff"
+    ],
+    "0x044BF": [
+      "crtc_value",
+      "starts at 0x2D, adjusted by key_crtc_adjust and key_crtc_store and displayed by print_decimal_digit -- the CRTC register the debug keys walk"
     ],
     "0x044C0": [
       "current_player",
-      ""
+      "written by load_other_block and new_game_reset; read by draw_score_display, show_game_over and 2 others; holds 0"
     ],
     "0x044C1": [
       "swallow_next_key",
-      ""
+      "written by init_vectors_and_video, int09_keyboard_isr and 2 others; read by check_bonus_abort, check_pause and 3 others; holds 0, 0xff"
     ],
     "0x044C2": [
       "tick_countdown",
-      ""
+      "written by bonus_prompt_show, joystick_store_buttons and 3 others; holds 0xf, 0x3c"
     ],
     "0x044C3": [
       "key_pending",
-      ""
+      "written by bonus_prompt_show, calibrate_joystick and 9 others; read by banner_wait, bonus_wait_delay and 8 others; holds 1, 2, 3, 0xf, 0x10"
     ],
     "0x044C4": [
       "key_capture_mode",
-      ""
+      "written by attract_config_screen, attract_score_page and 5 others; read by attract_score_page, key_action_space and 10 others; holds 0, 1, 0xff"
     ],
     "0x044C5": [
       "text_colour",
-      ""
+      "written by print_prompt_lines and print_string; read by print_emit_char"
     ],
     "0x044C6": [
       "is_pcjr",
-      ""
+      "written by store_is_pcjr; read by attract_config_screen, bonus_reveal_loop and 24 others"
     ],
     "0x044C7": [
       "round_number",
-      ""
+      "written by apply_difficulty, begin_round and seed_from_bios_clock; read by halve_late_rounds, print_round_units and 2 others; holds 0xc, 0xff"
     ],
     "0x044C8": [
       "score_bcd_hi",
-      ""
+      "written by add_score, apply_difficulty and 2 others; read by add_score and score_shadow_update; holds 0, 0x10"
     ],
     "0x044C9": [
       "score_bcd_mid",
-      ""
+      "written by add_score; read by add_score"
     ],
     "0x044CA": [
       "score_bcd_lo",
-      ""
+      "written by add_score, reset_all_scores and seed_from_bios_clock; read by add_score and score_shadow_update; holds 0, 0xff00"
     ],
     "0x044CB": [
       "score_shadow",
-      ""
+      "written by score_shadow_update"
+    ],
+    "0x044CC": [
+      "rng_seed",
+      "0xFFFF from seed_from_bios_clock"
     ],
     "0x044CD": [
       "score_shadow_lo",
-      ""
+      "written by score_shadow_update"
     ],
     "0x044CE": [
       "score_column",
-      ""
+      "written by seed_from_bios_clock; read by redraw_changed_digits; holds 1"
     ],
     "0x044D0": [
       "lives",
-      ""
+      "written by apply_difficulty, check_bonus_life and restart_round_after_death; read by check_bonus_life, death_pause_2 and game_over_try_other_player; holds 2, 4"
     ],
     "0x044D1": [
       "page_index",
-      ""
+      "written by apply_difficulty, page_advance and seed_from_bios_clock; read by knockback_apply, link_free_node and 6 others; holds 0x10, 0xffff"
     ],
     "0x044D3": [
       "round_param_index",
-      ""
+      "written by apply_difficulty, begin_round and 2 others; read by init_entity_state; holds 0xc, 0xffff"
     ],
     "0x044D5": [
       "next_bonus_score",
-      ""
+      "written by apply_difficulty and check_bonus_life; read by add_score and check_bonus_life; holds 1, 2, 0x12"
     ],
     "0x044D6": [
       "p1_saved_block",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x044D7": [
       "p1_saved_score",
-      ""
+      "written by reset_all_scores; holds 0"
     ],
     "0x044D9": [
       "p1_saved_score_lo",
-      ""
+      "written by reset_all_scores; holds 0"
     ],
     "0x044E5": [
       "p2_saved_block",
-      ""
+      "written by apply_difficulty and new_game_reset; holds 0, 0xd, 0xff"
     ],
     "0x044E6": [
       "p2_saved_score",
-      ""
+      "written by apply_difficulty, new_game_reset and reset_all_scores; holds 0, 0x10"
     ],
     "0x044E8": [
       "p2_saved_score_lo",
-      ""
+      "written by new_game_reset and reset_all_scores; holds 0, 0xff00"
+    ],
+    "0x044EA": [
+      "game_flags",
+      "0xFFFF at the start of a game"
+    ],
+    "0x044EC": [
+      "start_lives",
+      "0x21 at the start of a game"
     ],
     "0x044EE": [
       "p2_saved_lives",
-      ""
+      "written by apply_difficulty and new_game_reset; holds 3, 5"
     ],
     "0x044EF": [
       "p2_saved_page_index",
-      ""
+      "written by apply_difficulty and new_game_reset; holds 0, 0x11, 0xffff"
     ],
     "0x044F1": [
       "p2_saved_round_param",
-      ""
+      "written by apply_difficulty and new_game_reset; holds 0, 0xd, 0xffff"
     ],
     "0x044F3": [
       "p2_saved_bonus",
-      ""
+      "written by apply_difficulty and new_game_reset; holds 1, 2, 0x12"
     ],
     "0x044F4": [
       "bar_phase",
-      ""
+      "written by tick_bar_phase; read by tick_bar_phase; holds 0"
     ],
     "0x044F6": [
       "bar_index_x2",
-      ""
+      "written by copy_all_bar_bands, copy_bar_band_row and 3 others; read by advance_entity_position, alloc_node_to_bar_list and 25 others; holds 0"
     ],
     "0x044F8": [
       "entity_array_ptr",
-      ""
+      "written by erase_bar_entities; read by advance_node_position, death_place_player and 4 others"
     ],
     "0x044FC": [
       "cur_direction",
-      ""
+      "written by seed_entity_velocity; read by place_entity_on_bar, read_page_param and store_entity_column"
     ],
     "0x044FE": [
       "bonus_slot_index",
-      ""
+      "written by bonus_frame_delay and bonus_next_of_pair; read by bonus_draw_swap, bonus_frame_delay and bonus_redraw_can; holds 1"
     ],
     "0x04500": [
       "reveal_row_count",
-      ""
+      "written by reroll_distinct_pick, reveal_animation_step and 2 others; read by reveal_animation_step, reveal_delay_1 and reveal_scroll_row; holds 0"
     ],
     "0x04502": [
       "bonus_pick_slots",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x04506": [
       "popup_frame_index",
-      ""
+      "written by store_popup_frame and tick_pickup_popup; read by advance_popup_frame and draw_popup_frame; holds 0"
     ],
     "0x04508": [
       "serve_target_pos",
-      ""
+      "written by serve_cursor_offset; read by draw_player_now"
     ],
     "0x0450A": [
       "frame_list_cursor",
-      ""
+      "written by advance_frame_cursor, flush_bar_row and 4 others; read by draw_player_now; holds 0x40ae"
     ],
     "0x0450C": [
       "cycle_countdown",
-      ""
+      "written by store_theme_table_ptr and tick_bar_phase; read by erase_mug_node and mug_sprite_cycle; holds 0x202"
     ],
     "0x0450D": [
       "cycle_reload",
-      ""
+      "written by difficulty_cycle_fast; read by tick_bar_phase; holds 1"
     ],
     "0x0450E": [
       "pickup_ptr",
-      ""
+      "written by collect_pickup and spawn_pickup; read by collect_pickup, draw_entity_next and 2 others; holds 0"
     ],
     "0x04510": [
       "pickup_spawn_countdown",
-      ""
+      "written by init_new_node_fields and store_spawn_countdown"
     ],
     "0x04511": [
       "pickup_spawn_reload",
-      ""
+      "read by init_new_node_fields"
+    ],
+    "0x04512": [
+      "shake_source",
+      "bonus_wrong_choice stores SI here; both shake routines read it back"
+    ],
+    "0x04514": [
+      "shake_saved",
+      "the same routine's own save and restore"
     ],
     "0x04516": [
       "intro_delay_count",
-      ""
+      "written by store_intro_delay; read by bonus_redraw_can"
+    ],
+    "0x04518": [
+      "input_phase",
+      "incremented by poll_frame_input and masked to 3, so it counts frames modulo four; apply_knockback reads the pair as a word"
     ],
     "0x0451A": [
       "theme_table_ptr",
-      ""
+      "written by store_theme_table_ptr; read by apply_knockback"
     ],
     "0x0451C": [
       "leading_digit_seen",
-      ""
+      "written by draw_digit_at, draw_score_digits and redraw_changed_digits; read by score_compare_step, score_digit_advance and suppress_leading_zeros; holds 0, 0xff"
     ],
     "0x0451D": [
       "pickup_bar",
-      ""
+      "written by spawn_pickup; read by collect_pickup"
     ],
     "0x0451E": [
       "pickup_pos",
-      ""
+      "written by spawn_pickup; read by collect_pickup"
     ],
     "0x0451F": [
       "pickup_budget",
-      ""
+      "written by init_new_node_fields and set_pickup_budget; read by init_new_node_fields"
     ],
     "0x04520": [
       "entity_tick_reload",
-      ""
+      "written by store_theme_table_ptr and tighten_difficulty; read by apply_knockback, entity_enter_return and 2 others; holds 2, 4"
     ],
     "0x04521": [
       "input_flag_down",
-      ""
+      "written by key_action_down, key_down_check_input and player_move_from_keys; read by player_move_from_keys; holds 0, 1, 0xff"
     ],
     "0x04522": [
       "player_bar",
-      ""
+      "written by advance_player_bar and store_theme_table_ptr; read by advance_player_bar, check_player_bar and check_player_catch; holds 1"
     ],
     "0x04523": [
       "player_bar_prev",
-      ""
+      "written by advance_player_bar; read by mug_list_done"
     ],
     "0x04524": [
       "move_step_count",
-      ""
+      "written by flush_bar_row, move_entity_along_bar and 3 others; read by serve_release_step and serve_step_frame; holds 0, 3"
     ],
     "0x04525": [
       "slow_move_divider",
-      ""
+      "written by flush_bar_row, serve_step_frame and start_serve; read by flush_bar_row; holds 3"
     ],
     "0x04527": [
       "last_random_pick",
-      ""
+      "written by reroll_distinct_pick; read by reroll_distinct_pick"
     ],
     "0x04528": [
       "bonus_answer",
-      ""
+      "written by bonus_adjust_marker, bonus_intro_delay and 3 others; read by bitmap_to_answer_index, bonus_judge_choice and 3 others; holds 0xc0"
     ],
     "0x04529": [
       "bonus_choice",
-      ""
+      "written by bonus_selection_draw; read by bonus_judge_choice and bonus_move_cursor"
     ],
     "0x0452A": [
       "bonus_key_mirror",
-      ""
+      "written by bonus_prompt_show and bonus_wait_delay; read by bonus_wait_delay; holds 0x10"
     ],
     "0x0452B": [
       "theme_sprite_base",
-      ""
+      "written by store_theme_base; read by advance_popup_frame and draw_popup_frame"
     ],
     "0x0452C": [
       "pickup_popup_timer",
-      ""
+      "written by collect_pickup and tick_pickup_popup; read by check_popup_timer, init_new_node_fields and repaint_check_popup; holds 0x40"
     ],
     "0x0452D": [
       "popup_tick_divider",
-      ""
+      "written by reload_popup_divider, store_theme_table_ptr and tick_popup_divider; holds 0x10"
     ],
     "0x0452E": [
       "entity_delay_boost",
-      ""
+      "written by difficulty_delay_boost; read by alloc_node_to_bar_list and apply_knockback; holds 0x10"
     ],
     "0x0452F": [
       "difficulty_milestone",
-      ""
+      "written by poll_frame_input; read by poll_frame_input; holds 0x10"
     ],
     "0x04530": [
       "death_bar_index_x2",
-      ""
+      "written by player_death_sequence; read by move_entity_next and player_death_sequence"
     ],
     "0x04531": [
       "free_list_head",
-      ""
+      "written by alloc_node_to_bar_list, free_list_splice and 2 others; read by alloc_node_to_bar_list, free_list_splice and spawn_mug; holds 0x46c3"
     ],
     "0x04533": [
       "bar_list_heads_a",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x0453B": [
       "bar_list_heads_b",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x04543": [
       "bar_bound_table",
-      ""
+      "written by setup_bar_geometry; read by advance_entity_position, collision_next_entity and 3 others"
     ],
     "0x0454B": [
       "bar_row_top",
-      ""
+      "written by setup_bar_geometry; read by death_place_player and player_bar_install"
     ],
     "0x0454D": [
       "bar_row_bottom",
-      ""
+      "written by setup_bar_geometry; read by death_place_player and player_bar_install"
+    ],
+    "0x0454F": [
+      "player_start_x",
+      "read by init_player_position"
+    ],
+    "0x04551": [
+      "player_start_y",
+      "read by init_player_position"
     ],
     "0x0455B": [
       "bar_direction",
-      ""
+      "written by seed_entity_velocity; read by entity_enter_carry, knockback_store_timer and 4 others"
     ],
     "0x0455C": [
       "bar_byte_table",
-      ""
+      "written by setup_bar_geometry"
+    ],
+    "0x0455D": [
+      "player_start_frame",
+      "read by init_player_position"
+    ],
+    "0x0455E": [
+      "player_start_dir",
+      "read by init_player_position"
+    ],
+    "0x04561": [
+      "round_number_shown",
+      "compared against zero by print_round_number"
     ],
     "0x04563": [
       "overlay_offset_table",
-      ""
+      "written by store_overlay_offset; read by draw_entity_loop"
     ],
     "0x0456B": [
       "bar_sprite_pos",
-      ""
+      "written by read_page_param; read by draw_bar_contents, move_entity_next and repaint_bar_loop"
     ],
     "0x04573": [
       "bar_sprite_ptr",
-      ""
+      "written by lookup_bar_sprite_bounds; read by draw_bar_contents, move_entity_next and repaint_bar_loop"
     ],
     "0x0457B": [
       "bar_limit_table",
-      ""
+      "written by store_entity_column; read by entity_bound_left and move_entity_along_bar"
     ],
     "0x04583": [
       "entity_table",
-      ""
+      "written by bonus_round_entry; read by bonus_reveal_loop, reveal_animation_step and reveal_scroll_row"
+    ],
+    "0x04587": [
+      "last_pick",
+      "reroll_distinct_pick loads SI from it"
     ],
     "0x04682": [
       "str_tapper_pic",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x04683": [
       "player_top",
-      ""
+      "written by bonus_wrong_choice; read by bonus_wrong_choice"
+    ],
+    "0x04685": [
+      "bonus_scratch",
+      "two bytes *inside the string* `Tapper.Pic` -- the second 'p'. bonus_wrong_choice stores DI over them and reads it back. Dead bytes reused as scratch, which only works because the file has already been loaded by the time the bonus round runs"
     ],
     "0x04687": [
       "player_top_pos",
-      ""
+      "written by init_player_position and player_bar_install; read by bonus_move_cursor"
     ],
     "0x04689": [
       "player_top_flags",
-      ""
+      "written by player_bar_install"
     ],
     "0x0468B": [
       "player_column",
-      ""
+      "written by init_player_position and player_bar_install; read by check_player_catch and collect_pickup"
     ],
     "0x04691": [
       "player_velocity",
-      ""
+      "written by init_player_position, key_action_left and 3 others; read by bonus_read_keys, check_player_catch and 3 others; holds 0, 1, 0xff"
     ],
     "0x04693": [
       "player_bottom",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x04697": [
       "player_bottom_pos",
-      ""
+      "written by init_player_position and player_bar_install"
     ],
     "0x046A3": [
       "player_prev_top",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x046A9": [
       "player_prev_top_flags",
-      ""
+      "written by store_theme_table_ptr; holds 0"
     ],
     "0x046B3": [
       "player_prev_bottom",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x046B9": [
       "player_prev_bottom_flags",
-      ""
+      "written by store_theme_table_ptr; holds 0"
     ],
     "0x046C3": [
       "free_list_pool",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
     ],
     "0x047C3": [
       "sprite_table_default",
-      ""
+      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
+    ],
+    "cs:0x00130": [
+      "dat_file_handle",
+      "written by store_dat_handle; read by int80_disk_shim; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x035AB": [
+      "kbd_head",
+      "written by init_vectors_and_video and read_key_buffer_check; read by key_store_scancode and read_key_wait; holds 0; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x035AD": [
+      "kbd_tail",
+      "written by init_vectors_and_video and key_store_scancode; read by key_store_scancode and read_key_buffer_check; holds 0; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x03731": [
+      "voice_slot_1",
+      "written by sound_stop_all; read by play_voice_install; holds 0; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0373E": [
+      "voice_slot_2",
+      "written by sound_stop_all; read by play_voice_install; holds 0; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0374B": [
+      "voice_slot_3",
+      "written by sound_stop_all; read by play_voice_install; holds 0; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x03EEB": [
+      "row_offset_table",
+      "read by copy_bar_band_loop, flush_bar_band and move_entity_next; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0402A": [
+      "bar_geometry",
+      "byte pairs -- 0x15 0x37, 0x0E 0x3E, 0x08 0x44, 0x02 0x4A -- indexed by bar number; place_entity_on_bar and knockback_store_timer read it; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04032": [
+      "bar_columns",
+      "0x34 0x14, 0x3A 0x0E, 0x40 0x08, 0x46 0x02: the same four bars from the other end, read by store_entity_column and start_serve; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0405A": [
+      "anim_frame_table",
+      "read by step_entity_animation; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04063": [
+      "frames_per_entity",
+      "four sevens; step_entity_frame indexes it by entity kind; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0406F": [
+      "row_stride",
+      "0x00A0, 0x00F0, 0x0140, 0x0140 -- added to SI by the two bonus drawing routines, so 160, 240 and 320 bytes to a row; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x040CF": [
+      "next_page_screen",
+      "read by show_next_page; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x040EA": [
+      "page_theme_table",
+      "read by knockback_apply, link_free_node and 3 others; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04450": [
+      "alt_isr_slot",
+      "read by read_key; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04452": [
+      "orig_int09_vector",
+      "written by init_vectors_and_video; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04454": [
+      "program_segment",
+      "`mov word [cs:0x4454], ds` at start-up. DS is CS in a .COM, so this is the program's own segment, kept for building far pointers; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04456": [
+      "orig_int1c_vector",
+      "written by init_vectors_and_video; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04458": [
+      "program_segment_2",
+      "the second copy, written in the same breath; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0445D": [
+      "screen_loaded_flag",
+      "0xFF once load_and_show_screen has run; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0445E": [
+      "screen_id",
+      "0xFFFF alongside it; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04487": [
+      "abort_sequence_flag",
+      "written by check_abort_flag and round_cleared; read by check_abort_flag and check_round_complete; holds 0; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04488": [
+      "captured_scancode",
+      "written by check_bonus_abort, key_capture_store and 4 others; read by check_bonus_abort, check_round_complete and 3 others; holds 0, 0x39, 0xff; also written [cs:...] in 7 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04489": [
+      "joystick_sample_count",
+      "written by calibrate_joystick and store_sample_count; read by menu_check_joystick and read_joystick_axes; holds 0xff; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0448B": [
+      "input_enabled",
+      "written by init_entity_slots, menu_apply_option and menu_check_joystick; read by bonus_poll_input, bonus_prompt_pick and 12 others; holds 0, 1; also written [cs:...] in 7 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0448C": [
+      "two_player_flag",
+      "written by begin_round, init_entity_defaults and 2 others; read by death_pause_2, draw_score_display and 4 others; holds 0; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0448D": [
+      "difficulty",
+      "written by init_entity_slots; read by add_score and apply_difficulty; holds 0; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0448E": [
+      "sound_flags",
+      "written by sound_disable, sound_enable_pcjr and 2 others; read by apply_sound_setting, play_rom_noise and 8 others; holds 1, 3; also written [cs:...] in 5 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0448F": [
+      "staging_segment",
+      "written by init_after_mode_select and load_common_tables; read by bonus_draw_swap, bonus_reveal_loop and 13 others; also written [cs:...] in 15 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04491": [
+      "text_target_segment",
+      "written by load_common_tables; read by bonus_draw_swap, bonus_reveal_loop and 16 others; also written [cs:...] in 24 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04493": [
+      "draw_target_segment",
+      "written by store_is_pcjr; read by advance_player_bar, attract_config_screen and 17 others; holds 0xb800; also written [cs:...] in 20 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04499": [
+      "indirect_call_vector",
+      "written by init_after_mode_select, remap_byte_loop and transform_screen_rows; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0449C": [
+      "keys_down_hi",
+      "read by bonus_check_key, check_ctrl_alt_del and 2 others; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0449D": [
+      "rng_state",
+      "written by seed_from_bios_clock; read by advance_rng; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0449F": [
+      "sprite_table_alt_ptr",
+      "written by load_tables_mode0 and load_tables_other; read by set_entity_sprite; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044A1": [
+      "ptr_table_a",
+      "written by load_tables_mode0 and load_tables_other; read by lookup_ptr_pair; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044A3": [
+      "ptr_table_b",
+      "written by load_tables_mode0 and load_tables_other; read by load_tables_mode0 and lookup_ptr_pair; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044AB": [
+      "sprite_table_ptr",
+      "written by load_common_tables; read by select_sprite_ptr; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044AF": [
+      "screen_config",
+      "written by attract_config_screen, load_and_show_screen and page_screen_load; read by pcjr_video_setup and set_video_mode; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044B1": [
+      "joystick_low",
+      "written by converge_joystick_low and joystick_prompt_screen; read by bonus_read_stick, converge_joystick_low and store_joy_dir; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044B2": [
+      "joystick_y_low",
+      "read by read_move_input; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044B5": [
+      "joystick_high",
+      "written by joystick_prompt_screen; read by bonus_stick_left, converge_joystick_high and joystick_axis_to_direction; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044B6": [
+      "joystick_y_high",
+      "read by joy_check_down; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044B7": [
+      "joystick_buttons",
+      "written by joystick_store_buttons and store_is_pcjr; read by bonus_poll_input, check_serve_input and 3 others; holds 0x3030; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044B8": [
+      "joystick_prev",
+      "written by timer_after_pcjr_check; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044B9": [
+      "joy_move_dir",
+      "written by mode_attract_step and store_joy_dir; read by player_read_move_input; holds 0; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044BA": [
+      "joy_move_prev",
+      "written by player_read_move_input; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044BB": [
+      "screen_script_ptr",
+      "written by init_after_mode_select; read by init_after_mode_select and load_and_show_screen; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044BD": [
+      "display_mode",
+      "written by init_pick_mode and select_display_mode; read by mode_attract_step and page_screen_variant; holds 0, 0xff; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044BE": [
+      "screen_index_flags",
+      "written by attract_score_page, mode_attract_step and 3 others; read by begin_round, page_screen_compare and 2 others; holds 0xff; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C0": [
+      "current_player",
+      "written by load_other_block and new_game_reset; read by draw_score_display, show_game_over and 2 others; holds 0; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C1": [
+      "swallow_next_key",
+      "written by init_vectors_and_video, int09_keyboard_isr and 2 others; read by check_bonus_abort, check_pause and 3 others; holds 0, 0xff; also written [cs:...] in 5 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C2": [
+      "tick_countdown",
+      "written by bonus_prompt_show, joystick_store_buttons and 3 others; holds 0xf, 0x3c; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C3": [
+      "key_pending",
+      "written by bonus_prompt_show, calibrate_joystick and 9 others; read by banner_wait, bonus_wait_delay and 8 others; holds 1, 2, 3, 0xf, 0x10; also written [cs:...] in 11 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C4": [
+      "key_capture_mode",
+      "written by attract_config_screen, attract_score_page and 5 others; read by attract_score_page, key_action_space and 10 others; holds 0, 1, 0xff; also written [cs:...] in 6 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C5": [
+      "text_colour",
+      "written by print_prompt_lines and print_string; read by print_emit_char; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C6": [
+      "is_pcjr",
+      "written by store_is_pcjr; read by attract_config_screen, bonus_reveal_loop and 24 others; also written [cs:...] in 20 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C7": [
+      "round_number",
+      "written by apply_difficulty, begin_round and seed_from_bios_clock; read by halve_late_rounds, print_round_units and 2 others; holds 0xc, 0xff; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C8": [
+      "score_bcd_hi",
+      "written by add_score, apply_difficulty and 2 others; read by add_score and score_shadow_update; holds 0, 0x10; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044C9": [
+      "score_bcd_mid",
+      "written by add_score; read by add_score; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044CA": [
+      "score_bcd_lo",
+      "written by add_score, reset_all_scores and seed_from_bios_clock; read by add_score and score_shadow_update; holds 0, 0xff00; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044CB": [
+      "score_shadow",
+      "written by score_shadow_update; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044CD": [
+      "score_shadow_lo",
+      "written by score_shadow_update; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044CE": [
+      "score_column",
+      "written by seed_from_bios_clock; read by redraw_changed_digits; holds 1; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044D0": [
+      "lives",
+      "written by apply_difficulty, check_bonus_life and restart_round_after_death; read by check_bonus_life, death_pause_2 and game_over_try_other_player; holds 2, 4; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044D1": [
+      "page_index",
+      "written by apply_difficulty, page_advance and seed_from_bios_clock; read by knockback_apply, link_free_node and 6 others; holds 0x10, 0xffff; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044D3": [
+      "round_param_index",
+      "written by apply_difficulty, begin_round and 2 others; read by init_entity_state; holds 0xc, 0xffff; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044D5": [
+      "next_bonus_score",
+      "written by apply_difficulty and check_bonus_life; read by add_score and check_bonus_life; holds 1, 2, 0x12; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044F4": [
+      "bar_phase",
+      "written by tick_bar_phase; read by tick_bar_phase; holds 0; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044F6": [
+      "bar_index_x2",
+      "written by copy_all_bar_bands, copy_bar_band_row and 3 others; read by advance_entity_position, alloc_node_to_bar_list and 25 others; holds 0; also written [cs:...] in 31 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044F8": [
+      "entity_array_ptr",
+      "written by erase_bar_entities; read by advance_node_position, death_place_player and 4 others; also written [cs:...] in 7 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x044FE": [
+      "bonus_slot_index",
+      "written by bonus_frame_delay and bonus_next_of_pair; read by bonus_draw_swap, bonus_frame_delay and bonus_redraw_can; holds 1; also written [cs:...] in 7 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04500": [
+      "reveal_row_count",
+      "written by reroll_distinct_pick, reveal_animation_step and 2 others; read by reveal_animation_step, reveal_delay_1 and reveal_scroll_row; holds 0; also written [cs:...] in 9 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04506": [
+      "popup_frame_index",
+      "written by store_popup_frame and tick_pickup_popup; read by advance_popup_frame and draw_popup_frame; holds 0; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04508": [
+      "serve_target_pos",
+      "written by serve_cursor_offset; read by draw_player_now; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0450A": [
+      "frame_list_cursor",
+      "written by advance_frame_cursor, flush_bar_row and 4 others; read by draw_player_now; holds 0x40ae; also written [cs:...] in 7 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0450C": [
+      "cycle_countdown",
+      "written by store_theme_table_ptr and tick_bar_phase; read by erase_mug_node and mug_sprite_cycle; holds 0x202; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0450D": [
+      "cycle_reload",
+      "written by difficulty_cycle_fast; read by tick_bar_phase; holds 1; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0450E": [
+      "pickup_ptr",
+      "written by collect_pickup and spawn_pickup; read by collect_pickup, draw_entity_next and 2 others; holds 0; also written [cs:...] in 6 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04510": [
+      "pickup_spawn_countdown",
+      "written by init_new_node_fields and store_spawn_countdown; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04511": [
+      "pickup_spawn_reload",
+      "read by init_new_node_fields; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04512": [
+      "shake_source",
+      "bonus_wrong_choice stores SI here; both shake routines read it back; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04516": [
+      "intro_delay_count",
+      "written by store_intro_delay; read by bonus_redraw_can; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04518": [
+      "input_phase",
+      "incremented by poll_frame_input and masked to 3, so it counts frames modulo four; apply_knockback reads the pair as a word; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0451A": [
+      "theme_table_ptr",
+      "written by store_theme_table_ptr; read by apply_knockback; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0451C": [
+      "leading_digit_seen",
+      "written by draw_digit_at, draw_score_digits and redraw_changed_digits; read by score_compare_step, score_digit_advance and suppress_leading_zeros; holds 0, 0xff; also written [cs:...] in 6 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0451D": [
+      "pickup_bar",
+      "written by spawn_pickup; read by collect_pickup; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0451E": [
+      "pickup_pos",
+      "written by spawn_pickup; read by collect_pickup; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0451F": [
+      "pickup_budget",
+      "written by init_new_node_fields and set_pickup_budget; read by init_new_node_fields; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04520": [
+      "entity_tick_reload",
+      "written by store_theme_table_ptr and tighten_difficulty; read by apply_knockback, entity_enter_return and 2 others; holds 2, 4; also written [cs:...] in 5 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04521": [
+      "input_flag_down",
+      "written by key_action_down, key_down_check_input and player_move_from_keys; read by player_move_from_keys; holds 0, 1, 0xff; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04522": [
+      "player_bar",
+      "written by advance_player_bar and store_theme_table_ptr; read by advance_player_bar, check_player_bar and check_player_catch; holds 1; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04523": [
+      "player_bar_prev",
+      "written by advance_player_bar; read by mug_list_done; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04524": [
+      "move_step_count",
+      "written by flush_bar_row, move_entity_along_bar and 3 others; read by serve_release_step and serve_step_frame; holds 0, 3; also written [cs:...] in 7 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04525": [
+      "slow_move_divider",
+      "written by flush_bar_row, serve_step_frame and start_serve; read by flush_bar_row; holds 3; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04527": [
+      "last_random_pick",
+      "written by reroll_distinct_pick; read by reroll_distinct_pick; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04528": [
+      "bonus_answer",
+      "written by bonus_adjust_marker, bonus_intro_delay and 3 others; read by bitmap_to_answer_index, bonus_judge_choice and 3 others; holds 0xc0; also written [cs:...] in 10 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04529": [
+      "bonus_choice",
+      "written by bonus_selection_draw; read by bonus_judge_choice and bonus_move_cursor; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0452A": [
+      "bonus_key_mirror",
+      "written by bonus_prompt_show and bonus_wait_delay; read by bonus_wait_delay; holds 0x10; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0452B": [
+      "theme_sprite_base",
+      "written by store_theme_base; read by advance_popup_frame and draw_popup_frame; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0452C": [
+      "pickup_popup_timer",
+      "written by collect_pickup and tick_pickup_popup; read by check_popup_timer, init_new_node_fields and repaint_check_popup; holds 0x40; also written [cs:...] in 5 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0452D": [
+      "popup_tick_divider",
+      "written by reload_popup_divider, store_theme_table_ptr and tick_popup_divider; holds 0x10; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0452E": [
+      "entity_delay_boost",
+      "written by difficulty_delay_boost; read by alloc_node_to_bar_list and apply_knockback; holds 0x10; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0452F": [
+      "difficulty_milestone",
+      "written by poll_frame_input; read by poll_frame_input; holds 0x10; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04530": [
+      "death_bar_index_x2",
+      "written by player_death_sequence; read by move_entity_next and player_death_sequence; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04531": [
+      "free_list_head",
+      "written by alloc_node_to_bar_list, free_list_splice and 2 others; read by alloc_node_to_bar_list, free_list_splice and spawn_mug; holds 0x46c3; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04543": [
+      "bar_bound_table",
+      "written by setup_bar_geometry; read by advance_entity_position, collision_next_entity and 3 others; also written [cs:...] in 4 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0454B": [
+      "bar_row_top",
+      "written by setup_bar_geometry; read by death_place_player and player_bar_install; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0454D": [
+      "bar_row_bottom",
+      "written by setup_bar_geometry; read by death_place_player and player_bar_install; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0455B": [
+      "bar_direction",
+      "written by seed_entity_velocity; read by entity_enter_carry, knockback_store_timer and 4 others; also written [cs:...] in 5 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04563": [
+      "overlay_offset_table",
+      "written by store_overlay_offset; read by draw_entity_loop; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0456B": [
+      "bar_sprite_pos",
+      "written by read_page_param; read by draw_bar_contents, move_entity_next and repaint_bar_loop; also written [cs:...] in 5 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04573": [
+      "bar_sprite_ptr",
+      "written by lookup_bar_sprite_bounds; read by draw_bar_contents, move_entity_next and repaint_bar_loop; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0457B": [
+      "bar_limit_table",
+      "written by store_entity_column; read by entity_bound_left and move_entity_along_bar; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04583": [
+      "entity_table",
+      "written by bonus_round_entry; read by bonus_reveal_loop, reveal_animation_step and reveal_scroll_row; also written [cs:...] in 6 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04587": [
+      "last_pick",
+      "reroll_distinct_pick loads SI from it; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04685": [
+      "bonus_scratch",
+      "two bytes *inside the string* `Tapper.Pic` -- the second 'p'. bonus_wrong_choice stores DI over them and reads it back. Dead bytes reused as scratch, which only works because the file has already been loaded by the time the bonus round runs; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04687": [
+      "player_top_pos",
+      "written by init_player_position and player_bar_install; read by bonus_move_cursor; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04689": [
+      "player_top_flags",
+      "written by player_bar_install; also written [cs:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x0468B": [
+      "player_column",
+      "written by init_player_position and player_bar_install; read by check_player_catch and collect_pickup; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04691": [
+      "player_velocity",
+      "written by init_player_position, key_action_left and 3 others; read by bonus_read_keys, check_player_catch and 3 others; holds 0, 1, 0xff; also written [cs:...] in 3 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
+    ],
+    "cs:0x04697": [
+      "player_bottom_pos",
+      "written by init_player_position and player_bar_install; also written [cs:...] in 1 place -- the same address, because DS is CS in a .COM and the prefix costs nothing"
     ],
     "es:0x000E": [
       "int03_vector",
@@ -3079,7 +3691,7 @@
     ],
     "es:0x0026": [
       "int09_vector_seg",
-      ""
+      "written by init_vectors_and_video and player_bar_install; read by advance_player_bar"
     ],
     "es:0x0070": [
       "int1c_vector",
@@ -3087,7 +3699,11 @@
     ],
     "es:0x0072": [
       "int1c_vector_seg",
-      ""
+      "written by init_vectors_and_video"
+    ],
+    "es:0x04000": [
+      "asset_buffer",
+      "read as `[es:0x4000]` by both screen loaders, after BX is set to the same value: the offset a .PIC lands at; also written [es:...] in 2 places -- the same address, because DS is CS in a .COM and the prefix costs nothing"
     ],
     "es:0x0410": [
       "bios_equipment_word",
@@ -3096,9 +3712,12 @@
   },
   "_displacements": {
     "_note": [
-      "16 bracketed constants are displacements, not addresses:",
-      "each appears only with a base register, never on its own, and every",
-      "one is under 0x400 -- a field inside a record the base points at."
+      "Bracketed constants that are displacements, not addresses: each appears",
+      "only with a base register and never on its own.",
+      "",
+      "0x2000 is the exception to the size rule and belongs here anyway -- it is",
+      "the distance between the two CGA banks. `[si + 0x2000]` in a row copier",
+      "is the other field of the interlace, not a variable at 0x2000."
     ],
     "0x000A": [
       "bp",
@@ -3156,15 +3775,10 @@
     ],
     "0x00B0": [
       "bp"
+    ],
+    "0x2000": [
+      "di",
+      "si"
     ]
-  },
-  "_not_named": [
-    "133 addresses the listing references have no name.",
-    "They are Tapper's own variables, and they are left unnamed rather than",
-    "guessed. This game arrived from a separate repository where nothing",
-    "counted them; the other five here have none.",
-    "",
-    "Run build.ps1 and read what annotate.py prints -- it lists them, and the",
-    "list is the work queue."
-  ]
+  }
 }

@@ -32,13 +32,38 @@ silently, because a symbol that never lands cannot fail loudly.
 |---|---|
 | rebuild | **byte-identical**, `EC85DB55…` |
 | routines named | **583 — all 77 call targets and every tail-call entry** |
-| variables named | 182 |
+| variables named | **336** |
 | decoded as code | **74.5%** of the file |
-| **still unnamed** | **133 addresses the listing references** |
+| bracketed constants | 254 named, 19 recorded as displacements, **none left** |
 
-That last row is the difference between this game and the other five here,
-which have none. `build.ps1` prints the list every time it runs, and the list
-is the work queue.
+It is level with the other four now. Getting there took three passes and each
+found a different kind of mistake.
+
+**123 of the 133 were already named.** They are written `[cs:bx + 0x402A]`
+where the key was bare, and DS is CS in a `.COM`, so they are the same address
+under a second spelling. The author used the prefix on about half the table
+reads and not the other half. Aliasing them took the applied count from 330
+memory references to 759.
+
+**Nineteen were displacements**, not addresses -- a field offset that never
+appears without a base register. `0x2000` is the interesting one: it is the
+distance between the two CGA banks, so `[si + 0x2000]` in a row copier is the
+other field of the interlace and not a variable.
+
+**Thirty-two were real, and two of those are worth reading.** `0x0472` takes
+`0x1234` immediately before `ljmp 0xFFFF:0` -- that value at `0x0040:0x0072`
+means warm boot. But the write carries no segment prefix and DS is CS, set two
+instructions earlier by `push cs / pop ds`, so the flag lands in the program's
+own memory and the machine cold-boots instead: the slow reset, every time. And
+`0x4685` is *inside the string* `Tapper.Pic`, over its second 'p' --
+`bonus_wrong_choice` stores DI there and reads it back, two dead bytes reused
+as scratch once the file has been loaded.
+
+Every name now carries an evidence line. 181 globals and 454 routines had a
+name and an empty description; those are generated from the listing -- which
+routines write the address, which read it, what constants land in it -- and
+say so. Thinner than a sentence somebody wrote after reading the routine, and
+checkable, which an empty string was not.
 
 The 74.5% is worth a note. A recursive walk reaches what something branches to,
 and this release's crack installs an INT 80h floppy shim through a loader that
