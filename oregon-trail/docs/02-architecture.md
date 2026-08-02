@@ -823,7 +823,10 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    The party is an array of eleven-byte records at `DS:0x17FE`. **The store is
    fully priced** — oxen $40 a yoke, food 20¢ a pound, clothing $10 a set,
    ammunition $2 a box of 20, spare parts $10 each — because the game states
-   every price in its own dialogue. The scoring is partly read —
+   every price in its own dialogue. **And the simulation itself is out**: miles
+   today is `legRate × (pace + 2) / 2`, food is `people × (3 − rations)`, both
+   settings feed one health accumulator at `DS:0x1886`, and the casualty
+   routine's probability is computed from it. The scoring is partly read —
    the rates are one point per 50 bullets, per 25 pounds of food and per $5,
    and the profession multiplier is in the strings
    ([document three](03-the-code.md#the-first-numbers-out-of-the-simulation)).

@@ -28,7 +28,7 @@ shorter working reference you come back to.
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
-| game logic as code | **chance model, store and settings done** — 29 `Random` sites, the casualty routine, every store price, the pace hours; what is *not* read is the arithmetic joining pace and rations to the odds |
+| game logic as code | **the model is out** — miles, food, health and the odds of dying are all four formulas; every store price; 29 `Random` sites; the casualty routine |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | documents | [four](docs/), written from the above |
 
@@ -154,6 +154,28 @@ Data-segment offsets (add `0x23480` for an image offset):
 | `DS:0x1847` | cash, a 6-byte `Real` — one point per $5 **[inferred]** |
 | `DS:0x16B2` | the timer tick counter, a 32-bit `LongInt` |
 | `DS:0x1020` | the network licence timeout, in minutes: 30 |
+| `DS:0x185D` | **pace** — 0, 1, 2; the word table is at `DS:0x0C92`, 11-byte stride |
+| `DS:0x185E` | **rations** — 0, 1, 2; words at `DS:0x0CB4` |
+| `DS:0x185F` | which leg of the trail; a 37-byte record per leg at `DS:0x0896` |
+| `DS:0x1886` | **health**, a 6-byte `Real`, and a *badness* score — it goes up |
+| `DS:0x183F` | food in pounds |
+
+### The simulation, in four formulas
+
+All four established from the code, and each byte is touched only seven times in
+the whole program:
+
+```
+miles today      = legRate x (pace + 2) / 2        ; 1 : 1.5 : 2
+food eaten       = people x (3 - rations)          ; 3, 2 or 1 lb each
+health          += (pace + 1) x 2 x k + rations x 2 + weatherBits
+                   + 0.2 a day once the food runs out
+odds of dying    = (health - 2.5) / y              ; per party member
+```
+
+Scoring: a person is worth **500 / 400 / 300 / 200** by health (`0x0C0A7` holds
+the words and `0x0C0C0` the numbers, adjacent), plus one point per 50 bullets,
+per 25 lb of food and per $5; then x1 banker, x2 carpenter, x3 farmer.
 
 ### Turbo Pascal 5.0 runtime calls, established by body-matching
 

@@ -1151,8 +1151,118 @@ last substantial thing unread in this program, and the way in is the casualty
 routine — it already takes a computed probability, and the arithmetic that
 produces it is what pace and rations feed.
 
-**What is still open.** The illness model's inputs, and the arithmetic joining
-pace and rations to the odds of dying.
+### The two settings, and everything they touch
+
+Pace and rations are single bytes:
+
+```nasm
+0012FFC  mov al, [0x185D]          ; pace     0, 1, 2
+0013000  mov dx, 0x000B / mul dx   ; times eleven
+0013007  add di, 0x0C92            ;   -> the word table: steady, strenuous, grueling
+0013022  mov al, [0x185E]          ; rations  0, 1, 2
+001302D  add di, 0x0CB4            ;   -> filling, meager, bare bones
+```
+
+`DS:0x0C92` is image `0x24112`, which is exactly where the word list was found
+earlier — the two arrived independently and agree.
+
+Each byte is touched **seven times in the whole program**, and four of those are
+the menu writing it and one is the outfitting screen setting it to zero. So the
+entire influence of pace and rations on the simulation is **four instructions'
+worth of reads**, and they can simply be listed.
+
+**Pace decides how far you get.**
+
+```nasm
+0003C5  mov al, [0x185D]
+0003C9  add ax, 2                 ; 2, 3, 4
+0003CD  lcall System+0x0C6E       ;   as a Real
+0003D5  mov ax, [0x185F]          ; which leg of the trail
+0003DB  mul 0x25                  ;   times 37 -- a record array
+0003DF  mov al, [di + 0x8B2]      ;   this leg's rate
+0003FD  lcall System+0x0C5A       ; rate × (pace + 2)
+000409  lcall System+0x0C60       ;      ÷ 2.0
+```
+
+**miles per day = rate × (pace + 2) ÷ 2**, so steady, strenuous and grueling are
+in the ratio **1 : 1.5 : 2** — precisely the 8, 12 and 16 hours the shopkeeper's
+screen quotes. The rate comes from a 37-byte record per leg of the trail at
+`DS:0x08B2`, which is how terrain changes your speed without changing this
+formula.
+
+**Rations decide how fast the food goes.**
+
+```nasm
+0013D32  mov cx, ax                ; how many people are alive
+0013D34  mov al, [0x185E]
+0013D3A  mov ax, 3
+0013D3D  sub ax, dx                ; 3 - rations  ->  3, 2, 1
+0013D3F  imul cx                   ;   × people
+```
+
+**pounds eaten per day = people × (3 − rations)**: three pounds each on filling,
+two on meager, one on bare bones. No table, no fractions — one subtraction.
+
+**And both feed one accumulator.**
+
+```nasm
+0013FF9  mov al, [0x185E] / shl ax, 1   ; rations × 2   -> 0, 2, 4
+0014045  mov al, [0x185D]
+0014049  inc ax / shl ax, 1             ; (pace + 1) × 2 -> 2, 4, 6
+001404C  imul dx                        ;   × a parameter
+001404E  add ax, cx                     ; + 1 if the weather is bad
+0014050  add ax, bx                     ; + 1 if it is worse
+0014055  ... [0x1886] ...               ; the health value, a 6-byte Real
+0014093  ... + 0.2 when [0x183F] = 0    ; ... and again if the food ran out
+```
+
+`DS:0x1886` is the party's health, and it is a **badness** score: everything
+above *adds* to it. Travelling harder adds more, eating less adds more, bad
+weather adds more, and running out of food adds a fixed 0.2 a day.
+
+That closes the last link. The
+[casualty routine](#one-routine-kills-people-and-it-takes-the-odds-as-an-argument)
+takes its probability as an argument and two of its callers compute
+`(x − 2.5) / y` and `(x − 3.0) / y`. **`x` is this accumulator.** So the chain
+runs end to end:
+
+```mermaid
+flowchart LR
+    P["pace<br/>DS:0x185D"] --> H["health<br/>DS:0x1886"]
+    R["rations<br/>DS:0x185E"] --> H
+    W["weather"] --> H
+    F["food ran out"] --> H
+    R --> E["food eaten<br/>people x (3 - rations)"]
+    E --> F
+    P --> M["miles today<br/>rate x (pace+2) / 2"]
+    H --> D["odds of dying<br/>(health - 2.5) / y"]
+    D --> K["the casualty routine<br/>one per party member"]
+```
+
+Read it left to right: the two things the player chooses are the only inputs the
+player controls, they meet in a single number, and that number is the argument
+to the routine that kills people. Notice that pace reaches the outcome by **two
+separate paths** — it makes you travel further *and* it makes you sicker — which
+is the whole tension of the game expressed in about twenty instructions.
+
+**And the health words are scored right beside their own values:**
+
+```
+0x0C0A7  good\fair\poor\very poor
+0x0C0C0  500\400\300\200
+```
+
+Four words and four numbers, adjacent in the file, parsed by the same
+backslash-splitting the menus use. A person in good health is worth 500 points
+at the end, very poor 200 — which completes the scoring alongside the rates of
+one point per 50 bullets, per 25 pounds of food and per $5.
+
+**What transfers.** Two bytes, seven accesses each, and the whole difficulty
+curve of a game that people still argue about. The lesson is not that the model
+is simple — it is that **finding the variable is worth more than reading the
+code**. Once `DS:0x185D` was identified, four instructions were all that
+remained; before that, twenty-nine `Random` calls looked like twenty-nine
+separate mysteries.
 
 ## Where the artwork is loaded from
 
