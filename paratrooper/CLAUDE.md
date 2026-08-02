@@ -30,7 +30,7 @@ routine the phase table jumps to; every address the listing writes as a bare
 `[0x....]` has a name here, and 56 of the 93 bracketed constants overall —
 the other 37 are displacements into a struct rather than addresses; and
 `_data_spans` accounts for all 11,056 bytes of the data region with no gap
-between spans — and the toolkit's `annotate.py` applies it.
+between spans — and the toolkit's `annotate.py` checks and applies it, and every heading lands.
 
 ```powershell
 .\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe

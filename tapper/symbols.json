@@ -2395,7 +2395,7 @@
     ],
     "0x005B1": [
       "asset_table",
-      "no decoded instruction reaches it -- referenced only from a run the map calls data, or reached through a register the reading does not follow"
+      "15 four-byte records: start sector, then byte count. load_asset_read_chunk does `shl ax,1` twice and `add ax, 0x5b1`, reads the count from `[si+2]`, turns it into sectors with `(count + 0x1FF) >> 9`, and reads the start from `[si]`. The records chain: every one of the 14 gaps is exactly the sector count of the record before it, so the layout is checked and not guessed. Sectors are absolute -- divided by 9 for a track, plus 2 -- not offsets into a DOS file."
     ],
     "0x03557": [
       "alt_key_scan_table",
@@ -3779,6 +3779,189 @@
     "0x2000": [
       "di",
       "si"
+    ]
+  },
+  "_data_spans": {
+    "_note": [
+      "Named spans, as distinct from the named addresses in `globals`. A",
+      "reference count of 100% says nothing about the bytes between the",
+      "references. These partition the whole 17,920-byte file: no gap, no",
+      "overlap, every byte inside an extent that says what it is for.",
+      "",
+      "Keys are file offsets, which is the coordinate comrec's labels use.",
+      "Add 0x100 for the address the program sees."
+    ],
+    "0x00000": [
+      20,
+      "Two entry jumps with the file name `Tapper.Dat` stored between them. The first hops over the string; the second goes to load_pic_file, which is at the far end of the file and does the same trick with `Tapper.Pic`."
+    ],
+    "0x00014": [
+      107,
+      "Point SS at the program, open Tapper.Dat through DOS and keep the handle -- and then int80_disk_shim, which is how everything after this reads the disk. The game installs its own INT 0x80 and the loader calls that rather than INT 0x13 directly."
+    ],
+    "0x0007F": [
+      900,
+      "900 bytes, every one zero. Nothing decodes here and no table points at it; the file ships it empty and the program fills it at run time. The one named address inside is warm_boot_flag at 0x0372, and that is there by mistake -- the reset code writes 0x1234 without a segment prefix while DS is CS, so the value the BIOS wanted at 0x0040:0x0072 lands in here instead and the machine cold-boots."
+    ],
+    "0x00403": [
+      149,
+      "The asset loader, and it does not use DOS. It takes an asset number, indexes asset_table by four, divides the start sector by nine to get a track, adds two, and reads with AH=2 through the INT 0x80 shim -- absolute geometry, nine sectors to a track, starting at track 2. Three attempts per read and four retries around a controller reset before disk_error_hang."
+    ],
+    "0x00498": [
+      168,
+      "'Disk Error', the loader's own counters, and asset_table: fifteen four-byte records of (start sector, byte length). The lengths check out against the starts -- (length + 511) >> 9 sectors from one record lands exactly on the next record's start, for all fourteen gaps."
+    ],
+    "0x00540": [
+      789,
+      "Start-up: install the interrupt vectors, ask whether this is a PCjr, pick and program the display mode, load the tables that depend on it, and clear the entity slots."
+    ],
+    "0x00855": [
+      681,
+      "The front end: the menu and its markers, the high-score table, and what a new game resets -- the seed comes from the BIOS clock, and difficulty and sound come from the menu."
+    ],
+    "0x00AFE": [
+      487,
+      "Loading and showing a screen: the page counter, the screen table, the compare-and-load path, game over, and the start of a round."
+    ],
+    "0x00CE5": [
+      852,
+      "Entity slots: the defaults, seeding a bar with entities, placing one on a bar, and the geometry that says where the bars are."
+    ],
+    "0x01039": [
+      499,
+      "The pickup popup, erasing entities off a bar, and the state machine that runs each entity every frame."
+    ],
+    "0x0122C": [
+      797,
+      "Knockback and the death sequence: place the player, stop everything, redraw the bar, erase the entities, then copy the screen away row by row."
+    ],
+    "0x01549": [
+      246,
+      "The drink timer and the free list -- allocating a node onto a bar's list is how a new mug or a new customer comes into being."
+    ],
+    "0x0163F": [
+      570,
+      "Carrying and returning: an entity picks a mug up, walks back, and the served mugs slide the other way."
+    ],
+    "0x01879": [
+      498,
+      "Mugs at the end of a bar: the bound check, falling, the fall frames, and the player catching one."
+    ],
+    "0x01A6B": [
+      435,
+      "Serving: reading the tap key, stepping the pour animation, releasing, and spawning the mug that slides down the bar."
+    ],
+    "0x01C1E": [
+      215,
+      "The player's own animation -- the frame pairs for the top and bottom halves, and collecting a pickup."
+    ],
+    "0x01CF5": [
+      405,
+      "Drawing a bar's contents and flushing the band it occupies, plus the per-frame input poll and the difficulty tightening that runs with it."
+    ],
+    "0x01E8A": [
+      92,
+      "Round cleared: the flash, the pause, and choosing what comes next."
+    ],
+    "0x01EE6": [
+      461,
+      "Reading movement: keys to a direction, starting a move, changing bar, and the crash animation when a mug is missed."
+    ],
+    "0x020B3": [
+      204,
+      "Repaint: the playfield, every entity, every bar, then out to the screen."
+    ],
+    "0x0217F": [
+      127,
+      "The rectangle copies -- the popup and the four bar bands, each in two passes because CGA keeps even and odd rows in different banks."
+    ],
+    "0x021FE": [
+      270,
+      "Drawing mugs, served mugs and pickups, and the 8x8 blitter they share."
+    ],
+    "0x0230C": [
+      2098,
+      "The bonus round, and at 2,098 bytes the largest subsystem in the game: the reveal animation, the pair of cans, the swap, the pick, and the scoring. bonus_wrong_choice is the routine that stores DI over two bytes of the string `Tapper.Pic`."
+    ],
+    "0x02B3E": [
+      375,
+      "print_string and the sprite blitters -- 32x16, 24x22 and 16x16, each unrolled and each written twice for the two CGA banks."
+    ],
+    "0x02CB5": [
+      276,
+      "unpack_screen, which is a run-length decoder, and the pointer lookups that turn a sprite index into an address with a bounds check on the way."
+    ],
+    "0x02DC9": [
+      340,
+      "Table remapping for the display variants, the BIOS character output, the random number generator, and reading a key."
+    ],
+    "0x02F1D": [
+      641,
+      "The score: the digits, the shadow copy that says which digits changed, the lives icons, the 16x12 blitter that draws them, and the bonus life."
+    ],
+    "0x0319E": [
+      385,
+      "The joystick -- calibration, sampling, the axis timing loop -- and the INT 09 keyboard handler with the policy that decides what it captures."
+    ],
+    "0x0331F": [
+      312,
+      "The key actions: the four directions, the tap keys, num lock, and space, which restarts."
+    ],
+    "0x03457": [
+      107,
+      "The two scan-code maps, the key action table they index, and the keyboard ring buffer with its head and tail."
+    ],
+    "0x034C2": [
+      344,
+      "344 bytes that nothing in the file can reach. It is code -- INT 0x13 disk reset, a one-sector read into the segment at 0x4491, comparisons against a scratch area just past its end, and then a hand-written loop on the floppy controller at port 0x3F4 (0x00F4 when the PCjr flag is set) reading bytes straight out of the FDC. That is a disk copy-protection check. No relative call or jump anywhere in the 17,920 bytes lands inside it, at any offset, aligned or not, and no immediate names an address in it, which is consistent with the crack that also added the intro screen at 0x04590."
+    ],
+    "0x0361A": [
+      62,
+      "The scratch the block above writes into -- the values it compares and the buffer it reads the controller into -- and then the three voice slots. Zero in the file, and 96% zero because only the voice slots are ever written now."
+    ],
+    "0x03658": [
+      179,
+      "The INT 1C timer handler: debounce the joystick buttons, then step the three voices. Everything the game does with time hangs off this."
+    ],
+    "0x0370B": [
+      800,
+      "Sound. The PC speaker gate and the PCjr sound chip behind one interface, the three-voice player, and the envelope: note on, attack, sustain, release."
+    ],
+    "0x03A2B": [
+      129,
+      "The ROM-noise burst -- toggling port 0x61 against a script rather than against a period, which is how the game gets a crash rather than a note."
+    ],
+    "0x03AAC": [
+      102,
+      "The sound tables: the noise script, and the two period tables -- one of speaker divisors, one for the PCjr chip -- indexed by the same note."
+    ],
+    "0x03B12": [
+      362,
+      "The screen scripts for the two display modes, their aux tables, and the overlay buffer between them."
+    ],
+    "0x03C7C": [
+      367,
+      "The menu key and marker tables, and the strings that go on the screen: the player prompt, game over, get ready."
+    ],
+    "0x03DEB": [
+      319,
+      "The row offset table the band copies index, the prompt colours, the joystick and setup strings, and asset_buffer's own address."
+    ],
+    "0x03F2A": [
+      388,
+      "Geometry and timing tables: where the four bars are from each end, the animation frames, the popup sequence, the row strides, the page and theme tables, and what each round spawns."
+    ],
+    "0x040AE": [
+      673,
+      "673 bytes of one table, added to DL to put an entity on a row. It is indexed by BX+SI -- bar number and position -- which is why it is this large: it is the whole playfield as a lookup rather than a multiply."
+    ],
+    "0x0434F": [
+      561,
+      "The variables. The saved interrupt vectors and the program's own segment first, then the high score, the input and joystick state, the pointers the display mode picks, and the bar lists. Named through 0x04487; the 249 bytes after that are zero in the file and filled at run time."
+    ],
+    "0x04580": [
+      128,
+      "The last 128 bytes are used twice. First they are start-up: the branch over `Tapper.Pic`, the filename, and the crack group's intro screen. Then the picture is loaded and the game writes the player's state over the top of all of it -- player_top at 0x04583 is inside the filename, player_velocity at 0x04591 is inside the intro code, and free_list_pool runs from 0x045C3 to the end of the file. Start-up code as a variable block: the space was paid for, and after the picture is on the screen nothing needs it back."
     ]
   }
 }

@@ -978,14 +978,18 @@
   },
   "_data_spans": {
     "_note": [
-      "File offsets, contiguous from 0 to the end. Zaxxon has no data",
-      "segment in the file at all, so these spans cover the whole image",
-      "and the split between code and table is the only division there",
-      "is.",
+      "Named spans: a contiguous partition of the 20,736-byte image, so that",
+      "every byte is inside an extent that says what it is for.",
       "",
-      "The last span is half the file. It earns its single line: nothing",
-      "reaches it except tile_table, sprite_table and explosion_frames,",
-      "and all three end exactly where the bitmaps they index begin."
+      "annotate.py reports four whose heading it cannot place in the listing.",
+      "Measured against NASM's line listing: 0x0E4D (explosion_frames) and",
+      "0x1F12 (sound_handler) are on instruction boundaries that simply have",
+      "no label. 0x046B (start_map) and 0x0FF5 (velocity_table) are inside an",
+      "instruction -- they are tables the recursive walk reached and decoded",
+      "as code. The listing still reassembles byte for byte; it just reads as",
+      "`mov` where the game keeps a map. The span is right and the decode is",
+      "the thing that is wrong, which is the opposite of what the message",
+      "sounds like."
     ],
     "0x0000": [
       128,

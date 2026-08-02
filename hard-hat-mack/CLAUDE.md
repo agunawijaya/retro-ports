@@ -33,7 +33,7 @@ If a port starts, it goes in `web/` and gets documents 05 and 06, following
 
 `recovered/hhm.asm` is correct and is not source. `symbols.json` holds the
 reading — 273 routines and 605 globals, each with the evidence for
-its name, plus `_data_spans` accounting for all 42,112 bytes — and the toolkit's `annotate.py` applies it.
+its name, plus `_data_spans` accounting for all 42,112 bytes — and the toolkit's `annotate.py` checks and applies it, and every heading lands.
 
 ```powershell
 .\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe

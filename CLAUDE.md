@@ -9,7 +9,7 @@ explain it again.
 the counts below drift the moment a tool improves, and eleven of them had gone
 stale within a single session before `tools/docaudit.py` existed.*
 
-Four games are reconstructed and read. All four rebuild **byte-identically**,
+Five games are reconstructed and read. All five rebuild **byte-identically**,
 which `build.ps1` checks and refuses to report success without.
 
 | | routines | globals | rebuild |
@@ -26,24 +26,27 @@ every name carries the evidence for itself. `annotate.py` checks all of that on
 each build and prints it — **read that output, not the symbol file's own prose
 about itself.**
 
-The first four also have every byte of every data region inside a named span.
-Tapper does not yet; it arrived from a separate repository on 2026-08-02 and
-its names were brought level over three passes, described in
-[tapper/CLAUDE.md](tapper/CLAUDE.md).
+All five also have every byte inside a named span -- `_data_spans`, a
+contiguous partition of the image with a reason against each extent. That is
+the second denominator, and it is the one that catches a symbol file which
+names every reference and has still never looked at half the file.
+`annotate.py` refuses a gap or an overlap, and writes each span's reason into
+the listing as a heading, splitting a `db` run where it has to.
 
 ### What is still open
 
-Two things, and they are different in kind. Tapper has no `_data_spans`, so the
-bytes between its named addresses are not yet accounted for — a gap in
-coverage, and the same work the other four have already had done to them.
-
-The other is a measurement, not a gap.
+One thing, and it is a measurement rather than a gap.
 Hard Hat Mack's static level render reproduces 172 of the 193 placements the
 program actually makes. Recall 98% / 87% / 81% by level, precision
-94% / 96% / 86%. The 21 that remain are thirteen on Level 2 and eight on Level
-3, in three groups: four rivets along a bottom row, a vertical run of five, and
-a column of three. `hard-hat-mack/tools/verify-screens.py` runs the game under
-the toolkit's `comrun.py` and lists each one by value.
+94% / 96% / 86%. The 21 that remain are one on Level 1, thirteen on Level 2 and
+seven on Level 3, and they fall into two shapes. A ladder on Level 2 — shape 68
+at rows 79, 111, 143, 175 and shape 25 at rows 103, 135, 167, all in column 0 —
+comes out as a single placement, so the loop is being run once. And a row of
+rivets on Level 3 — columns 16, 18, 20 at row 168, each drawn twice as an erase
+and a draw — comes out transposed, as a column at 22 with the *rows* stepping
+instead. Both are the extractor choosing the wrong register as the loop index.
+`hard-hat-mack/tools/verify-screens.py` runs the game under the toolkit's
+`comrun.py` and lists every one by value.
 
 None of those is a limit of the method. The single thing that genuinely is —
 which arm of a conditional runs — accounts for three placements on Level 1.

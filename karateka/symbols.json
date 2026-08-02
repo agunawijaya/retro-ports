@@ -2312,6 +2312,7 @@
       "Zero-filled entries are buffers: empty in the file because nothing is",
       "stored there, filled at run time. Empty is finished; unread is work."
     ],
+    "_base": "0x6CA0",
     "0x0000": [
       59,
       "the Lattice C 2.1 banner the compiler stamps in, and the zeros after it"

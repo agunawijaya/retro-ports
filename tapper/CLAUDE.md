@@ -35,6 +35,7 @@ silently, because a symbol that never lands cannot fail loudly.
 | variables named | **336** |
 | decoded as code | **74.5%** of the file |
 | bracketed constants | 254 named, 19 recorded as displacements, **none left** |
+| bytes accounted for | **all 17,920**, in 43 spans with no gap and no overlap |
 
 It is level with the other four now. Getting there took three passes and each
 found a different kind of mistake.
@@ -64,6 +65,35 @@ name and an empty description; those are generated from the listing -- which
 routines write the address, which read it, what constants land in it -- and
 say so. Thinner than a sentence somebody wrote after reading the routine, and
 checkable, which an empty string was not.
+
+Then `_data_spans`, which is the other denominator. A reference count of 100%
+says nothing about the bytes *between* the references, so the file is cut into
+43 contiguous extents, each with a reason, and `annotate.py` refuses a gap or
+an overlap. Three of them are worth reading on their own.
+
+**0x034C2, 344 bytes that nothing in the file can reach.** It is code: INT 0x13
+disk reset, a one-sector read, then a hand-written loop on the floppy
+controller at port 0x3F4 -- 0x00F4 when the PCjr flag is set -- pulling bytes
+straight out of the FDC and comparing them against a scratch area just past its
+end. A disk copy-protection check. No relative call or jump anywhere in the
+17,920 bytes lands inside it, at any offset, aligned or not, and no immediate
+names an address in it. The crack that added the intro screen at 0x04590 is
+the obvious explanation.
+
+**The last 128 bytes are used twice.** They start as the branch over
+`Tapper.Pic`, the filename, and the crack intro. Once the picture is loaded the
+game writes player state over all of it: `player_top` at 0x04583 is inside the
+filename, `player_velocity` at 0x04591 is inside the intro code, and
+`free_list_pool` runs from 0x045C3 to the end of the file. `bonus_scratch` was
+the first instance found of this and it is not an oddity -- it is the pattern.
+
+**The loader does not use DOS.** It opens `Tapper.Dat` through INT 21h and then
+never reads it that way. `asset_table` is fifteen four-byte records of (start
+sector, byte count); load_asset divides the start by nine for a track, adds
+two, and reads with AH=2 through an INT 0x80 shim the game installs itself.
+Absolute geometry. Every one of the fourteen gaps between records is exactly
+`(count + 0x1FF) >> 9` sectors, which is what makes the record layout a
+reading rather than a guess.
 
 The 74.5% is worth a note. A recursive walk reaches what something branches to,
 and this release's crack installs an INT 80h floppy shim through a loader that

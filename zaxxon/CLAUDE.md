@@ -27,7 +27,17 @@ reading — 127 routines and 105 globals, each with the evidence for
 its name. All 74 call targets are named, plus the scene, fortress and wall
 handlers the three jump tables reach; 47 of the 64 bracketed constants have a
 name, and every one of the remaining 17 is a displacement into a struct
-rather than an address; and `_data_spans` accounts for all 20,736 bytes — and the toolkit's `annotate.py` applies it.
+rather than an address; and `_data_spans` accounts for all 20,736
+bytes — and the toolkit's `annotate.py` checks and applies it.
+
+`annotate.py` reports four span headings it cannot place. Measured against
+NASM's own line listing: `explosion_frames` (0x0E4D) and `sound_handler`
+(0x1F12) are on instruction boundaries that have no label, and `start_map`
+(0x046B) and `velocity_table` (0x0FF5) are *inside* an instruction — tables the
+recursive walk reached and decoded as code. The listing still reassembles byte
+for byte; it just reads as `mov` where the game keeps a map. The spans are
+right and the decode is the thing that is wrong, which is the opposite of what
+the message sounds like.
 
 ```powershell
 .\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
