@@ -410,27 +410,27 @@
     ],
     "0x5DBB": [
       "getch",
-      "bdos(AH=0x08), console input without echo"
+      "bdos(AH=0x08), console input without echo; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_CGET`"
     ],
     "0x5DCF": [
       "getche",
-      "bdos(AH=0x01), console input with echo"
+      "bdos(AH=0x01), console input with echo; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_CGETE`"
     ],
     "0x5DE3": [
       "putch",
-      "bdos(AH=0x02), console output"
+      "bdos(AH=0x02), console output; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_CPUT`"
     ],
     "0x5DF7": [
       "aux_getc",
-      "bdos(AH=0x03), auxiliary input"
+      "bdos(AH=0x03), auxiliary input; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_AGET`"
     ],
     "0x5E0B": [
       "aux_putc",
-      "bdos(AH=0x04), auxiliary output"
+      "bdos(AH=0x04), auxiliary output; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_APUT`"
     ],
     "0x5E1F": [
       "prn_putc",
-      "bdos(AH=0x05), printer output"
+      "bdos(AH=0x05), printer output; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_LPUT`"
     ],
     "0x682D": [
       "alloc_block",
@@ -603,6 +603,10 @@
     "0x46FC": [
       "calibrate_axis",
       "AH selects the axis, DI the pair of bounds to fill; called twice"
+    ],
+    "0x6B3A": [
+      "cxc33",
+      "**confirmed**: Lattice C 2.12's LCD.LIB calls this `CXC33`"
     ]
   },
   "globals": {
@@ -1929,5 +1933,29 @@
     "",
     "A `[di + 0x337]` in the listing is not a global with a displacement. It is",
     "the screen."
+  ],
+  "_confirmed_by_library": [
+    "Lattice C 2.12 for DOS (1984) was fetched and scanned against this image",
+    "with libscan.py. It matched 3 modules of 625 -- 0.2% -- and that number",
+    "understates what it settled: the three carry seven symbols, and all seven",
+    "land on addresses already named here from behaviour alone. Seven for seven.",
+    "",
+    "  0x5DBB _CGET   0x5DCF _CGETE  0x5DE3 _CPUT   0x5DF7 _AGET",
+    "  0x5E0B _APUT   0x5E1F _LPUT   0x6B84 BDOS",
+    "",
+    "The 0.2% is explained, not disappointing. Karateka names Lattice C **2.1**",
+    "and the obtainable release is **2.12**; the library was rebuilt between",
+    "those point releases, so most modules differ by a byte or two and an",
+    "exact-bytes scan refuses them -- correctly. The three that matched are the",
+    "small ones nobody had reason to change.",
+    "",
+    "The memory model is **D**, not S: LCS.LIB matched nothing and LCD.LIB",
+    "matched all three. That agrees with the entry stub setting DS once to a",
+    "segment of its own while code is addressed from zero.",
+    "",
+    "What this does *not* give is a recompile. There is no C source for",
+    "Karateka; producing one that compiles to identical bytes is the extended-",
+    "reconstruction workflow, measured in weeks. What the library gives is",
+    "**verification**, and the verification passed."
   ]
 }
