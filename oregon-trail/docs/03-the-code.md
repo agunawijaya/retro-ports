@@ -1810,6 +1810,94 @@ So the hunting screen is described here from its code and not shown. That is a
 worse outcome than a picture and a better one than a picture that was invented,
 which is what this folder had before.
 
+### That prediction was wrong, and here is the picture
+
+The paragraph above stays where it was written. It was wrong: the screen *was*
+reached, on the fifteenth attempt, and the two things that were missing were
+both small and both invisible from where the search had been looking.
+
+**Why `--call` could never have worked, whatever the state.** Entering the
+routine with the segment corrected — comrun loads the image at `BASE + LOAD`,
+so every runtime segment is `0x10` paragraphs above the value stored in the
+file, confirmed by DGROUP `0x3348` arriving as `0x3358` — gets forty-nine
+instructions in and then dies here:
+
+```nasm
+001F3D3  lcall [0x3d3e]            ; -> 0000:000B
+```
+
+`DS:0x3D3E` is the scratch far pointer the BGI `Graph` unit recomputes before
+each driver primitive: eleven `call far [0x3d3e]` sites between `0x1F25F` and
+`0x1F39C`, and five places that store into it. It held `0B 00 00 00` — a
+plausible entry offset on **segment zero**, which is `driver_base + entry` with
+no driver loaded. Hunting draws through BGI; the rest of the game draws through
+its own PCX blitter. So no amount of poking state would have helped: the
+graphics driver is installed on the way in, and the way in is the menu.
+
+**The menu, from the program's own text.** One caller only, at `0x4117`, and
+the option list is built from two alternatives:
+
+```
+0003E56  '1-8'                    <- on the trail
+0003E80  '8. Hunt for food'
+0003E7C  '1-9'                    <- at a landmark or settlement
+0003E5A  '8. Talk to people'
+0003E6C  '9. Buy supplies'
+```
+
+That is what `cmp byte [0x199d], 0` at `0x4109` is choosing between. Hunting is
+option **8**, and only away from a landmark — which is why every attempt made
+while parked at South Pass was asking for the wrong thing.
+
+**And the flush loop, generalised.** [The section
+above](#the-loop-that-looked-like-a-wait-and-was-a-flush) had the mechanism
+exactly right and drew the wrong conclusion from it — that the sequence could
+not be found. What it needed was not a better sequence but a harness that can
+tell the two `KeyPressed` sites apart *without being told which is which*. They
+differ in persistence: a flush asks a handful of times and gives up, a wait asks
+until the answer changes. comrun's `--poll-patience N` answers "nothing
+waiting" until the question has been repeated N times since the last blocking
+read. With `N = 200` the flush at `0x10963` sees an empty buffer and stops, and
+the getter at `0x104D4` gets its key.
+
+**Two more things the store does, found by looking at it rather than at the
+code.** Matt's greeting is **two pages**, not one, so a sequence that dismissed
+one page had every later purchase off by one item — that is where *"Oxen
+$0.00"* came from. And the `1-5` item prompt takes a digit **and** an `Enter`,
+with a field one character wide: typing `1` then `3` gets the `3` rejected and
+the `1` submitted, after which `3` lands in the *quantity* field. Feeding
+`1 3 CR 2 9 0 0 CR` that way asks for 13 yoke and produces *"You may only take
+20 oxen."* The screen said so; nothing in the disassembly would have.
+
+With those, 111 keystrokes drive the program from its title screen to the
+hunting mini-game:
+
+```
+main menu 1 -> no saved game -> banker -> five names -> March
+Matt's store: two greeting pages, 3 yoke, 900 lb food, 5 sets, 5 boxes, SPACE
+Independence -> 1. Continue on trail ... to the Kansas River, 102 miles
+then, between landmarks: 8. Hunt for food
+```
+
+and every address on the path is in the execution map:
+
+| | |
+|---|---|
+| `0x4093` | the travel menu is read |
+| `0x4104` | `cmp ax, 8` |
+| `0x4109` | `cmp byte [0x199d], 0` — not at a landmark |
+| `0x77F8` | the hunting routine |
+| `0x628A` | the terrain is drawn |
+| `0x72DD` | the mini-game |
+
+The screen that comes up is the instructions, and it carries the text
+[quoted earlier in this document](#hunting) from the code — the keypad
+diagrams out of `terrain.pcc`, *"Enter Key … to start or stop walking"*,
+*"Space Bar … to fire the rifle"*, *"To point the rifle (novice hunters)"* and
+*"(expert hunters)"*, *"Escape Key … to stop hunting"*. Read from the binary
+first, then shown by the binary. That is the order this folder is supposed to
+work in.
+
 ## Where the artwork is loaded from
 
 Not traced in the code — but the file format is fully read, and

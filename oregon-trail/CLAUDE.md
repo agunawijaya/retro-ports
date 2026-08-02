@@ -199,6 +199,50 @@ keys to enter a department and the prices appear. It takes a few minutes.
 Confirmed this way and not by reading: the journey starts **1 March 1848**, a
 banker begins with **$1,600**, and the party is **five** people.
 
+### Driving it all the way to hunting
+
+That recipe stops at the store, and for a long time nothing got past it. Three
+things were in the way, and none of them is guessable — read them before
+writing another key sequence.
+
+**Use `--poll-patience 200`.** Without it the queue evaporates: the game opens
+most screens with `while KeyPressed do ReadKey`, and a harness that says "yes, a
+key is waiting" feeds the whole sequence to that flush. 88 keys once vanished in
+88 reads. The flag makes `INT 16h AH=01` answer "nothing waiting" until it has
+been asked 200 times since the last blocking read, which separates a flush from
+a `repeat until KeyPressed` wait by how long each one persists.
+
+**Matt's greeting is two pages.** Two `SPACE`s, not one. One `SPACE` puts every
+later purchase one item out of step, and the symptom is `Oxen $0.00`.
+
+**The `1-5` item prompt wants a digit and an `Enter`, in a field one character
+wide.** `1` then `3` gets the `3` rejected and the `1` submitted; the `3` then
+lands in the quantity field. `1 3 CR 2 9 0 0 CR` asks for 13 yoke and answers
+*"You may only take 20 oxen."*
+
+**And hunting is offered only away from a landmark** — `1-9` with `8. Talk to
+people` at a settlement, `1-8` with `8. Hunt for food` on the trail, chosen by
+`cmp byte [0x199d], 0` at `0x4109`. Travel first.
+
+`tools/drive-to-hunt.py` builds the 111-key sequence and prints the command.
+Budget **3,000,000,000** and expect tens of minutes. The check is the execution
+map, not the picture:
+
+| | |
+|---|---|
+| `0x4093` | the travel menu is read |
+| `0x4104` | `cmp ax, 8` |
+| `0x4109` | the not-at-a-landmark gate |
+| `0x77F8` | hunting |
+| `0x628A` | the terrain drawn |
+| `0x72DD` | the mini-game |
+
+**Do not try to `--call` the hunting routine.** It draws through Borland's
+`Graph`, which dispatches through `DS:0x3D3E`; entered cold that word holds
+`0B 00 00 00`, an entry offset on segment zero, and the far call lands at
+`0000:000B`. The BGI driver is installed on the way in, so there is no way in
+but the menu.
+
 ## Where things are
 
 Image offsets.
