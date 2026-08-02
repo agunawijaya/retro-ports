@@ -2062,6 +2062,62 @@
       "stdio_scratch",
       118,
       "zero in the file"
+    ],
+    "0xE3BA": [
+      "stdio_pad",
+      128,
+      "zero in the file, between the FILE table and errno"
+    ],
+    "0xD6BE": [
+      "message_index",
+      58,
+      "ascending words 0x3BFC, 0x3C10, 0x3C24 ... a second pointer table beside message_table"
+    ],
+    "0xBA32": [
+      "pattern_a",
+      55,
+      "mixed bytes read by the drawing path; a bitmap or mask"
+    ],
+    "0xE5D0": [
+      "stdio_pad_2",
+      40,
+      "zero in the file"
+    ],
+    "0xE5FC": [
+      "stdio_pad_3",
+      38,
+      "zero in the file"
+    ],
+    "0xBA82": [
+      "pattern_b",
+      36,
+      "the same shape as pattern_a"
+    ],
+    "0xDD9E": [
+      "space_fill",
+      32,
+      "0x0020 repeated -- a table pre-filled with spaces"
+    ],
+    "0xB87E": [
+      "tune_index",
+      30,
+      "ascending words 0x0120, 0x0134, 0x013E ... offsets into the note tables"
+    ],
+    "0x003B": [
+      "runtime_pad",
+      30,
+      "zero in the file, inside the runtime's own globals"
+    ],
+    "0xBCE8": [
+      "script_dispatch",
+      26,
+      "ascending words 0x1786 ... 0x1842, all inside run_script -- a jump table"
+    ],
+    "_remainder": [
+      "After these, 52 gaps remain totalling about 320 bytes, none larger than 26.",
+      "They are alignment padding between the named spans and the tails of tables",
+      "whose exact ends are not pinned. Characterised, not named: a name for a",
+      "twelve-byte gap between two known tables would be invention."
     ]
   }
 }

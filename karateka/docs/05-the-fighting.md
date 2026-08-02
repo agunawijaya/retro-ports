@@ -1,13 +1,13 @@
 # Karateka — the fighting
 
-*Document five. [01-the-game.md](01-the-game.md) is what the game is;
+*Document five of five. [01-the-game.md](01-the-game.md) is what the game is;
 [02-architecture.md](02-architecture.md) is how the program is shaped;
 [03-the-code.md](03-the-code.md) walks its routines;
 [04-porting.md](04-porting.md) is what rebuilding it would take.*
 
-The other four documents all end at the same wall: *nothing here has read the
-fighting.* This one gets most of the way through it, and the answer is not where
-those documents were looking.
+The other four documents all ended at the same wall: *nothing here has read the
+fighting.* This one goes through it, and the answer was not where those
+documents were looking.
 
 **The fighting is not in the executable.** The choreography ships beside it as
 **plain text**, in a language the program compiles at load time into a
@@ -548,10 +548,10 @@ they recover.** Only five stance values in the whole table reach those classes �
 Nothing this document set out to read, and nothing it deferred. The eight arms
 and the calibration are above.
 
-What is left is data, not code: **113 of Karateka's globals have no name**, and
-94 of those are referenced twice or fewer. Two uses cannot tell a flag from a
-counter. Running the game past the attract sequence — into a fight a human is
-losing — would move some of them, and that is the only thing that would.
+And the data is read too, since this was written: every address the code names,
+and 99.5% of the data segment by byte. What moved the last of it was not
+analysis but driving the game — writing `[0x156] = 0` and a scripted `[0xE19F]`
+plays it as a human would, and 48 globals moved that the demo never touched.
 
 ## How this was found
 

@@ -44,7 +44,7 @@ python <toolkit>/tools/comrec.py original/KARATEKA.EXE --out recovered/karateka.
 format      : MZ, 512-byte header stripped; entry CS:IP -> image offset 0x2
 instructions: 10,589 disassembled (987 pinned to fixed bytes to preserve encoding)
 code region : 0x0000..0x6C9D  (27,805 bytes)
-  recovered : 25,554 bytes as instructions (91.9% of the code region)
+  recovered : 25,558 bytes as instructions (91.9% of the code region)
 data tail   : 0x6C9D..0x155B6 left as data (59,673 bytes)
 BYTE-IDENTICAL
 ```
