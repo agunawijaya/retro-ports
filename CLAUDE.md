@@ -51,13 +51,13 @@ in `draw_rivet_row` that depend on which arm of a conditional runs.
 
 That is the boundary of static extraction, and it is now the *only* thing left
 — established per placement rather than asserted about the method. Getting
-there took six bugs, and the one that mattered was in the referee rather than
+there took eight bugs, and the one that mattered was in the referee rather than
 in the extractor: it had listed the wrong placements by coordinate for three
 sessions, and coordinates describe the picture, which is never where the bug
 is. Naming the routine that made each one — the return address is a word down
 `SS:SP` at the hook — turned it into a work list the same afternoon.
 
-The six, in the order they were found:
+The eight, in the order they were found:
 
 - **A counted loop that runs up.** `mov bl, 1` … `inc byte [V]` … `cmp bl, 5`
   read as the down-loop shape every other loop uses, so `draw_toolboxes` drew
@@ -77,10 +77,30 @@ The six, in the order they were found:
   two calls to `draw_crate` reading each other's columns — but a column is
   scratch and `hoist_y` is not. The rule is by address now: the drawer
   parameter block stays isolated, everything else comes back.
+- **AL never reached the index registers.** `shl al, 1`, `mov bl, al`, `inc bl`
+  were all unrecognised, so BL kept whatever the *caller* had left in it.
+- **A stored value that still depended on a register that then moved.** A store
+  keeps the expression rather than the number, so one call site in a loop can
+  be evaluated once per iteration. `spawn_lunchbox` stores its column, does
+  `inc bl`, and stores its row — the same expression twice — so both resolved
+  with the later BL and the lunchbox came out at (39, 39), its row twice, on
+  every screen. Collapsing a stored value at the moment its register changes
+  is safe for the loop case, because the drawer is called inside the body and
+  its site has already been emitted before the counter steps.
 
-Every one of the six still produced *a* placement, which is why none of them
-ever failed and why the coverage number never moved. See
+Every one of the eight still produced *a* placement, which is why none of them
+ever failed and why the coverage number never moved. The last two did not move
+it either — `spawn_lunchbox`'s shape is unreadable whatever its position — but
+the reading now puts it at (12, 39), (24, 39) and (20, 188), which is where the
+program puts it, instead of at (14, 44) on all three. **A number that does not
+change is not the same as a change that did not happen.** See
 [knowledge/12](../DOS-Decompiler/knowledge/12-hooking-the-right-thing.md).
+
+Two candidate fixes were measured and thrown away: clearing the loop counter
+when the index is loaded from a variable (`draw_pillar_cell` then unrolled 26
+false placements, 186 → 182), and rejecting placements off the 320×200 screen
+(the column is in units of each drawer's own scale, so a flat bound threw away
+four of Mack's own; scaled, it caught nothing). Neither is in the tree.
 
 ### How to check any of this rather than believe it
 
