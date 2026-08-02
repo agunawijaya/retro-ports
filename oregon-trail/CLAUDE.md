@@ -28,7 +28,7 @@ shorter working reference you come back to.
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
 | runtime call offsets | **established by differential compilation**, not guessed |
-| game logic as code | **chance model and store done** — 29 `Random` sites located, the casualty routine traced, every store price read; illness inputs and pace/rations are not |
+| game logic as code | **chance model, store and settings done** — 29 `Random` sites, the casualty routine, every store price, the pace hours; what is *not* read is the arithmetic joining pace and rations to the odds |
 | byte-identical rebuild | **not reachable, and the reason is measured** — 22.6% of the code is a Genus library that is not archived |
 | documents | [four](docs/), written from the above |
 
@@ -134,7 +134,11 @@ Image offsets.
 | `0x21DA5` | `MemAvail` — walks the free list, returns a 32-bit byte count |
 | `0x23480` | DGROUP: code ends, data begins |
 | `0x23D32` | the trail table — 17 records: miles, map X, map Y, name |
+| `0x24112` | pace and ration words: steady, strenuous, grueling, filling, meager, bare bones |
 | `0x24156` | the six illnesses: exhaustion, typhoid, cholera, measles, dysentery, a fever |
+| `0x0DE5C` | the store script — every price, in the shopkeeper's dialogue |
+| `0x09DE0` | the pace screen: 8, 12 and 16 hours a day |
+| `0x0A2BE` | the rations screen |
 | `0x0C0A7` | the health scale: `good\fair\poor\very poor` |
 | `0x0E793` | Matt's General Store and its five departments |
 | `0x134D6` | the casualty routine — takes the odds as a `Real`, five callers |

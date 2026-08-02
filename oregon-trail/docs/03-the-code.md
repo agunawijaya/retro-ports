@@ -1085,8 +1085,42 @@ there are five separate routines, and four of them never touch floating point.
 Cross-checked against the running game for two of the five — oxen and food —
 which is the pair the emulator was driven far enough to see.
 
+### Pace and rations, in the game's own words
+
+The same walk works on the two settings that drive the whole simulation, and it
+gives the numbers the game actually quotes:
+
+| pace | hours a day | what it costs you |
+|---|---|---|
+| **steady** | about 8 | *"frequent rests. You take care not to get too tired"* |
+| **strenuous** | about 12 | *"just after sunrise … shortly before sunset … very tired"* |
+| **grueling** | about 16 | *"almost never stop to rest … not enough sleep … **your health suffers**"* |
+
+and rations come in three: **filling** (*"meals are large"*), **meager**
+(*"meals are small"*), and **bare bones** (*"meals are very…"*).
+
+Those seven words also exist as a plain array of short Pascal strings in the data
+segment, one after another at `0x24112`, immediately before the six illnesses at
+`0x24156`:
+
+```
+steady   strenuous   grueling   filling   meager   bare bones   exhaustion …
+```
+
+which is how the game prints *"currently: strenuous"* without a case statement —
+the setting is an index, and the word is `table[index]`. The same pattern as
+everything else in this repository: **a table instead of a branch.**
+
+**What is not established** is how the two combine numerically. `grueling`
+promising that *your health suffers* is a sentence, not a coefficient; the
+coefficient is in the travelling code, among the `Random` calls at `0x13B3`
+through `0x29EF` that scale by a variable rather than a constant. That is the
+last substantial thing unread in this program, and the way in is the casualty
+routine — it already takes a computed probability, and the arithmetic that
+produces it is what pace and rations feed.
+
 **What is still open.** How the store's text is addressed, the illness model's
-inputs, and how pace combines with rations.
+inputs, and the arithmetic joining pace and rations to the odds of dying.
 
 ## Where the artwork is loaded from
 
