@@ -13,9 +13,10 @@ program is shaped, and everything else hangs off it. The other four are
 
 ## State of the work
 
-**The reconstruction, the data formats, the move libraries, the fight loop, the
-hit test, the health system and the map are done.** What is left is the path
-from the joystick hardware to the player's reaction flags.
+**The code is read.** Reconstruction, data formats, move libraries, fight loop,
+hit test, health, the map, the input chain from the stick to the move, and every
+one of the 120 routines. What is left is **data**: 113 globals with no name, 94
+of them referenced twice or fewer.
 
 | | |
 |---|---|
@@ -26,12 +27,12 @@ from the joystick hardware to the player's reaction flags.
 | the animation system | a 14-command **compiler**, opcode = 2 × command index |
 | the fighting | choreography read — 150 moves in three plain-text libraries |
 | the fight AI | **found and read** — `0x2605`, a tree over pose, pose and distance |
-| the reading | **120 of 120 routines named**, by probe, by observation, or by reading |
+| the reading | **120 of 120 routines named**; 199 of 312 globals, 90% of references |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |
 | documents | **5 of 5** |
-| port | none, and not in scope yet |
+| port | none, and nothing blocks one |
 
 ## The fighting is data, and it is readable text
 
@@ -109,7 +110,7 @@ of 40 moves changed x by exactly the frame's `inc_x`.
 
 `recovered/karateka.asm` is correct and is not source: ten thousand
 instructions under labels named after their own addresses. `symbols.json` holds
-the reading — **all 120 routines and 214 globals**, each with the evidence
+the reading — **all 120 routines and 215 globals**, each with the evidence
 for its name — and the toolkit's `annotate.py` applies them.
 
 **Every routine is named; the data is not.** 120 of 120 routine prologues, plus
@@ -134,8 +135,7 @@ the names are not equally strong and pretending otherwise would undo the point
 of keeping the evidence at all.
 
 ```powershell
-.uild.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path	o
-asm.exe
+.\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
 ```
 
 Three steps: reconstruct, name, **rebuild and compare**. The third is the point.
@@ -347,18 +347,15 @@ What is actually left:
 1. **113 globals, of which 94 are referenced twice or fewer.** Two uses cannot
    tell a flag from a counter. Running the game further than the attract
    sequence — into a fight a human is losing — would move some of them and is
-   the only thing that would.
-2. **The eight arms of the pose switch, individually.** They are identified and
-   grouped; none has been read line by line.
-3. **The calibration routine** that fills `[0xE197]`–`[0xE19B]`, the stick's
-   bounds. Not traced.
-4. **A container reader in the toolkit**, not in this folder — an index-and-heap
+   the only thing that would. **This is the last thing in the code that is not
+   read**; everything else on this list is a new project rather than a gap.
+2. **A container reader in the toolkit**, not in this folder — an index-and-heap
    pair is not Broderbund's invention and the next game may use one.
-5. **The Apple II original** is in `reference/apple-ii/`, six disk images. Now
+3. **The Apple II original** is in `reference/apple-ii/`, six disk images. Now
    that the DOS version is known *not* to be a translation, the comparison is
    more interesting rather than less: two independent implementations of one
    design.
-6. **A port.** Nothing blocks one now; see [04-porting.md](docs/04-porting.md).
+4. **A port.** Nothing blocks one now; see [04-porting.md](docs/04-porting.md).
 
 ## Before you commit
 

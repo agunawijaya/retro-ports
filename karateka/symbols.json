@@ -567,6 +567,42 @@
     "0x6B96": [
       "fclose_body",
       "tests bit 2 of the FILE flag byte and releases the slot"
+    ],
+    "0x214B": [
+      "pose_arm_stand",
+      "poses 1 and 8; no input becomes move 0, anything else passes through"
+    ],
+    "0x2161": [
+      "pose_arm_low",
+      "poses 2-4; no input becomes 41, anything else is offset by +34"
+    ],
+    "0x217D": [
+      "pose_arm_low_alt",
+      "poses 42-44; the same shape with +37"
+    ],
+    "0x2199": [
+      "pose_arm_strike",
+      "poses 5-7; intents 0x18-0x1A rotate [0x15A] modulo three"
+    ],
+    "0x21DB": [
+      "pose_arm_crouch",
+      "poses 10 and 11; intent 12 in pose 10 stays 12"
+    ],
+    "0x2211": [
+      "pose_arm_locked",
+      "pose 15; `xor ax, ax` and return -- this pose accepts no input at all"
+    ],
+    "0x2218": [
+      "pose_arm_down",
+      "poses 65 and 66; no input becomes move 19"
+    ],
+    "0x2231": [
+      "pose_arm_hurt",
+      "pose 70; no input becomes move 15"
+    ],
+    "0x46FC": [
+      "calibrate_axis",
+      "AH selects the axis, DI the pair of bounds to fill; called twice"
     ]
   },
   "globals": {
@@ -903,8 +939,8 @@
       "0xFFFF for none; init_fight, reset_guard and story_step set it"
     ],
     "0x015A": [
-      "input_armed",
-      "main clears it, player_choose_move sets it"
+      "strike_cycle",
+      "counts 0,1,2 and wraps; pose_arm_strike rotates it so repeated input alternates between three variants"
     ],
     "0x0160": [
       "sprite_set",
@@ -1425,6 +1461,10 @@
     "0xE5CC": [
       "file_slots_end",
       "read by close_all_files, open_file and stdio_getbuf"
+    ],
+    "0xE19D": [
+      "stick_down_bound",
+      "the second half of the axis-2 pair calibrate_axis fills"
     ]
   },
   "_unnamed": [

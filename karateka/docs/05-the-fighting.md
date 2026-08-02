@@ -476,6 +476,53 @@ the moment he closes. When they expire the guard is pushed into pose 70 and the
 chooser starts returning move 14. **It is the routine that stops you waiting
 the game out.**
 
+## The pose switch is where input becomes a move
+
+`0x1D07` returns an *intent*, not a move. The eight arms of the switch turn it
+into a move number appropriate to what the fighter is already doing — the same
+stick position means different things from different poses:
+
+| poses | arm | what it does with the intent |
+|---|---|---|
+| 1, 8 | `0x214B` | nothing pressed becomes move 0; anything else passes through |
+| 2, 3, 4 | `0x2161` | nothing becomes 41; anything else is offset **+34** |
+| 42, 43, 44 | `0x217D` | nothing becomes 41; anything else **+37** |
+| 5, 6, 7 | `0x2199` | intents 0x18–0x1A rotate a counter modulo three |
+| 10, 11 | `0x21DB` | intent 12 from pose 10 stays 12 |
+| **15** | `0x2211` | **`xor ax, ax` and return** — this pose accepts no input |
+| 65, 66 | `0x2218` | nothing becomes move 19 |
+| 70 | `0x2231` | nothing becomes move 15 |
+
+Two of those are worth pulling out.
+
+**Pose 15 ignores the player entirely.** The arm is four instructions and never
+calls the input layer. Whatever pose 15 is, you are committed to it.
+
+**Poses 5–7 rotate.** `[0x15A]` counts 0, 1, 2 and wraps, so holding the same
+input through a strike alternates between three variants rather than repeating
+one. This document named that global `input_armed` on the strength of who wrote
+it; the arm shows what it does, and the name is now `strike_cycle`. **Who writes
+a variable is weaker evidence than what the reader does with it.**
+
+## The stick, and how it is found
+
+```nasm
+    in   al, dx
+    and  al, 3                  ; both buttons must read zero
+    jne  .no_stick
+    mov  byte [0xe196], 1
+    mov  ah, 1
+    lea  di, [0xe197]           ; axis 1's pair of bounds
+    call 0x46fc
+    mov  ah, 2
+    lea  di, [0xe19b]           ; axis 2's
+    call 0x46fc
+```
+
+`0x46FC` times one axis and fills two words. The timing is done against the
+**BIOS tick at `0040:006C`** — read the tick, wait for it to change, then count
+`in al, dx` until the RC line decays. Same clock the game uses for its frames.
+
 ## What the stance classes turn out to mean
 
 Run every move in `ALLPAL` through the two tables and they line up with what the
@@ -498,9 +545,13 @@ they recover.** Only five stance values in the whole table reach those classes �
 
 ## What is still unread
 
-Nothing that this document set out to read. What is left is smaller and named:
-the eight arms of the pose switch are identified but not individually read, and
-the calibration routine that fills `[0xE197]`–`[0xE19B]` has not been traced.
+Nothing this document set out to read, and nothing it deferred. The eight arms
+and the calibration are above.
+
+What is left is data, not code: **113 of Karateka's globals have no name**, and
+94 of those are referenced twice or fewer. Two uses cannot tell a flag from a
+counter. Running the game past the attract sequence — into a fight a human is
+losing — would move some of them, and that is the only thing that would.
 
 ## How this was found
 
