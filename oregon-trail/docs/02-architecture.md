@@ -821,12 +821,23 @@ program's code is a compiler's output that no tool here can reconstruct at all.
    *Established:* the whole chance model — all 29 `Random` calls located, the
    constant probabilities read off, and the
    [casualty routine](03-the-code.md#one-routine-kills-people-and-it-takes-the-odds-as-an-argument)
-   that takes its odds as an argument. The four formulas the simulation runs on
-   — miles, food, health, and the odds of dying — and the flat `Random(6)` that
-   picks which illness. Every store price. The scoring rates and the 500/400/
-   300/200 by health. The party as eleven-byte records at `DS:0x17FE`.
+   that takes its odds as an argument. Three of the formulas the simulation runs
+   on — miles today, food eaten, and the health *term* that pace and rations
+   feed — and the flat `Random(6)` that picks which illness. Every store price.
+   The scoring rates and the 500/400/300/200 by health. The party as
+   eleven-byte records at `DS:0x17FE`.
 
-   *Not traced:* hunting, the events table that fires them, the river-crossing
+   *Not traced, and this is a correction:* the health **update** at `0x140C2`.
+   These documents published it as `health += (pace+1)×2×k + rations×2 + …` and
+   called it established. The integer term is real; the `+=` is not. That term
+   is one argument among six, alongside `DS:0x199E`, `DS:0x199F`, a second local
+   and `Real` constants near 0.9 and 0.5, and health is multiplied by 0.5
+   somewhere inside — so it decays as well as accumulates. The overclaim was
+   caught by writing the rules out as a runnable program
+   ([`tools/model.pas`](../tools/model.pas)), which killed the entire party in
+   every configuration and scored grueling/bare-bones highest.
+
+   Also not traced: hunting, the events table that fires them, the river-crossing
    choice (ferry, ford, caulk and float) beyond the rafting accident, and the
    day-to-day loop that ties them together. Those are the remaining routines in
    segment `0x00000` and the five MECC units from `0x007B6` to `0x00F30`, and
