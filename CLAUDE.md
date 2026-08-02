@@ -3,6 +3,60 @@
 Context for any coding agent picking up work here, so the user does not have to
 explain it again.
 
+## Where this stands, and what to do next
+
+*Last measured 2026-08-02. If you change anything, re-measure and edit this —
+the counts below drift the moment a tool improves, and eleven of them had gone
+stale within a single session before `tools/docaudit.py` existed.*
+
+Four games are reconstructed and read. All four rebuild **byte-identically**,
+which `build.ps1` checks and refuses to report success without.
+
+| | routines | globals | rebuild |
+|---|---|---|---|
+| [karateka](karateka/) | 218 | 338 | `C8736BBA…` |
+| [hard-hat-mack](hard-hat-mack/) | 273 | 605 | `FD70BAB8…` |
+| [paratrooper](paratrooper/) | 31 | 134 | `D709DDEC…` |
+| [zaxxon](zaxxon/) | 134 | 105 | `A9214CCE…` |
+
+For every one of them: every call target, every tail-call entry and every
+bracketed constant in the listing is named or explicitly accounted for, every
+byte of every data region is inside a named span, and every name carries the
+evidence for itself. `annotate.py` checks all of that on each build and prints
+it — **read that output, not the symbol file's own prose about itself.**
+
+### The one thing still open
+
+Hard Hat Mack's static level render reproduces 172 of the 193 placements the
+program actually makes. Recall 98% / 87% / 81% by level, precision
+94% / 96% / 86%. The 21 that remain are thirteen on Level 2 and eight on Level
+3, in three groups: four rivets along a bottom row, a vertical run of five, and
+a column of three. `hard-hat-mack/tools/verify-screens.py` runs the game under
+the toolkit's `comrun.py` and lists each one by value.
+
+None of those is a limit of the method. The single thing that genuinely is —
+which arm of a conditional runs — accounts for three placements on Level 1.
+
+### How to check any of this rather than believe it
+
+    cd <game>
+    .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm <path>\nasm.exe
+    python ..\..\dos-decompiler\tools\docaudit.py .
+
+The first proves the reconstruction and prints what the naming does not cover.
+The second finds every number in every document so a stale one is a line
+number instead of a surprise.
+
+### A warning that cost five sessions
+
+Ask "is this finished?" against the *right denominator*. Each of these read
+100% while something real was missing: 120 of 120 prologues (56 call targets
+had none); 312 of 312 referenced addresses (the bytes between them were 40%
+unaccounted); 165 of 165 call targets (39 tail-call entries); "39/39 placement
+calls explained" (it counted calls that produced *a* placement, not the right
+one). A percentage needs its denominator in the same sentence, and the
+denominator has to be the thing you actually care about.
+
 ## What this repository is for
 
 **Teaching programming to people who do not program yet, by taking apart old
