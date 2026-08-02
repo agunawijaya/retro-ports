@@ -37,7 +37,7 @@ Four routes, and they are not exclusive.
 high-level compiler, which is *much* easier to read than hand-written assembly:
 stack frames are regular, the calling convention is fixed, strings are
 length-prefixed and findable, and the unit boundaries are known.
-[Document two](02-architecture.md#eleven-segments-one-per-unit) gives the
+[Document two](02-architecture.md#fifteen-segments-one-per-unit) gives the
 segment map to start from. This is the honest route and it is weeks of work.
 
 **2. Test the prior attempt's reconstruction.** `prior-attempt/src/` has 17

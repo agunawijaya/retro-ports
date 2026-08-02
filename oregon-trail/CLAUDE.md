@@ -63,7 +63,8 @@ unpacked image        : 201,184 bytes
 compiler    : Turbo Pascal  [System unit init at 0x219f0]
 DGROUP      : 0x3348  -> data starts at 0x23480
 code / data : 144,512 bytes of code, 56,672 bytes of data and stack
-units       : 11 code segments carrying 3,080 far calls
+units       : 14 code segments carrying 3,084 far calls
+  (four restored by their string references -- 0x0bea, 0x0c54, 0x0cfa, 0x0f30)
 runtime     : segment 0x219f -- 6,800 bytes, 1,500 far calls (48% of all calls)
 
 29 decoded, 0 failed        (once per container)
@@ -173,12 +174,22 @@ by compiling probes and matching 24-byte routine bodies, not by a table.
 | `System+0x03B5` | `MemAvail` |
 | `System+0x1714` `0x1742` `0x174B` `0x17C3` `0x17F7` `0x17FE` | `Assign`, `Reset`, `Rewrite`, `Close`, `Read`, `Write` |
 
-### The eleven segments, named
+### The fifteen segments, named
+
+**Corrected.** This said eleven until `tpscan.py` was taught to keep a unit that
+is far-called exactly once at a non-zero offset. Four such units were being
+folded into their neighbour, which is why the store's strings appeared to be
+addressed by nothing — they resolve fine against the base the tool was not
+reporting.
 
 | segment | bytes | whose | what |
 |---|---|---|---|
 | `0x00000` | 31,584 | MECC | the program, the menu, the trail |
-| `0x007B6` | 35,008 | MECC | scoring, the ending, the top ten |
+| `0x007B6` | 17,216 | MECC | scoring and the ending |
+| `0x00BEA` | 1,696 | MECC | the Oregon Top Ten |
+| `0x00C54` | 2,656 | MECC | "learn about the trail" |
+| `0x00CFA` | 9,056 | MECC | **outfitting: the professions and Matt's store** |
+| `0x00F30` | 4,384 | MECC | the erase / housekeeping menus |
 | `0x01042` | 18,656 | MECC | UI, files, saved games, tombstones |
 | `0x014D0` | 1,216 | MECC | the artwork loader |
 | `0x0151C` | 2,544 | MECC | the licence check |
@@ -188,6 +199,9 @@ by compiling probes and matching 24-byte routine bodies, not by a table.
 | `0x01DE9` | 13,632 | Borland | `Graph` — 74% by `GRAPH.TPU`, one 6,636-byte run |
 | `0x0213D` | 1,568 | Borland | `Crt` — 71% covered by `TURBO.TPL` |
 | `0x0219F` | 6,800 | Borland | `System` — 87%, and 48% of all far calls |
+
+The six MECC rows above were one 35,008-byte block until the segment scan
+was fixed; the totals below are unchanged because all six are MECC's.
 
 Every one of those percentages comes from `tpscan.py`'s `tpl_match` against
 Borland's own libraries. The separation is clean: four segments above 71%,
@@ -296,18 +310,21 @@ second knew what to look for: TP 5.0 addresses a string constant as
 `strefs.py` in the scratchpad matches, and which finds **266** string references
 elsewhere in the program.
 
-It still finds nothing for the store, and the check has since been redone with
-the offsets corrected — the banner's length byte is at `0x0E793`, not `0x0E79F`,
-so the first attempt searched for the wrong number. With the right one
-(`0x6C33`) the answer is the same, and the same for five other strings in the
-block: **no reference, and no offset table either.**
+It found nothing for the store for a long time, and **the reason was this
+toolkit, not the program.** The store is its own unit based at `0x0CFA0`, and
+`tpscan.py` was folding it into its neighbour because it is far-called exactly
+once, at offset `0x22B8` rather than at zero. Every store string was being
+resolved against the wrong segment base.
 
-The screen is definitely drawn — there is a photograph of it in
-[document three](docs/03-the-code.md#when-reading-fails-play-it) — so something
-addresses those strings. A base register loaded once and walked forward is the
-obvious guess, since they are contiguous, but the first address is not in the
-program as a literal either. **How the store's text is addressed is genuinely
-unknown**, and it is the most concrete unsolved thing in the folder.
+Against the right one they resolve immediately: `mov di, 0x17F3 / push cs /
+push di` at image `0x0E992` is the Matt's General Store banner, and 69 of 80
+references in that unit land on a Pascal string. **Nothing unusual is going on
+in the store at all** — it uses the same idiom as the other 266.
+
+The lesson is the expensive kind. A missing segment does not announce itself; it
+shows up as a *different* subsystem looking inexplicable, three steps away. If
+some part of a program seems to address its data by magic, suspect the segment
+map before inventing a mechanism.
 
 **The store is fully priced**, and it was never hidden — the game states every
 price in the shopkeeper's dialogue, which walks straight out of the file from

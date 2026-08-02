@@ -14,7 +14,7 @@ unknown](#what-is-still-unknown) is listed at the end rather than papered over.
 - [Is this even the game that shipped?](#is-this-even-the-game-that-shipped)
 - [It is packed, and the packer tells you where to start](#it-is-packed-and-the-packer-tells-you-where-to-start)
 - [It is Turbo Pascal, and how you can tell](#it-is-turbo-pascal-and-how-you-can-tell)
-- [Eleven segments, one per unit](#eleven-segments-one-per-unit)
+- [Fifteen segments, one per unit](#fifteen-segments-one-per-unit)
 - [Where the memory goes](#where-the-memory-goes)
 - [The artwork, which needs no reverse engineering](#the-artwork-which-needs-no-reverse-engineering)
 - [The check that is not copy protection](#the-check-that-is-not-copy-protection)
@@ -194,7 +194,7 @@ directly: **73.7% covered, with a single unbroken identical run of 6,636 bytes**
 So the compiler is established three separate ways: the runtime's code, a
 byte-identical driver file, and a 6,636-byte match against the graphics unit.
 
-## Eleven segments, one per unit
+## Fifteen segments, one per unit
 
 Here is the fact that makes a Pascal program readable without any symbol
 information at all:
@@ -209,7 +209,11 @@ needed.
 ```
 segment    starts    bytes   calls  entries
  0x00000 0x0000000   31,584       -        -   the program itself
- 0x007b6 0x0007b60   35,008       9        9
+ 0x007b6 0x0007b60   17,216       9        9
+ 0x00bea 0x000bea0    1,696       1        1
+ 0x00c54 0x000c540    2,656       1        1
+ 0x00cfa 0x000cfa0    9,056       1        1
+ 0x00f30 0x000f300    4,384       1        1
  0x01042 0x0010420   18,656     806       62
  0x014d0 0x0014d00    1,216     101        5
  0x0151c 0x00151c0    2,544       3        3
@@ -791,7 +795,7 @@ comparison the other games in this repository cannot make.
 | written in | 6502, translated | 8088 assembly | **Turbo Pascal** |
 | artwork | inside the binary | inside the binary | **511 KB of files** |
 | sprite format | guessed from a pointer stride | guessed from the blitters | **published in 1985** |
-| module structure | none — one flat image | none | **11 segments, one per unit** |
+| module structure | none — one flat image | none | **15 segments, one per unit** |
 | runtime | none | none | **Borland's, 48% of all calls** |
 | compression | none | RLE over 8×8 tiles, hand-rolled | **RLE, someone else's** |
 | protection | none found | none found | **network licensing** |

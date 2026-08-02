@@ -32,7 +32,7 @@ by a compiler, and compiler output has a grammar you can learn in five minutes.
 **A far call is a call to another unit.** `lcall 0x319F:0x03B5` means "segment
 `0x319F`, offset `0x3B5`". Within a unit, calls are near — two or three bytes,
 no segment. So the far calls are exactly the module boundaries, which is what
-[document two](02-architecture.md#eleven-segments-one-per-unit) exploits.
+[document two](02-architecture.md#fifteen-segments-one-per-unit) exploits.
 
 **Every procedure starts and ends the same way.**
 
@@ -1015,9 +1015,9 @@ I charge $40 a yoke.
 `$5.00`. And the food cap has a sentence to match the `cmp` against 2,000:
 `Your wagon may only carry 2000 pounds of food.`
 
-### The store's text is addressed by something nobody has found
+### The store's text looked unreferenced, and the segment map was to blame
 
-Worth stating carefully, because it was got wrong once. The store's strings are
+Worth stating carefully, because it was got wrong twice. The store's strings are
 perfectly ordinary Pascal strings, packed one after another in the code segment:
 
 ```
@@ -1029,23 +1029,55 @@ perfectly ordinary Pascal strings, packed one after another in the code segment:
 0x0E8A3  len  31  "Okay, that comes to a total\of "
 ```
 
-There is nothing unusual about them. What is unusual is that **not one is
-referenced.** The idiom every other string in the program uses — `mov di,
-offset` then `push cs / push di` — finds 266 references elsewhere and none here.
-Nor does the offset appear as a bare word anywhere, so there is no table of
-offsets either. Checked for six different strings in the block, with the offsets
-recomputed after getting the first one wrong by eleven bytes.
+There is nothing unusual about them. What looked unusual was that **not one
+appeared to be referenced.** The idiom every other string in the program uses —
+`mov di, offset` then `push cs / push di` — finds 266 references elsewhere and
+seemingly none here. Nor did the offset appear as a bare word anywhere, so there
+was no table of offsets either. Checked for six different strings, and rechecked
+after getting the first one's address wrong by eleven bytes.
 
-The screen is drawn — the emulator photograph above proves it — so something
-reaches them. A base register loaded once and advanced, most likely, since the
-strings are contiguous and a walker needs only the first address. But that first
-address is not in the program as a literal either, and **how the store is
-addressed remains genuinely unknown.**
+**All of that was true, and the conclusion drawn from it was still wrong,
+because every one of those offsets was computed from the wrong segment base.**
 
-This is the honest shape of an unfinished investigation, and it is worth leaving
-visible: a fact (the strings exist), a stronger fact (nothing references them
-the usual way), a demonstration that the conclusion cannot be "they are unused"
-(the screen appears), and a hypothesis that has not been tested.
+The store is its own Turbo Pascal unit, based at `0x0CFA0`. The tool that
+produced the segment map had folded it into its neighbour, because it is
+far-called *exactly once* — from the main program, at offset `0x22B8` — and the
+rule kept a candidate on two calls or on one call to offset zero. A unit entered
+once, elsewhere than its start, satisfied neither.
+
+Against the right base the mystery evaporates in one line:
+
+```nasm
+000E992  bf f3 17    mov di, 0x17F3        ; 0x0CFA0 + 0x17F3 = 0x0E793
+000E995  0e          push cs
+000E996  57          push di               ; -> "Matt's General Store\…"
+```
+
+and 69 of the 80 references in that unit land on a Pascal string. **The store
+addresses its text exactly like everything else.**
+
+The way to find it was to invert the question. Instead of asking *what
+references this string*, ask *what segment base would make some existing `mov
+di` reference it* — every `mov di, imm / push cs / push di` in the image, tested
+against every candidate base, keeping the bases that are paragraph-aligned. One
+base explained five references at once, and each of the five sat in the code
+immediately after the string it pointed at.
+
+Two things to carry away, and the second is the expensive one:
+
+- **A wrong segment map does not fail where it is wrong.** It fails three steps
+  away, as a *different* subsystem that appears to address its data by magic.
+  Nothing about the store was strange; the map was.
+- **"I checked carefully and found nothing" is not evidence of absence when
+  every check shares one assumption.** Six strings, two address spaces, a
+  corrected off-by-eleven — all of it careful, all of it resting on a segment
+  base that was never questioned because a tool had printed it.
+
+*This was fixed in the toolkit rather than worked around here: `tpscan.py` now
+restores a single-call segment when the string references in the span it would
+own resolve against it far better than against the neighbour, with four
+regression checks. The Oregon Trail's eleven segments became fifteen, and the
+35,008-byte "scoring" block turned out to be five units.*
 
 ### And then the shopkeeper simply tells you
 
@@ -1119,8 +1151,8 @@ last substantial thing unread in this program, and the way in is the casualty
 routine — it already takes a computed probability, and the arithmetic that
 produces it is what pace and rations feed.
 
-**What is still open.** How the store's text is addressed, the illness model's
-inputs, and the arithmetic joining pace and rations to the odds of dying.
+**What is still open.** The illness model's inputs, and the arithmetic joining
+pace and rations to the odds of dying.
 
 ## Where the artwork is loaded from
 
