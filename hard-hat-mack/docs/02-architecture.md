@@ -872,7 +872,7 @@ keeping. It read each list's first record and stopped at the terminator, which
 put a lone **"L"** and a lone **"M"** on the right edge of every screen. Both
 looked like plausible little markers. Nobody would have questioned them.
 
-That is the same failure the [CONTRAP reconstruction](https://github.com/agunawijaya/dos-decompiler/blob/main/knowledge/09-lessons-from-contrap.md)
+That is the same failure the [CONTRAP reconstruction](https://github.com/agunawijaya/DOS-Decompiler/blob/main/knowledge/09-lessons-from-contrap.md)
 recorded independently — chained records treated as one, producing output that
 is silently truncated and entirely believable. It survives because the wrong
 answer is *shorter* than the right one, and nothing about a shorter answer looks

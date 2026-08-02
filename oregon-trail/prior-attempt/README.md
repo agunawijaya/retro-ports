@@ -1,6 +1,6 @@
 # The earlier attempt — read this before trusting anything in here
 
-This folder is work from a session that ran **before `dos-decompiler` existed**.
+This folder is work from a session that ran **before `DOS-Decompiler` existed**.
 It is kept because it contains real findings and a great deal of reading, and it
 is quarantined because **none of it has been checked by the method this
 repository now uses.**

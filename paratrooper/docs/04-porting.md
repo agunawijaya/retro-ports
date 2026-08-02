@@ -429,7 +429,7 @@ the code or looking at the screen. The first two are invisible in a screenshot.
 ## How to know your port is right
 
 The toolkit this reconstruction came from grades claims about equivalence on a
-[verification ladder](https://github.com/agunawijaya/dos-decompiler#the-verification-ladder).
+[verification ladder](https://github.com/agunawijaya/DOS-Decompiler#the-verification-ladder).
 A port cannot reach the top rungs — it is different code — but it can do much
 better than "looks right", which proves nothing:
 

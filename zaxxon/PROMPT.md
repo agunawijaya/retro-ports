@@ -7,7 +7,7 @@ running it.
 
 This is the fourth game in this repository. Sopwith, ParaTrooper and Hard Hat
 Mack came first, and the toolkit that came out of them is measured rather than
-asserted. Read `dos-decompiler/AGENTS.md` before you start; it is the method,
+asserted. Read `DOS-Decompiler/AGENTS.md` before you start; it is the method,
 not a manual.
 
 ---
@@ -86,7 +86,7 @@ is worth fixing rather than working around: **it abstract-evaluates from offset
 Follow the initial `jmp` before evaluating. Then Zaxxon needs no flags, and so
 will the next game that hides its stub the same way.
 
-Add a fixture to `dos-decompiler/tests/com/fixtures/` that reproduces the shape
+Add a fixture to `DOS-Decompiler/tests/com/fixtures/` that reproduces the shape
 — a `jmp` over data, then a `retf`-based segment switch — so it cannot come
 back. There are four fixtures; the suite runs with
 `python tests/com/regress.py`. Do not put Zaxxon itself in a fixture; it is
@@ -100,7 +100,7 @@ In order. Do not skip forward; each step is what makes the next one checkable.
 
 1. **Byte-identical rebuild, proved outside the tool that made it.**
    SHA-256 the original and the reassembled file. This is rung 1b of the
-   verification ladder in `dos-decompiler/README.md`, and for a `.COM` it comes
+   verification ladder in `DOS-Decompiler/README.md`, and for a `.COM` it comes
    free — there is no linker, so the artefact compared *is* the whole image.
 
 2. **A high fraction of real instructions.** Byte-identity alone is a low bar:
@@ -197,7 +197,7 @@ Every one of these was a confident wrong answer, not an admitted gap.
   something to report.
 - **Anything the toolkit learns goes back into the toolkit** — a tool, a
   documented technique, or a recorded negative result, in the
-  `dos-decompiler` repository, with a regression test where one is possible.
+  `DOS-Decompiler` repository, with a regression test where one is possible.
   That is the actual point of this project; the games are the material.
 
 ## What this project is for

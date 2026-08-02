@@ -154,7 +154,7 @@ the names are not equally strong and pretending otherwise would undo the point
 of keeping the evidence at all.
 
 ```powershell
-.\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
+.\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
 ```
 
 Three steps: reconstruct, name, **rebuild and compare**. The third is the point.
@@ -183,7 +183,7 @@ is `symbols.json`, and it is small enough to read.
 ## Regenerating
 
 ```powershell
-python <path-to>\dos-decompiler\tools\comrec.py `
+python <path-to>\DOS-Decompiler\tools\comrec.py `
        original\KARATEKA.EXE --out recovered\karateka.asm
 ```
 
@@ -297,8 +297,8 @@ the people out: a standing figure is 30–60 scanlines and ≤ 14 bytes wide, a 
 is 99 tall, a banner 63 bytes across. That filter is what `--figures` applies.
 
 ```
-python tools\render-sprites.py --sheet KSC   --toolkit <path-to>\dos-decompiler
-python tools\render-sprites.py --figures KS4 --toolkit <path-to>\dos-decompiler
+python tools\render-sprites.py --sheet KSC   --toolkit <path-to>\DOS-Decompiler
+python tools\render-sprites.py --figures KS4 --toolkit <path-to>\DOS-Decompiler
 ```
 
 ## The backdrops are a different format, and a much simpler one
@@ -320,7 +320,7 @@ check that matters: a wrong row stride shears the picture visibly and a wrong
 interleave splits it into two combs. Neither happens.
 
 ```
-python tools\render-sprites.py --backdrop FUJI.BCG --toolkit <path-to>\dos-decompiler
+python tools\render-sprites.py --backdrop FUJI.BCG --toolkit <path-to>\DOS-Decompiler
 ```
 
 The lesson is worth keeping: **having just decoded a hard format, the next file

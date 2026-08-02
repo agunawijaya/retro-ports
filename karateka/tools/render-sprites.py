@@ -28,7 +28,7 @@ kind of wrong answer that looks like a discovery.
     python tools/render-sprites.py --pairs KS0:KM0 --out reference/sprites
     python tools/render-sprites.py --sheet KSC --out reference/sprites
 
-Needs Pillow and dos-decompiler (for its CGA palette).
+Needs Pillow and DOS-Decompiler (for its CGA palette).
 """
 
 import argparse
@@ -130,7 +130,7 @@ def main():
     ap.add_argument("--game", default="original",
                     help="folder holding the .IND/.DAT files")
     ap.add_argument("--toolkit", default=os.environ.get("DOS_DECOMPILER"),
-                    help="a dos-decompiler checkout, for the CGA palette")
+                    help="a DOS-Decompiler checkout, for the CGA palette")
     ap.add_argument("--pairs", help="shape:mask, e.g. KS0:KM0")
     ap.add_argument("--sheet", help="one series, e.g. KSC")
     ap.add_argument("--backdrop", help="a .BCG, e.g. FUJI.BCG")
@@ -139,7 +139,7 @@ def main():
     args = ap.parse_args()
 
     if not args.toolkit:
-        ap.error("say where dos-decompiler is: --toolkit or $DOS_DECOMPILER")
+        ap.error("say where DOS-Decompiler is: --toolkit or $DOS_DECOMPILER")
     sys.path.insert(0, str(Path(args.toolkit) / "tools"))
     from PIL import Image
     import gfxdump

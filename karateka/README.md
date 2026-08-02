@@ -91,7 +91,7 @@ switch, so the table and the arms it names are unreachable together and neither
 can be used to find the other. Recognising such a table by its contents took
 Karateka from 85.0% to 91.9% and cost the other four games here nothing. The
 whole account is in
-[dos-decompiler/knowledge/11](../../dos-decompiler/knowledge/11-unreached-code.md).
+[DOS-Decompiler/knowledge/11](../../DOS-Decompiler/knowledge/11-unreached-code.md).
 
 **The ninety data files are decoded, all 666 records.** `(id, offset)` pairs
 terminated by `0xFFFF`; records are run-length encoded with `0x7B` as the
@@ -100,7 +100,7 @@ settled by running the game and reading the routines that consume the data, not
 by inspecting the bytes — an earlier guess reached 282 of 284 and was wrong.
 
 ```
-python tools/render-sprites.py --sheet KSC --toolkit <path-to>/dos-decompiler
+python tools/render-sprites.py --sheet KSC --toolkit <path-to>/DOS-Decompiler
   60 records -> reference/sprites/KSC.png
 ```
 

@@ -22,7 +22,7 @@ everything shipped.
 The good news is that all of it is decoded, verified and rendering:
 
 ```
-python tools/render-sprites.py --sheet KSC --toolkit <path-to>/dos-decompiler
+python tools/render-sprites.py --sheet KSC --toolkit <path-to>/DOS-Decompiler
   60 records -> reference/sprites/KSC.png
 ```
 

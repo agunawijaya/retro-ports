@@ -21,9 +21,9 @@ found the missing sprites; looking at the picture found the misplaced ones.
 Use both.
 
     python tools/render-screens.py --com original/HHM.COM \\
-        --toolkit ../../dos-decompiler --out recovered/screens-game.png
+        --toolkit ../../DOS-Decompiler --out recovered/screens-game.png
 
-Needs Pillow, NASM, and dos-decompiler.
+Needs Pillow, NASM, and DOS-Decompiler.
 """
 
 import argparse
@@ -105,14 +105,14 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--com", default="original/HHM.COM")
     ap.add_argument("--toolkit", default=os.environ.get("DOS_DECOMPILER"),
-                    help="path to a dos-decompiler checkout "
+                    help="path to a DOS-Decompiler checkout "
                          "(or set DOS_DECOMPILER)")
     ap.add_argument("--nasm", default=os.environ.get("NASM", "nasm"))
     ap.add_argument("--out", default="recovered/screens-game.png")
     args = ap.parse_args()
 
     if not args.toolkit:
-        ap.error("say where dos-decompiler is: --toolkit or $DOS_DECOMPILER")
+        ap.error("say where DOS-Decompiler is: --toolkit or $DOS_DECOMPILER")
     sys.path.insert(0, str(Path(args.toolkit) / "tools"))
     from PIL import Image, ImageDraw          # noqa: E402
     import gfxdump                            # noqa: E402

@@ -22,7 +22,7 @@ instruction, and the numbers below are counts rather than estimates.
 | bytes in a named span | 42,112 of 42,112 |
 | level screens drawn from the file alone | recall **98% / 87% / 81%**, precision **94% / 96% / 86%**; the pixels the game draws are **95% / 90% / 90%** covered |
 | how that is known | `tools/verify-screens.py` runs the game under `comrun.py`, hooks the four drawing routines, and diffs the call list against the static reading |
-| what it actually is | a mechanical **6502 to 8086 translation** of the Apple II original — see [knowledge/14](../../dos-decompiler/knowledge/14-translated-binaries.md) |
+| what it actually is | a mechanical **6502 to 8086 translation** of the Apple II original — see [knowledge/14](../../DOS-Decompiler/knowledge/14-translated-binaries.md) |
 
 There is no port, and porting was deliberately out of scope.
 [docs/04-porting.md](docs/04-porting.md) is the decision that comes before one.
@@ -36,7 +36,7 @@ reading — 273 routines and 605 globals, each with the evidence for
 its name, plus `_data_spans` accounting for all 42,112 bytes — and the toolkit's `annotate.py` applies it.
 
 ```powershell
-.\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
+.\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
 ```
 
 Three steps: reconstruct, name, **rebuild and compare**. Names go in as
@@ -55,9 +55,9 @@ on it.
 ## Regenerating
 
 ```powershell
-python <path-to>\dos-decompiler\tools\comrec.py `
+python <path-to>\DOS-Decompiler\tools\comrec.py `
        original\HHM.COM --out recovered\hhm.asm
-python tools\render-screens.py --toolkit <path-to>\dos-decompiler
+python tools\render-screens.py --toolkit <path-to>\DOS-Decompiler
 ```
 
 **No flags.** The interrupt handler, the two dispatch pointers and the 6502
@@ -143,7 +143,7 @@ rendering and none by re-reading the code.
 ## Running it
 
 ```powershell
-python <path-to>\dos-decompiler\tools\comrun.py original\HHM.COM `
+python <path-to>\DOS-Decompiler\tools\comrun.py original\HHM.COM `
        --stop-at 0xAA8 --call 0x14D8 --png level1.png
 ```
 

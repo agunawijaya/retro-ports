@@ -52,14 +52,14 @@ byte-identical copy of the game — which makes shipping it the same as shipping
 the binary, only in source form.
 
 If you have your own copy, you can regenerate both in about a minute. You need
-[dos-decompiler](https://github.com/agunawijaya/dos-decompiler) and
+[DOS-Decompiler](https://github.com/agunawijaya/DOS-Decompiler) and
 [NASM](https://www.nasm.us/):
 
 ```powershell
 mkdir original, recovered
 copy <your copy> original\ParaTrooper.1982.com
 
-python <path-to>\dos-decompiler\tools\comrec.py `
+python <path-to>\DOS-Decompiler\tools\comrec.py `
        original\ParaTrooper.1982.com --out recovered\paratrooper.asm
 ```
 
@@ -147,5 +147,5 @@ ax` that opens the real code puts `DS` 0x110 bytes into the file. That is the
 
 ---
 
-Method and tooling: [dos-decompiler](https://github.com/agunawijaya/dos-decompiler).
+Method and tooling: [DOS-Decompiler](https://github.com/agunawijaya/DOS-Decompiler).
 The game is © 1982 Orion Software, Inc.; only the reconstruction is here.

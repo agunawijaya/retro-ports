@@ -11,7 +11,7 @@
 # nothing else in this folder should be believed. That is the whole reason the
 # check is here rather than in a document.
 #
-#   .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
+#   .\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
 #
 # Nothing this produces may be committed. `recovered/` is gitignored because a
 # byte-identical reconstruction is the game, whether or not it has names on it.

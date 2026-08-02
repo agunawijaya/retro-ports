@@ -41,7 +41,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-sys.path.insert(0, r"C:\Projects\dos-decompiler\tools")
+sys.path.insert(0, r"C:\Projects\DOS-Decompiler\tools")
 import pcxlib                                              # noqa: E402
 
 # CGA palette 1, high intensity -- what the header's mode flags select and what

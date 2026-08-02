@@ -30,7 +30,7 @@ name, and every one of the remaining 17 is a displacement into a struct
 rather than an address; and `_data_spans` accounts for all 20,736 bytes — and the toolkit's `annotate.py` applies it.
 
 ```powershell
-.\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
+.\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
 ```
 
 Three steps: reconstruct, name, **rebuild and compare**. Names go in as
@@ -49,7 +49,7 @@ on it.
 ## Regenerating
 
 ```powershell
-python <path-to>\dos-decompiler\tools\comrec.py `
+python <path-to>\DOS-Decompiler\tools\comrec.py `
        original\ZAXXON.COM --out recovered\zaxxon.asm --map recovered\zaxxon.map
 python tools\render-artwork.py --com original\ZAXXON.COM --out recovered
 ```

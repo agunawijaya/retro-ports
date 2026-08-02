@@ -13,7 +13,7 @@ which is which, and [CLAUDE.md](CLAUDE.md) is the working reference.
 The objective here was the toolkit rather than the game, and on that it
 delivered: an LZEXE entry point read instead of guessed, a Turbo Pascal
 structure scanner, and a PCX/pcxLib reader — all now in
-[dos-decompiler](https://github.com/agunawijaya/dos-decompiler).
+[DOS-Decompiler](https://github.com/agunawijaya/DOS-Decompiler).
 
 There is also substantial material from an earlier attempt that predates the
 toolkit — see [`prior-attempt/`](prior-attempt/). The one claim from it that was

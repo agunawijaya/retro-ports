@@ -33,7 +33,7 @@ the other 37 are displacements into a struct rather than addresses; and
 between spans — and the toolkit's `annotate.py` applies it.
 
 ```powershell
-.\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
+.\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
 ```
 
 Three steps: reconstruct, name, **rebuild and compare**. Names go in as
@@ -52,7 +52,7 @@ on it.
 ## Regenerating
 
 ```powershell
-python <path-to>\dos-decompiler\tools\comrec.py `
+python <path-to>\DOS-Decompiler\tools\comrec.py `
        original\ParaTrooper.1982.com --out recovered\paratrooper.asm
 ```
 

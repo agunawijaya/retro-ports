@@ -161,11 +161,11 @@ pictures may not be.
 ## Where the analysis comes from
 
 The reverse engineering is done with
-[**dos-decompiler**](https://github.com/agunawijaya/dos-decompiler), a separate
+[**DOS-Decompiler**](https://github.com/agunawijaya/DOS-Decompiler), a separate
 toolkit for taking DOS binaries apart. It is what produces the `recovered/`
 source and most of the facts in documents 02 and 03.
 
-The two repositories are deliberately separate: `dos-decompiler` is a set of
+The two repositories are deliberately separate: `DOS-Decompiler` is a set of
 tools, this is a set of finished work. You do not need the toolkit to read
 anything here.
 

@@ -70,7 +70,7 @@ its pointer at `[9]` — which capstone prints without the prefix, so nine
 routines went missing to one character class in a regular expression. Recovery
 of the code region went 0.1% → 57.9% → 75.3% → **75.8%** as each was addressed.
 The fixes and the fixtures live in
-[dos-decompiler](https://github.com/agunawijaya/dos-decompiler).
+[DOS-Decompiler](https://github.com/agunawijaya/DOS-Decompiler).
 
 **Everything is accounted for.** Not "mostly data" — every byte of the code
 region is in one of five buckets, with **zero unexplained**, and all 94 tiles
@@ -85,14 +85,14 @@ under copyright, and `recovered/zaxxon.asm` assembles to a byte-identical copy
 — which makes shipping it the same as shipping the game, only in source form.
 
 If you have your own copy you can regenerate both. You need
-[dos-decompiler](https://github.com/agunawijaya/dos-decompiler) and
+[DOS-Decompiler](https://github.com/agunawijaya/DOS-Decompiler) and
 [NASM](https://www.nasm.us/):
 
 ```powershell
 mkdir original, recovered
 copy <your copy> original\ZAXXON.COM
 
-python <path-to>\dos-decompiler\tools\comrec.py `
+python <path-to>\DOS-Decompiler\tools\comrec.py `
        original\ZAXXON.COM --out recovered\zaxxon.asm --map recovered\zaxxon.map
 ```
 
@@ -176,7 +176,7 @@ For a reference to compare against, the toolkit's `comrun.py` runs the binary
 under emulation and dumps the framebuffer:
 
 ```powershell
-python <path-to>\dos-decompiler\tools\comrun.py original\ZAXXON.COM `
+python <path-to>\DOS-Decompiler\tools\comrun.py original\ZAXXON.COM `
        --keys K,1 --stop-at 0x3B1 --stop-after 200 --png frame.png
 ```
 

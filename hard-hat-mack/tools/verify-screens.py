@@ -25,7 +25,7 @@ the extractor emits both. Counting the call as one placement made the reading
 look like it had invented twenty sprites per screen that it had not. When two
 measurements disagree, suspect the measurements first.
 
-    python tools/verify-screens.py --toolkit ../../dos-decompiler \\
+    python tools/verify-screens.py --toolkit ../../DOS-Decompiler \\
         --nasm C:/path/to/nasm.exe
 
 Needs Unicorn (for comrun) and NASM (for the static side).
@@ -108,7 +108,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--com", default=str(HERE / "original" / "HHM.COM"))
     ap.add_argument("--toolkit", default=os.environ.get("DOS_DECOMPILER",
-                                                        "../../dos-decompiler"))
+                                                        "../../DOS-Decompiler"))
     ap.add_argument("--nasm", default=os.environ.get("NASM", "nasm"))
     ap.add_argument("--show", type=int, default=6,
                     help="how many differing placements to print per screen")

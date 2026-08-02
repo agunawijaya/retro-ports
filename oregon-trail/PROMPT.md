@@ -2,14 +2,14 @@
 
 Decompile it. The point is not the game.
 
-**The objective is to enrich `dos-decompiler`.** Every game in this repository
+**The objective is to enrich `DOS-Decompiler`.** Every game in this repository
 has been chosen for what it breaks, and this one breaks more than any of the
 others: it is the first **Turbo Pascal** program the toolkit has ever seen. Five
 games in, every tool assumes C or hand-written assembly. If you do this well,
 the toolkit comes out able to handle a compiler family it currently cannot see
 at all — and that is worth more than the game.
 
-Read `dos-decompiler/AGENTS.md` before you start. It is the method, not a
+Read `DOS-Decompiler/AGENTS.md` before you start. It is the method, not a
 manual. Then read `prior-attempt/README.md` in this folder, which explains what
 an earlier session found and why none of it is trusted yet.
 
@@ -270,7 +270,7 @@ Every one was a confident wrong answer, not an admitted gap.
 - **Correct claims in place when they turn out wrong**, and say that they were
   wrong. The Hard Hat Mack documents do this in four places, and it is the most
   useful thing in them.
-- **Someone else is working in `dos-decompiler` at the same time.** Commit only
+- **Someone else is working in `DOS-Decompiler` at the same time.** Commit only
   your own files, read `git log` before you start, and expect the tools to move
   under you.
 

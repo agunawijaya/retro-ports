@@ -67,14 +67,14 @@ copy — which makes shipping it the same as shipping the game, only in source
 form.
 
 If you have your own copy you can regenerate both. You need
-[dos-decompiler](https://github.com/agunawijaya/dos-decompiler) and
+[DOS-Decompiler](https://github.com/agunawijaya/DOS-Decompiler) and
 [NASM](https://www.nasm.us/):
 
 ```powershell
 mkdir original, recovered
 copy <your copy> original\HHM.COM
 
-python <path-to>\dos-decompiler\tools\comrec.py `
+python <path-to>\DOS-Decompiler\tools\comrec.py `
        original\HHM.COM --out recovered\hhm.asm
 ```
 
@@ -110,7 +110,7 @@ the sprite region, the positions by walking each level's build routine — and
 the program is never run:
 
 ```powershell
-python tools\render-screens.py --toolkit <path-to>\dos-decompiler
+python tools\render-screens.py --toolkit <path-to>\DOS-Decompiler
 ```
 
 ```

@@ -40,8 +40,8 @@ which arm of a conditional runs — accounts for three placements on Level 1.
 ### How to check any of this rather than believe it
 
     cd <game>
-    .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm <path>\nasm.exe
-    python ..\..\dos-decompiler\tools\docaudit.py .
+    .\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm <path>\nasm.exe
+    python ..\..\DOS-Decompiler\tools\docaudit.py .
 
 The first proves the reconstruction and prints what the naming does not cover.
 The second finds every number in every document so a stale one is a line
@@ -156,11 +156,11 @@ Excerpts of recovered source **inside documentation** are fine and expected:
 short routines quoted for commentary, with explanation around them. A whole file
 is not.
 
-## Using dos-decompiler
+## Using DOS-Decompiler
 
 The reverse engineering toolkit lives in a **separate repository**:
-<https://github.com/agunawijaya/dos-decompiler>, cloned locally at
-`C:\Projects\dos-decompiler`.
+<https://github.com/agunawijaya/DOS-Decompiler>, cloned locally at
+`C:\Projects\DOS-Decompiler`.
 
 Read `AGENTS.md` in that repository before using it — it is the canonical
 method and it explains what the tools can and cannot establish.
@@ -169,21 +169,21 @@ Typical sequence for a new game:
 
 ```powershell
 # 0. what is in this folder? Which file is actually the game?
-python C:\Projects\dos-decompiler\tools\survey.py <game-folder>
+python C:\Projects\DOS-Decompiler\tools\survey.py <game-folder>
 
 # 0a. is that executable in scope? Report the verdict before promising anything.
-python C:\Projects\dos-decompiler\tools\triage.py <game>.EXE
+python C:\Projects\DOS-Decompiler\tools\triage.py <game>.EXE
 
 # 0b. if packed, unpack first
-python C:\Projects\dos-decompiler\tools\unpack.py <game>.EXE -o unpacked.exe
+python C:\Projects\DOS-Decompiler\tools\unpack.py <game>.EXE -o unpacked.exe
 
 # --- .COM files take a separate, stronger route ---
-python C:\Projects\dos-decompiler\tools\comrec.py <game>.COM --out recovered\<game>.asm
+python C:\Projects\DOS-Decompiler\tools\comrec.py <game>.COM --out recovered\<game>.asm
 nasm -f bin -o recovered\rebuilt.com recovered\<game>.asm     # then compare SHA-256
 
 # --- MZ executables go through the full pipeline ---
-. C:\Projects\dos-decompiler\env.ps1
-C:\Projects\dos-decompiler\tools\pipeline.ps1 -Exe <game>.EXE -OutDir out
+. C:\Projects\DOS-Decompiler\env.ps1
+C:\Projects\DOS-Decompiler\tools\pipeline.ps1 -Exe <game>.EXE -OutDir out
 ```
 
 `comrec.py` prints `BYTE-IDENTICAL` or says why not. **Verify it independently**

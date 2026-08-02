@@ -108,7 +108,7 @@ flowchart TB
 is the only part the processor ever executes; the grey band above it is
 pictures, text and lookup tables. That ratio is normal for a game and it is why
 [a percentage of the whole file is a misleading way to measure a
-decompilation](https://github.com/agunawijaya/dos-decompiler/blob/main/tests/com/CASE-STUDY.md).
+decompilation](https://github.com/agunawijaya/DOS-Decompiler/blob/main/tests/com/CASE-STUDY.md).
 
 The red band at the bottom is 77 bytes of zeros — scratch space the game writes
 into while running. It is stored in the file only because the file has to be a

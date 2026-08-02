@@ -386,7 +386,7 @@ the check is still present.
   sat in the file as data for that reason alone. Reading a table by its contents
   took the figure from 85.0% to **91.9%**, and to 99.1% counting the
   instructions pinned to fixed bytes. The account is in
-  [dos-decompiler/knowledge/11](../../../dos-decompiler/knowledge/11-unreached-code.md).
+  [DOS-Decompiler/knowledge/11](../../../DOS-Decompiler/knowledge/11-unreached-code.md).
 
   What remains is now *identified* rather than missing: about 120 bytes are
   those tables, correctly left as data; eleven runs are a single `0x90` of

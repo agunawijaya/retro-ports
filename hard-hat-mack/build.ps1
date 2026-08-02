@@ -8,7 +8,7 @@
 # nasm's output with the original directly. That is the one way this differs
 # from Karateka's build, where an MZ header is put back on first.
 #
-#   .\build.ps1 -Toolkit ..\..\dos-decompiler -Nasm C:\path\to\nasm.exe
+#   .\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
 #
 # Nothing this produces may be committed: recovered/ is gitignored because a
 # byte-identical reconstruction is the game, named or not.
