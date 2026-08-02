@@ -43,7 +43,7 @@ own library and came back right.
 | the animation system | a 14-command **compiler**, opcode = 2 × command index |
 | the fighting | choreography read — 150 moves in three plain-text libraries |
 | the fight AI | **found and read** — `0x2605`, a tree over pose, pose and distance |
-| the reading | 148 routines, 338 named addresses, **100% of the data segment by byte** |
+| the reading | 204 routines — **every one of the 165 call targets** — 338 named addresses, **100% of the data segment by byte** |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |
@@ -126,11 +126,16 @@ of 40 moves changed x by exactly the frame's `inc_x`.
 
 `recovered/karateka.asm` is correct and is not source: ten thousand
 instructions under labels named after their own addresses. `symbols.json` holds
-the reading — **all 120 routines and 320 globals**, each with the evidence
+the reading — **204 routines and 338 globals**, each with the evidence
 for its name — and the toolkit's `annotate.py` applies them.
 
-**Everything is named.** 120 of 120 routine prologues plus 18 interior labels,
-and every data-segment address the code references.
+**Everything is named**, and it is worth saying against which denominator.
+The count used to be 120 of 120 `push bp` prologues, which was true and was
+the wrong set: Lattice C's runtime is hand-written assembly with no prologue,
+and so are the tail entry points the compiler generates inside a function. By
+the measure that matters — **addresses the program actually calls** — 56 were
+unnamed while the figure read 100%. All 165 are named now, along with every
+data-segment address the code references.
 
 **The finding that moved this most was not a naming technique.** `DS:0x0337` is
 a 16,000-byte off-screen CGA frame, 200 rows of 80, ending at `0x4217` exactly

@@ -23,7 +23,7 @@ If a port starts, it goes in `web/` and gets documents 05 and 06, following
 ## Source you can rebuild
 
 `recovered/zaxxon.asm` is correct and is not source. `symbols.json` holds the
-reading — 119 routines and 105 globals, each with the evidence for
+reading — 127 routines and 105 globals, each with the evidence for
 its name. All 74 call targets are named, plus the scene, fortress and wall
 handlers the three jump tables reach; 47 of the 64 bracketed constants have a
 name, and every one of the remaining 17 is a displacement into a struct

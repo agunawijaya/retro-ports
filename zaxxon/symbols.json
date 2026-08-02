@@ -442,8 +442,40 @@
       "whether the ship is lined up with the gap"
     ],
     "0x1F15": [
-      "wall_gap_test_2",
-      "the same test for a bullet"
+      "clears_wall_low",
+      "depth 0x14 to 0x1E and altitude 4 or under. One of the seven predicates a scene installs in stage_handler; collisions reaches them all through `call word [9]`"
+    ],
+    "0x1F2A": [
+      "clears_wall_high",
+      "in_wall_depth, then altitude 5 or more"
+    ],
+    "0x1F38": [
+      "in_wall_depth",
+      "the shared window: depth 0x0E to 0x1E, altitude ignored. Three of the others start by calling it"
+    ],
+    "0x1F47": [
+      "clears_wall_mid",
+      "in_wall_depth, then altitude 0xC or under"
+    ],
+    "0x1F55": [
+      "clears_barrier",
+      "the inverted one: depth over 0x18 or altitude under 0xC passes"
+    ],
+    "0x1F65": [
+      "pass",
+      "clc -- the shared success tail of all seven"
+    ],
+    "0x1F67": [
+      "fail",
+      "stc"
+    ],
+    "0x1F69": [
+      "clears_wall_upper",
+      "clears_wall_high, then altitude 0xE or under"
+    ],
+    "0x1F77": [
+      "clears_wall_lower",
+      "clears_wall_high, then altitude 0xE or more"
     ],
     "0x1F96": [
       "depth_of",

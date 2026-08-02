@@ -20,6 +20,10 @@
       "entry",
       "the MZ entry from CS:IP; sets DS once and never again"
     ],
+    "0x0023C": [
+      "dos_version_check",
+      "INT 21h for the version, then the heap flag -- the tail of the C start-up"
+    ],
     "0x0255": [
       "startup",
       "detects the display, loads the libraries, then calls main"
@@ -64,9 +68,53 @@
       "blit_column",
       "one byte per scanline, add di 0x50"
     ],
+    "0x00B4E": [
+      "clear_frame",
+      "0x1F40 words of zero over screen_buffer: the whole 16,000-byte off-screen frame. Fourteen callers"
+    ],
+    "0x00B5E": [
+      "advance_run_pair",
+      "one step of both run-length streams at once -- shape_run_count against shape_stream, mask_run_count against mask_stream"
+    ],
     "0x0B95": [
       "next_pixel_byte",
       "run-length decoder, called once per output byte"
+    ],
+    "0x00BC9": [
+      "draw_layers",
+      "walks draw_layer from draw_layer_min to draw_layer_max, dispatching on scene_kind"
+    ],
+    "0x00C52": [
+      "compose_scene",
+      "the whole picture: the backdrop bands at screen_r32c0 and screen_r154c0, then the sprites from sprite_table_b, gated on draw_enable and redraw_all"
+    ],
+    "0x00D68": [
+      "blit_frame",
+      "200 rows of 0x28 words from screen_buffer to 0xB800, each row's address from the scanline table. Twelve callers, and the only routine that touches the real screen"
+    ],
+    "0x00D89": [
+      "refresh_bands",
+      "redraws the two bands at screen_r32c0 and screen_r116c0 when redraw_all is set"
+    ],
+    "0x00DD0": [
+      "draw_horizon",
+      "the band at screen_r114c0, chosen by scene"
+    ],
+    "0x00DEF": [
+      "fade_frame",
+      "walks screen_buffer with a delay between passes"
+    ],
+    "0x00EE8": [
+      "spin_1000",
+      "a thousand turns of an empty loop; the only delay the drawing code has"
+    ],
+    "0x00EEE": [
+      "card_sprite",
+      "one sprite from sprite_table_a at screen_r70c0, cleared and blitted around it"
+    ],
+    "0x00F27": [
+      "show_frame",
+      "clear, draw, blit, wait -- the four calls every title card makes, with draw_ready deciding whether there is anything to draw"
     ],
     "0x0F52": [
       "load_backdrop",
@@ -108,6 +156,46 @@
       "run_script",
       "walks compiled byte code; polls for a key with AH=06"
     ],
+    "0x0169C": [
+      "unwind_to_main",
+      "`mov sp, bp` then a pushed return to 0x02B8: the long jump out of a failed load"
+    ],
+    "0x016A3": [
+      "check_quit_key",
+      "INT 21h AH=6 with DL=0xFF, unbuffered. A 0x11 -- Ctrl-Q -- sets mode 3, restores SP from the saved top and exits through INT 21h AH=4Ch with code 1"
+    ],
+    "0x01718": [
+      "command_matches",
+      "compares a script command's name against script_limits, character by character"
+    ],
+    "0x01734": [
+      "advance_script",
+      "steps script_cursor, honours wipe_pending, and skips the demo-only commands when demo_mode is clear"
+    ],
+    "0x017FB": [
+      "script_return",
+      "pops one level of script_depth back into script_cursor"
+    ],
+    "0x0186C": [
+      "reset_scene_state",
+      "redraw_all to 0xFFFF, the draw_layer bounds to 3 and 0, palette_byte cleared, and script_cursor stepped"
+    ],
+    "0x018BF": [
+      "wait_ticks",
+      "AX ticks on INT 1Ah, spinning until the count matches"
+    ],
+    "0x018D5": [
+      "wait_or_key",
+      "AX/2 rounds of a two-tick wait, abandoned as soon as read_intent reports a key"
+    ],
+    "0x018EF": [
+      "mark_tick",
+      "the current INT 1Ah reading into script_pc"
+    ],
+    "0x018F8": [
+      "wait_3_ticks",
+      "spins until three ticks have passed since script_pc, then re-marks it"
+    ],
     "0x190B": [
       "play_script",
       "compile a named script and run it"
@@ -115,6 +203,10 @@
     "0x1976": [
       "index_blocks",
       "walks a compiled library recording each block's offset; 42 of them, frames 17 bytes"
+    ],
+    "0x0197E": [
+      "index_moves",
+      "walks a move library building 0x2A index entries, skipping the two-byte 0x18 records and stopping at 0xFF"
     ],
     "0x19A2": [
       "index_guard_library",
@@ -204,6 +296,10 @@
       "fight_frame",
       "one frame for both fighters: advance, or choose and start a move"
     ],
+    "0x022E1": [
+      "fight_step",
+      "one turn of the fight: both cursors, both positions, the phase, and whichever of player_choose_move, guard_choose_move or demo_choose_move applies"
+    ],
     "0x2324": [
       "fight_step_player",
       "advance or restart the player's move"
@@ -252,6 +348,26 @@
       "scripted_defeat",
       "drops guard_health on a scripted beat rather than a hit"
     ],
+    "0x0301C": [
+      "check_defeat",
+      "player_health against guard_health, and what follows -- hit_flash, defeat_pending, defeat_done"
+    ],
+    "0x03162": [
+      "clear_hud_column",
+      "seven words of zero at stride 0x50"
+    ],
+    "0x0316F": [
+      "copy_hud_column",
+      "seven words from SI at the same stride"
+    ],
+    "0x0317F": [
+      "draw_defeat_word_a",
+      "defeat_word_a at hud_row"
+    ],
+    "0x03196": [
+      "draw_defeat_word_b",
+      "defeat_word_b at screen_r194c0"
+    ],
     "0x31AA": [
       "story_step",
       "switches on the pending story event [0xD672]; loads scenes and advances the level"
@@ -280,6 +396,62 @@
       "play_sound",
       "21 call sites"
     ],
+    "0x03DB9": [
+      "tune_next_byte",
+      "reads the next byte of the tune through tune_read_a"
+    ],
+    "0x03DD5": [
+      "speaker_toggle",
+      "XOR bit 1 of port 0x61. Ten callers, and the whole of the sound hardware"
+    ],
+    "0x03DDE": [
+      "sound_tick",
+      "tune_flags and sound_channel decide whether speaker_toggle fires this pass"
+    ],
+    "0x03E16": [
+      "tune_next_note",
+      "the next note: tune_cursor into note_table, giving note_period and note_length"
+    ],
+    "0x03E7C": [
+      "sfx_step",
+      "the four sfx_slot entries, their phases and their remaining ticks"
+    ],
+    "0x03F29": [
+      "sfx_clear",
+      "empties a slot"
+    ],
+    "0x03F3F": [
+      "card_opening",
+      "'high atop a craggy cliff'"
+    ],
+    "0x03F56": [
+      "card_the_end",
+      "'THE END' at screen_r94c31"
+    ],
+    "0x03F71": [
+      "card_closing",
+      "'and so this adventure ends', and the one card that waits for a key rather than a timer"
+    ],
+    "0x03FB7": [
+      "card_author",
+      "'A GAME BY' and 'JORDAN MECHNER'"
+    ],
+    "0x03FDA": [
+      "card_port_credit",
+      "'IBM VERSION BY' and 'THE CONNELLEY GROUP'"
+    ],
+    "0x03FFD": [
+      "card_disk_prompt",
+      "'MAKE SURE YOUR KARATEKA', 'DISK IS IN DRIVE A', 'PRESS ANY KEY TO CONTINUE'"
+    ],
+    "0x04028": [
+      "title_animation",
+      "walks screen_buffer against sfx_state_a and sound_table_end, so the picture and the tune advance together"
+    ],
+    "0x040A1": [
+      "card_ksi",
+      "the KSI logo at screen_r62c5"
+    ],
     "0x40D5": [
       "rand",
       "the generator random() scales"
@@ -296,6 +468,22 @@
       "read_intent",
       "called from inside pose_handler at 0x1D2A and 0x1DAA"
     ],
+    "0x041FC": [
+      "poll_input",
+      "one pass of the input latch, taking the adapter_kind path"
+    ],
+    "0x04233": [
+      "flush_console",
+      "calls check_quit_key until the buffer is empty, then clears input_latch"
+    ],
+    "0x04241": [
+      "stop_sound",
+      "saves sound_on, clears it, runs play_sound(5) with the speaker disabled, and puts the flag back"
+    ],
+    "0x04257": [
+      "ret_stub",
+      "a bare `ret`, followed by six bytes -- `mov ah, 0x0E / int 0x21 / ret` -- that nothing reaches"
+    ],
     "0x425E": [
       "hercules_sync_wait",
       "port 0x3BA with a counted loop -- display detection, NOT the joystick"
@@ -307,6 +495,22 @@
     "0x42D1": [
       "detect_hercules",
       "port 0x3BF, then the sync wait above"
+    ],
+    "0x0433E": [
+      "program_crtc",
+      "twelve CRTC registers out to port 0x3B4, which is the Hercules address"
+    ],
+    "0x04352": [
+      "choose_adapter",
+      "the equipment word and INT 11h, then detect_cga or detect_hercules"
+    ],
+    "0x04373": [
+      "apply_video_mode",
+      "the chosen mode and page through INT 10h; set_video_mode at 0x0608 is the one-argument wrapper it does not use"
+    ],
+    "0x04396": [
+      "set_video_segment",
+      "0xB800 or 0xB000, by which adapter answered"
     ],
     "0x43AA": [
       "hit_test",
@@ -320,6 +524,10 @@
       "intent_from_input",
       "turns the stick bitmask into an intent, given the player's pose"
     ],
+    "0x04619": [
+      "calibrate_stick",
+      "the four bounds, through calibrate_axis, with stick_present set if any of it answered"
+    ],
     "0x46FC": [
       "calibrate_axis",
       "AH selects the axis, DI the pair of bounds to fill; called twice"
@@ -331,6 +539,18 @@
     "0x4756": [
       "read_stick",
       "buttons plus both axes against the calibration bounds"
+    ],
+    "0x047EE": [
+      "read_axis_avg",
+      "four timings of one axis, averaged, subtracted from 0x310"
+    ],
+    "0x04806": [
+      "time_axis",
+      "counts down from 0x310 while the axis bit stays high -- the paddle discharge"
+    ],
+    "0x0482B": [
+      "load_input_table",
+      "reads input_table off disk through INT 21h"
     ],
     "0x483C": [
       "fopen",
@@ -595,6 +815,10 @@
     "0x6B3A": [
       "cxc33",
       "**confirmed**: Lattice C 2.12's LCD.LIB calls this `CXC33`"
+    ],
+    "0x06B57": [
+      "lmul",
+      "a 32-by-32 multiply in four 16-bit steps, with both zero cases short-circuited. Lattice C's runtime, not the game's"
     ],
     "0x6B84": [
       "bdos",
@@ -1964,29 +2188,21 @@
     ]
   },
   "_unnamed": [
-    "Nothing is unnamed. Every one of the 120 routine prologues and every one of",
-    "the 312 data-segment addresses the code references -- 1,642 references, all",
-    "of them -- carries a name and the evidence for it.",
+    "Nothing is unnamed. All 165 call targets in the listing carry a name and",
+    "the evidence for it, and so does every one of the 338 addresses the code",
+    "references.",
     "",
-    "That number is only meaningful with the caveats attached, so here they are:",
+    "That sentence used to say 120 routine prologues, which was true and was",
+    "the wrong denominator. Lattice C's runtime is hand-written assembly with",
+    "no `push bp` at all, and neither are the tail entry points the compiler",
+    "generates inside a function -- so 56 routines the program calls had no",
+    "name while the count read 100%. The same mistake as quoting a reference",
+    "count for a data segment: a percentage needs its denominator said out",
+    "loud, and the denominator has to be the thing you care about.",
     "",
-    "  * The names are not equally strong. Each `why` says which kind of evidence",
-    "    it rests on -- a probe four cases agreed on, an argument watched during a",
-    "    real run, a body that states it outright, or a single reader. The last is",
-    "    the weakest and there are a lot of them.",
-    "  * A great many were never separate variables at all. DS:0x0337 is one",
-    "    16,000-byte off-screen frame and forty 'globals' were rows of it; another",
-    "    sixteen are elements of tables whose extents were established separately.",
-    "    Folding those was arithmetic, not judgement.",
-    "  * Six were named wrongly first. 'Read by play_sound, never written,",
-    "    therefore a sound table' is a plausible inference and it made the closing",
-    "    credits into tune data. The reader tells you who uses an address; only",
-    "    the bytes tell you what is in it.",
-    "",
-    "What is still not here is a *C* reconstruction. This is assembly that",
-    "reassembles to the original exactly, which is a different and stronger claim",
-    "about the bytes and a weaker one about the design. Lattice C 2.1 would be",
-    "needed for the other, and the copy on this machine is 3.10 with no library."
+    "The names are not equally strong. Each `why` says what it rests on -- a",
+    "probe four cases agreed on, an argument watched under emulation, a string",
+    "the routine draws, or the set of already-named variables it touches."
   ],
   "_globals_note": [
     "199 of the 312 data-segment addresses the code names are named above --",
