@@ -2,10 +2,1474 @@
   "_about": [
     "Names for Moon Patrol's routines and globals, with the evidence for each.",
     "",
-    "Empty: nothing has been read yet. See BRIEF.md for what triage found and the order the work is worth doing in.",
+    "Provenance: mechanically translated from 6502. Comrec detects it -- 281 `cmc` after cmp/sub, 99% of them straight after a compare. Read as 6502: AL = accumulator, BL and CL = X and Y index registers, no register push/pop, 16-bit as byte pairs with `adc`, every global is a fixed address. See knowledge/14-translated-binaries.md.",
     "",
-    "Routine keys are image offsets, the coordinate comrec's labels use. Global keys are the addresses the program sees. Getting those the wrong way round is the mistake that costs a session, and the only symptom is silence."
+    "Two address bases. File loads .COM at ORG 0x100. Entry stub at file 0 writes a far pointer at run time and does `jmp far [0x140]` to (CS+0x20):0000 -- file offset 0x100 in a new segment addressed from 0. Everything from file 0x100 onward is base-0. Comrec cannot see the target because the pointer is written at run time (Zaxxon and ParaTrooper use `retf`, which comrec autodetects; Moon Patrol does not). build.ps1 passes `--segment 0x100:0 --entry 0x100`.",
+    "",
+    "Copyright string in the file: `Moon Patrol Copyright (C) 1984 Atari, Inc.` at file 0x4E98. The DOS conversion is Atari's, published 1984; the arcade original is Irem, 1982.",
+    "",
+    "DS is set at startup to CS+0x55D paragraphs (`mov bx, cs; sub bx, 0x100; add bx, 0x65D; mov ds, bx`). DS:0x0000 = memory address 0x55D0 in the new segment = file offset 0x56D0. So a bare `[0x81E0]` reads file 0x56D0+0x81E0 = 0xD8B0 -- past the code region (which ends at 0x54C9), inside the 36 KB data tail. `cs:` and bare-DS addresses are two different address spaces.",
+    "",
+    "Routine keys are file offsets, the coordinate comrec's labels use. Global keys are the addresses the program sees. Getting those the wrong way round is the mistake that costs a session, and the only symptom is silence.",
+    "",
+    "This file is being built up. See BRIEF.md for progress and the order the work is worth doing in."
   ],
-  "routines": {},
-  "globals": {}
+  "routines": {
+    "0x002EE": [
+      "startup",
+      "the entry point after the run-time far jmp lands here at file 0x2EE. cli, then writes 0 to port 0xA0 (PC NMI mask register on the 5150/5160, disables NMI), sets SS = CS, computes DS = CS + 0x55D paragraphs (so DS:0 = file 0x56D0, just past the code region), saves DS at ss:0x5C and the original ES at [0x8814], sets SP = 0x1EE (the byte at that offset in the initial stub is data, but the stack grows down from here), calls L_0082E to set up the graphics adapter, unmasks NMI by writing 0x80 to port 0xA0, `sti`, disables the PPI beep by clearing bit 0 of port 0x61, then jumps to L_04ECB (the main menu / title loop)"
+    ],
+    "0x004CB": [
+      "irq_epilogue",
+      "`pop ds; pop bx; pop ax; iret`. The tail every arm of the keyboard ISR jumps to when it is done. Ax/bx/ds are pushed on entry, ds is set to the game's data segment, then a dispatcher selects the arm from the scancode"
+    ],
+    "0x00505": [
+      "reset_and_reboot",
+      "the ISR arm for scancode 0x1D (LCtrl) or 0x38 (LAlt). Runs the video-setup routine (L_0082E), sets BIOS equipment word bits 4-5 (`or byte [es:0x410], 0x30`), calls int 10h AX=3 (80x25 colour text), then far-jumps to the saved BIOS int 9 handler at [0x8812] -- so this is the Ctrl+Alt+Del exit, chaining to the ROM's own reset path"
+    ],
+    "0x00562": [
+      "peek_key",
+      "`mov ax, [0x100]; test al, al; ret`. Reads the low byte of the keyboard variable and returns flags. Called by every routine that waits on input"
+    ],
+    "0x00568": [
+      "wait_key_up",
+      "loops calling peek_key while the sign flag is not set. Falls into clear_key"
+    ],
+    "0x0056D": [
+      "clear_key",
+      "`and byte [0x100], 0x7F; ret`. Clears the 'key ready' top bit that the ISR sets. Called after a wait so the next peek starts clean"
+    ],
+    "0x00573": [
+      "enter_cga_graphics",
+      "sets up 320x200 4-colour CGA. Zeroes [0x8818] (in-game flag), sets ES = 0 to reach the BIOS data area, clears equipment bits 4-5 and sets bit 5 (color adapter present), int 10h AX=4 (CGA mode 4), records the mode in [0x8819] = 4, then does int 10h AH=0Bh BH=1 to set palette 1 (cyan/magenta/white) and int 10h AH=0Bh BH=0 to set background 0. Falls into L_0085D"
+    ],
+    "0x005A3": [
+      "show_menu_and_wait",
+      "sets SP = 0x1EE, zeroes [0x8818] (in-game) and ss:0x5A (frame counter) and [0x8819] (mode marker), runs int 10h (mode) and L_0085D, then falls into the menu render loop at L_005B7"
+    ],
+    "0x005B7": [
+      "menu_render",
+      "the menu render entry -- prints the string at DS:0x81E0 (`Game Options`) and clears the key latch. Falls into L_005C0"
+    ],
+    "0x005C0": [
+      "menu_loop",
+      "the menu poll loop -- prints the demo copy at DS:0x84B7 once every 500 timer ticks, then walks a per-key table looking for a matching scancode and dispatching. Two special scancodes fall through to sub-menus at L_0060A (2D = 'Z', jumps into player-select) and L_0064B (2E = 'C', jumps into course-config)"
+    ],
+    "0x00645": [
+      "print_and_wait",
+      "two instructions: `call print_string; jmp wait_key_up`. The universal 'show this line and hold until the player releases the key' pattern the menu uses for every submenu title and confirmation"
+    ],
+    "0x0064B": [
+      "scancode_dispatch",
+      "walks a (scancode, action) pair table at DS:0x88A9 -- pairs terminated by an 0xFFFF entry. For each pair, scans 0x53 bytes at DS:0x8856 for the matching scancode, then writes the action byte into whatever cell the action's second word points at. This is the input remap step used by the [K]/[J] menu"
+    ],
+    "0x0066D": [
+      "install_scancode",
+      "the accept branch of scancode_dispatch: prints DS:0x84D9 (the 'PRESS KEY' prompt), reads a scancode via peek_key/wait_key_up chain, swaps it into the two mirrored key-map cells at [si - 0x77AB] and [di - 0x77AB], updates the display cells at [0x8712], [0x872B], [0x8742], flips [0x8853], and jumps back to scancode_dispatch to install the next binding"
+    ],
+    "0x006BF": [
+      "run_calibrate_or_read",
+      "the joystick-calibration/read dispatcher. Sets [0x82B1] = 0xF0, then calls read_joystick_raw three times with three different bases (0x8832, 0x8836, 0x883A) -- min-x, max-x, min-y or similar -- with the caller's function pointer invoked between reads (`call ax`/`call bx`). Ends by scaling the readings into `[si - 0x77DE]` scale factors used by later reads"
+    ],
+    "0x0073F": [
+      "poll_joystick_scaled",
+      "reads the joystick if input mode is joystick ([0x8853] == 1), applies the min/max calibration written by run_calibrate_or_read, and returns the scaled axes. Uses port 0x201 via read_joystick_raw and compares against the per-axis min/max cells at [bx - 0x77E2] and [bx - 0x77CA]"
+    ],
+    "0x00789": [
+      "read_joystick_or_cache",
+      "returns the joystick position -- from port 0x201 if input mode is joystick ([0x8853] == 1), otherwise from the cached values at [0x881A]/[0x881C] that the last real read left there. Every game-loop input path funnels through here"
+    ],
+    "0x007AB": [
+      "read_joystick_raw",
+      "raw poll of the IBM PC game port at 0x201. cli, arm the one-shots by writing to the port, then a 256-iteration loop reading `in al, dx` and testing each of the four RC-timed bits; each axis returns the count at which its bit dropped. The write to [0x883E] = 0xFF marks the readings as valid"
+    ],
+    "0x0088D": [
+      "print_string",
+      "prints a string from DS:SI straight into CGA text-mode video RAM. Sets ES = 0xB800, `lodsb`, `cmp al, 0xff` -- the terminator is 0xFF. For each character, computes `row * 80 * 2 + col * 2 + 4` (`ah = 0x50; mul ah; add ax, 4`) and writes attribute + char into `[es:ax]`. Every menu, prompt, score and end-of-game string funnels through here"
+    ],
+    "0x0082E": [
+      "walk_installed_isrs",
+      "the interrupt vector installer/restorer used by startup and by reset_and_reboot. ES = 0, then walks a table pointed to by BP with (offset, seg, offset-of-old) triples: reads the table's entry, if the seg field is 0 the CS-relative install path takes over, otherwise it restores the saved vector. Same routine drives install and teardown -- the direction is encoded in the table"
+    ],
+    "0x0085D": [
+      "program_crtc_split",
+      "writes to the CGA CRTC via port 0x3D4 (index/data pair) using the scroll offset in [0x8817]. Sets registers 0x0E (cursor-hi = 0xFF, effectively hiding the cursor) and 0x03 (h-sync width = 0x0A), then a MA-lookup pair driven by [0x8817]. This is the raster-timed split that lets the score line stay on top while the game field scrolls below"
+    ],
+    "0x00A6D": [
+      "clear_bullet_slots",
+      "cl = 2, then loops writing `al` (=0) to `[si + 0xE8]` and `[si + 0xEB]` for si = 2, 1, 0 -- clears three pairs of state bytes at 0x0E8/0x0EB, 0x0E9/0x0EC, 0x0EA/0x0ED. Same shape as the 'zero this small array' the game uses everywhere at round boundaries"
+    ],
+    "0x00A82": [
+      "queue_sound_pair_L134",
+      "queues two notes into the L_05134 sound engine: al = 1, cl = [0x59] | [0x216], bl = [0x5A]; then al = 0, cl = [0x61] | [0x216], bl = [0x62]. The `| [0x216]` OR is a volume/priority mask the sound flag sets. Pair pattern (voice 1 then voice 0) appears throughout the sound path"
+    ],
+    "0x00ACA": [
+      "queue_sound_pair_L115",
+      "same shape as queue_sound_pair_L134 but goes to the L_05115 engine and uses cells [0x57], [0x58], [0x5B]. Two engines, two note tables -- probably the two square-wave voices the 8253/PIT can drive on channel 2"
+    ],
+    "0x00CA0": [
+      "on_key_225",
+      "if [0x225] != 0 (6502-idiom `mov al, X; inc al; dec al; jne` sets Z from AL like LDA): falls into the [0x100] check at L_00CAC, otherwise jumps to L_00D11. Reads the keyboard state to decide whether to advance a script"
+    ],
+    "0x011E0": [
+      "for_each_bullet_slot",
+      "cl = 2 loop over the three bullet slots. For each slot: if `[si + 0xE8] == 0` (6502-idiom zero check), jump to L_011F1 (idle branch), otherwise L_011F8 (active branch). Iterates the three-slot bullet array clear_bullet_slots initialised"
+    ],
+    "0x022EE": [
+      "script_run",
+      "the inline-script interpreter, called 25+ times. `pop word [5]; dec word [5]` pops the return address into the 16-bit cell at [5..6] -- the interpreter's PC -- and backs it up by one so the first `inc byte [5]` at L_022FE walks it forward one byte. Then stores CL and BL into [3] and [4] as script arguments. Every caller of this is `call script_run; db opcodes...` -- the routine reads opcodes out of the caller's own code stream and never returns to the byte after the call. This is the dominant control-flow shape of the whole game"
+    ],
+    "0x04ECB": [
+      "main_menu_entry",
+      "the target of startup's final `jmp`. Zeroes [0x231], [0x230], [0x22F] (probably player/round/level counters), calls enter_cga_graphics with ax=0, then renders the title screen: loads si from the pointer at [0x2F84] and calls L_054B2 (draws the title art), then loads si from [0x2F86] and calls the OR-blit at L_053F9 at (cx=0x15, dx=0xB9). Where the menu proper takes over"
+    ],
+    "0x009C3": [
+      "reset_ammo_counters",
+      "zeroes the two ammo cells [0x222] and [0x22A], then falls into reset_round_state"
+    ],
+    "0x009CD": [
+      "reset_round_state",
+      "the round-init clear: writes [0x6E] = 0x22, [0x41] = [0x43] = 0x15, zeroes twelve state cells around [0x28..0x29] and [0xBB..0xC0], then continues with more state bytes -- the shape of a per-wave BSS clear. Called after ammo reset when a new round starts"
+    ],
+    "0x020DB": [
+      "advance_scroll",
+      "calls L_05172 (a draw), then copies [0x43] into [0x41] and increments [0x43]; if the new [0x43] hits 0x8D it wraps back to 0. The 0x8D matches the code-region horizontal cell count -- this is the terrain scroll pointer, and its wrap is where the horizon loops"
+    ],
+    "0x021E8": [
+      "place_status_line",
+      "hard-codes cx = 0x18 (24 columns) into [0xA6] and dx = 0x0F (15 rows) into [0xA7], then calls the sprite-draw pair for the score/status bar using [0x7E] (score digit) and [0x7D] (fuel or similar)"
+    ],
+    "0x02249": [
+      "add_bcd_score",
+      "the BCD score add. `add al, [0x7A]; daa; mov [0x7A], al` -- classic BCD accumulator using DAA. AL comes from the score-value argument, [0x7A] is the ones digit; the daa preserves the packed-BCD invariant so `[0x7A]` never leaves 0..99. The full 8-digit score lives in [0x7A..0x81]"
+    ],
+    "0x032E0": [
+      "unpack_bit_pattern",
+      "6502-style bit permutation. Reads [0x20] and rotates five bits into AL through carry, then rotates carry into AH, XORs back with [0x20]. This is the 6502 shape for a shape-table byte unpack -- the same idiom the Applesoft turtle-graphics interpreter used, carried across by the translator (see knowledge/14-translated-binaries.md)"
+    ],
+    "0x04CAE": [
+      "check_object_row",
+      "6502 subtract-with-cmc test on [0x28] vs [0xAF]. If >=, add 7 to al and dec [0x29]; otherwise fall through. Reads the object's row and either advances the vertical counter or moves to the next slot"
+    ],
+    "0x04F70": [
+      "callback_slot_0",
+      "single `ret`. One of three empty callback slots at 0x4F70/71/72 the game overrides with sound or draw handlers -- comrec sees only the initial nop-return that the sound-on/off toggle patches back to when muted"
+    ],
+    "0x04F71": [
+      "callback_slot_1",
+      "single `ret`. See callback_slot_0"
+    ],
+    "0x04F72": [
+      "callback_slot_2",
+      "single `ret`. See callback_slot_0"
+    ],
+    "0x04F73": [
+      "trampoline_menu",
+      "one-instruction `jmp show_menu_and_wait`, so the caller can push a return address the menu unwinds by resetting SP"
+    ],
+    "0x04F76": [
+      "busy_delay_al_squared",
+      "nested `dec al; nop; jne` loop -- inner loop runs 256 times per outer, outer runs AL times, so AL squared * ~4 cycles. The game's short pause between menu clicks and sound events"
+    ],
+    "0x04F83": [
+      "clear_key_flags_preserved",
+      "`lahf; and byte [0x100], 0x7f; sahf; ret`. Same as clear_key but preserves flags around the mask -- called from arithmetic sequences that need the surrounding carry to survive"
+    ],
+    "0x04F8B": [
+      "speaker_toggle",
+      "`lahf; in al, 0x61; xor al, [0x8852]; and al, [0x896E]; out 0x61, al; sahf; ret`. The 1-bit PC speaker bit-bang. [0x8852] is the toggle mask (usually 0x02, the speaker output bit), [0x896E] is the sound-on gate (0xFF when sound on, 0xFD or so when muted so the XOR is discarded). Flags preserved so the caller's timing loop keeps its counter"
+    ],
+    "0x04F9A": [
+      "poll_joystick_x_bit",
+      "reads the calibrated joystick and returns bit 7 = fire, bit 0 = left/right. `rcr ch, 1` on entry and `rcl ch, 1` on exit rotate a status bit into and out of a caller's register. Wraps poll_joystick_scaled"
+    ],
+    "0x04FB4": [
+      "poll_joystick_fire",
+      "like poll_joystick_x_bit but wraps read_joystick_or_cache and ands with ah (the fire-button mask) then xors 0x80 to invert the sense -- the game's 'is the button pressed' predicate"
+    ],
+    "0x04FC6": [
+      "clear_screen_and_draw",
+      "atomic clear-then-draw guarded by a one-byte semaphore at [0x896D]: `inc byte [0x896D]; je skip; dec [0x896D]; ...`. The body sets ES = 0xB800 and does `rep stosb cx=0x4000` -- clears all 16 KB of CGA memory -- then loads si from [0x2F80] and draws through L_053F9. Used for full screen transitions"
+    ],
+    "0x050D7": [
+      "erase_sprite_B",
+      "one of a 2x2 family (0x50D7/0x50F6/0x5115/0x5134) whose only differences are (a) which sprite table they index and (b) which blit routine they call. Common shape: `cbw; shl ax,1; xchg si,ax; mov si,[si+table]; mov al,7; imul byte [0x39]; add cx,ax; call blit; clear bx/cx/dx; ret`. Al is the sprite id, cx is the row (multiplied by 7 * [0x39] scale), bl is the column. This one reads table 0x1242 and calls L_053F9, the XOR blit -- so it erases (undraws) a sprite from atlas B"
+    ],
+    "0x050F6": [
+      "draw_sprite_B",
+      "table 0x1242, blit L_05432 (OR-copy). Draws a sprite from atlas B. Same shape as erase_sprite_B"
+    ],
+    "0x05115": [
+      "erase_sprite_A",
+      "table 0x1210, blit L_053F9. Erases a sprite from atlas A"
+    ],
+    "0x05134": [
+      "draw_sprite_A",
+      "table 0x1210, blit L_05432. Draws a sprite from atlas A"
+    ],
+    "0x05153": [
+      "draw_sprite_A_alt_scale",
+      "table 0x1210, blit L_05432, but scales by [0x33] instead of [0x39]. Used where a different sprite class has its own y-stride -- probably the fixed HUD row that never scrolls"
+    ],
+    "0x00513": [
+      "key_repeat_arm",
+      "the ISR arm reached by falling through reset_and_reboot when the tested scancode was not Ctrl or Alt but a key that repeats. Pushes [0x100], forces the latch to 0x7F, zeroes ss:0x5A, then loops peek_key at L_0053C with a 0xCCC-tick timeout -- the auto-repeat hold that the [S]ound and joystick-configure menus rely on"
+    ],
+    "0x008CF": [
+      "script_run_cl8_bl4E",
+      "trampoline: `mov cl, 8; mov bl, 0x4e; call script_run`. Runs a fixed-parameter script for one of the standard events. The junk `add [bx+si], ah` decoding after the call is the inline opcode stream script_run reads, not real instructions"
+    ],
+    "0x008F3": [
+      "on_key_top",
+      "`mov cl, 0; mov sp, 0x1EE; call on_key_225` -- resets the stack to the fixed 0x1EE top and then runs the input-driven advance. Called from the main round loop as the single entry that both restores the stack after a game-loop unwind and processes input"
+    ],
+    "0x00C9A": [
+      "trampoline_main_menu_inner",
+      "one instruction: `jmp L_04EDA` -- into main_menu_entry after its initial state clear, so callers that already zeroed those cells skip the redundant clears"
+    ],
+    "0x00E2B": [
+      "check_var13_set_10_FC",
+      "if [0x13] == 0 (6502 idiom): sets [0x10] = 0xFC. Otherwise returns. First of three state-transitions guarded on [0x13] -- the trio at 0xE2B/0xE4B/0xE6B sets [0x10] to 0xFC, 4 and 0 respectively, so [0x10] is a signed velocity component driven from the state byte [0x13]. Guessed role: horizontal speed of the moon buggy in three states (accel left / accel right / idle)"
+    ],
+    "0x00E4B": [
+      "check_var13_set_10_04",
+      "if [0x13] == 0: sets [0x10] = 4. See check_var13_set_10_FC for the family shape"
+    ],
+    "0x00E6B": [
+      "check_var13_set_10_and_15_00",
+      "if [0x13] == 0: sets [0x10] = 0 and [0x15] = 0. The idle / stop branch of the trio"
+    ],
+    "0x00F3F": [
+      "check_var1A_reset_9D_57",
+      "if [0x1A] == 0: sets [0x9D] = 0, then reads [0x57] and stores it -- resets the horizontal buggy X to the value the wave chose. Companion to L_00E family for vertical vs horizontal state"
+    ],
+    "0x00FF3": [
+      "walk_var1A_then_1C",
+      "if [0x1A] != 0: jump to L_010BC; else checks [0x1C] for further branching. A two-level dispatch on the same pair of state cells check_var1A_reset_9D_57 initialises"
+    ],
+    "0x01164": [
+      "recenter_lane_positions",
+      "reads the drift value at [0x14] out of the lane position [0x58], writes it back, then adds 8 to that new value and stores it as the following three lane positions [0x5C], [0x5E], [0x60]. The 8-apart spacing means these are four lanes stepped by a fixed pitch"
+    ],
+    "0x011B1": [
+      "subtract_af_from_96",
+      "`mov al, [0x96]; sub al, [0xAF]; cmc; mov [0x96], al; jae L_011C1`. Subtracts [0xAF] from [0x96] with the 6502 carry-invert convention and writes back. Then bumps [0xDD] on the >= branch. Position update -- probably obstacle-Y decrement each frame, with the branch guarding underflow"
+    ],
+    "0x011DF": [
+      "empty_ret",
+      "single `ret` -- a callback slot the game overrides at run time"
+    ],
+    "0x0124B": [
+      "table_pair_lookup_0DFE",
+      "`mov [0x50], cl; sub al, 0xF; cmc; mov cl, al; mov si, cx; mov al, [si+0xDFE]; push ax; mov al, [si+0xE02]; push ax` -- indexes two parallel four-entry tables at DS:0xDFE and DS:0xE02 by (al - 0xF), pushes both values. Used where the caller needs a pair of related values from a table"
+    ],
+    "0x0127A": [
+      "cmp_al_C_dispatch",
+      "`cmp al, 0xC; cmc; jb L_01282; jmp L_012EA`. Small dispatcher: al < 0xC one branch, else other. AL comes from the state cell [0xE0] visible at L_01282"
+    ],
+    "0x01318": [
+      "script_run_cl7_bl35",
+      "trampoline: `mov cl, 7; mov bl, 0x35; call script_run`. See script_run_cl8_bl4E"
+    ],
+    "0x01382": [
+      "load_script_at_75",
+      "reads the current script pointer at word [0x75], grabs one byte from it into [0x54], then hard-codes [0x55] = 0xE0 and [0x56] = 0xB (probably screen-column and lane-count constants for the entity this script drives)"
+    ],
+    "0x01474": [
+      "init_sprite_state_44_45",
+      "copies the wave's starting X and Y from [0x44]/[0x45] into [0x99]/[0x9A], clears [0x97], sets [0x96] = 0x18. The vertical position starts at 24 lines down from the top, and [0x97] is the countdown that ticks it toward zero"
+    ],
+    "0x014AB": [
+      "on_var97_zero",
+      "if [0x97] == 0 (6502 idiom): jump to L_014BA; else L_0150C. The countdown terminated -- L_014BA is the action, L_0150C the noop"
+    ],
+    "0x0150D": [
+      "for_each_slot_90A_hit",
+      "cl = 3 for-each loop over four slots at DS:[si+0x90A]. For each: if slot's first byte is zero, skip; else run L_01527 (the collision/hit action). One of the family of `mov cl, 3` iterators over four-entry object arrays"
+    ],
+    "0x01603": [
+      "for_each_slot_90A_step",
+      "cl = 3 iterator over the same four slots at DS:[si+0x90A] as for_each_slot_90A_hit, but the branch is L_0161B -- the per-frame step, not the hit test"
+    ],
+    "0x01667": [
+      "for_each_slot_82B_step",
+      "cl = 3 iterator over four slots at DS:[si+0x82B] (a different array). Zero => L_01678 (idle), non-zero => L_016AC. Probably rockets or enemy shots"
+    ],
+    "0x017A4": [
+      "collide_half_af_vs_46",
+      "collision test: computes ([0xAF] >> 1) - 1 into [0x0], then subtracts that from [0x46] with 6502 carry-invert. Half of [0xAF] is the sprite's own vertical extent halved -- an axis test between the moon buggy's [0x46] and an obstacle's [0xAF]"
+    ],
+    "0x01AE8": [
+      "for_each_slot_82B_hit",
+      "cl = 3 iterator over the four slots at DS:[si+0x82B], zero-slot branch. Companion to for_each_slot_82B_step -- likely the hit test the step routine skips"
+    ],
+    "0x01C6F": [
+      "for_each_slot_8BE_zeroing",
+      "cl = 3 iterator over four slots at DS:[si+0x8BE]. Non-zero => L_01C83 (advance); reset by writing al into [0xB0] first"
+    ],
+    "0x01D08": [
+      "for_each_slot_8BE_action",
+      "cl = 3 iterator over the same four slots at DS:[si+0x8BE] as for_each_slot_8BE_zeroing but the zero branch takes L_01D19. Companion to it"
+    ],
+    "0x01F17": [
+      "for_each_slot_8F3_zero",
+      "cl = 0 iterator (single-shot) over slot at DS:[si+0x8F3]. Zero-branch pattern -- similar to the 0x8BE family but a different array"
+    ],
+    "0x02100": [
+      "init_scoreboard_setup",
+      "sets scratch [0] = 0xF, then reads [0x22A] and dispatches on its zero-state. Called from the level-transition path"
+    ],
+    "0x02140": [
+      "place_score_at_6_6",
+      "sets [0xA6] = 6 and [0xA7] = 6 (screen position), then reads [0x22F] (which player is scoring). The single-player score sprite draw at column 6 row 6"
+    ],
+    "0x02169": [
+      "compare_active_player",
+      "compares the active player index at [0x22F] with the round-owner at [0x7C]. 6502 cmp-cmc convention. Two branches: match => L_02176, mismatch => L_0217E"
+    ],
+    "0x021BF": [
+      "place_hud_at_1A_73",
+      "same shape as place_score_at_6_6 but at [0xA6] = 0x1A, [0xA7] = 0x73 -- the fuel/lives sprite draw. Reads [0x21A]"
+    ],
+    "0x02232": [
+      "extract_high_nibble_and_draw",
+      "shifts AL right by four (four `shr al, 1` because the translator emits shifts one bit at a time -- a 6502 has no multi-bit shift), so the high nibble becomes the digit index, then draws it. The score display's tens-digit path"
+    ],
+    "0x022CD": [
+      "add_bcd_score_offset",
+      "adds an offset from [0x21C] and the caller's cl argument to the score digit. Mid-level score-add helper"
+    ],
+    "0x023A3": [
+      "draw_digit_ax_advance",
+      "reads column/row from [0xA6]/[0xA7], adds 0x2F to al (the '0' sprite offset), calls the blit at L_050BA, then increments [0xA6] -- advance to the next column. The score-digit stamp used in a loop"
+    ],
+    "0x023B5": [
+      "cmp_var78_4",
+      "compares [0x78] with 4. Two branches. [0x78] is a mode selector -- probably the wave-count 0..4 that keeps recycling"
+    ],
+    "0x027EE": [
+      "for_each_slot_82B_alt1",
+      "cl = 3 iterator over [si + 0x82B], a third arm of the same array (companions: 0x1667/0x1AE8)"
+    ],
+    "0x02A93": [
+      "for_each_slot_82B_alt2",
+      "cl = 3 iterator over [si + 0x82B]. Fourth arm; the four routines together are draw, undraw, step and hit for the same object class"
+    ],
+    "0x02B49": [
+      "draw_sprite_78_at_19_6",
+      "reads sprite id from [0x78], sets cl = 0x19, bl = 6, calls the L_050BA blit and returns. Fixed-position render for a HUD element"
+    ],
+    "0x02B54": [
+      "for_each_slot_8BE_alt",
+      "cl = 3 iterator over [si + 0x8BE]. Third companion to for_each_slot_8BE_zeroing/action"
+    ],
+    "0x02C97": [
+      "for_each_slot_8F3_alt1",
+      "cl = 3 iterator over [si + 0x8F3]. Companion to L_02EC1 and L_045FB"
+    ],
+    "0x02EC1": [
+      "for_each_slot_8F3_alt2",
+      "cl = 3 iterator over [si + 0x8F3]"
+    ],
+    "0x02FBC": [
+      "init_entity_84B_14_1E",
+      "sets [si + 0x84B] = 0x1E and [si + 0x83B] = 0x14 for the slot in cx. Object spawn -- 0x1E and 0x14 are its starting Y and X, and 0x84B/0x83B are per-slot arrays 16 bytes apart"
+    ],
+    "0x0301B": [
+      "for_each_slot_84F",
+      "cl-driven iterator over [si + 0x84F]. Companion helper"
+    ],
+    "0x03366": [
+      "hard_reset_state",
+      "zeroes [0x6E] and calls L_05213 (compute screen ptr) and L_0500D (clear video pages). One of the two most-central resets, called from every 'go back to menu' path"
+    ],
+    "0x034D4": [
+      "set_sound_flag",
+      "sets [0x21D] = 1 and reads [0x216]. Sets the sound-on latch"
+    ],
+    "0x03590": [
+      "full_screen_reset",
+      "the full-reset sequence: clear_key_flags_preserved, hard_reset_state, L_05044 (a second page clear), then set [0x21D] = 1. Called between rounds"
+    ],
+    "0x03E27": [
+      "loop_add_al_var6",
+      "reads DS:[si + 0xF0A] into al, then repeatedly adds byte [6] while carry not set. The 6502 `LDA / ADC` inner loop the translator emits for a wrap-based counter"
+    ],
+    "0x03E3B": [
+      "eight_bit_shift_out",
+      "`mov [0] = al; mov [1] = cl; mov al, 0; mov cl, 8; loop`. Sets up an 8-iteration bit-shift loop -- the shape the translator emits for a byte-wide serial output (probably the tune player's per-sample step)"
+    ],
+    "0x03E99": [
+      "loop_30_iterations",
+      "`mov [3] = al; mov cl, 0x1E; loop`. A 30-step iteration -- exactly one CGA vertical retrace tick's worth of accumulation at 60 Hz"
+    ],
+    "0x03EB2": [
+      "prime_counter_D2",
+      "sets [6] = 1 and cl = 0xD2. Prime for a counted operation of 210 steps"
+    ],
+    "0x03EC1": [
+      "check_var_A0_zero",
+      "if [0xA0] == 0: L_03ECD; else L_03F02. Same 6502 zero-check idiom"
+    ],
+    "0x03FB2": [
+      "call_51E1_then_collide_D8",
+      "calls L_051E1 (some setup), then subtracts [0xAF] from [0xD8] with 6502 cmc. Collision test between the buggy at [0xD8] and an obstacle's height at [0xAF]"
+    ],
+    "0x03FCC": [
+      "check_sound_flag",
+      "if [0x216] == 0: L_03FD8; else L_04002. Sound-flag gate -- [0x216] is the sound-on toggle"
+    ],
+    "0x040B6": [
+      "save_var22A_set_235",
+      "pushes [0x22A], then sets [0x235] = 1 and zeroes a series of state cells. Enter a scoped state that will be popped later"
+    ],
+    "0x040E3": [
+      "clear_235_if_set",
+      "sets [0x21D] = 1, then checks [0x235] == 0. Companion to save_var22A_set_235 -- the tear-down"
+    ],
+    "0x04164": [
+      "for_each_slot_8BE_alt2",
+      "cl = 3 iterator over [si + 0x8BE]. Yet another arm of the 8BE family"
+    ],
+    "0x042DC": [
+      "on_var22A_zero",
+      "if [0x22A] == 0: L_042E8; else L_04347. Zero-state check for the queue at [0x22A]"
+    ],
+    "0x045DD": [
+      "trampoline_clear_screen",
+      "`call clear_screen_and_draw; ret`. Two-instruction trampoline"
+    ],
+    "0x045E1": [
+      "read_218_dec_and_dispatch",
+      "reads [0x218], subtracts 1 with 6502 cmc, pushes result, sets al = 0x25. Read a countdown and act on its previous value"
+    ],
+    "0x045FB": [
+      "for_each_slot_8F3_alt3",
+      "cl = 3 iterator over [si + 0x8F3]"
+    ],
+    "0x046DE": [
+      "for_each_slot_8BE_alt3",
+      "cl = 3 iterator over [si + 0x8BE]"
+    ],
+    "0x047D1": [
+      "check_var_BD_zero",
+      "if [0xBD] == 0: L_047DD; else L_047DE. State check"
+    ],
+    "0x04814": [
+      "check_var_C0_zero",
+      "if [0xC0] == 0: L_04820; else L_04821. State check"
+    ],
+    "0x048CC": [
+      "check_var_BB_nonzero",
+      "if [0xBB] != 0: L_048D7; else L_048CB. State check"
+    ],
+    "0x04969": [
+      "check_var_BB_zero",
+      "if [0xBB] == 0: L_04975; else L_04976. Companion to check_var_BB_nonzero for the opposite branch"
+    ],
+    "0x04D70": [
+      "sound_effect_B75",
+      "trampoline: `mov si, 0xB75; jmp L_04D7D`. Sound effect data at DS:0xB75 -- probably one of the alarm/explosion tones"
+    ],
+    "0x04D75": [
+      "sound_effect_BBC",
+      "trampoline: `mov si, 0xBBC; jmp L_04D7D`. Sound effect data at DS:0xBBC"
+    ],
+    "0x04D7A": [
+      "sound_effect_DA7",
+      "trampoline: `mov si, 0xDA7; jmp L_04D7D`. Sound effect data at DS:0xDA7"
+    ],
+    "0x04D7D": [
+      "play_sound_effect",
+      "the shared body of the sound-effect trampolines -- the caller loads SI with a data pointer, this walks it"
+    ],
+    "0x0500D": [
+      "clear_video_page_a",
+      "bp = 0x48 loop reading segment values from DS:[bp + 0x53C9] and doing `xor al; mov cx, 0x46; ...` -- clears cx*4 bytes at each page. DS:0x53C9 is the scanline pointer table; walking bp from 0x48 downward walks through page pointers"
+    ],
+    "0x05044": [
+      "clear_video_page_b",
+      "sibling of clear_video_page_a with the same shape but a different bp span -- clears the other CGA half"
+    ],
+    "0x051B3": [
+      "copy_86_bytes_at_8A8B",
+      "cx = 0x86, si = 0x8A8B, checks [4] before deciding branch. Buffer copy in an ISR body"
+    ],
+    "0x05213": [
+      "compute_scanline_index",
+      "`mov al, 7; mul [0x29]; add al, [0x28]; adc ah, bh; mov bx, ax; mov dx, ax; sar dx, 1`. Computes 7 * [0x29] + [0x28] with 16-bit carry -- the game's per-row byte-offset formula. The `sar dx, 1` sequences halve the result twice for the four-pixel-per-byte CGA layout"
+    ],
+    "0x0526A": [
+      "copy_ds_to_896F",
+      "`push ds; pop es; mov cx, 0x46; xor si, si; mov di, 0x896F` then falls into copy. Copies 0x46 bytes from DS:0 into DS:0x896F -- saves the zero-page state before an operation that trashes it"
+    ],
+    "0x053A6": [
+      "compute_scanline_from_6c",
+      "same shape as compute_scanline_index but `mul [0x6C]` instead of `[0x29]`. Second-object variant"
+    ],
+    "0x053F9": [
+      "blit_sprite_or",
+      "sprite blitter, OR path (draw). Setup: `mov bp, 0x53C9; add bp, dx; add bp, dx; mov es, [bp]` -- ES for row N comes from the row_dispatch_table at CS:0x53C9 walked in step with sprite rows. BX = cx/4 selects the byte within the row (CGA 4-pixel-per-byte). Inner per byte: `lodsb; xor ah, ah; ror ax, cl; and ax, [di - 0x752f]; or word [es:di], ax` -- loads a sprite byte, aligns to the pixel boundary via a cl*2 rotate, masks through the 128-entry alignment mask at DS:0x752f indexed by the destination column, and ORs into destination. This is the draw arm; the erase arm at blit_sprite_and does the same with a masked-off inner"
+    ],
+    "0x05432": [
+      "blit_sprite_and",
+      "sprite blitter, AND-NOT path (erase). Same setup as blit_sprite_or but the inner writes `not ax; and word [es:di], ax` -- clears the bits the sprite covers. Pair with blit_sprite_or to draw an XOR-style sprite: erase old position, draw new. That is why the sprite routine family has erase/draw pairs per atlas"
+    ],
+    "0x054B2": [
+      "draw_bitmap_stream",
+      "`mov ch, 0; lodsw; xchg dx, ax; mov bp, 0x53C9`. Loads a starting row from si and indexes DS:0x53C9 (scanline table) to compute the destination. Used for the title art and any run-of-rows bitmap the game copies as a stream"
+    ],
+    "0x00E93": [
+      "read_dir_pad_x",
+      "reads the joystick X-axis via poll_joystick_x_bit and compares with 0x76 -- the centre-plus-hysteresis threshold. Above it: press-right; below it: press-left; between: neutral. Called from the buggy's per-frame input step"
+    ],
+    "0x01E27": [
+      "for_each_slot_867",
+      "cl = 3 iterator over four slots at DS:[si + 0x867] -- yet another object-class array. Companion to 0x450A which iterates the same array with a bx base"
+    ],
+    "0x02307": [
+      "script_pc_wrap",
+      "the high-byte wrap of script_run's `inc byte [5]` -- when the low byte carries, `inc byte [6]` bumps the high byte. Falls into L_0230B which fetches the next opcode with `mov si, [5]; mov al, [cs:si]; or al, 0x80`"
+    ],
+    "0x02361": [
+      "add_scoreboard_number",
+      "reads a three-byte packed number at [0x21A]/[0x21B]/[0x21C] and hands it to add_bcd_score. The 6502-style multi-byte-add entry"
+    ],
+    "0x02373": [
+      "delay_1B_iterations",
+      "cl = 0x1B outer loop of `mov al, 0xFF; inc al; dec al; call busy_delay_al_squared` -- 27 iterations of a 256*256 delay. About 1.7 million cycles at 4.77 MHz, roughly a third of a second"
+    ],
+    "0x02DD7": [
+      "unpack_col_from_bit_2",
+      "`mov al, 2; call unpack_bit_pattern; add al, 0x84; mov [0x58], al`. Feeds the bit-2 slot of the shape byte through the 6502-style rotator and offsets the result by 0x84 to make a column position stored at [0x58]"
+    ],
+    "0x02DF6": [
+      "step_and_place_buggy",
+      "calls advance_scroll then sets [0x48] = 1 (buggy alive) and continues with the per-frame draw sequence"
+    ],
+    "0x033A0": [
+      "reset_video_65_ticks",
+      "calls callback_slot_2 and clear_key_flags_preserved, then cl = 0x41 (65) delay loop -- the 'pause and repaint' after a state change"
+    ],
+    "0x033DE": [
+      "toggle_pause_and_reset",
+      "sets [0x225] = 1 (a mode/pause marker), calls trampoline_menu and full_screen_reset. The dispatch entry from the [P]ause key"
+    ],
+    "0x0389F": [
+      "hard_reset_object_arrays",
+      "the full per-round object clear: [0x6D] = 0xFF (a sentinel), then zeroes fourteen cells around [0x67], [0x6F], [0xC0]. Called at the start of every round to wipe the object arrays back to empty"
+    ],
+    "0x03975": [
+      "check_bounds_5C_A3_8E",
+      "`mov al, [0x5C]; sub al, [0xA3]; cmp al, 0x8E` -- the buggy's column [0x5C] against its own left edge [0xA3] must not exceed 0x8E (142 pixels, roughly the visible field). Off-screen check on the horizontal axis"
+    ],
+    "0x03B05": [
+      "check_var_70_zero",
+      "if [0x70] == 0: L_03B11; else L_03B12. State check"
+    ],
+    "0x03DA7": [
+      "deep_reset_entry",
+      "`call hard_reset_object_arrays; call callback_slot_2; call L_0424E; jmp on_key_top`. The chain that returns from a wave-end back to the input-driven step"
+    ],
+    "0x03DB3": [
+      "bump_frame_counter_49",
+      "`inc byte [0x49]; mov al, [0x49]; rcl ah, 1; and al, 1; rcr ah, 1; je ...` -- increments a frame counter and dispatches on its parity. The classic 6502 'every other frame' idiom"
+    ],
+    "0x03E78": [
+      "loop_add_var6_F0A_indexed",
+      "cl-indexed inner loop that reads DS:[si + 0xF0A] and adds byte [6] repeatedly until carry. Same shape as L_03E27 but the indexer bumps bl and cl first"
+    ],
+    "0x04030": [
+      "on_var22A_zero_arm2",
+      "if [0x22A] == 0: L_0403C; else L_0403D. Sibling of check_var_22A_zero -- different arms of the same dispatch"
+    ],
+    "0x04082": [
+      "swap_var22A_zero",
+      "pushes [0x22A], forces it to zero via the 6502 idiom, then does its work; the caller restores. Scoped 'do this as if 22A were zero' operation"
+    ],
+    "0x0424E": [
+      "check_var_217_zero",
+      "if [0x217] == 0: L_0425A; else L_0425B. Same zero-check shape"
+    ],
+    "0x043A6": [
+      "check_var_22A_nonzero",
+      "if [0x22A] != 0: L_043B2; else L_04411. Opposite branch of the 0x22A family"
+    ],
+    "0x04470": [
+      "for_each_slot_90A_alt",
+      "cl = 3 iterator over [si + 0x90A]. Third arm of the 0x90A family"
+    ],
+    "0x0450A": [
+      "for_each_slot_867_bx",
+      "bl = 3 iterator over [bx + 0x867] -- same array as for_each_slot_867 but bx-based rather than cx-based indexing (the translator emits either depending on what the 6502 source held)"
+    ],
+    "0x04F4F": [
+      "isr_save_state",
+      "`push cx; push bp; push ds; mov al, 0xFF; xor bp, bp` and continues -- the fat state-save the timer or vertical-retrace ISR does. Restored by a matching pop chain further down"
+    ],
+    "0x050BA": [
+      "draw_sprite_C",
+      "sibling of the 5x sprite family. Table 0x1268, blit path via `and ax, 0x3F; shl ax, 1; xchg si, ax; mov si, [si + 0x1268]` -- so the sprite id is masked to 6 bits before indexing. Third sprite atlas"
+    ],
+    "0x051E1": [
+      "compute_screen_ptr_D7_D8",
+      "`mov al, 7; imul [0xD7]; add al, [0xD8]; adc ah, bh; xchg cx, ax; mov dx, 0xB4`. Same shape as compute_scanline_index but using cells [0xD7] and [0xD8] -- a second entity's screen position formula. dx = 0xB4 seeds the CGA row 180"
+    ],
+    "0x04F4F": [
+      "poll_input_saved",
+      "`push cx; push bp; push ds` -- fat context save before an input poll that touches segment registers; matched pop chain later. Used by the menu_loop timeout branch"
+    ],
+    "0x04E66": [
+      "read_table_into_91",
+      "`lodsb; test al, al; xchg cx, di; mov [di + 0x91], al` -- reads a byte from DS:SI, tests for zero terminator, and stores into a slot at [di + 0x91]. The zero-terminated init table reader used at round-start"
+    ],
+    "0x05063": [
+      "compute_pos_from_B0",
+      "`mov al, 7; mul [0xB0]; shr ax, 1; shr ax, 1; xchg bx, ax`. Same 7 * variable formula as compute_scanline_index but sourced from [0xB0] and the result kept in bx (word) after halving twice for the CGA 4-pixel-byte layout"
+    ],
+    "0x0509B": [
+      "clear_video_page_c",
+      "sibling of clear_video_page_a and clear_video_page_b -- third pass at clearing a range through the DS:0x53C9 scanline table. The three cover the whole 200-row CGA image in three passes so the raster catches up between them"
+    ],
+    "0x05172": [
+      "render_horizon_stripe",
+      "reads terrain byte at [0x41], iterates 0x8D horizontal cells with a display-pointer at DX = 0xCF3, DI = 0xFFFF. The scrolling-horizon draw -- 0x8D cells is the visible field width, [0x41] carries the terrain type for the current stripe, and CF3 is a display offset chosen so the next row's stripe lines up with the buggy's baseline"
+    ],
+    "0x052DB": [
+      "compute_scanline_28_29_alt",
+      "same shape as compute_scanline_index -- 7 * [0x29] + [0x28] with 16-bit carry then two right shifts. A second entry point into the same formula that the caller uses when it wants the pre-scaled BX as well as DX"
+    ],
+    "0x0531F": [
+      "restore_ds_from_896F",
+      "`mov cx, 0x46; mov si, 0x896F; xor di; mov es, [cs:0x54FB]; rep movsb` -- copies the 70 zero-page bytes back from the save at [0x896F] into the segment stored at cs:0x54FB. The teardown of copy_ds_to_896F"
+    ],
+    "0x0534D": [
+      "compute_screen_ptr_0_1",
+      "same shape as compute_screen_ptr_D7_D8 but the multiplicand and addend live at [0] and [1] -- the scratch zero-page pair the game overwrites for one-shot calculations"
+    ],
+    "0x0546D": [
+      "blit_sprite_third",
+      "third sprite blit variant, same setup pattern as blit_sprite_or and blit_sprite_and (mov bp,0x53C9 + row-indexed ES load, cx/4 column, mask via DS:0x752f). Inner operation differs -- likely a copy or a masked overwrite the game uses for a specific class of sprites. Not on the game-field or HUD critical path since those render cleanly using the other two"
+    ],
+    "0x022FE": [
+      "script_advance_pc",
+      "the tail of script_run's opcode-fetch: `inc byte [5]; je script_pc_wrap; jmp script_fetch`. Called by the interpreter to advance its 16-bit PC one byte, with the wrap arm handling the high-byte increment"
+    ],
+    "0x0230B": [
+      "script_fetch",
+      "reads the next script opcode: `mov si, [5]; mov al, [cs:si]; or al, 0x80` -- indexes the script bytes with cs (the code segment, since script data lives inside the code region) and forces the top bit so the interpreter can distinguish opcode from data"
+    ],
+    "0x00E37": [
+      "set_var10_var9C",
+      "the body reached by check_var13_set_10_FC's match arm -- sets [0x10] to a value (0xFC in this trio's first, 4 in the second, 0 in the third) and initialises [0x9C] to 0. Together they run the state machine that reads [0x13] and writes the two positional cells [0x10] and [0x9C]"
+    ],
+    "0x01614": [
+      "for_each_slot_90A_end",
+      "`dec cl; js ret; jmp L_01605`. The tail of for_each_slot_90A_step's inner loop -- decrement the slot index, stop if negative, otherwise go back for the next slot"
+    ],
+    "0x03821": [
+      "player_switch",
+      "`call clear_key_flags_preserved; call hard_reset_state; mov al, [0x8853]; mov [0xEF], al; mov al, [0x216]; ...`. Snapshots the input mode and the sound flag into [0xEF]/[0xF0], and continues with the between-players teardown"
+    ],
+    "0x03D89": [
+      "init_script_pointers",
+      "`mov word [0x73], 0xC46; mov word [0x75], 0xC93`. Points the two script cursors [0x73] and [0x75] at the script tables at DS:0xC46 and DS:0xC93. Called before any script-driven wave runs"
+    ],
+    "0x03F73": [
+      "reset_and_seed_buggy",
+      "`call hard_reset_state; mov al, [0x83]; mov [0x44], al; mov al, [0x84]; mov [0x45], al`. Resets state, then seeds the wave's [0x44]/[0x45] starting coords from the level's [0x83]/[0x84] template"
+    ],
+    "0x04857": [
+      "set_var_BB_5",
+      "`mov [0xBB], 5; mov al, [0x1C]; inc; dec; ...`. Sets a state cell to 5 and then reads [0x1C]. State transition"
+    ],
+    "0x0489F": [
+      "arm_var_BB_1_DB_0",
+      "`mov [0xBB] = 1; mov [0xDB] = 0; mov al, 0x3C`. Arms a new state -- [0xBB] = 1 turns something on, [0xDB] = 0 clears the sub-state, 0x3C is a timer"
+    ],
+    "0x048CB": [
+      "empty_ret_arm",
+      "single `ret` reached from the check_var_BB_nonzero dispatch. The no-op arm of the [0xBB] state table"
+    ],
+    "0x00E4A": [
+      "ret_arm_var13",
+      "single `ret` -- the no-op arm shared by the check_var13 dispatch trio"
+    ],
+    "0x01605": [
+      "for_each_slot_90A_body",
+      "the loop body reached from for_each_slot_90A_step -- indexes [si + 0x90A] and dispatches on zero. Companion inner label"
+    ],
+    "0x0161B": [
+      "for_each_slot_90A_action_body",
+      "the body reached from for_each_slot_90A_step when the slot is non-zero. Sets [0x50] = cl and reads the slot header at [si + 0x90A]"
+    ],
+    "0x04A34": [
+      "arm_end_of_round",
+      "sets [0x21D] = 1 and reads [0x217] -- the arm that runs when a round-end condition triggers. Companion to the various check_var_XXX entries"
+    ],
+    "0x04EDA": [
+      "menu_render_inner",
+      "the body of main_menu_entry after its clear -- `xor ax, ax; call enter_cga_graphics`, then loads sprite pointers from [0x2F84] and draws the title. Trampolined into from L_00C9A"
+    ],
+    "0x04EFD": [
+      "menu_render_after_clear",
+      "the entry the demo playback uses -- same shape as menu_render_inner but writes 0xFE into [0x896D] first, forcing clear_screen_and_draw to run (the counter is preloaded to overflow on its first inc)"
+    ],
+    "0x04F3E": [
+      "load_sound_flag",
+      "`mov sp, 0x1EE; push bp; mov al, [0x8851]; mov [0x216], al` -- resets the stack to its fixed top and reloads sound_enable from the saved-at-menu-choice cell [0x8851]. The 'restore sound flag from user setting' entry"
+    ]
+  },
+  "globals": {
+    "0x0100": [
+      "kbd_input",
+      "one byte written by the keyboard ISR: bit 7 = key ready, bits 6..0 = scancode. peek_key/wait_key_up/clear_key are its only readers"
+    ],
+    "0x8812": [
+      "old_int9_far",
+      "saved BIOS int 9 vector, restored via `jmp far [0x8812]` in reset_and_reboot on Ctrl+Alt"
+    ],
+    "0x8814": [
+      "old_es",
+      "the ES value at program entry, saved once by startup so the ISR arms can restore it before touching the BIOS data area at ES = 0"
+    ],
+    "0x8817": [
+      "kbd_state_slot",
+      "one of a family of byte cells in the 0x88.. region that scancode ISR arms bump; L_004EB increments, L_004F7 checks 0x2E cap"
+    ],
+    "0x8818": [
+      "in_game_flag",
+      "cleared by enter_cga_graphics and show_menu_and_wait; probably 'in game' since it is set/cleared around video-mode transitions"
+    ],
+    "0x8819": [
+      "video_mode",
+      "the last video mode the program selected (4 = CGA 320x200 in enter_cga_graphics)"
+    ],
+    "ss:0x005A": [
+      "frame_ticks",
+      "16-bit counter driven by the timer, read by menu_loop against 500 to time the demo, and reset when the demo runs"
+    ],
+    "ss:0x005C": [
+      "saved_ds",
+      "startup copies DS here so the ISR entry can restore it -- an interrupt cannot trust DS. Read at least once at file 0x3D6"
+    ],
+    "0x0003": [
+      "script_arg_cl",
+      "written by script_run from CL. The first script argument -- how the caller parameterises the inline opcode stream"
+    ],
+    "0x0004": [
+      "script_arg_bl",
+      "written by script_run from BL. The second script argument"
+    ],
+    "0x0005": [
+      "script_pc_lo",
+      "the low byte of the script interpreter's 16-bit PC. `inc byte [5]` walks the interpreter through inline data"
+    ],
+    "0x0006": [
+      "script_pc_hi",
+      "the high byte of the script PC. Bumped when the low byte's `inc` carries"
+    ],
+    "0x0010": [
+      "buggy_vx",
+      "the buggy's horizontal velocity component: 0xFC = accelerate left, 4 = accelerate right, 0 = idle. Written by the check_var13 dispatch trio"
+    ],
+    "0x0013": [
+      "buggy_ax_state",
+      "the state selector the check_var13 trio reads to decide whether to write buggy_vx. Non-zero = idle, zero = one of the three motion arms fires"
+    ],
+    "0x0014": [
+      "lane_drift",
+      "the amount recenter_lane_positions removes from [0x58] each frame to keep the enemy lanes centred as the buggy scrolls"
+    ],
+    "0x0015": [
+      "buggy_ay_state",
+      "companion to buggy_ax_state -- the vertical axis. Cleared together with buggy_vx by check_var13_set_10_and_15_00"
+    ],
+    "0x0028": [
+      "screen_col",
+      "screen column argument to compute_scanline_index (`add al, [0x28]`). One of the two-byte pair the game uses to compute row/column-based screen pointers"
+    ],
+    "0x0029": [
+      "screen_row",
+      "screen row argument to compute_scanline_index (`mul byte [0x29]` by 7 -- the sprite row height). Row index into the 200-line CGA image"
+    ],
+    "0x0033": [
+      "hud_row_stride",
+      "alternate row-stride multiplicand used by draw_sprite_A_alt_scale. Selects the different y-pitch of the HUD area from the main sprite grid"
+    ],
+    "0x0039": [
+      "sprite_row_stride",
+      "the row-stride multiplicand for the main sprite family (`imul byte [0x39]` in the 5x sprite dispatch). 7 * [0x39] is the sprite's vertical footprint"
+    ],
+    "0x0041": [
+      "terrain_cursor",
+      "advance_scroll copies [0x43] into this and uses it to look up the current terrain byte. The terrain scroll's read pointer"
+    ],
+    "0x0043": [
+      "terrain_write_ptr",
+      "advance_scroll increments this every frame, wrapping at 0x8D (the number of horizontal terrain cells)"
+    ],
+    "0x0044": [
+      "wave_start_x",
+      "the wave's starting X coordinate template -- copied into [0x99] by init_sprite_state_44_45"
+    ],
+    "0x0045": [
+      "wave_start_y",
+      "the wave's starting Y coordinate template -- copied into [0x9A] by init_sprite_state_44_45"
+    ],
+    "0x0046": [
+      "obstacle_y",
+      "the current obstacle's Y coordinate. Compared against the buggy in collide_half_af_vs_46"
+    ],
+    "0x0049": [
+      "frame_parity_counter",
+      "incremented by bump_frame_counter_49; the game reads bit 0 to alternate between two visual frames on the buggy's animation"
+    ],
+    "0x0050": [
+      "current_slot_index",
+      "for_each_slot_XXX routines store their cl (0..3) into [0x50] so the callee can find which slot it was invoked for without carrying the register"
+    ],
+    "0x0057": [
+      "voice_a_note",
+      "one of the two-voice sound engine's cells -- feeds queue_sound_pair_L115"
+    ],
+    "0x0058": [
+      "lane_pos_0",
+      "the first of four lane-position cells (0x58, 0x5C, 0x5E, 0x60), each 8 pixels apart, that recenter_lane_positions keeps aligned"
+    ],
+    "0x0059": [
+      "voice_b_note",
+      "companion cell to voice_a_note for the second voice"
+    ],
+    "0x005A": [
+      "voice_b_dur",
+      "duration or envelope for voice_b_note. Passed as bl to queue_sound_pair_L134"
+    ],
+    "0x005B": [
+      "voice_a_dur",
+      "duration for voice_a_note"
+    ],
+    "0x0061": [
+      "voice_a_note_2",
+      "second-arm note cell fed to the sound-pair queue"
+    ],
+    "0x0062": [
+      "voice_a_dur_2",
+      "second-arm duration"
+    ],
+    "0x0075": [
+      "script_ptr_75",
+      "a script pointer set by init_script_pointers to DS:0xC93. Points at the current wave's per-frame script"
+    ],
+    "0x0073": [
+      "script_ptr_73",
+      "a script pointer set by init_script_pointers to DS:0xC46. Points at the setup script"
+    ],
+    "0x0078": [
+      "sprite_id_78",
+      "sprite id compared with 4 in cmp_var78_4 and drawn at (0x19, 6) by draw_sprite_78_at_19_6. The HUD's changing icon"
+    ],
+    "0x007A": [
+      "score_ones_digit",
+      "the ones digit of the BCD score, updated by add_bcd_score. The eight-digit score spans [0x7A..0x81]"
+    ],
+    "0x007C": [
+      "round_owner_player",
+      "which player owns the current round (compared against the active-player [0x22F])"
+    ],
+    "0x0083": [
+      "level_start_x_template",
+      "the level's fixed starting X, copied by reset_and_seed_buggy into [0x44] each round"
+    ],
+    "0x0084": [
+      "level_start_y_template",
+      "companion Y template"
+    ],
+    "0x0096": [
+      "obstacle_y_2",
+      "second obstacle's Y coordinate, decremented each frame by subtract_af_from_96"
+    ],
+    "0x0097": [
+      "spawn_countdown",
+      "spawn timer for the next entity -- checked by on_var97_zero"
+    ],
+    "0x0099": [
+      "buggy_x_current",
+      "the buggy's live X coordinate, seeded by init_sprite_state_44_45 from [0x44]"
+    ],
+    "0x009A": [
+      "buggy_y_current",
+      "the buggy's live Y coordinate, seeded from [0x45]"
+    ],
+    "0x00A0": [
+      "state_A0",
+      "checked by check_var_A0_zero -- likely 'in cutscene' or 'title playing'"
+    ],
+    "0x00A6": [
+      "draw_col",
+      "column parameter used by draw_digit_ax_advance and the various place_XXX routines. Advanced in-place during multi-character draws"
+    ],
+    "0x00A7": [
+      "draw_row",
+      "row parameter -- companion to draw_col"
+    ],
+    "0x00AF": [
+      "sprite_height",
+      "the current sprite's vertical extent, used in collision tests and Y-position updates"
+    ],
+    "0x00B0": [
+      "screen_offset_arg",
+      "argument passed to compute_pos_from_B0 -- an object's position expressed as a single byte"
+    ],
+    "0x00BB": [
+      "state_BB",
+      "state cell checked by check_var_BB_zero/nonzero; armed by arm_var_BB_1_DB_0 and cleared by set_var_BB_5. Probably a wave-phase counter"
+    ],
+    "0x00BD": [
+      "state_BD",
+      "state cell checked by check_var_BD_zero. Sibling of state_BB"
+    ],
+    "0x00C0": [
+      "state_C0",
+      "state cell checked by check_var_C0_zero"
+    ],
+    "0x00D7": [
+      "obj2_row",
+      "second-object row multiplicand for compute_screen_ptr_D7_D8"
+    ],
+    "0x00D8": [
+      "obj2_col",
+      "second-object column addend"
+    ],
+    "0x00DB": [
+      "state_DB",
+      "state cell arm_var_BB_1_DB_0 initialises to 0"
+    ],
+    "0x00E8": [
+      "bullet_slot_0",
+      "first byte of the three-bullet-slot array cleared by clear_bullet_slots and iterated by for_each_bullet_slot. Slots at [0xE8], [0xE9], [0xEA]; second bytes at [0xEB], [0xEC], [0xED]"
+    ],
+    "0x00EF": [
+      "player_snapshot_input_mode",
+      "player_switch's snapshot of the input-mode toggle [0x8853]. Restored when switching back to that player"
+    ],
+    "0x00F0": [
+      "player_snapshot_sound_flag",
+      "player_switch's snapshot of the sound flag [0x216]"
+    ],
+    "0x0100": [
+      "kbd_input",
+      "one byte written by the keyboard ISR: bit 7 = key ready, bits 6..0 = scancode. peek_key/wait_key_up/clear_key are its only readers. The ISR itself lives at file 0x321 and is installed via walk_installed_isrs from startup"
+    ],
+    "0x0101": [
+      "reserved_scancode_check",
+      "read by reset_and_reboot: `cmp byte [0x101], 0x1d` (LCtrl) then 0x38 (LAlt). Companion to kbd_input for detecting Ctrl+Alt sequences"
+    ],
+    "0x0216": [
+      "sound_enable",
+      "the [S]ound-on toggle: OR'd into every queue_sound_pair mask, so setting it to 0 leaves the note tables untouched but disabled by write mask; setting it to 0xFF gates them on"
+    ],
+    "0x0217": [
+      "state_217",
+      "state cell checked by check_var_217_zero"
+    ],
+    "0x0218": [
+      "state_218",
+      "state cell read by read_218_dec_and_dispatch"
+    ],
+    "0x021A": [
+      "score_display_hi",
+      "high byte of the packed scoreboard number read by add_scoreboard_number"
+    ],
+    "0x021B": [
+      "score_display_mid",
+      "middle byte -- companion to score_display_hi"
+    ],
+    "0x021C": [
+      "score_display_lo",
+      "low byte -- companion. The three-byte packed display value"
+    ],
+    "0x021D": [
+      "flag_21D",
+      "a game-progress latch set to 1 by set_sound_flag, full_screen_reset, arm_end_of_round and others -- probably the 'render this frame' request"
+    ],
+    "0x0222": [
+      "ammo_a",
+      "first ammo counter, zeroed by reset_ammo_counters"
+    ],
+    "0x0225": [
+      "state_225",
+      "state cell read by on_key_225 and set by toggle_pause_and_reset. Probably the pause flag"
+    ],
+    "0x022A": [
+      "ammo_b_or_state",
+      "second ammo/state cell, zeroed by reset_ammo_counters; also read by many state-dispatch routines"
+    ],
+    "0x022F": [
+      "active_player",
+      "which of the two players is playing this round -- compared against round_owner_player at [0x7C]"
+    ],
+    "0x0230": [
+      "round_counter",
+      "one of the three cells main_menu_entry zeroes at start"
+    ],
+    "0x0231": [
+      "wave_counter",
+      "companion to round_counter, zeroed at main-menu entry"
+    ],
+    "0x0235": [
+      "scope_flag",
+      "set to 1 by save_var22A_set_235 and checked by clear_235_if_set -- a scoped operation marker"
+    ],
+    "0x2F80": [
+      "clear_screen_sprite_ptr",
+      "pointer word read by clear_screen_and_draw for the sprite to draw after clearing"
+    ],
+    "0x2F84": [
+      "title_sprite_ptr",
+      "pointer word to the title screen art, read by main_menu_entry into si before calling draw_bitmap_stream"
+    ],
+    "0x2F86": [
+      "title_over_sprite_ptr",
+      "second title-screen pointer -- read after the main art and blitted at (0x15, 0xB9)"
+    ],
+    "0x1210": [
+      "sprite_atlas_A_ptrs",
+      "pointer table for sprite atlas A -- indexed by (sprite_id * 2) in erase_sprite_A, draw_sprite_A, draw_sprite_A_alt_scale"
+    ],
+    "0x1242": [
+      "sprite_atlas_B_ptrs",
+      "pointer table for sprite atlas B -- indexed by (sprite_id * 2) in erase_sprite_B, draw_sprite_B"
+    ],
+    "0x1268": [
+      "sprite_atlas_C_ptrs",
+      "pointer table for sprite atlas C -- indexed by (sprite_id & 0x3F) * 2 in draw_sprite_C. The 0x3F mask means this atlas has 64 slots"
+    ],
+    "0x53C9": [
+      "row_dispatch_table_ds_ref",
+      "the same address 0x53C9 also appears in the code as a bare `[0x53C9]` DS-relative reference (which is the byte at file 0xAA99 in the data tail, not the CS-relative table). See cs:0x53C9 for the actual row_dispatch_table the blits use. This bare-DS reference is likely a coincidence of the same immediate value being reused for a different purpose, or a stale reference the game does not exercise on the critical path"
+    ],
+    "cs:0x53C9": [
+      "row_dispatch_table",
+      "the base of a runtime-built table the blit routines index with `mov bp, 0x53C9; add bp, dx; add bp, dx; mov es, [bp]` (BP default SS = CS in this game, so the read is CS-relative). The table gets set up before any blit runs -- static bytes at file 0x53C9 look like code (and comrec decoded them as such) but every one of the 165 bytes in the region differs at runtime, confirming that a startup routine writes the table over the code image. Each 2-byte entry supplies the ES value for one screen row of the sprite the blit is drawing. The exact per-row content did not match a plain CGA segment layout (0xB800 + row/2 * 5) in a spot-check, so the table probably encodes something game-specific (perhaps precomputed offsets that combine row and column shift), which a frame-by-frame trace would settle. The referee run proves the mechanism works: on a stable frame boundary the game renders its full HUD (`HIGH 001550`, `2UP 000000`, `POINT`, `TIME 000`, the A-Z checkpoint arrow and the buggy icon) and the game field cleanly. See BRIEF.md#the-title-screen-referee-run"
+    ],
+    "0x81E0": [
+      "str_game_options",
+      "the string `          Game Options          ` at file 0xD8B0 -- passed as SI to print_string when menu_render draws the title bar"
+    ],
+    "0x84B7": [
+      "str_demo_prompt",
+      "a printable demo string at file 0xDB87 (DS-offset + 0x56D0) -- printed by menu_loop while the demo runs"
+    ],
+    "0x84D9": [
+      "str_press_key_prompt",
+      "the 'PRESS KEY' banner used by install_scancode when it waits for the user to bind a new key"
+    ],
+    "0x8712": [
+      "kbd_display_left",
+      "display cell for the left key-map slot -- install_scancode updates this after a new binding"
+    ],
+    "0x872B": [
+      "kbd_display_mid",
+      "middle key-map display cell"
+    ],
+    "0x8742": [
+      "kbd_display_right",
+      "right key-map display cell"
+    ],
+    "0x8817": [
+      "crtc_scroll_offset",
+      "one-byte cell that program_crtc_split feeds to the CGA CRTC as the horizontal scroll offset. Bumped by scancode arms L_004EB/L_004F7 within [0..0x2E]"
+    ],
+    "0x8818": [
+      "in_game_flag",
+      "cleared by enter_cga_graphics and show_menu_and_wait -- 'in game' latch. Non-zero once a round starts"
+    ],
+    "0x8819": [
+      "video_mode",
+      "the last video mode selected (4 = CGA 320x200). Read by menu_loop to decide whether to touch CRTC state on the next redraw"
+    ],
+    "0x8812": [
+      "old_int9_far",
+      "saved BIOS int 9 vector, restored via `jmp far [0x8812]` in reset_and_reboot"
+    ],
+    "0x8814": [
+      "old_es",
+      "ES at program entry, saved by startup so ISR arms can restore it before touching ES:0"
+    ],
+    "0x8832": [
+      "joy_calib_min_x",
+      "first of the joystick min/max calibration cells (0x8832, 0x8836, 0x883A) written by run_calibrate_or_read from three timed reads"
+    ],
+    "0x8836": [
+      "joy_calib_max_x",
+      "second calibration cell"
+    ],
+    "0x883A": [
+      "joy_calib_min_y",
+      "third calibration cell"
+    ],
+    "0x883E": [
+      "joy_reading_valid",
+      "set to 0xFF by read_joystick_raw once the four axis timings have been captured. Cleared/checked elsewhere"
+    ],
+    "0x8852": [
+      "speaker_xor_mask",
+      "the bit pattern speaker_toggle XORs into port 0x61 -- usually 0x02 (the speaker output bit), so each call flips the speaker"
+    ],
+    "0x8853": [
+      "input_mode",
+      "0 = keyboard, 1 = joystick. Toggled by the [K] and [J] menu keys and by install_scancode's swap step"
+    ],
+    "0x896D": [
+      "clear_semaphore",
+      "one-byte guard in clear_screen_and_draw -- `inc [0x896D]; je skip` means the routine early-exits on the second concurrent call. Preloaded to 0xFE by menu_render_after_clear so the first inc runs the body"
+    ],
+    "0x896E": [
+      "sound_gate_mask",
+      "the ANDed gate for speaker_toggle -- 0xFF when sound is enabled (the XOR is applied), otherwise a mask that discards the XORed change so the speaker stays silent"
+    ],
+    "0x896F": [
+      "zero_page_save",
+      "the 0x46-byte save area copy_ds_to_896F copies the zero page into before an operation that trashes it. restore_ds_from_896F copies it back"
+    ],
+    "0x88A9": [
+      "scancode_action_table",
+      "(scancode, action-address) word pairs terminated by 0xFFFF. Walked by scancode_dispatch; the [K] menu remaps entries here"
+    ],
+    "0x8856": [
+      "scancode_map",
+      "0x53 bytes of active scancodes -- scanned by scasb inside install_scancode when the user rebinds"
+    ],
+    "cs:0x54FB": [
+      "clear_video_target_segment",
+      "code-region word holding the video segment that restore_ds_from_896F copies to. Read with `mov es, [cs:0x54FB]` because ES cannot be trusted at that point"
+    ],
+    "0x000F": ["scratch_lo", "one-byte scratch cell in the pre-argument slot. Written and read within compute_screen_ptr_0_1 -- part of the pair at [0]/[1] the game overwrites for one-shot address computations, spilling into [0xF]"],
+    "0x0011": ["scratch_2", "second scratch cell in the [0]..[0xF] scratch pool. Same role as scratch_lo -- transient math"],
+    "0x0016": ["state_16", "one-byte state cell paired with buggy_ax_state at [0x13]. Read by many state checks, but no single routine writes it in a way that decides the semantics from static reading"],
+    "0x0017": ["state_17", "companion cell to state_16 -- same pattern of read-many, write-few"],
+    "0x0018": ["state_18", "third cell in the [0x16..0x18] cluster"],
+    "0x001A": ["walker_state", "the state variable check_var1A_reset_9D_57 and walk_var1A_then_1C read to decide their state machine. 24 references, third-most-touched cell in the zero page"],
+    "0x001B": ["walker_state_2", "companion to walker_state at [0x1A]"],
+    "0x001C": ["walker_state_3", "third cell of the walker-state trio"],
+    "0x0020": ["shape_byte_2", "second half of the two-byte shape word at [0x20..0x21] unpack_bit_pattern rotates through. Its five `rcl` ops through [0x20] make an unpacked shape mask"],
+    "0x0021": ["shape_byte_2_hi", "companion high byte of the two-byte shape word"],
+    "0x0022": ["scratch_22", "one-byte scratch near the shape unpacker"],
+    "0x0023": ["scratch_23", "one-byte scratch adjacent"],
+    "0x002E": ["scratch_2E", "one-byte scratch cell between the row/col pair and the sprite-stride pair"],
+    "0x0031": ["scratch_31", "one-byte scratch"],
+    "0x0042": ["terrain_prev", "byte adjacent to terrain_cursor at [0x41]. One reference"],
+    "0x0047": ["scratch_47", "one-byte scratch adjacent to wave_start_x/y at [0x44..0x45]"],
+    "0x0048": ["buggy_alive", "byte written to 1 by step_and_place_buggy at file 0x2DF6 when the buggy is placed. Cleared elsewhere on death"],
+    "0x004A": ["scratch_4A", "one-byte scratch near the frame-parity counter"],
+    "0x004C": ["scratch_4C", "one-byte scratch"],
+    "0x004D": ["scratch_4D", "one-byte scratch"],
+    "0x004E": ["scratch_4E", "one-byte scratch"],
+    "0x004F": ["scratch_4F", "one-byte scratch"],
+    "0x0051": ["obj_state_51", "one of a cluster of per-object state cells the four-slot iterators reach via [si + BASE] indexing; the bare form here is the slot-0 shortcut"],
+    "0x0052": ["obj_state_52", "companion object-state cell"],
+    "0x0053": ["obj_state_53", "companion"],
+    "0x0054": ["obj_state_54", "companion"],
+    "0x0055": ["obj_state_55", "companion"],
+    "0x0056": ["obj_state_56", "companion"],
+    "0x005C": ["lane_pos_1", "second lane position -- recenter_lane_positions writes `[0x58] + 8` here, so the four lanes at [0x58], [0x5C], [0x5E], [0x60] are 8-pixel-spaced"],
+    "0x005D": ["lane_state_5D", "byte adjacent to lane_pos_1"],
+    "0x005E": ["lane_pos_2", "third lane position, same +8 spacing"],
+    "0x005F": ["lane_state_5F", "byte adjacent to lane_pos_2"],
+    "0x0060": ["lane_pos_3", "fourth lane position"],
+    "0x0063": ["obj_state_63", "one-byte state cell in the object-adjacent region"],
+    "0x0064": ["obj_state_64", "companion"],
+    "0x0065": ["obj_state_65", "companion"],
+    "0x0066": ["obj_state_66", "companion"],
+    "0x0067": ["obj_state_67", "cell zeroed by hard_reset_object_arrays -- part of the per-round object-init block"],
+    "0x0068": ["obj_state_68", "cell zeroed by hard_reset_object_arrays"],
+    "0x006C": ["obj2_row_alt", "alternate row multiplicand read by compute_scanline_from_6c (`mul byte [0x6C]`)"],
+    "0x006D": ["obj_state_6D", "cell hard_reset_object_arrays writes 0xFF into as a sentinel"],
+    "0x006E": ["obj_state_6E", "cell zeroed by hard_reset_state and reset_round_state"],
+    "0x006F": ["obj_state_6F", "cell zeroed by hard_reset_object_arrays"],
+    "0x0070": ["obj_state_70", "read by check_var_70_zero; 13 references. State cell that dispatches a routine"],
+    "0x0071": ["obj_state_71", "byte adjacent to obj_state_70; 12 references. Companion state cell"],
+    "0x0072": ["scratch_72", "one-byte scratch"],
+    "0x0074": ["scratch_74", "one-byte scratch near the script pointers at [0x73]/[0x75]"],
+    "0x0076": ["scratch_76", "one-byte scratch near script pointers"],
+    "0x007B": ["score_tens_digit", "second digit of the 8-digit BCD score, paired with score_ones_digit at [0x7A]"],
+    "0x007D": ["score_digit_3", "third BCD score digit; also read by place_status_line as sprite id"],
+    "0x007E": ["score_digit_4", "fourth BCD score digit"],
+    "0x007F": ["score_digit_5", "fifth BCD score digit"],
+    "0x0080": ["score_digit_6", "sixth BCD score digit"],
+    "0x0085": ["scratch_85", "one-byte scratch near level_start templates"],
+    "0x0091": ["hud_slot_91", "cell read_table_into_91 writes each byte of a zero-terminated init table into at [di + 0x91]"],
+    "0x0092": ["hud_slot_92", "companion cell"],
+    "0x0093": ["hud_slot_93", "companion cell"],
+    "0x0094": ["hud_slot_94", "companion cell"],
+    "0x0098": ["obj_state_98", "state cell near buggy_x/y_current"],
+    "0x009C": ["obj_state_9C", "state cell zeroed alongside buggy_vx by check_var13_set_10_FC and its siblings"],
+    "0x009D": ["obj_state_9D", "state cell zeroed by check_var1A_reset_9D_57"],
+    "0x009E": ["obj_state_9E", "byte adjacent to obj_state_9D"],
+    "0x00A1": ["obj_state_A1", "state cell in the object-position area near state_A0 at [0xA0]"],
+    "0x00A2": ["obj_state_A2", "companion"],
+    "0x00A3": ["obj_state_A3", "read by check_bounds_5C_A3_8E as the buggy's left-edge column"],
+    "0x00A4": ["obj_state_A4", "companion"],
+    "0x00A5": ["obj_state_A5", "companion"],
+    "0x00B1": ["obj_state_B1", "cell near screen_offset_arg at [0xB0]"],
+    "0x00B2": ["obj_state_B2", "companion"],
+    "0x00B3": ["obj_state_B3", "companion"],
+    "0x00B5": ["obj_state_B5", "companion"],
+    "0x00B6": ["obj_state_B6", "companion"],
+    "0x00B7": ["obj_state_B7", "companion"],
+    "0x00B8": ["obj_state_B8", "companion"],
+    "0x00B9": ["obj_state_B9", "companion"],
+    "0x00BA": ["obj_state_BA", "companion"],
+    "0x00BC": ["obj_state_BC", "companion"],
+    "0x00BE": ["obj_state_BE", "byte adjacent to state_BD at [0xBD] and state_C0 at [0xC0]"],
+    "0x00BF": ["obj_state_BF", "companion"],
+    "0x00C1": ["obj_state_C1", "companion"],
+    "0x00C2": ["obj_state_C2", "companion"],
+    "0x00D5": ["scratch_D5", "one-byte scratch"],
+    "0x00D9": ["scratch_D9", "one-byte scratch near obj2_row/col at [0xD7]/[0xD8]"],
+    "0x00DA": ["scratch_DA", "one-byte scratch"],
+    "0x00DD": ["counter_DD", "bumped by subtract_af_from_96 on the >= branch. Frame-counted state advance"],
+    "0x00DE": ["scratch_DE", "one-byte scratch"],
+    "0x00DF": ["scratch_DF", "one-byte scratch"],
+    "0x00E0": ["state_E0", "state cell read at L_01282 (the < branch of cmp_al_C_dispatch)"],
+    "0x00E1": ["state_E1", "companion"],
+    "0x00EE": ["state_EE", "state cell near player_snapshot_input_mode at [0xEF]"],
+    "0x00F1": ["state_F1", "companion state"],
+    "0x00F2": ["state_F2", "companion"],
+    "0x00F3": ["state_F3", "companion"],
+    "0x0140": ["far_jmp_target_offset", "the offset half of the far-jmp pointer the entry stub writes at run time: `xor ax, ax; mov [0x140], ax`. Read once by `jmp far [0x140]` and never again"],
+    "0x0142": ["far_jmp_target_segment", "the segment half of the same pointer: `mov ax, cs; add ax, 0x20; mov [0x142], ax`. Together with [0x140] it names (CS+0x20):0000, which is file offset 0x100 in the new segment"],
+    "0x0200": ["sound_ch_state_0", "first of a 22-byte per-voice sound-channel state block at [0x200..0x215] the two sound engines read and write"],
+    "0x0201": ["sound_ch_state_1", "sound-channel state"],
+    "0x0202": ["sound_ch_state_2", "sound-channel state"],
+    "0x0203": ["sound_ch_state_3", "sound-channel state"],
+    "0x0204": ["sound_ch_state_4", "sound-channel state"],
+    "0x0205": ["sound_ch_state_5", "sound-channel state"],
+    "0x0206": ["sound_ch_state_6", "sound-channel state"],
+    "0x0207": ["sound_ch_state_7", "sound-channel state"],
+    "0x0208": ["sound_ch_state_8", "sound-channel state"],
+    "0x0209": ["sound_ch_state_9", "sound-channel state"],
+    "0x020A": ["sound_ch_state_A", "sound-channel state"],
+    "0x020B": ["sound_ch_state_B", "sound-channel state"],
+    "0x020C": ["sound_ch_state_C", "sound-channel state"],
+    "0x020D": ["sound_ch_state_D", "sound-channel state"],
+    "0x020E": ["sound_ch_state_E", "sound-channel state"],
+    "0x020F": ["sound_ch_state_F", "sound-channel state"],
+    "0x0210": ["sound_ch_state_10", "sound-channel state"],
+    "0x0211": ["sound_ch_state_11", "sound-channel state"],
+    "0x0212": ["sound_ch_state_12", "sound-channel state"],
+    "0x0213": ["sound_ch_state_13", "sound-channel state"],
+    "0x0214": ["sound_ch_state_14", "sound-channel state"],
+    "0x0215": ["sound_ch_state_15", "sound-channel state"],
+    "0x021E": ["state_21E", "state cell in the 0x216-0x22F block"],
+    "0x021F": ["state_21F", "state cell"],
+    "0x0220": ["state_220", "state cell"],
+    "0x0223": ["state_223", "state cell with 9 references"],
+    "0x0224": ["state_224", "state cell with 8 references"],
+    "0x0226": ["state_226", "state cell"],
+    "0x0227": ["state_227", "state cell"],
+    "0x0228": ["state_228", "state cell"],
+    "0x0229": ["state_229", "state cell"],
+    "0x022B": ["state_22B", "state cell adjacent to ammo_b_or_state at [0x22A]"],
+    "0x022C": ["state_22C", "state cell"],
+    "0x022D": ["state_22D", "state cell"],
+    "0x022E": ["state_22E", "state cell adjacent to active_player at [0x22F]"],
+    "0x0232": ["state_232", "state cell with 7 references, adjacent to wave_counter at [0x231]"],
+    "0x0233": ["state_233", "state cell"],
+    "0x0234": ["state_234", "state cell adjacent to scope_flag at [0x235]"],
+    "0x2F82": ["title_sprite_ptr_intermediate", "pointer word between the two named title sprite pointers at [0x2F80] and [0x2F84]. Referenced once from the boot sequence"],
+    "0x82B1": ["joy_calib_scratch", "one-byte scratch inside the joystick calibration routine (run_calibrate_or_read writes 0xF0 here)"],
+    "0x881A": ["joy_cached_x_lo", "cached joystick X low byte. read_joystick_or_cache returns this when input mode is keyboard"],
+    "0x881C": ["joy_cached_x_hi", "cached joystick X high byte -- second half of the joystick's cached-value pair"],
+    "0x881E": ["joy_cached_y_lo", "cached joystick Y low byte"],
+    "0x8820": ["joy_cached_y_hi", "cached joystick Y high byte -- completes the 4-byte cached joystick reading"],
+    "0x8844": ["joy_reading_hi_a", "one of a family of joystick reading intermediates"],
+    "0x884A": ["joy_reading_hi_b", "sibling to joy_reading_hi_a"],
+    "0x8850": ["menu_state_50", "a menu-time state cell"],
+    "0x8851": ["saved_sound_choice", "load_sound_flag copies this into sound_enable at [0x216] -- the user's saved [S]ound choice"],
+    "0x8854": ["state_8854", "cell xor'd bit 4 (0x04) by L_004E4"],
+    "0xB140": ["far_ram_scratch", "a cell in RAM well past the file image -- since DS points at file 0x56D0 and the file ends at 0xE302, DS:0xB140 is at file 0x101E0 which is past EOF, so this is uninitialised RAM the game uses as scratch"],
+    "0xC0FE": ["far_ram_scratch_2", "another uninitialised-RAM scratch, past the file image"],
+    "cs:0x4D01": ["sound_jump_table_0", "part of a jump-table cluster at cs:0x4D01..cs:0x4D4D -- 8 word entries at 4-byte spacing, the offsets of the sound-effect body arms play_sound_effect dispatches into"],
+    "cs:0x4D05": ["sound_jump_table_1", "second entry of the sound-effect jump table"],
+    "cs:0x4D15": ["sound_jump_table_2", "third entry"],
+    "cs:0x4D19": ["sound_jump_table_3", "fourth entry"],
+    "cs:0x4D35": ["sound_jump_table_4", "fifth entry"],
+    "cs:0x4D39": ["sound_jump_table_5", "sixth entry"],
+    "cs:0x4D49": ["sound_jump_table_6", "seventh entry"],
+    "cs:0x4D4D": ["sound_jump_table_7", "eighth entry"],
+    "cs:0x54FD": ["clear_video_target_offset", "code-region word paired with clear_video_target_segment at cs:0x54FB. Together they name the destination address restore_ds_from_896F copies to"],
+    "cs:0x54FF": ["clear_video_target_length", "code-region word paired with the target seg/off. The transfer length"],
+    "es:0x0410": ["bios_equipment_word",
+      "the standard BIOS data area word at 0040:0010 -- video mode bits are 4-5 (00=EGA/VGA, 10=CGA colour, 11=CGA mono). reset_and_reboot sets bits 4-5 to `0x30` (colour text) before returning to DOS; enter_cga_graphics clears them and sets bit 5 for CGA-colour"
+    ]
+  },
+  "_data_spans": {
+    "_note": [
+      "Region map for PATROL.COM (58,306 bytes). The file has two functional sections:",
+      "the 21,705-byte code region 0x0000..0x54C9 (88.3% recovered as instructions;",
+      "the remaining ~11.7% is tables and small in-line data comrec left as db) and",
+      "the 36,601-byte data tail 0x54C9..0xE302 (sprite atlases, tables, strings, sound",
+      "data and game scripts). The spans below partition the whole file; each names",
+      "what the extent is for, with evidence.",
+      "",
+      "Spans of pure code inside the code region are not enumerated individually --",
+      "the region map at recovered/moon-patrol.map has 90+ code runs interleaved with",
+      "small pin/db holes. Those holes are re-encoding artefacts (comrec had to emit",
+      "them as db to preserve the original bytes), not data proper."
+    ],
+    "0x0000": [17, "entry stub: `mov ax, cs; add ax, 0x20; mov [0x142], ax; xor ax, ax; mov [0x140], ax; jmp far [0x140]`. The runtime-written far jump to (CS+0x20):0000 that landed comrec at 0.5% decoded before build.ps1 knew to pass --segment 0x100:0"],
+    "0x0011": [238, "zero fill between the stub and the small pointer table -- BSS the runtime never actually writes here. Bytes are 0x00 throughout"],
+    "0x00FF": [1, "bridge byte before the near jmp"],
+    "0x0100": [3, "the near jmp `e9 eb 01` -- inside the new segment (base 0) this is at offset 0 and dispatches to offset 0x1EE (file 0x2EE), which is where startup lives"],
+    "0x0103": [25, "zero fill before the small pointer table at 0x011C"],
+    "0x011C": [18, "a small pointer table (nine word entries): 0xFFFF, 0x03CB, 0x4E21, 0x4E36, 0x0425, 0x04A3, 0x4DC3, 0x03CF, 0x03D6, 0x03E4, 0x03EB, 0x03F2, 0x0405, 0xFFFE, followed by trailing zeros. The values point at addresses in the 0x04.. and 0x4E.. ranges -- probably the initial int-vector install table walk_installed_isrs walks"],
+    "0x012E": [448, "BSS-shaped zero region between the pointer table and the real init routine -- reserved for run-time state the game writes here (the far-jmp target words at 0x140/0x142 land in here)"],
+    "0x02EE": [20955, "the code region proper -- 88.3% of it is disassembled by comrec into 8,578 instructions covering 19,175 bytes; the balance is in-line lookup tables, pinned re-encodings, small data holes and a few text blobs (69 bytes ASCII, 981 bytes 'other' per the map). See recovered/moon-patrol.map for the byte-level breakdown"],
+    "0x54C9": [519, "the pre-DS transition zone between the code and the DS-addressable region -- zeros predominate. The DS register at run time points at file 0x56D0, so any bare `[X]` in the code lands X bytes into this data tail starting from the address after this transition"],
+    "0x56D0": [16, "DS:0x0000..0x000F -- the game's zero-page pointer/argument cells (script_arg_cl at [3], script_arg_bl at [4], script_pc at [5..6])"],
+    "0x56E0": [16, "DS:0x0010..0x001F -- buggy_vx at [0x10], buggy_ax_state at [0x13], lane_drift at [0x14], buggy_ay_state at [0x15] and the surrounding motion cells"],
+    "0x56F0": [64, "DS:0x0020..0x005F -- the row/column/lane/voice/note cells the game treats as its 'zero page' (screen_col [0x28], screen_row [0x29], hud_row_stride [0x33], sprite_row_stride [0x39], terrain_cursor [0x41], terrain_write_ptr [0x43], wave_start_x/y [0x44/45], voice_a_note [0x57], lane_pos_0 [0x58], voice_b_note [0x59])"],
+    "0x5730": [160, "DS:0x0060..0x00FF -- mid-page state cells: frame_parity_counter [0x49], current_slot_index [0x50], voice_a_dur [0x5B], voice cells [0x61/62], script_ptr_73/75, sprite_id_78 [0x78], score_ones_digit [0x7A] through the score's eight BCD digits ending at [0x81], level_start_x/y_template [0x83/84], obstacle_y_2 [0x96], spawn_countdown [0x97], buggy_x/y_current [0x99/9A], state_A0 [0xA0], draw_col/row [0xA6/A7], sprite_height [0xAF], screen_offset_arg [0xB0], state_BB/BD/C0 [0xBB/BD/C0], obj2_row/col [0xD7/D8], state_DB [0xDB], bullet_slot_0 [0xE8..0xEA/0xEB..0xED], player snapshots [0xEF/F0]"],
+    "0x57D0": [256, "DS:0x0100..0x01FF -- kbd_input at [0x100], reserved_scancode_check at [0x101], and state cells for pause/wave/scoring"],
+    "0x58D0": [256, "DS:0x0200..0x02FF -- sound_enable at [0x216], state_217/218, score display bytes [0x21A..0x21C], flag_21D, ammo_a [0x222], state_225, ammo_b_or_state [0x22A], active_player [0x22F], round_counter [0x230], wave_counter [0x231], scope_flag [0x235]"],
+    "0x59D0": [3856, "DS:0x0300..0x120F -- the object-slot arrays. Every for_each_slot_XXX iterator addresses this range at [si + BASE] where BASE is one of 0x82B, 0x867, 0x8BE, 0x8F3, 0x90A, 0x84B, 0x83B, 0x84F, 0xF0A. Also holds sprite/tile pointers referenced from the two [0x2F80]/[0x2F84]/[0x2F86] slots"],
+    "0x68E0": [50, "DS:0x1210..0x1241 -- sprite_atlas_A_ptrs, 25 word entries pointing at bitmaps further down the tail"],
+    "0x6912": [38, "DS:0x1242..0x1267 -- sprite_atlas_B_ptrs, 19 word entries"],
+    "0x6938": [352, "DS:0x1268..0x13C7 -- sprite_atlas_C_ptrs, 176 word entries reached via the `& 0x3F` mask in draw_sprite_C, so the low 64 are the addressable atlas and the rest is either padding or an alternate index space"],
+    "0x6A98": [4097, "DS:0x13C8..0x23C8 -- the bulk of the sprite bitmaps that the three atlases point into. Each bitmap is a run of packed CGA bytes preceded by a small header giving its width and height"],
+    "0x7A99": [12288, "DS:0x23C9..0x53C8 -- more sprite/tile bitmaps, plus the terrain-strip and horizon data render_horizon_stripe walks. This is the largest single region in the tail (12 KB) and it is nearly all artwork"],
+    "0xAA99": [400, "DS:0x53C9..0x5558 -- scanline_ptr_table, 200 words giving the CGA video-memory offset for each screen row. The blits index this with dx (`mov bp, 0x53C9; add bp, dx; add bp, dx`). A 6502-translation artifact: Apple II hi-res has the same shape and its programs all carry this table"],
+    "0xAC29": [22, "DS:0x5559..0x556E -- code-region-relative constants restore_ds_from_896F uses via `mov es, [cs:0x54FB]`"],
+    "0xAC3F": [6273, "DS:0x556F..0x6DEF -- sound engine tables and music sequences: sound_effect_B75 through sound_effect_DA7 point into here; the two note tables voice_a_note / voice_b_note draw values from this region"],
+    "0xC4C0": [3776, "DS:0x6DF0..0x7CAF -- script tables at 0xC46 (init_script_pointers's [0x73] pointer) and 0xC93 ([0x75] pointer) plus wave scripts. script_run walks these"],
+    "0xD380": [1481, "DS:0x7CB0..0x8278 -- keyboard/joystick maps: scancode_map at DS:0x8856, scancode_action_table at DS:0x88A9, plus display cells for the key-config screen"],
+    "0xD949": [365, "DS:0x8279..0x83E5 -- menu strings and the copyright banner. `Moon Patrol Copyright (C) 1984 Atari, Inc.` at file 0x4E98 (in the code region) is also referenced through this area"],
+    "0xDAB6": [2316, "DS:0x83E6..0x8CF1 -- end-of-round strings, HUD label strings, `          Game Options          ` at DS:0x81E0 (file 0xD8B0), the demo prompt, PRESS KEY prompt, misc text. Each string is prefixed with a `\\x0B, row, \\x0E, col` cursor-positioning sequence and terminated with 0xFF"]
+  },
+  "_displacements": {
+    "_note": [
+      "The bracketed constants below are indexed forms -- `[si + BASE]` or",
+      "`[bx + BASE]` -- that never appear as a lone `[BASE]` in the code. Each",
+      "names the head of an array that the game walks by loading an index into",
+      "the base register, so the address in the entry is the *start* of an",
+      "array or struct rather than a single scalar. They are kept here rather",
+      "than in globals because annotate.py's audit distinguishes the two forms.",
+      "",
+      "Most of the low-address (0x0002A..0x0300) and 0x08XX-0x09XX bases are",
+      "four-slot per-object arrays that the `mov cl, 3; ...` iterators sweep --",
+      "the games' equivalent of a struct-of-arrays for the four enemy/obstacle/",
+      "bullet slots. The 4-byte-aligned stride from 0x0823 through 0x08FB is",
+      "the most visible signature of this layout: each 4-byte group is one",
+      "field, and there are 30-plus fields per slot. The 0x0DEA..0x0E06 range",
+      "is a smaller two-array pair L_0124B indexes into for its parallel",
+      "lookups. The high ones (0x740F..0x7896) are the sound engine's per-voice",
+      "tables walked through di/si by play_sound_effect."
+    ],
+    "0x002A": ["si"],
+    "0x0086": ["si"],
+    "0x00C3": ["si"],
+    "0x00C7": ["si"],
+    "0x00CB": ["si"],
+    "0x00D1": ["si"],
+    "0x00E2": ["si"],
+    "0x00E5": ["si"],
+    "0x00E8": ["si"],
+    "0x00EB": ["si"],
+    "0x0300": ["si"],
+    "0x0823": ["bx", "si"],
+    "0x0827": ["bx", "si"],
+    "0x082B": ["bx", "si"],
+    "0x082F": ["si"],
+    "0x0833": ["si"],
+    "0x0837": ["si"],
+    "0x083B": ["si"],
+    "0x083F": ["si"],
+    "0x0843": ["si"],
+    "0x0847": ["si"],
+    "0x084B": ["si"],
+    "0x084F": ["si"],
+    "0x0853": ["si"],
+    "0x0857": ["si"],
+    "0x085B": ["si"],
+    "0x085F": ["bx", "si"],
+    "0x0863": ["si"],
+    "0x0867": ["bx", "si"],
+    "0x086B": ["bx", "si"],
+    "0x086F": ["bx", "si"],
+    "0x0873": ["bx"],
+    "0x087B": ["bx"],
+    "0x0883": ["bx"],
+    "0x088B": ["bx"],
+    "0x0893": ["bx", "si"],
+    "0x0897": ["bx", "si"],
+    "0x089B": ["bx", "si"],
+    "0x089F": ["bx", "si"],
+    "0x08A3": ["si"],
+    "0x08A8": ["si"],
+    "0x08AD": ["si"],
+    "0x08B2": ["bx", "si"],
+    "0x08B6": ["bx", "si"],
+    "0x08BA": ["bx", "si"],
+    "0x08BE": ["bx", "si"],
+    "0x08C2": ["bx", "si"],
+    "0x08C6": ["si"],
+    "0x08CA": ["bx"],
+    "0x08CF": ["si"],
+    "0x08D3": ["si"],
+    "0x08D7": ["si"],
+    "0x08DB": ["si"],
+    "0x08DF": ["bx", "si"],
+    "0x08E3": ["si"],
+    "0x08E7": ["si"],
+    "0x08EB": ["si"],
+    "0x08EF": ["bx", "si"],
+    "0x08F3": ["bx", "si"],
+    "0x08F7": ["bx"],
+    "0x08FC": ["bx"],
+    "0x0901": ["bx"],
+    "0x0906": ["si"],
+    "0x090A": ["si"],
+    "0x090E": ["si"],
+    "0x090F": ["si"],
+    "0x0918": ["si"],
+    "0x0919": ["si"],
+    "0x093A": ["bx"],
+    "0x0CE1": ["bx"],
+    "0x0D22": ["bx"],
+    "0x0D63": ["si"],
+    "0x0DD0": ["bx"],
+    "0x0DEA": ["si"],
+    "0x0DEE": ["si"],
+    "0x0DF2": ["si"],
+    "0x0DF6": ["si"],
+    "0x0DFA": ["si"],
+    "0x0DFE": ["si"],
+    "0x0E02": ["si"],
+    "0x0E06": ["si"],
+    "0x0E0A": ["bx"],
+    "0x0F0A": ["si"],
+    "0x100A": ["bx"],
+    "0x110A": ["bx"],
+    "0x2F88": ["bx"],
+    "0x740F": ["di"],
+    "0x752F": ["di"],
+    "0x7579": ["bx"],
+    "0x7605": ["si"],
+    "0x764B": ["si"],
+    "0x7691": ["si"],
+    "0x76DD": ["bx"],
+    "0x77AB": ["di", "si"],
+    "0x77B6": ["di"],
+    "0x77BC": ["di"],
+    "0x77C2": ["di"],
+    "0x77C6": ["bx"],
+    "0x77CA": ["bx"],
+    "0x77CE": ["bx"],
+    "0x77D6": ["si"],
+    "0x77DE": ["si"],
+    "0x77E2": ["bx"],
+    "0x7896": ["di", "si"]
+  }
 }

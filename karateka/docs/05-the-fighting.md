@@ -1,9 +1,10 @@
 # Karateka — the fighting
 
-*Document five of five. [01-the-game.md](01-the-game.md) is what the game is;
+*Document five of six. [01-the-game.md](01-the-game.md) is what the game is;
 [02-architecture.md](02-architecture.md) is how the program is shaped;
 [03-the-code.md](03-the-code.md) walks its routines;
-[04-porting.md](04-porting.md) is what rebuilding it would take.*
+[04-porting.md](04-porting.md) is what rebuilding it would take;
+[06-web-code.md](06-web-code.md) walks the port's code.*
 
 The other four documents all ended at the same wall: *nothing here has read the
 fighting.* This one goes through it, and the answer was not where those

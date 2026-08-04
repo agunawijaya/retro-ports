@@ -1,0 +1,175 @@
+/* Moon Patrol -- browser port
+ *
+ * The canvas is 320x200 (CGA mode 4, native), scaled up by CSS with
+ * image-rendering: pixelated. Everything below is presentation only --
+ * the game logic never learns what the display size is. */
+
+:root {
+  /* CGA mode 4 palette 1 -- what enter_cga_graphics at file 0x573
+   * chooses via int 10h AH=0Bh BH=1 BL=1. These four are the only
+   * colours the canvas ever draws. */
+  --cga-black:   #000000;
+  --cga-cyan:    #55ffff;
+  --cga-magenta: #ff55ff;
+  --cga-white:   #ffffff;
+
+  --page-bg: #0b0b12;
+  --edge:    #1e2440;
+  --ink:     #d8def0;
+  --dim:     #7b85a8;
+  --accent:  #ff55ff;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--page-bg);
+  color: var(--ink);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px 16px 40px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cga-magenta);
+  text-shadow: 0 0 10px rgba(255, 85, 255, 0.35);
+}
+
+.sub {
+  margin: -10px 0 0;
+  font-size: 14px;
+  color: var(--dim);
+  text-align: center;
+  max-width: 62ch;
+  line-height: 1.5;
+}
+
+.frame {
+  position: relative;
+  width: min(96vw, 1080px);
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #171d33, #0a0d18);
+  border: 1px solid var(--edge);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* CGA is 320x200 with square pixels in the video buffer. On a real IBM
+   * PC's colour composite display that gets stretched to 320x240, which is
+   * where the 4:3 look comes from. The reference frames in reference/ are
+   * 3x scaled without any correction (960x600), so v1 matches them --
+   * square pixels, 320:200 aspect. If someone wants the CRT stretch, the
+   * one line to change is here. */
+  aspect-ratio: 320 / 200;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: var(--cga-black);
+  border-radius: 4px;
+  cursor: crosshair;
+}
+
+/* Nothing here says "authentic": a real CGA monitor did not look like this.
+ * The overlay ties the modern framing to the era the pixels came from. */
+.frame::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 4px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+#start-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 9px 14px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(0deg, rgba(4, 6, 16, 0.92), rgba(4, 6, 16, 0.55));
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 13.5px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  /* pointer-events: none so the div does not eat clicks intended
+     for the canvas underneath. Clicks pass through; keydowns are
+     window-level so they reach the game regardless. */
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+#start-hint.gone { opacity: 0; }
+
+/* Canvas needs a focus outline that isn't obtrusive; hide it. */
+#screen:focus { outline: none; }
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  justify-content: center;
+  font-size: 13.5px;
+  color: var(--dim);
+}
+.keys b {
+  display: inline-block;
+  min-width: 22px;
+  padding: 2px 7px;
+  margin-right: 6px;
+  border-radius: 5px;
+  background: #1a2038;
+  border: 1px solid #2a3255;
+  border-bottom-width: 2px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+footer {
+  max-width: 74ch;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--dim);
+  text-align: center;
+}
+footer strong { color: var(--ink); font-weight: 600; }
+footer code {
+  color: var(--cga-cyan);
+  font-family: "Consolas", "Menlo", monospace;
+  font-size: 12.5px;
+}
+footer a { color: #8fb6ff; }
+
+@media (max-width: 640px) {
+  .frame { padding: 8px; }
+  .frame::after, #start-hint { inset: 8px; }
+  .keys { font-size: 12px; }
+}

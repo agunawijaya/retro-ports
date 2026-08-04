@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karateka Move Viewer &mdash; browser port foundation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Karateka</h1>
+<p class="sub">
+  A browser port of the 1986 Br&oslash;derbund IBM PC game. Every pixel is
+  decoded at runtime from your own copy of the game's data files &mdash;
+  nothing is baked into the code. Two modes: <b>game</b> plays the fight,
+  <b>viewer</b> steps through the source animation libraries frame by frame.
+</p>
+
+<div class="controls">
+  <label>mode:
+    <button data-mode="game">G &mdash; play</button>
+    <button data-mode="viewer">V &mdash; viewer</button>
+  </label>
+  <label>library:
+    <button data-lib="ALLPAL">ALLPAL (hero)</button>
+    <button data-lib="ALLGAL">ALLGAL (guard)</button>
+    <button data-lib="ALLVAL">ALLVAL (guard 2)</button>
+  </label>
+  <label>backdrop:
+    <button data-backdrop="FUJI.BCG">Fuji</button>
+    <button data-backdrop="CASTLE.BCG">Castle</button>
+  </label>
+  <label>scene:
+    <button data-scene="BAL00">BAL00 (gate)</button>
+    <button data-scene="BAL01">BAL01 (wall)</button>
+    <button data-scene="BAL02">BAL02</button>
+    <button data-scene="BAL03">BAL03</button>
+    <button data-scene="CAL00">CAL00 (cut)</button>
+  </label>
+  <label>move:
+    <select id="move"></select>
+  </label>
+</div>
+
+<div class="frame">
+  <canvas id="screen" width="1280" height="800"></canvas>
+  <div id="info"></div>
+  <div id="status"></div>
+</div>
+
+<div class="keys">
+  <span><b>G</b> game &nbsp; <b>V</b> viewer &nbsp; <b>R</b> restart &nbsp; <b>P</b> pause</span>
+  <br>
+  <em>game mode:</em>
+  <span><b>&larr;</b><b>&rarr;</b> walk (hold <b>Shift</b> to run)</span>
+  <span><b>A</b><b>S</b><b>D</b> punch hi / mid / lo</span>
+  <span><b>Z</b><b>X</b><b>C</b> kick hi / mid / lo</span>
+  <br>
+  <em>viewer mode:</em>
+  <span><b>&larr;</b><b>&rarr;</b> previous / next move</span>
+  <span><b>&darr;</b><b>&uarr;</b> actor left / right</span>
+  <span><b>[</b><b>]</b> scroll camera left / right</span>
+  <span><b>,</b><b>.</b> step frame back / forward</span>
+  <span><b>Space</b> pause / play</span>
+  <span><b>L</b> next library</span>
+  <span><b>B</b> toggle backdrop</span>
+  <span><b>T</b> self-test</span>
+</div>
+
+<footer>
+  <p>
+    <strong>Where to put the game files.</strong> Copy your KARATEKA.EXE and
+    its 90 data files (BCG, DAT, IND, ALL*, BAL*, CAL*) into
+    <code>../original/</code> (which <code>.gitignore</code> blocks), then serve
+    <code>karateka/</code> with <code>python -m http.server</code>.
+  </p>
+  <p>
+    <strong>What this viewer shows.</strong> Each fighter's move library is 47&ndash;51
+    short animations. Pick a library, pick a move, and this steps through its
+    frames at the game's animation rate. Every frame is composed the same way
+    the port will compose them: backdrop into shadow buffer, then each fig's
+    KS sprite combined with its KM alpha mask, written to the buffer at the
+    frame's own coordinates.
+  </p>
+  <p>
+    <strong>What is not here yet.</strong> Combat &mdash; input, hits,
+    damage, opponent AI. Scene composition from BAL/CAL scripts (that gives
+    the level backdrops, gate, wall, ground plateau). Level progression. The
+    order these come in and the honest scope is in
+    <code>../docs/06-web-code.md</code>.
+  </p>
+  <p>
+    Written from a byte-identical reconstruction of KARATEKA.EXE. The
+    reconstruction, the decoder tests and this viewer's code live in this
+    repository. The game data does not. Original game
+    &copy;&nbsp;1986 Br&oslash;derbund Software.
+  </p>
+</footer>
+
+<script src="game.js"></script>
+</body>
+</html>

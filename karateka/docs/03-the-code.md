@@ -1,9 +1,10 @@
 # Karateka — the code
 
-*Document three of five. [01-the-game.md](01-the-game.md) is what the game is;
+*Document three of six. [01-the-game.md](01-the-game.md) is what the game is;
 [02-architecture.md](02-architecture.md) is how the program is shaped;
 [04-porting.md](04-porting.md) is what rebuilding it would take;
-[05-the-fighting.md](05-the-fighting.md) reads the fighting.*
+[05-the-fighting.md](05-the-fighting.md) reads the fighting;
+[06-web-code.md](06-web-code.md) walks the port's code.*
 
 Five things, in the order they were found rather than the order they run. Every
 listing is copied from `recovered/karateka.asm` — the file that reassembles to

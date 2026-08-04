@@ -1,0 +1,138 @@
+/* Karateka port -- minimal styling. Same shape as ParaTrooper's. */
+
+:root {
+  --bg: #0a0a10;
+  --fg: #d0d0d8;
+  --dim: #7a7a86;
+  --accent: #55ffff;   /* CGA palette 1 cyan, so the page reads like the game */
+  --frame: #1a1a24;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+h1 {
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  margin: 0 0 6px 0;
+  color: var(--accent);
+}
+
+p.sub {
+  color: var(--dim);
+  margin: 0 0 20px 0;
+  max-width: 900px;
+}
+
+.frame {
+  background: #000;
+  border: 1px solid var(--frame);
+  padding: 12px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+#screen {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  width: 100%;
+  height: auto;
+  max-width: 1280px;
+}
+
+#status, #info {
+  color: var(--dim);
+  font: 12px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  margin-top: 6px;
+  min-height: 1.2em;
+  white-space: pre-wrap;
+}
+
+#info { color: var(--accent); }
+
+.controls {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.controls label { display: inline-flex; align-items: center; gap: 8px; }
+
+.controls button {
+  background: var(--frame);
+  color: var(--fg);
+  border: 1px solid var(--frame);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+.controls button:hover { border-color: var(--accent); color: var(--accent); }
+
+.controls select {
+  background: var(--frame);
+  color: var(--fg);
+  border: 1px solid var(--frame);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  min-width: 180px;
+}
+
+.keys {
+  color: var(--dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  margin: 8px 0 24px;
+  font-size: 13px;
+}
+
+.keys b {
+  display: inline-block;
+  background: var(--frame);
+  color: var(--fg);
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin: 0 3px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+footer {
+  color: var(--dim);
+  max-width: 900px;
+  border-top: 1px solid var(--frame);
+  padding-top: 18px;
+  margin-top: 24px;
+}
+
+footer p { margin: 0 0 12px 0; }
+footer strong { color: var(--fg); }
+footer code {
+  background: var(--frame);
+  color: var(--fg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+}

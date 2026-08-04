@@ -1,8 +1,17 @@
 # Karateka — porting it
 
-*Document four of five. [01-the-game.md](01-the-game.md) is what the game is;
+*Document four of six. [01-the-game.md](01-the-game.md) is what the game is;
 [02-architecture.md](02-architecture.md) is how the program is shaped;
-[03-the-code.md](03-the-code.md) walks its routines.*
+[03-the-code.md](03-the-code.md) walks its routines;
+[05-the-fighting.md](05-the-fighting.md) reads the fighting;
+[06-web-code.md](06-web-code.md) walks the port's code.*
+
+**A port now exists.** [`../web/`](../web/) &mdash; three files, no game data
+committed, everything decoded at runtime. This document was written before it
+existed and its analysis of trade-offs is unchanged; [06-web-code.md](06-web-code.md)
+is the walk-through of the choices that were actually made and what remains
+open.
+
 
 **No port exists.** This is the decision that comes before one — what the
 choices are, what each costs, and what about *this* game makes it different

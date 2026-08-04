@@ -1,8 +1,10 @@
 # Karateka — architecture
 
-*Document two of five. [01-the-game.md](01-the-game.md) is what the game is;
-[03-the-code.md](03-the-code.md) walks its routines; [04-porting.md](04-porting.md)
-is what rebuilding it would take.*
+*Document two of six. [01-the-game.md](01-the-game.md) is what the game is;
+[03-the-code.md](03-the-code.md) walks its routines;
+[04-porting.md](04-porting.md) is what rebuilding it would take;
+[05-the-fighting.md](05-the-fighting.md) reads the fighting;
+[06-web-code.md](06-web-code.md) walks the port's code.*
 
 *Facts here were read from the binary; anything
 reasoned rather than observed is marked **[inferred]**, and
@@ -349,6 +351,54 @@ Four of the five fail. One further variant — the same rule without skipping th
 three header bytes — also passes, and cannot be separated by this test, because
 skipping fewer bytes only adds output. It is separated by the program instead:
 `add word [0x4220], 3`, and every measured read beginning three bytes in.
+
+## The scene backdrop is more than the BAL script
+
+`BAL00` is the level-0 layout file. Reading it gives six figures —
+ground, ground, fence-top, three fence posts — plus a gate at
+world-x=326 that is off the visible 320-pixel screen. A port that
+draws only those figs on top of `FUJI.BCG` at Y=0 gets 34 % of the
+bytes right and looks nothing like the game. What is happening on
+the other 66 %, measured by hooking `draw_sprite` and comparing the
+shadow at `DS:0x0337` against a Python replica of the same
+composition path:
+
+- **`FUJI.BCG` is at Y=80, not Y=0.** The horizon offset that puts
+  Mt. Fuji's base at the top of the plateau. Byte-scoring by
+  distinctive content: 195 of 206 non-sky non-black FUJI bytes
+  match at Y=80, zero at Y=0.
+- **The sky is filled with `0x55`.** Y=0..107 is set to `0x55` (four
+  cyan pixels per byte) before any figure is drawn. `FUJI.BCG`
+  overwrites rows 80..114 within that band, so the mountain sits
+  in a sky the backdrop file did not supply — cyan above the
+  mountain is not from any file, it is a rectfill.
+- **The plateau is a two-row dither, Y=154..183.** Alternates:
+  even rows `0x99` (pixel pattern magenta/cyan/magenta/cyan), odd
+  rows `0x66` (cyan/magenta/cyan/magenta). Same visual pattern
+  either way, a byte apart. Getting the range wrong by one on
+  either end is invisible on screen but a 100 % byte miss on the
+  affected rows.
+- **Structural sprites (no mask pack) write opaquely.** `fig 200`,
+  `fig 206`, `fig 201`, `fig 208` all have `KMC[fig]` at zero,
+  meaning no mask; the game writes their shape bytes — including
+  the zeros — straight through. Treating zero as transparent, which
+  the port did first, let the plateau show through where the
+  ground pieces meant to draw black.
+- **Post-FUJI overlays paint the horizon by hand.** After drawing
+  `FUJI.BCG` the game overwrites four rows: Y=106 to `0xFF` (the
+  white horizon rail across the whole screen), Y=107..109 to
+  `0x00` (a shadow band under the rail), and Y=114 to `0x00` (the
+  base — FUJI's row 34 is cyan and would leak through otherwise).
+  These are not in FUJI.BCG and not in any BAL script; only the
+  before-and-after shadow comparison shows them.
+
+None of that is in any file. It is code, in a routine that runs
+between opening `BAL00` and the first `draw_sprite`, and nothing
+in the BAL script itself says a word about it. Applying all of it
+takes a Python replica of the port's renderer from 34 % to
+**100 % byte-match** against the game's own composed shadow —
+16000 of 16000 bytes agree. The account is in
+[06-web-code.md](06-web-code.md).
 
 ## The copy protection
 

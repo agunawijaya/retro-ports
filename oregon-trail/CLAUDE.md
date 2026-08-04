@@ -23,7 +23,7 @@ shorter working reference you come back to.
 | module structure | **done** — 17 segments, all named, third-party split measured |
 | artwork | **done and verified against the running game** — LOGO.004 matches the drawn frame 17,600/17,600 pixels |
 | data files | **done** — `DIALOGS.REC` is 51 records of 286 bytes, exactly |
-| the trail | **done** — 17 landmarks, distances and map coordinates, at `0x23D32` |
+| the trail | **done** — 18 records at `0x23D16` (Independence + 17 destinations), each 37 bytes: name, rate, next/alt landmark indices (fork bytes), miles-to-next, mapX/mapY. Two forks: South Pass (leg 7, alt = Fort Bridger detour) and Blue Mountains (leg 14, alt = The Dalles direct). Total 2083 miles on default route |
 | the prior attempt's protection claim | **tested: address right, meaning wrong** |
 | the real protection | **traced in full** — and it does not refuse; see below |
 | the memory check | **traced, and shown unreachable** — DOS refuses to load the program before the heap can fall that low |
@@ -270,7 +270,7 @@ Image offsets.
 | `0x21BFD` | `Runtime error `, ` at `, `.` |
 | `0x21DA5` | `MemAvail` — walks the free list, returns a 32-bit byte count |
 | `0x23480` | DGROUP: code ends, data begins |
-| `0x23D16` | the trail table — **18** records of 37 bytes: name at `+0`, the leg's rate at `+0x1C` |
+| `0x23D16` | the trail table — **18** records of 37 bytes: name `+0`, rate `+0x1C`, nextIdx `+0x1D`, altIdx `+0x1E` (fork), miles-to-next `+0x1F`, mapX `+0x21`, mapY `+0x23` — see [docs/03 §"The leg record, in full"](docs/03-the-code.md#the-leg-record-in-full-and-the-fork-mechanism) |
 | `0x24112` | pace and ration words: steady, strenuous, grueling, filling, meager, bare bones |
 | `0x24156` | the six illnesses: exhaustion, typhoid, cholera, measles, dysentery, a fever |
 | `0x0DE5C` | the store script — every price, in the shopkeeper's dialogue |

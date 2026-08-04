@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Port demo screens</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas" width="320" height="200"></canvas>
+        <div id="ui-panel">
+            <div id="status-row" class="status-row" style="display:none"></div>
+            <div id="message-log" aria-live="polite"></div>
+            <div id="input-area"></div>
+        </div>
+    </div>
+    <script type="module">
+        import { AssetLoader } from './js/assets.js';
+        import { Renderer } from './js/renderer.js';
+        import { GameState, PHASE, Supplies } from './js/state.js';
+        import { LANDMARKS } from './js/trail.js';
+        import { HuntingGame, buildField } from './js/hunting.js';
+        import { STORE_PRICES } from './js/constants.js';
+        import { rng } from './js/rng.js';
+
+        const canvas = document.getElementById('game-canvas');
+        const assets = new AssetLoader();
+        const renderer = new Renderer(canvas, assets);
+
+        renderer.clearScreen('#000000');
+        await assets.loadAll();
+
+        const screen = new URLSearchParams(location.search).get('s') || 'title';
+
+        // Baseline gameState populated to look like a mid-trail run.
+        const gs = new GameState();
+        gs.landmarks = LANDMARKS;
+        gs.supplies = new Supplies(400);
+        gs.supplies.oxen = 6;
+        gs.supplies.food = 800;
+        gs.supplies.ammunition = 100;
+        gs.supplies.clothingSets = 4;
+        gs.supplies.spareWheels = 1;
+        gs.supplies.spareAxles = 1;
+        gs.supplies.spareTongues = 1;
+        gs.supplies.cash = 250;
+        gs.currentLandmarkIndex = 7;   // South Pass, matching DOS saved game
+        gs.totalMiles = 932;
+        gs.currentDay = 13;
+        gs.currentMonth = 4;           // May
+        gs.currentYear = 1848;
+        gs.weather = 'warm';
+        rng.setSeed(42);
+
+        if (screen === 'title') {
+            renderer.drawMainMenu(0);
+        } else if (screen === 'travel') {
+            renderer.drawTravelScreen(gs, 0);
+        } else if (screen === 'daily') {
+            renderer.drawDailyMenu(gs);
+        } else if (screen === 'landmark') {
+            renderer.drawScene('vga_P7');   // South Pass
+        } else if (screen === 'map') {
+            renderer.drawMap(gs);
+        } else if (screen === 'store') {
+            renderer.drawStoreScreen(STORE_PRICES, gs.supplies.cash, {});
+        } else if (screen === 'supplies') {
+            renderer.drawSuppliesGrid(gs.supplies, STORE_PRICES);
+        } else if (screen === 'river') {
+            renderer.drawRiverCrossing({ name: 'Snake River crossing', widthFt: 700, depth: 4.5 });
+        } else if (screen === 'hunt') {
+            gs.currentLandmarkIndex = 8;   // Fort Bridger area
+            const field = buildField(8);
+            // Seed a couple of animals so the field isn't empty.
+            field.animals.push(
+                { x:  40, y:  90, w: 26, h: 19, species: { name: 'bison', frames: [{sx:40,sy:2,sw:26,sh:19}], animFrameInterval: 120 }, dx: 2, dy: 0, alive: true },
+                { x: 200, y:  60, w: 23, h: 22, species: { name: 'deer',  frames: [{sx:39,sy:45,sw:23,sh:22}], animFrameInterval: 90 }, dx: -2, dy: 0, alive: true },
+                { x: 260, y: 150, w: 14, h:  9, species: { name: 'rabbit',frames: [{sx:34,sy:100,sw:14,sh:9}], animFrameInterval: 60 }, dx: -2, dy: 0, alive: true },
+            );
+            renderer.drawHuntingField(field, { hits: 0, shotsFired: 0, meat: 0 });
+        }
+
+        document.title = 'Port demo — ' + screen;
+    </script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+/*
+ * Oregon Trail port -- stylesheet.
+ * The game draws to a 320x200 canvas scaled 2x by CSS.
+ * Menus and prompts are DOM so they read cleanly to a screen reader.
+ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    background: #000;
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    -webkit-font-smoothing: none;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding-top: 40px;
+}
+
+#game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#game-canvas {
+    width: 640px;
+    height: 400px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 2px solid #00ff00;
+    display: block;
+    background: #000;
+}
+
+#ui-panel {
+    width: 640px;
+    margin-top: 4px;
+    color: #00ff00;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: #002200;
+    color: #ccff99;
+    font-size: 13px;
+    border: 1px solid #007700;
+    margin-bottom: 4px;
+}
+.status-row .field { margin-right: 12px; }
+.status-row .field b { color: #ffff00; font-weight: normal; }
+
+#message-log {
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 6px 8px;
+    border: 1px solid #007700;
+    background: #001100;
+    white-space: pre-wrap;
+}
+#message-log .msg { margin: 0 0 2px 0; }
+#message-log .msg .ts { color: #007700; margin-right: 6px; }
+
+#input-area {
+    padding: 8px;
+    border: 1px solid #007700;
+    border-top: none;
+    background: #000800;
+    min-height: 48px;
+}
+
+.menu { list-style: none; margin: 0; padding: 0; }
+.menu li { margin: 2px 0; }
+.menu button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #00ff00;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 2px 6px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+}
+.menu button:hover, .menu button:focus {
+    background: #00aa00;
+    color: #000;
+    outline: none;
+    border: 1px solid #00ff00;
+}
+
+.text-input {
+    background: #000;
+    border: 1px solid #00aa00;
+    color: #00ff00;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 2px 4px;
+    width: 200px;
+}
+.text-input:focus { outline: none; border-color: #00ff00; }
+
+.prompt { margin: 0 0 6px 0; color: #ffff00; }
+.hint { color: #007700; font-style: italic; margin-top: 4px; font-size: 12px; }

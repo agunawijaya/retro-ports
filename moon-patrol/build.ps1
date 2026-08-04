@@ -22,9 +22,16 @@ if (-not (Test-Path $Original)) {
 }
 New-Item -ItemType Directory -Force recovered | Out-Null
 
+# Two address bases: the entry stub at file 0 runs at 0x100, then does a
+# far jmp through [0x140] to (CS+0x20):0000 -- file offset 0x100 in the
+# new segment addressed from 0. The pointer is written at run time
+# (mov [0x142], cs+0x20 / mov [0x140], 0), so comrec cannot see the target
+# by static walking of the stub; seed it explicitly. Every near jump and
+# bracketed constant from file 0x100 onward is in the new base.
 Write-Host "1/3  reconstructing" -ForegroundColor Cyan
 python (Join-Path $Toolkit "tools\comrec.py") $Original `
-    --out recovered\moon-patrol.asm --map recovered\moon-patrol.map --nasm $Nasm
+    --out recovered\moon-patrol.asm --map recovered\moon-patrol.map --nasm $Nasm `
+    --segment 0x100:0 --entry 0x100
 if ($LASTEXITCODE -ne 0) { throw "comrec.py failed" }
 
 Write-Host "2/3  applying names" -ForegroundColor Cyan

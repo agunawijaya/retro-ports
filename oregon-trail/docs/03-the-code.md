@@ -1363,6 +1363,126 @@ at a steady pace on the plains and 12 in the mountains, or 40 and 24 at a
 grueling one. **The second half of the trail is not longer; it is slower**, and
 that is one byte per landmark.
 
+### The leg record, in full, and the fork mechanism
+
+An earlier draft of this section listed only the name and the rate. The
+rest of the 37 bytes are used too, and reading them reveals both the
+mile markers between landmarks and the branching structure of the trail:
+
+| offset | type | field | notes |
+|---|---|---|---|
+| `+0x00`..`+0x1B` | Pascal `string[27]` | name | length byte, then up to 27 chars |
+| `+0x1C` | byte | `legRate` | 20 or 12, per the table above |
+| `+0x1D` | byte | `nextIdx` | default next-landmark index |
+| `+0x1E` | byte | `altIdx` | 0 = no fork; else the alternate destination |
+| `+0x1F` | byte | `miles` | miles to `nextIdx` |
+| `+0x20` | byte | (unused, 0x7D at forks) | see below |
+| `+0x21..+0x22` | word | `mapX` | X pixel on `vga_MAP.png` (640×400) |
+| `+0x23..+0x24` | word | `mapY` | Y pixel on the same map |
+
+The fork detector is at image `proc_02FD4`. Its first two instructions
+after entry are:
+
+```nasm
+02FDB  mov ax, word ptr [0x185f]      ; current leg index
+02FDE  mov dx, 0x25 / mul dx           ;   times 37
+02FE3  mov di, ax
+02FE5  cmp byte ptr [di + 0x8b4], 0    ;   [leg_base + 0x1E] == 0 ?
+02FEA  jne 0x2ff3                      ;   yes -> no fork, straight on
+                                       ;   no  -> show the menu
+```
+
+When the byte is non-zero, the menu builds itself:
+
+```nasm
+0302A  mov al, byte ptr [di + 0x8b3]   ; [+0x1D] = nextIdx
+       ... System.StrCat with leg[nextIdx].name (via *37 + 0x896) ...
+03056  mov al, byte ptr [di + 0x8b4]   ; [+0x1E] = altIdx
+       ... System.StrCat with leg[altIdx].name ...
+```
+
+producing `The trail divides here.  You may:  1. head for {next name}  2.
+head for {alt name}`. Two landmarks have `altIdx != 0`:
+
+| leg | name | default (`+0x1D`) | alt (`+0x1E`) |
+|---|---|---|---|
+| 7 | South Pass | 9 (Green River crossing — the shortcut) | 8 (Fort Bridger — the detour) |
+| 14 | the Blue Mountains | 15 (Fort Walla Walla) | 16 (The Dalles — the direct route) |
+
+Both alternates converge two landmarks later (leg 8's `+0x1D` = 10 and
+leg 9's `+0x1D` = 10, both pointing at Soda Springs; similarly leg 15 and
+16 both `+0x1D` = 17). So each fork is a **temporary detour** that
+rejoins the main line, which is the shape the trail actually had.
+
+A **third fork** exists in code but not via the `+0x1E` mechanism — the
+Columbia River / Barlow Toll Road choice at image `proc_03203`. It fires
+at leg 16 (The Dalles) with its own hardcoded string
+`The trail divides here.  You may:  1. float down the Columbia River
+2. take the Barlow Toll Road` and its own cost handling ($ for the toll
+road).
+
+**The byte at `+0x20` is present but not read.** It holds `0x7D` (=125)
+exactly at the two fork legs and `0x00` elsewhere. A grep for
+`[di + 0x8b6]` finds no matches in the disassembly; the fork detection
+uses `+0x1E` alone. That byte is dead data — either a compile-time
+marker that some MECC editor tool used, or reserved for a use that never
+shipped. Recorded here so nobody has to look for it again.
+
+**Total trail length**, summing the `+0x1F` byte of each record, is
+**2083 miles** on the default route (legs 0..17, all `next`, always
+choosing the longer fork option — Fort Bridger and Fort Walla Walla).
+`tools/model.pas` says 2040; that figure was a rounding, not a
+measurement. The game's own progress screen prints "2000 miles" as
+marketing prose; the internal arithmetic is 2083.
+
+### The map coordinates, verified by drawing them
+
+Bytes `+0x21..+0x24` of each leg record are two words: X and Y pixel
+positions on `vga_MAP.png`. Reading them in order gives 18 (x,y) pairs
+that trace the Oregon Trail across the map:
+
+| leg | name | (x, y) |
+|---|---|---|
+| 0 | Independence | (579, 149) |
+| 1 | Kansas River crossing | (551, 145) |
+| 5 | Fort Laramie | (414, 123) |
+| 7 | South Pass | (338, 117) |
+| 12 | Snake River crossing | (212, 100) |
+| 17 | Willamette Valley | (109, 62) |
+
+The polyline drawn between successive `(mapX, mapY)` pairs matches the
+route illustrated on the actual `vga_MAP.png` — east coast (higher x)
+to west coast (lower x), with a slight northward drift (lower y). The
+DOS game's own map-drawing code at image `proc_02D2B` uses exactly
+these bytes, pushing four words at a time to `Graph:0x1670` (BGI's
+`Line`).
+
+### The per-river config, in the same shape
+
+The ford handler dispatches on a byte read from a second table at
+`DS:0x0038`, indexed the same way (`index * 10`). Four fields per
+10-byte entry are actually consulted, all at `proc_042D0` (depth setup)
+and `proc_0458E` (ford outcome):
+
+| offset within entry | field | used by |
+|---|---|---|
+| `+0x32..+0x33` | word depth-A | `042FE`: `LongToReal` + `RealAdd` for depth base |
+| `+0x34..+0x35` | word depth-B | `0437B`: same chain, second component |
+| `+0x36..+0x37` | word depth-C | `043A9`: same chain, third component |
+| `+0x38..+0x39` | word ford type | `045E8`: dispatch 0/1/2/other |
+
+The depth formula reduces to:
+
+```
+depth_ft = round1dp( 2.0 x hazard_real[DS:0x1861] + word[+0x32]
+                     + trunc(hazard_real x 10) / 10 + word[+0x36] )
+```
+
+with `hazard_real` initialised at start-up to `Random(1) + (7 -
+occupation)` (image `0x0EFE0..0x0F002`) — so bankers get lower base
+hazard than farmers, which is one of two places in the program where
+occupation genuinely affects difficulty rather than just scoring.
+
 **The scoring table is on the game's own explanation screen**, at `0x00C166`,
 as two backslash-separated lists side by side — the same idiom as the health
 words:

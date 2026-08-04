@@ -47,8 +47,9 @@ own library and came back right.
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
 | the map | **read** — four scenery scripts, `docs/01-the-game.md` |
-| documents | **5 of 5** |
-| port | none, and nothing blocks one |
+| documents | **6 of 6** — `docs/06-web-code.md` walks the port |
+| referee | **proven** — `tools/prove-exact.py` matches 192/192 non-zero bytes of fig 201 (the fence); `tools/prove-blit.py` matches all 40 blit boxes of the intro; the shadow buffer's address is `image + 0x6FD7`, verified by scanning memory for `FUJI.BCG`'s bytes |
+| port | **playable, byte-identical on BAL00** in `web/` — three files, no game data committed. Decodes and renders at runtime from `../original/`. Two modes: viewer (steps through libraries) and game (input, guard AI, hit test, health bars). Fig-ID lookup uses the game's own `(0x100 \| byte)` convention across a scene-picked pack list; BAL/CAL scene composition wired; sub-byte X shift and mask+shape combine in the blitter. **BAL00 composes byte-for-byte with the game** — 16000/16000 match against a hooked shadow snapshot after all seven BAL00 blits (see `docs/06-web-code.md` for the seven fixes that took it from 34 % to 100 %). What is honest to say is not there: the game's own `0x2605` AI tree (the port uses a distance-band substitute), pose-flag striking (approximated as the middle frame of a strike), level progression, horizontal sprite flipping, attract mode, and cutscene playback. See `docs/06-web-code.md` |
 
 ## The fighting is data, and it is readable text
 
@@ -374,7 +375,51 @@ What is actually left:
    that the DOS version is known *not* to be a translation, the comparison is
    more interesting rather than less: two independent implementations of one
    design.
-4. **A port.** Nothing blocks one now; see [04-porting.md](docs/04-porting.md).
+4. ~~**A port.** Nothing blocks one now; see [04-porting.md](docs/04-porting.md).~~
+   **A port exists and plays** in [`web/`](web/) — hero, guard, hit test,
+   health bars, and the level's own scenery composed from BAL/CAL. What was
+   on this list before is done: sub-byte X shift, mask+shape combine, and
+   the fig-ID mapping now uses `(0x100 | byte)` looked up across a scene's
+   pack list (not the runtime table at `DS:0x423C`, but the same answer for
+   scenes where each fig id resolves in exactly one loaded pack — verified
+   for BAL00..BAL03).
+
+   **Byte-verified against the game's own shadow buffer.** Hooking
+   `draw_sprite` in Unicorn, dumping shadow at `DS:0x0337`, and diffing
+   against a Python replica of the port's renderer got the numbers below.
+   Each round of diffing pointed at one bug in the port; seven rounds took
+   BAL00 from 34 % to **100 % — 16000 of 16000 bytes match**:
+
+   | screen | match | evidence |
+   |---|---|---|
+   | BAL00 clean (backdrop only) | **100.0 %** | 0 bytes differ against the game's shadow after all seven BAL00 blits |
+   | BAL00 + Mariko (fig 163 at 70,167) | **94.7 %** | character bytes match; diff is fence being in a different redraw phase |
+   | BAL00 + hero walking (fig 10 at 240,165) | **81.5 %** | game shows an extra Akuma silhouette (fig 47/102) at the gate that the port does not add |
+   | BAL00 + all demo figs at once | **76.2 %** | fundamental: reproducing a live demo frame needs the game's animation state machine, not a static composition |
+
+   Tools that made the comparison possible are kept — see
+   [docs/06-web-code.md#screen-by-screen-against-the-game](docs/06-web-code.md).
+
+   What is honestly still not the game:
+
+   - **Guard AI is a substitute.** The port's `guardAction` is a distance
+     band with a small random tilt; the game's own `0x2605` is a tree over
+     pose, pose and distance and picks moves the substitute never will.
+   - **The striking-frame flag is approximated** as "the middle frame of
+     any strike move". The real flag is set_pos's second byte (see
+     [docs/05-the-fighting.md](docs/05-the-fighting.md)) and only some
+     frames within a strike are hittable.
+   - **No sprite flipping.** The guard uses ALLGAL sprites which are drawn
+     from its own point of view; there is no horizontal mirror in the
+     blitter, so a hero moving to the right side of a guard would look
+     wrong. The game keeps the hero on the left.
+   - **No level progression.** One scene, one guard, one round; hitting HP
+     zero freezes and prompts `R` to restart.
+   - **No attract mode / no cutscene playback.** The game's demo cycles
+     between title (BAL00 + Mariko + walking hero + Akuma on gate) and the
+     CAL01 story cutscene; the port has neither. BAL01/02/03 render right
+     in viewer mode but are not byte-verified because the attract loop in
+     the emulator never reaches them.
 
 ## Before you commit
 

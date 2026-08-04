@@ -1,9 +1,10 @@
 # Karateka — the game
 
-*Document one of five. [02-architecture.md](02-architecture.md) is how the
+*Document one of six. [02-architecture.md](02-architecture.md) is how the
 program is built; [03-the-code.md](03-the-code.md) walks its routines;
 [04-porting.md](04-porting.md) is what rebuilding it would take;
-[05-the-fighting.md](05-the-fighting.md) reads the fighting.*
+[05-the-fighting.md](05-the-fighting.md) reads the fighting;
+[06-web-code.md](06-web-code.md) walks the port's code.*
 
 Two kinds of fact are kept apart here on purpose:
 

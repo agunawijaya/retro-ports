@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moon Patrol (1983) &mdash; browser port</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Moon Patrol</h1>
+<p class="sub">
+  A port of the 1983 Atari, Inc. DOS conversion of Irem's 1982 arcade game.
+  The screen model, palette and control map are the DOS version's, read out
+  of the binary. Anything invented is noted in <code>../docs/04-porting.md</code>.
+</p>
+
+<div class="frame">
+  <canvas id="screen" width="320" height="200" tabindex="0"></canvas>
+  <div id="start-hint">click the game to start (any key also works)</div>
+</div>
+
+<div class="keys">
+  <span><b>F1</b> start game</span>
+  <span><b>F2</b> option screen</span>
+  <span><b>&larr;</b><b>&rarr;</b> or <b>A</b><b>D</b> drive</span>
+  <span><b>Space</b> or <b>W</b> jump</span>
+  <span><b>Z</b> shoot forward</span>
+  <span><b>X</b> shoot up</span>
+  <span><b>M</b> mute</span>
+  <span><b>P</b> pause</span>
+</div>
+
+<footer>
+  <p>
+    <strong>Drive right, shoot what you can, jump what you cannot.</strong>
+    The buggy holds a fixed column in the game field; the moon scrolls past it.
+    Rocks in front of the wheels are shot with <b>Z</b>. Craters are jumped
+    with <b>Space</b>. UFOs overhead are shot with <b>X</b>. Reach checkpoints
+    A through Z.
+  </p>
+  <p>
+    The palette is CGA mode 4, palette 1 &mdash; the four colours cyan,
+    magenta, white on black &mdash; because that is the palette
+    <code>enter_cga_graphics</code> at file 0x573 chooses at boot, and no
+    other. The split between the fixed status bar and the scrolling field
+    exists because the DOS program programs the CGA CRTC that way in
+    <code>program_crtc_split</code> at file 0x85D.
+  </p>
+  <p>
+    What is <em>not</em> the DOS version's, and is documented as such: the
+    physics of the jump, the exact spawn rates, the point values, the sound
+    effects, and the sprite artwork. Those live in routines whose
+    <em>shape</em> is read but whose <em>values</em> the reading does not
+    settle. See <a href="../docs/04-porting.md"><code>docs/04-porting.md</code></a>
+    for the boundary.
+  </p>
+  <p>
+    Original DOS game &copy; 1983 Atari, Inc.; arcade original &copy; 1982
+    Irem. This port ships none of it &mdash; the artwork here is redrawn in
+    the four-colour palette the original used.
+  </p>
+</footer>
+
+<script src="game.js"></script>
+<script>
+  const hint = document.getElementById('start-hint');
+  const canvas = document.getElementById('screen');
+  const dismiss = () => hint.classList.add('gone');
+  // Auto-focus the canvas so keydown lands on it -- Chrome sometimes
+  // treats window listeners as unfocused if nothing on the page holds
+  // focus. Canvas is tabindex="0", so click focuses it.
+  canvas.addEventListener('click', () => { canvas.focus(); dismiss(); });
+  addEventListener('keydown', dismiss, { once: true });
+  // Try to focus immediately too.
+  setTimeout(() => canvas.focus(), 50);
+</script>
+</body>
+</html>
