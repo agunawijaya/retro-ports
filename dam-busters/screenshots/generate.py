@@ -123,11 +123,144 @@ def draw_text(px, text: str, blit_x: int, blit_y: int,
 
 
 def blit_rect(px, src_offset: int, w_bytes: int, h_rows: int,
-              blit_x: int, blit_y: int):
+              blit_x: int, blit_y: int, *, transparent_zero: bool = False):
     """Simplified `blit_rect` (0xDA39): copies w_bytes x h_rows region
     from `src_offset` at (blit_x*2, blit_y) as 2bpp CGA."""
     tile = decode_tile_2bpp(src_offset, w_bytes, h_rows)
-    blit_tile(px, tile, blit_x * 2, blit_y, transparent_zero=False)
+    blit_tile(px, tile, blit_x * 2, blit_y, transparent_zero=transparent_zero)
+
+
+# ---------------------------------------------------------------------
+# Display-list interpreter (draw_display_list at 0xDF0E)
+# ---------------------------------------------------------------------
+#
+# Ten opcodes at dl_dispatch (0xDF18).  Each opcode reads a small
+# parameter block after itself in the byte stream.  This is the machine
+# every phase's init and menu screen paints through -- we implement the
+# ones we need to reproduce the static screens: 0 (end), 1 (bitmap),
+# 2 (masked sprite via blit_shape) and 5 (sprite-at via text drawer).
+# Opcodes 3/4 (wait ticks, set border colour) are no-ops in the still.
+
+def draw_display_list(px, si: int, dl_string_base: int,
+                      sprite_base: int, verbose: bool = False):
+    """Python translation of draw_display_list at 0xDF0E."""
+    # Local state that mirrors the game's 0xD9A2..0xD9BE parameter block
+    state = {
+        "blit_x": 0,
+        "blit_y": 0,
+        "blit_width": 0,
+        "blit_height": 0,
+        "sprite_base": sprite_base,
+    }
+    step = 0
+    while True:
+        step += 1
+        opcode = data[si]
+        if verbose:
+            print(f"  dl@{si:04X} op={opcode:02X}")
+        if opcode == 0:
+            return
+        elif opcode == 1:
+            # dl_opcode_1_text (0xDF2C): 5 params + str_index
+            w      = data[si + 1]
+            h      = data[si + 2]
+            x      = data[si + 3]
+            y      = data[si + 4]
+            si_idx = data[si + 5]
+            # blit_src = *(word*)(dl_string_base + si_idx*2)
+            ptr = dl_string_base + si_idx * 2
+            blit_src = data[ptr] | (data[ptr + 1] << 8)
+            blit_rect(px, blit_src, w, h, x, y)
+            si += 6
+        elif opcode == 2:
+            # dl_opcode_2_sprite (0xDF62) + blit_shape (0xDEA8):
+            # solid fill of a rectangle -- NOT an image blit.  The mask
+            # byte encodes two CGA pixel pairs (high and low nibbles).
+            # rep stosb fills CX bytes with the full mask byte per row.
+            stride = data[si + 1]
+            h      = data[si + 2]
+            x      = data[si + 3]
+            y      = data[si + 4]
+            mask   = data[si + 5]
+            # blit_x is in 2-pixel units.  A mask byte packs 4 pixels:
+            # bits (7,6)=pixel0, (5,4)=pixel1, (3,2)=pixel2, (1,0)=pixel3.
+            pixel_x_start = x * 2
+            for row in range(h):
+                pixel_y = y + row
+                if pixel_y < 0 or pixel_y >= CGA_H:
+                    continue
+                for byte_idx in range(stride):
+                    for sub in range(4):
+                        pixel_x = pixel_x_start + byte_idx * 4 + sub
+                        if pixel_x < 0 or pixel_x >= CGA_W:
+                            continue
+                        colour = (mask >> ((3 - sub) * 2)) & 0x3
+                        px[pixel_x, pixel_y] = PALETTE[colour]
+            si += 6
+        elif opcode == 3:
+            # wait_ticks -- ignore for the still
+            si += 3
+        elif opcode == 4:
+            # set_border_color -- ignore
+            si += 2
+        elif opcode == 5:
+            # dl_opcode_5_sprite_at (0xDFAA): draws text via
+            # draw_shape_row_flexible at (x, y).  si+1..3 = x, y, count;
+            # si+4..5 = pointer to text data.
+            x     = data[si + 1]
+            y     = data[si + 2]
+            count = data[si + 3]
+            text_ptr = data[si + 4] | (data[si + 5] << 8)
+            if count == 0:
+                count = (0xA0 - x) // 4
+            # Read the null-terminated text (up to count chars) and draw
+            # it using the font at state["sprite_base"].
+            text = []
+            for i in range(count):
+                b = data[text_ptr + i]
+                if b == 0:
+                    break
+                text.append(chr(b) if b < 128 else "?")
+            draw_text(px, "".join(text), blit_x=x, blit_y=y,
+                      colour=WHITE, font_base=state["sprite_base"])
+            si += 6
+        elif opcode == 6:
+            # text_clip -- similar to op1 but clipped; we approximate as op1
+            w      = data[si + 1]
+            h      = data[si + 2]
+            x      = data[si + 3]
+            y      = data[si + 4]
+            si_idx = data[si + 5]
+            ptr = dl_string_base + si_idx * 2
+            blit_src = data[ptr] | (data[ptr + 1] << 8)
+            blit_rect(px, blit_src, w, h, x, y)
+            si += 6
+        elif opcode == 7:
+            # sprite_clip -- approximate as op2
+            w      = data[si + 1]
+            h      = data[si + 2]
+            x      = data[si + 3]
+            y      = data[si + 4]
+            si_idx = data[si + 5]
+            ptr = dl_string_base + si_idx * 2
+            blit_src = data[ptr] | (data[ptr + 1] << 8)
+            blit_rect(px, blit_src, w, h, x, y, transparent_zero=True)
+            si += 6
+        else:
+            # Opcodes 8, 9 -- extra sprite variants; approximate as op1
+            w      = data[si + 1] if si + 1 < len(data) else 0
+            h      = data[si + 2] if si + 2 < len(data) else 0
+            x      = data[si + 3] if si + 3 < len(data) else 0
+            y      = data[si + 4] if si + 4 < len(data) else 0
+            si_idx = data[si + 5] if si + 5 < len(data) else 0
+            ptr = dl_string_base + si_idx * 2
+            blit_src = data[ptr] | (data[ptr + 1] << 8)
+            if 0 < blit_src < len(data) and w > 0 and h > 0:
+                blit_rect(px, blit_src, w, h, x, y, transparent_zero=True)
+            si += 6
+        if step > 500:
+            print(f"  [display list ran past {step} ops, aborting]")
+            return
 
 
 # --- Helpers -----------------------------------------------------------
@@ -155,7 +288,11 @@ def render_title_screen():
     img = new_frame()
     px = img.load()
 
-    # Block A: 12 rows of 40 sprites, sprite_base 0xB544, y=0x26..
+    # Step 1: draw the "Accolade PRESENTS" header via display list at 0xB4BF
+    # with dl_string_base at 0xB4D2 -- exactly what draw_title_screen does.
+    draw_display_list(px, si=0xB4BF, dl_string_base=0xB4D2, sprite_base=0xF902)
+
+    # Step 2: 12 rows of 40 sprites, sprite_base 0xB544
     sprite_row_data = 0xAFD7
     y = 0x26
     for _ in range(12):
@@ -163,7 +300,7 @@ def render_title_screen():
         sprite_row_data += 0x28
         y += 8
 
-    # Block B: 7 more rows, sprite_base 0xC4E4
+    # Step 3: 7 more rows, sprite_base 0xC4E4
     for _ in range(7):
         draw_sprite_row_2x8(px, sprite_row_data, 0x28, 0xC4E4, 0, y)
         sprite_row_data += 0x28
@@ -286,30 +423,40 @@ def render_map_screen(region_idx: int = 0, suffix: str = "great-britain"):
 # positions the game's own row-counter table at 0x1682/0x1683 gives.
 
 def render_cockpit_menu():
+    """menu_main_init draws its whole layout via draw_display_list at
+    SI=0x13A6 with dl_string_base=0x1B57 and sprite_base=0xF902 (font).
+    Executing that gives us the four gauge banks + sliders + labels
+    the phase-5 screen shows."""
     img = new_frame()
     px = img.load()
 
-    draw_text(px, "COCKPIT CONTROLS", blit_x=32, blit_y=10, colour=MAGENTA)
-
-    labels = [
-        "BOOSTER GAUGES",
-        "RPM GAUGES",
-        "THROTTLES",
-        "FIRE EXT.",
-        "BOOSTERS",
-    ]
-    y = 40
-    for lab in labels:
-        draw_text(px, lab, blit_x=32, blit_y=y, colour=CYAN)
-        y += 20
-
-    # Four engine indicators
-    for i in range(4):
-        draw_text(px, f"E{i+1}", blit_x=100 + i * 12, blit_y=170, colour=WHITE)
-
-    draw_text(px, "USE ARROW KEYS", blit_x=32, blit_y=190, colour=WHITE)
+    draw_display_list(px, si=0x13A6, dl_string_base=0x1B57, sprite_base=0xF902)
 
     save(img, "04-menu-cockpit.png")
+
+
+def render_menu_second():
+    """menu_second_init draws via draw_display_list at SI=0x21D9 with
+    dl_string_base=0x25B1.  This is the FUEL GAUGES / FLAPS / LANDING
+    GEAR / TRIM page (phase 6)."""
+    img = new_frame()
+    px = img.load()
+
+    draw_display_list(px, si=0x21D9, dl_string_base=0x25B1, sprite_base=0xF902)
+
+    save(img, "10-menu-second.png")
+
+
+def render_flight_forward():
+    """flight_forward_init draws via draw_display_list at SI=0x2E8E.
+    This is the pilot's forward cockpit view (phase 0)."""
+    img = new_frame()
+    px = img.load()
+
+    # dl_string_base = 0x3401 per flight_forward_init (0x309F).
+    draw_display_list(px, si=0x2E8E, dl_string_base=0x3401, sprite_base=0xF902)
+
+    save(img, "11-flight-forward.png")
 
 
 # =====================================================================
@@ -467,6 +614,8 @@ if __name__ == "__main__":
     render_map_screen(2, "north-germany")
     render_map_screen(4, "eastern-france")
     render_cockpit_menu()
+    render_menu_second()
+    render_flight_forward()
     render_bomb_options()
     render_results()
     render_crash_messages()

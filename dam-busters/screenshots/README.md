@@ -14,29 +14,27 @@ noise.
 
 ## What each image is
 
-### Faithful reconstructions — pixels come from the game's own sprite data
+### Faithful reconstructions — pixels come from the game's own data through the game's own drawing routines
 
 | file | what it is | drawn by |
 |---|---|---|
-| `01-title-screen.png` | the title -- "THE DAM BUSTERS" logo, Lancaster silhouette, dam scenery | `draw_title_screen` at `0xB4D8`, verbatim: 12 rows × 40 sprites from `sprite_base_bank` (`0xB544`) then 7 more from `0xC4E4`. Missing only the "Accolade PRESENTS" header at the very top (drawn by the display-list bytecode at `0xB4BF` which this generator does not interpret) |
+| `01-title-screen.png` | the title: `Accolade PRESENTS THE DAM BUSTERS`, Lancaster silhouette, dam scenery | `draw_title_screen` at `0xB4D8` verbatim: `draw_display_list` at `0xB4BF` for the header (opcode 1 bitmap blits of the pre-rendered "Accolade" script and "PRESENTS" text) then 12 rows × 40 sprites from `sprite_base_bank` (`0xB544`) then 7 more from `0xC4E4` |
 | `03-map-screen-*.png` | the six-region raid map | `draw_map_border` at `0x2E0`; border sprites at `0xE632`, corners from `0xE9F2..0xE9FE`, region terrain sprites via the pointer table at `0xED26`, region titles via `city_name_pointers` (`0x150`) |
+| `04-menu-cockpit.png` | phase-5 cockpit controls with `BOOSTER GAUGES` (4 dials), `RPM GAUGES` (4 dials), `THROTTLES`, `BOOSTERS`, `FIRE EXT.` panels | `menu_main_init` at `0x174B`, executing `draw_display_list` at `SI=0x13A6` with `dl_string_base=0x1B57` |
+| `10-menu-second.png` | phase-6 auxiliary controls: `FUEL GAUGES` (4 dials), `FLAPS` dial, `LANDING GEAR`, `TRIM` | `menu_second_init` at `0x23B9`, executing `draw_display_list` at `SI=0x21D9` with `dl_string_base=0x25B1` |
+| `11-flight-forward.png` | phase-0 pilot's forward view: cyan cockpit frame with instrument panel | `flight_forward_init` at `0x309F`, executing `draw_display_list` at `SI=0x2E8E` with `dl_string_base=0x3401` |
 | `08-sprite-atlas.png` | `sprite_base_bank` at `0xB544` dumped as an 8×8 tile sheet | the 456 tiles the game draws from |
 | `09-font-sheet.png` | the ASCII font at `0xF902` | the 8×8 1bpp glyphs `draw_shape_row_flexible` at `0xD731` reads |
 
-### Text-faithful mockups — strings and layout from the reading, no sprite gauges
+### Text-faithful mockups — strings and layout from the reading
 
-The game's real menus and screens have graphical gauges, sliders and
-indicators (see the copyrighted reference images in `../reference/`,
-gitignored).  These reconstructions use the correct **text**, the
-correct **font** (rendered from the game's own 1bpp glyph data), and
-the correct **CGA palette**, but they do not reproduce the gauge/
-slider sprites.  Doing that faithfully would need a full display-list
-interpreter — that is the port, not the reading.
+These use the game's own text strings and font but do not run their
+routine's own display list -- they compose plausible layouts around
+the correct data.
 
 | file | what it is | how it was composed |
 |---|---|---|
 | `02-intelligence-report.png` | pre-mission briefing with a plausible pick | `generate_intelligence_report` at `0x9EE`; strings at `0x8E8..0x93B`, cities at `0x966..0x9B8`, font at `0xF902` |
-| `04-menu-cockpit.png` | phase-5 controls page (labels only, no gauges) | labels from the doc for menu_main_init: `BOOSTER GAUGES`, `RPM GAUGES`, `THROTTLES`, `FIRE EXT.`, `BOOSTERS` |
 | `05-bomb-options.png` | phase-3 YES/NO toggles | `bomb_options_init` / `draw_bomb_options` at `0x4C07` |
 | `06-mission-report.png` | phase-7 scoreboard | `results_step` at `0x8720`; labels at `0x83D1..0x843E`; values are illustrative |
 | `07-crash-messages.png` | the eight end-run reasons in the file, all at once | strings at `0x7F3C..0x7FD5` picked at run time via `end_run_message_table` at `0x7FE1` |
@@ -64,20 +62,18 @@ CGA palette 1 throughout: **black / cyan / magenta / white**.
   screenshot of a copyrighted 1984 game is still the game.  Any reference
   images used to check this generator live under `../reference/` which
   is gitignored per the root `CLAUDE.md`.
-- **Sprites decoded to their pixel-perfect final positions on every
-  screen.**  This would require executing the display-list bytecode at
-  `0xB4BF` (title), `0x13A6` (menu_main), `0x21D9` (menu_second), etc.
-  through the ten-opcode interpreter at `dl_dispatch` (`0xDF18`).  That
-  is a whole subsystem; the reading documents it in
-  [`../docs/03-the-code.md`](../docs/03-the-code.md#6-draw_display_list--a-bytecode-interpreter-in-eight-instructions)
-  but reproducing every screen bytecode-perfect is the *port*, not the
-  reading.
-- **The bomb-run, forward-flight and rear-gunner views** (phases 0, 1,
-  2).  These are real-time 3D scenes composed from the object pool
-  through `render_object_pool` and `project_point_2d` in a way that
-  depends on frame-time inputs.  A single-frame static reconstruction
-  is possible but was not built — this set covers the static screens
-  where the reading is easiest to verify.
+- **Runtime-driven gauge needles and slider positions.**  The cockpit
+  menu's frame (the cyan gauge boxes with their dial rings) comes from
+  the display list, but which position each needle points to comes from
+  `engine_slider_top`, `engine_slider_bottom`, `engine_load`, etc. --
+  runtime state written per frame by the physics.  The screenshots show
+  the panel at its at-init state.
+- **The bomb-run, forward-flight and rear-gunner scenes** in-flight.
+  The cockpit frame (`11-flight-forward.png`) is faithful, but the sky
+  through the windshield is a real-time 3D scene composed from the
+  object pool through `render_object_pool` and `project_point_2d` in a
+  way that depends on frame-time inputs.  Reproducing the scene needs
+  the port.
 
 ## Regenerate
 
