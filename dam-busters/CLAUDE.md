@@ -14,7 +14,7 @@ the port.
 ## State of the work
 
 **Reading complete on the naming ladder, still byte-identical.**
-`symbols.json` holds **241 routines and 277 globals**, each with the evidence
+`symbols.json` holds **241 routines and 290 globals**, each with the evidence
 for its name, and every byte in the load image is inside a named or reasoned
 _data_span. `annotate.py` reports:
 
@@ -25,8 +25,8 @@ _data_span. `annotate.py` reports:
 | instructions | 5,690 (262 pinned) |
 | call targets named | **158 of 158 (100%)** |
 | tail-call entries named | **6 of 6** |
-| bracketed constants named | 247 of 433 (57%) + 13 recorded as displacements |
-| routines / globals | 241 / 277 |
+| bracketed constants named | 260 of 433 (60%) + 13 recorded as displacements |
+| routines / globals | 241 / 290 |
 | `_data_spans` | **112 spans, 65,028 bytes covering 0x00000..0x0FE04 (100% of image)** |
 
 **Quote both numbers when you say "how much is decoded".** 25.9% is the file
@@ -72,12 +72,12 @@ trap below).
 BYTE-IDENTICAL. wrote recovered\dam-busters.asm
               wrote dam-busters.mzheader (512 bytes)
               ...
-241 routine names, 277 globals
+241 routine names, 290 globals
   applied: ...
   names 158 of 158 call targets
   no unnamed tail-call entries
-  covers 247 of 433 bracketed constants, and 13 more are recorded as displacements or as not addresses at all
-  173 unnamed: 0x00C8, 0x0190, 0x05DD, 0x09EA, 0x0BC2, 0x0BC8, 0x0BCA, 0x0BCD, 0x0D44, 0x1234...
+  covers 260 of 433 bracketed constants, and 13 more are recorded as displacements or as not addresses at all
+  160 unnamed: 0x00C8, 0x0190, 0x05DD, 0x09EA, 0x0D44, 0x1234, 0x128E, 0x1682, 0x1683, 0x16A8...
   112 data spans cover 0x00000..0x0FE04, 65,028 bytes with no gap and no overlap
 BYTE-IDENTICAL  D3657960A00AAC6548C47EE35A8AC008EF0BB254F94AE2A335B04431F26C380D
 ```
@@ -193,11 +193,17 @@ memory, and the writer has not been read.
 every byte in the load image sits inside a named or reasoned span, with no
 gap and no overlap). What is left is smaller.
 
-- **186 unnamed bracketed constants** (247 of 433 covered + 13 as
+- **160 unnamed bracketed constants** (260 of 433 covered + 13 as
   displacements). Many of these are inside the sprite/text tables that the
   span partition subsumes with a coarse reason rather than a per-address name.
   Naming more of them would refine the coverage number without necessarily
-  teaching anything new.
+  teaching anything new. The leading addresses in the current unnamed list
+  are 0x00C8 (a per-menu byte-field), 0x0190 (a byte in the region-title
+  string table), 0x0D44 (a per-engine damage-status byte table used by
+  check_flight_conditions), 0x1682/0x1683 (the per-slot X/Y coord tables
+  draw_menu_cursor reads), 0x1234 and 0x128E (inside get_map_tile's
+  addressing math), and a run through 0x16Axx (menu_main state fields near
+  the row counters).
 - **One indirect not resolved** — the `jmp bx` at 0x06F53, where BX is loaded
   from memory that no static reading has traced (the pointer is at
   `jmp_bx_indirect_ptr` 0x6EAB → 0x6EAD, but its writer is not visible
@@ -220,7 +226,7 @@ gap and no overlap). What is left is smaller.
 ## The order to work in
 
 1. Fill in the small game-state globals as they surface while reading. Chase
-   the 186 unnamed bracketed constants down when they resolve cleanly; do not
+   the 160 unnamed bracketed constants down when they resolve cleanly; do not
    invent names for the ones that do not.
 2. Then documents 02-06 (01 is done — see [docs/01-the-game.md](docs/01-the-game.md)),
    in the order the root CLAUDE.md prescribes.

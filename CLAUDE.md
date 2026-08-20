@@ -30,9 +30,9 @@ only symptom is silence. Its `CLAUDE.md` has the evidence and the order.
 
 ### One reading in progress
 
-**Dam Busters is through the naming ladder.** 241 routines and 277 globals,
+**Dam Busters is through the naming ladder.** 241 routines and 290 globals,
 `annotate.py` reports **158 of 158 call targets**, all 6 tail-call entries,
-247 of 433 bracketed constants (+13 more as displacements) — still
+260 of 433 bracketed constants (+13 more as displacements) — still
 byte-identical at `D3657960…`. `_data_spans` **now covers the whole image,
 112 spans partitioning 65,028 bytes with no gap or overlap.**
 [dam-busters/CLAUDE.md](dam-busters/CLAUDE.md) has the state and what is

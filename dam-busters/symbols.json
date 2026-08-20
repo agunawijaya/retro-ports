@@ -1127,6 +1127,10 @@
       "heading_tile",
       "the 16-directional heading tile computed by yaw_to_direction; check_heading_tile_change triggers a redraw when it moves"
     ],
+    "0x00BC2": [
+      "music_bar_peak",
+      "running max of music_bar_count observed while per_frame_step drains it. Reset to 0 at the head of the drain loop (0x00DCC); each iteration compares music_bar_count and, on a new max, stores it here and copies the low byte to bombrun_status_indicator. The audio-cue level the HUD reads"
+    ],
     "0x00BC4": [
       "heading_accum",
       "the heading-rate accumulator written by integrate_heading and read by yaw_to_direction"
@@ -1135,9 +1139,17 @@
       "heading_rate",
       "the current heading rate. Saved copy of heading_accum after saturation; drives the world-position stepping and is read by every frame's camera-x setter"
     ],
+    "0x00BC8": [
+      "heading_accum_lo",
+      "low word of the signed 24-bit accumulator integrate_heading updates with `add word [0xBC8], ax` where ax is the current heading_rate. The high byte at heading_accum_hi (0xBCA) receives the carry via `adc byte [0xBCA], dl` on the very next instruction"
+    ],
     "0x00BC9": [
       "heading",
       "the plane heading in degrees (0..0x167 = 0..359), integrated from heading_rate by integrate_heading"
+    ],
+    "0x00BCA": [
+      "heading_accum_hi",
+      "high byte of the heading accumulator with the carry-in from heading_accum_lo. The `jns L_00E7E` right after these two writes checks its sign, and a negative result wraps `heading` up by 0x168 (360) -- the modular-arithmetic step of integrate_heading"
     ],
     "0x00BCB": [
       "distance_travelled",
@@ -1146,6 +1158,10 @@
     "0x0BCC": [
       "terrain_horizon_offset",
       "horizon offset that object_render_ground uses to bias its distance-to-sprite mapping. Written elsewhere in the flight physics"
+    ],
+    "0x00BCD": [
+      "damage_grace_timer",
+      "compound-engine-damage grace timer, initialised to 0x64 (100 frames) by reset_per_run_counters. check_flight_conditions decrements it once per frame while both engine_status_3 and engine_status_1 hold damage bits in the per-engine table at 0xD44; the frame it reaches zero, the routine jumps to end_run with reason 3 (LOW ALTITUDE CRASH). Also cleared to 0 by mission_common_setup before reset_per_run_counters re-initialises it -- the two-engine path stays alive for 100 frames after the second engine goes"
     ],
     "0x00BCF": [
       "damage_flag",
@@ -1271,9 +1287,45 @@
       "menu_move_right_targets",
       "next-slot indices for the 'right' direction"
     ],
+    "0x016C0": [
+      "menu_main_row_counter_0",
+      "first of eight per-row animation counters zeroed by menu_main_init before its first paint (row 0 of the eight cockpit-menu rows). The counters are spaced 10 bytes apart at 0x16C0, 0x16CA, 0x16D4, 0x16DE, 0x16E8, 0x16F2, 0x16FC, 0x1706 -- each row keeps its own state next to the row's other display fields"
+    ],
+    "0x016CA": [
+      "menu_main_row_counter_1",
+      "second of the eight per-row counters zeroed by menu_main_init (10 bytes past menu_main_row_counter_0)"
+    ],
+    "0x016D4": [
+      "menu_main_row_counter_2",
+      "third of the eight per-row counters zeroed by menu_main_init"
+    ],
+    "0x016DE": [
+      "menu_main_row_counter_3",
+      "fourth of the eight per-row counters zeroed by menu_main_init"
+    ],
+    "0x016E8": [
+      "menu_main_row_counter_4",
+      "fifth of the eight per-row counters zeroed by menu_main_init"
+    ],
+    "0x016F2": [
+      "menu_main_row_counter_5",
+      "sixth of the eight per-row counters zeroed by menu_main_init"
+    ],
+    "0x016FC": [
+      "menu_main_row_counter_6",
+      "seventh of the eight per-row counters zeroed by menu_main_init"
+    ],
+    "0x01706": [
+      "menu_main_row_counter_7",
+      "last of the eight per-row counters zeroed by menu_main_init (0x46 bytes past menu_main_row_counter_0)"
+    ],
     "0x01718": [
       "menu_cursor",
       "the current menu cursor position; index into cs:0x1610 when the fire key is pressed"
+    ],
+    "0x0171A": [
+      "menu_repeat_delay",
+      "the 0x10-tick (16 frames) keyboard-repeat delay menu_input holds between cursor steps. Decremented once per frame while a directional key is held; when it hits zero, the cursor moves one slot and it is reset to 0x10. Reset to zero when no directional key is currently held, so a fresh press moves immediately"
     ],
     "0x0171C": [
       "menu_input_flags",
