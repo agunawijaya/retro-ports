@@ -33,8 +33,14 @@ the real raid four different people did those jobs, and any one of them being
 overwhelmed sank the mission.
 
 The title screen says **DAM BUSTERS · SQUADRON 617** (offsets `0x00E8` and
-`0x00DB`). No one played this game without knowing what those two lines mean;
-the next section is for anyone reading now who doesn't.
+`0x00DB`), under a *"Accolade PRESENTS"* header the game blits in from a
+pre-rendered bitmap in the display list at `0xB4BF`. The whole opener,
+regenerated from the reading:
+
+![Title screen](../screenshots/01-title-screen.png)
+
+No one played this game without knowing what those two lines mean; the
+next section is for anyone reading now who doesn't.
 
 ## What it is *about* — Operation Chastise, 16-17 May 1943
 
@@ -65,10 +71,18 @@ approach, the wooden-triangle sighting — and asks you to fly one Lancaster
 through it. You are Wing Commander Guy Gibson's aircraft, or one of the
 eighteen others: the game does not say which.
 
-## The three difficulty settings
+## Missions and difficulty — one raid, many configurations
 
-The game offers you three starting positions, chosen from the file at offset
-`0x7111`:
+**There is one target: the dam.** No campaign, no branching. Every run ends
+in the same reservoir with the same wooden triangle framing the same two
+towers.
+
+What the game varies, per run, is *how* you get there. Three axes of
+choice, drawn from what the reading finds in memory:
+
+### Axis 1 — Starting position (three "levels" the game unlocks in order)
+
+From the file at offset `0x7111`:
 
 ```
 SELECT A STARTING POSITION
@@ -77,19 +91,108 @@ SELECT A STARTING POSITION
   3 - SCAMPTON AIRFIELD
 ```
 
-- **1: Dam Approach.** Skip the flight. You begin already at the target, with
-  the bomb-run in front of you. This is where you learn to release the bomb.
-- **2: English Channel.** You begin over the Channel, having crossed
-  Britain. You have a shorter cross-Europe flight and then the bomb-run.
+- **1: Dam Approach.** Skip the flight. You begin already at the target,
+  bomb-run in front of you. This is where you learn to release the bomb.
+- **2: English Channel.** You begin over the Channel, having crossed Britain.
+  You have a shorter cross-Europe flight and then the bomb-run.
 - **3: Scampton Airfield.** The full mission. Take off from Scampton, cross
   the North Sea, navigate across occupied Europe (with the risk of German
-  night fighters and flak), find the dam and bomb it, then get home. This is
-  the whole raid.
+  night fighters and flak), find the dam and bomb it, then get home.
 
-Start on 1 until you can breach the dam, then 2, then 3. This is the same
-order the real crews trained — Lancaster crews of 617 Squadron practised
-low-level flying and dam sighting over English reservoirs for weeks before
-Chastise.
+You start locked to level 1. **Do well enough on level 1 to unlock level 2**;
+do well on level 2 to unlock level 3. The scoreboard message reads *"WELL
+DONE YOU'VE QUALIFIED FOR THE ENGLISH CHANNEL LEVEL"* or *"...SCAMPTON
+AIRFIELD LEVEL"* (offsets `0x81A8`..`0x81E1`). This is the same order the
+real 617 Squadron trained — six weeks on English reservoirs before the
+raid itself.
+
+### Axis 2 — Target-approach configuration (nine variants inside each level)
+
+At **phase 6** (the target/altitude selector), you pick two three-position
+switches. `selector_a` chooses one of three target distances, `selector_b`
+chooses one of three target altitudes. The reading finds the tables:
+
+- `distance_by_option_a` at `0x23AD`: **140 / 120 / 100** game units of
+  approach distance
+- `altitude_by_option_a` at `0x23B3`: **0 / 20 / 40** game units of
+  target altitude
+
+That is **3 × 3 = 9 approach configurations** per starting level. Shorter
+distance × lower altitude is the hardest — less room to correct the drop.
+
+### Axis 3 — Bomb options (three switches at phase 3)
+
+`bomb_options_init` at `0x4B63` draws the switch labels stored at file
+offset `0x4B4C`:
+
+```
+BOMB
+ROTATION
+SPOTS
+```
+
+These are **not generic options — they are the three real Chastise
+switches**:
+
+- **BOMB** — arm the bomb. Nothing releases until this is on.
+- **ROTATION** — spin up the backspin motor. The bouncing bomb needed
+  around **500 rpm counter-rotation** to skip across the water and cling
+  to the dam wall on impact instead of ricocheting away. On the real raid
+  this was engaged in the approach, and the game wants you to do the same.
+- **SPOTS** — turn on the pair of downward-pointing **spotlights** that
+  converged on the water at exactly **60 feet altitude**. When the two
+  circles of light merged into one on the reservoir, the pilot knew he
+  was at the release height. This was **the actual altimeter 617 Squadron
+  used** on the run in — barometric altimeters were not accurate enough at
+  60 ft.  The game reproduces the switch.
+
+Together: **3 levels × 9 approach configurations × up to 8 bomb-option
+combinations = 216 distinct mission setups** the player can dial in.
+On top of that, the intelligence-report objectives are **rolled at
+random** from the ten target cities every time you enter the map screen
+— so what the mission tells you to avoid changes each run.
+
+### The difficulty progression
+
+```mermaid
+flowchart LR
+    START["start"] --> L1["Level 1:<br/>DAM APPROACH<br/>practise release"]
+    L1 -->|"score above threshold"| L2["Level 2:<br/>ENGLISH CHANNEL<br/>flight + release"]
+    L1 -->|"score below"| DEMO1["DEMOTED TO<br/>KITCHEN DUTY"]
+    L2 -->|"score above threshold"| L3["Level 3:<br/>SCAMPTON AIRFIELD<br/>full mission"]
+    L2 -->|"score below"| DEMO2["DEMOTED TO<br/>KITCHEN DUTY"]
+    L3 -->|"survived and hit"| PROMO["PROMOTED TO<br/>SQUADRON LEADER"]
+    L3 -->|"died on the target"| AWARD["FLANDER'S FIELD<br/>AWARD<br/>(posthumous)"]
+    L3 -->|"failed"| DEMO3["DEMOTED TO<br/>KITCHEN DUTY"]
+    style L3 fill:#d4edda,stroke:#155724
+    style PROMO fill:#fff3cd,stroke:#856404
+    style AWARD fill:#f8d7da,stroke:#721c24
+    style DEMO1 fill:#e2e3e5,stroke:#495057
+    style DEMO2 fill:#e2e3e5,stroke:#495057
+    style DEMO3 fill:#e2e3e5,stroke:#495057
+```
+
+**The reading is explicit that a promotion is the top prize.** *"BEEN
+PROMOTED TO SQUADRON LEADER"* (offset `0x81F9`..`0x820A`) — one rank below
+Guy Gibson, who commanded 617 Squadron and led the raid. The award, if
+you make the dam and don't come home, is *"FLANDER'S FIELD"* — the
+posthumous poppy field. Anything less: *"DEMOTED TO KITCHEN DUTY"*.
+
+### Hidden difficulty — the auto-stabilise flag
+
+Not exposed on any menu: the byte `auto_stabilise` at `[0x3072]`.
+`integrate_heading` (`0xE46`) does one thing when this is zero, and
+another when it is non-zero:
+
+- **auto_stabilise == 0** — the accumulated heading rate saturates to
+  `[-6, +6]`. The Lancaster resists sharp turns; sensible for cruise.
+- **auto_stabilise != 0** — no saturation. Every input accumulates. You
+  can pull harder manoeuvres but the aircraft will happily depart
+  controlled flight while you're doing it.
+
+The reading has not settled how this is set — but a byte that flips the
+plane between "easier to fly" and "does what you tell it" is a difficulty
+switch by any other name.
 
 ## The nine phases of a mission
 
@@ -261,13 +364,15 @@ the moment the wooden triangle lined up with the two towers. The game does
 not tell you these numbers; you must find them by feel. That is a large
 part of what makes it hard.
 
-### The mission report
+### The mission report — the ten counters that decide your score
 
 Between the awards and the crash reasons, the report also lists what you
-did to the enemy. Strings at `0x83D1`..`0x8430`:
+did to the enemy. Strings at `0x83D1`..`0x8430`, drawn on the phase-7
+scoreboard:
 
 ```
 MISSION REPORT
+  FLAK HITS
   ME109 ATTACKS
   SEARCH LIGHTS SHOT
   FLAK INSTALLATIONS SHOT
@@ -280,58 +385,186 @@ DAMAGE REPORT
   ENGINE 4 DOWN
 ```
 
+The generator reproduces the scoreboard exactly:
+
+![Mission Report](../screenshots/06-mission-report.png)
+
+The reading finds `results_step` at `0x8720` reading **ten counters** in
+memory, formatting each into a five-digit ASCII slot with `format_decimal`
+(`0x87C7`), and painting the whole layout from a display list. The
+counters, with the addresses they read from:
+
+| # | counter | address | what it counts |
+|---|---|---|---|
+| 1 | `player_shot_count` (labelled "FLAK HITS" in some grades, related to `border_flash_timer`) | `[0x6AD3]` | times the plane took a hit and flashed white |
+| 2 | `enemy_shot_count` | `[0x598F]` | Me 109s the player shot down |
+| 3 | `results_counter_c` | `[0x6C03]` | search-lights hit — check_object_hit_b writes here |
+| 4 | `check_object_hit_a` accumulator | `[0x64BC]` | flak installations silenced |
+| 5 | `enemy_hit_count` | `[0x5991]` | Me 109 attack runs completed (not necessarily shot down) |
+| 6 | `altitude` | `[0xCE6]` | final altitude — appears on the DAMAGE REPORT side, probably as a proxy for how well controlled the return was |
+| 7 | `engine_status_1` | `[0xBDB]` | engine-1 damage grade 0..17 |
+| 8 | `engine_status_2` | `[0xBDD]` | engine-2 damage grade |
+| 9 | `engine_status_3` | `[0xBE3]` | engine-3 damage grade (also read by check_flight_conditions) |
+| 10 | `engine_fire_severity` | `[0x5515]` | engine-fire damage accumulator |
+
+`results_step` walks a 4-entry per-crew-position list at `engine_states`
+(`0x173D`), pointing at row addresses that read *"ENGINE 1 DOWN"* through
+*"ENGINE 4 DOWN"* selectively — you only see the "engine N DOWN" line for
+engines that actually failed.
+
+### How the grade is decided
+
+At the end of `count_engines_alive` (`0x7DDA`), the game computes a raw
+score:
+
+```nasm
+mov ax, word [player_shot_count]      ; enemies fired at you
+add ax, word [enemy_shot_count]       ; enemies you shot down
+sub ax, word [enemy_hit_count]        ; enemies that hit you
+mov bx, word [end_run_score_ptr]      ; pointer into threshold table
+cmp ax, word [bx + end_run_score_threshold]
+```
+
+The score is *fought-back minus taken-hits*.  It is compared to a
+threshold from `end_run_score_threshold` (`0x7D91`), and the threshold
+pointer advances with each level — so **Scampton Airfield needs more
+enemies shot than English Channel does**, which needs more than Dam
+Approach.
+
+Above threshold → promotion / award. Below → *DEMOTED TO KITCHEN DUTY*.
+There is no in-between.
+
 The **Me 109** (Messerschmitt Bf 109) was the primary German day fighter.
-Historical Chastise was a **night** raid, so the more likely intercept would
-have been Bf 110 night fighters, but Me 109 is the game's chosen shorthand
-for enemy. Each shot-down fighter, each destroyed searchlight, each
-silenced flak battery goes on your report.
+Historical Chastise was a **night** raid, so the more likely intercept
+would have been Bf 110 night fighters, but Me 109 is the game's chosen
+shorthand for enemy. Each shot-down fighter, each destroyed searchlight,
+each silenced flak battery goes on your report.
 
 ## Flying over Europe — the six regions
 
-The map screen (Phase 4) is a chart of Western Europe. Six regions are
-named in the file (strings at `0x015C`..`0x0195`):
+The map screen (phase 4) is a chart of Western Europe divided into six
+regions, each with its own terrain, coastline and named target-cities.
+Region names come from strings at `0x015C..0x0195`; the terrain sprite
+data is at `0xED26 + region*2` (the `region_titles` table, which points
+into region-specific tile-index blocks). Six named regions, and the
+game's own physics treats them as **four groups** — the reading finds
+`region_effect_dispatch` at `0x1045` with only four distinct handlers
+across the six slots:
+
+| region | handler | share of flight |
+|---|---|---|
+| Great Britain | `region_effect_conditional` | conditional-shift; harder terrain |
+| Belgium | `region_effect_shift_left` | double the physics rate |
+| France | `region_effect_shift_left` | double the physics rate |
+| North Germany | `region_effect_default` | plain integration |
+| Eastern France | `region_effect_default` | plain integration |
+| South Germany | `region_effect_shift_right` | half the physics rate — where the target is |
+
+**South Germany getting a lower physics rate** is the interesting one.
+The dam is somewhere over the Ruhr — a name for the industrial part of
+western/southern Germany — and the reduced rate is the game telling the
+approach to slow down.
+
+### The map layout, west to east
+
+```mermaid
+flowchart LR
+    GB["GREAT BRITAIN<br/>region 0<br/>Scampton start"]
+    BE["BELGIUM<br/>region 1"]
+    NG["NORTH GERMANY<br/>region 2"]
+    FR["FRANCE<br/>region 3"]
+    EF["EASTERN FRANCE<br/>region 4"]
+    SG["SOUTH GERMANY<br/>region 5<br/>the target"]
+    GB -.->|"North Sea crossing"| BE
+    GB -.->|"cross-Channel"| FR
+    BE -->|"east"| NG
+    BE -->|"south-east"| EF
+    FR -->|"east"| EF
+    NG -->|"south"| SG
+    EF -->|"east"| SG
+    style GB fill:#d4edda,stroke:#155724
+    style SG fill:#f8d7da,stroke:#721c24
+```
+
+`clamp_map_position` at `0x240` implements the cursor-movement rules:
+regions 0 and 3 clamp against the west edge (Great Britain and France
+are both against the Atlantic), regions 2 and 5 clamp against the east
+edge (further east than what the game maps). Everywhere else the cursor
+wraps between adjacent regions.
+
+### The six regions, as the reading renders them
+
+The border, water pattern, coastline, target markers and flak
+installations on each of the six maps below are decoded straight from
+the game's own sprite bank at the byte offsets `symbols.json` records,
+laid out through the `draw_map_border` routine at `0x2E0`.  Screens are
+generated by `screenshots/generate.py` — the pixels come from the file,
+positioned by the routine the reading documents.
+
+**Great Britain** — where the raid begins. Scampton airfield is
+somewhere on this map; the coastline is the east side of England.
+
+![Great Britain](../screenshots/03-map-screen-great-britain.png)
+
+**Belgium** — first landfall after crossing the North Sea. `radar_hole`
+picks call out corridors through the coastal defence.
+
+![Belgium](../screenshots/03-map-screen-belgium.png)
+
+**North Germany** — the flat plain north of the Ruhr. The route through
+here can be blocked by *"NIGHT FIGHTER ACTION OVER HAMBURG"* or *"FLAK
+CONCENTRATIONS IN HANNOVER"* if the intelligence roll picks those.
+
+![North Germany](../screenshots/03-map-screen-north-germany.png)
+
+**France** — the alternative crossing, through Paris.
+
+![France](../screenshots/03-map-screen-france.png)
+
+**Eastern France** — the border approach. Coming this way brings you
+close to `KOLN` (Köln — Cologne, using the German spelling in the file).
+
+![Eastern France](../screenshots/03-map-screen-eastern-france.png)
+
+**South Germany** — where the dam is. The Ruhr industrial region; the
+map shows more rivers and reservoirs than the other regions because
+that is what is there. The physics slows down when you enter — the
+approach.
+
+![South Germany](../screenshots/03-map-screen-south-germany.png)
+
+### The ten target cities, as the intelligence report picks them
+
+Ten cities are named at offset `0x0966`, indexed into by `radar_hole_city_table`,
+`night_fighter_city_table`, `flak_city_table` and `bombing_raid_target_table`:
 
 ```
-GREAT BRITAIN
-BELGIUM
-NORTH GERMANY
-FRANCE
-EASTERN FRANCE
-SOUTH GERMANY
+BRUSSELS   PARIS      AMSTERDAM  HANNOVER   ANTWERP
+DUSSELDORF KOLN       DORTMUND   HAMBURG    BERLIN
 ```
 
-You move a cursor between them. Ten cities are named as flak/fighter
-"reports", at offset `0x0966`:
+Before your mission, the **INTELLIGENCE REPORT** (offset `0x08E8`) rolls
+these tables and tells you which corridors are safe and which to avoid:
 
-```
-BRUSSELS
-PARIS
-AMSTERDAM
-HANNOVER
-ANTWERP
-DUSSELDORF
-KOLN            (Köln, German spelling)
-DORTMUND
-HAMBURG
-BERLIN
-```
+![Intelligence Report](../screenshots/02-intelligence-report.png)
 
-Before your mission, an **INTELLIGENCE REPORT** (offset `0x08E8`) tells you
-what to avoid:
+The report picks:
+- **ONE** radar hole (safe corridor)
+- **ONE** night-fighter zone (avoid)
+- **FOUR** bombing-raid target cities (also avoid — flak is thick)
+- **ONE** flak concentration (avoid)
 
-```
-INTELLIGENCE REPORT
-  RADAR HOLE THROUGH ...
-  NIGHT FIGHTER ACTION OVER ...
-  BOMBING RAID OVER ...
-  FLAK CONCENTRATIONS IN ...
-```
+`pick_radar_hole` at `0xA19` writes flag bit `0x40` into the target region's
+tile bytes; `pick_flak_concentration` at `0xB4D` writes `0x80` into the
+danger regions' tiles. Then `spawn_flak` at `0x5517` and `spawn_enemy_plane`
+at `0x5ABC` read those flag bits per frame to decide what to send at you.
+**The intelligence report is not decoration — it is the game telling you
+where the world it has just built is going to shoot at you.**
 
-The names are filled in from the city list. **Radar holes** were real —
-617 Squadron flew below German radar coverage for most of Chastise, at
-altitudes low enough that ground-based radar could not see them. The game
-lets the briefing tell you which corridors are safe and which are not,
-and it is on you to route through the holes and around the flak.
+**Radar holes** were real — 617 Squadron flew below German radar coverage
+for most of Chastise, at altitudes low enough that ground-based radar
+could not see them. Different runs put the hole through different cities;
+route through it to reach the dam with fewer fighters and less flak.
 
 ## How to play — the crew stations
 
@@ -433,6 +666,112 @@ actual rule the machine is applying.
   framebuffer and sets the border to white (`0x0F`) — a flash effect.
   When the danger clears, it restores the previous phase. If your screen
   flashes white, you were hit but not shot down.
+
+## Easter eggs and hidden details
+
+Not "easter eggs" in the coded-secret sense — the code does not hide the
+programmer's name, a debug room or a cheat code, and the reading has not
+found one. **What the game hides is historical accuracy** — pieces of
+Chastise the game reproduces without ever surfacing to a player who has
+not read the raid's history.
+
+### The three bomb-option switches ARE the real Chastise switches
+
+Documented above but worth repeating. The three strings at file offset
+`0x4B4C` — `BOMB`, `ROTATION`, `SPOTS` — are the three real controls the
+617 Squadron crews used. The **spotlight altimeter** in particular is one
+of the most famous field-improvised tools in RAF history: two Aldis lamps
+mounted to converge at exactly 60 ft under the aircraft. When the two
+pools of light merged into one on the water, you were at the release
+altitude — because barometric altimeters were not accurate enough. The
+game **reproduces the switch** in phase 3, thirty-nine years after the
+raid and forty-one years before this document.
+
+### The music is telling you something the gauges are not
+
+`altitude_step` at `0xE8D` picks a music-loop pointer from a table
+indexed by the *average* of your four engine-load values. As engines take
+damage or drop out, the average shifts, and the loop changes to a
+different tune from the `song_table` at `0xADAD`. **You can hear an
+engine dying before the gauge reads down** — the music becomes thinner
+or more urgent. The `set_loop_song` write is on every frame; the change
+is real-time.
+
+### The music ends the mission for you
+
+`end_run` at `0x7DA3` — the routine that runs when the mission ends
+for any reason — first silences the current music with
+`set_loop_song(0)` and then plays **song 8**. Whatever song 8 is (it is
+one of the note-streams at `song_note_streams`, `0xADCB`), it is the
+game's own death march. The reading finds the code plays it once,
+un-looped, then falls through to display the crash reason.
+
+### The prng is a full 256-byte LFSR
+
+Not a small 16-bit rolling counter. `prng_step` at `0xE366` walks a
+256-byte state at `prng_state_bank` (`0xE381`), reading a byte, rotating
+it left through carry, writing it back, decrementing the index. The
+period is much longer than any single run. **Fighter spawn choices, flak
+target picks, intelligence-report rolls, scenery drift — all pull from
+this one LFSR**. Every session's rolls are different, because the seed
+byte comes off the timer, but there is no small period to exploit.
+
+### The scenery drifts continuously
+
+`spawn_scenery_maybe` at `0x4F92` runs every frame, and on a
+**1-in-32 PRNG roll** replaces one of the sixteen slot in the scenery
+pool at `[0x4D14]` with a new (row, col) picked from the PRNG. The
+horizon is never still — even when nothing is chasing you, something
+is moving out there. It is a very small piece of code for a very
+large effect on how the game *feels*.
+
+### A hit does not blank the screen — it saves the state
+
+`check_flak_hit` at `0x6AD7` saves the current `game_phase` into
+`phase_before_hit` (`[0xD1CB]`), forces `game_phase = 8` (idle), clears
+the framebuffer and sets the CGA border to white (`0x0F`) — the flash.
+When the type-3 object leaves range, the routine restores the previous
+phase. **If your screen flashes white, you were hit but not shot down;
+the game paused, tallied damage, and gave you back your view**.
+
+### The 1943 vocabulary is preserved
+
+`KOLN` (0x099B) — the file spells Cologne the German way (Köln, minus
+the umlaut). `HANNOVER` (0x097F) — one 'n' as in German, not two as in
+English "Hanover". The city labels are period-correct to the 1943
+briefing room, and the game does not modernise them for a 1984 English-
+speaking audience.
+
+### Sydney Development Corp put its name in twice
+
+The copyright string at `0x7167`..`0x71A0` reads:
+
+```
+COPYRIGHT
+SYDNEY DEVELOPMENT CORP 1984/1985
+```
+
+And in the sprite bank at `0xB544`, **the copyright is also drawn as a
+row of pixel tiles**: "©1984 SYDNEY DEVELOPMENT LO..." (LOANED? LTD?)
+appears as glyph sprites in the second half of `sprite_base_bank` — you
+can see it in [`../screenshots/08-sprite-atlas.png`](../screenshots/08-sprite-atlas.png).
+The copyright is both a searchable string and part of the title screen
+imagery.
+
+### What the reading DID NOT find
+
+Things you might expect but the code does not have:
+
+- **No cheat code.** No sequence of key presses that gives you infinite
+  fuel, invincibility, or auto-target-lock. `main_loop`'s only special-key
+  branch is the `1`-key check for the acknowledgement prompt.
+- **No debug room / test mode.** The nine phases are the only phases.
+- **No unused text.** Every string quoted in this document is referenced
+  by some routine.  The reading closed at 158 of 158 call targets and
+  247 of 433 memory references; nothing large is orphaned.
+- **No credits screen with the programmer's name.** The Sydney Development
+  copyright is on the title screen and in the copyright block. Whoever
+  wrote the DOS version specifically is not named in the binary.
 
 ## Hidden gems — what the reading finds inside
 
