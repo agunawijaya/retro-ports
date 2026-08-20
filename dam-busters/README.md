@@ -6,12 +6,12 @@ region-select map, a three-view cockpit (pilot, bomb-aimer, rear-gunner),
 and per-engine controls for the Lancaster's four Merlin engines.
 
 **It rebuilds byte-identically** from a copy you own — checked on every
-run. **241 routines and 290 globals** are named in `symbols.json`, each
+run. **241 routines and 295 globals** are named in `symbols.json`, each
 with the evidence for its name. Coverage:
 
 - **All 158 call targets named (100%)**
 - **All 6 tail-call entries named**
-- 260 of 433 bracketed constants named + 13 recorded as displacements
+- 265 of 433 bracketed constants named + 15 recorded as displacements
 - The reading covers the entry stub, the frame loop, all 9 game phases,
   the timer/music/keyboard/video subsystems, the CGA blitter, the drawing
   DSL, the 3D projection, the 20-slot object pool with all 10 object-type

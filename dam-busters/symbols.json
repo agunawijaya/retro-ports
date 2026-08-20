@@ -1111,6 +1111,10 @@
       "bombing_raid_target_slots",
       "4-byte array of picked bombing-raid targets (with dedup)"
     ],
+    "0x009EA": [
+      "bombing_raid_target_slots_hi",
+      "the second word (bytes 2 and 3) of the 4-byte bombing_raid_target_slots array. pick_bombing_raid_targets writes 0xFFFF to both bombing_raid_target_slots and here, filling all four slot bytes with 0xFF to mark them empty before rolling"
+    ],
     "0x009EC": [
       "bombing_raid_slot_count",
       "count-down counter used by pick_bombing_raid_targets to fill 4 slots"
@@ -1267,9 +1271,25 @@
       "region_effect_dispatch",
       "6-entry table read by apply_region_flight_effect. Values: 0x1058, 0x1051, 0x106D, 0x1051, 0x106D, 0x1062 -- each a region-specific flight-effect handler"
     ],
+    "0x01234": [
+      "sin_table",
+      "sine lookup at 0x1234, read by sin_deg as `mov ax, word [bx + 0x1234]` with bx = the heading (in degrees, masked to even). Negative headings are handled by `neg bx` around the lookup then negating the result. The table shares its bytes with cos_table at 0x128E -- the two are 90 entries (45 words = quarter-period) apart because cos(x) = sin(x + 90 degrees), so they can overlap in the middle. Embedded inside the code region between the flight-integration routines"
+    ],
+    "0x0128E": [
+      "cos_table",
+      "cosine lookup, read by cos_deg as `mov ax, word [bx + 0x128E]` with bx = the heading masked to even. Reuses the same word entries as sin_table (0x1234) but at a 90-word offset (0x128E - 0x1234 = 0x5A = 45 words = 90 degrees), because cos(x) = sin(x + 90 degrees). cos_deg_alt at 0x138C wraps its input into +/- 0xB4 first"
+    ],
     "0x01610": [
       "menu_action_dispatch",
       "19-entry table read by menu_input when the fire key is pressed. Indexed by menu_cursor*2, each entry is a menu action handler (adjust_engine_slider_*, use_fire_ext_engine_*, toggle_bomb_option_*, cycle_selector_*, or one of the 'all four' variants)"
+    ],
+    "0x01682": [
+      "menu_cursor_x_table",
+      "byte table of per-slot X coordinates for the menu cursor, interleaved with menu_cursor_y_table at 0x1683 (odd bytes). draw_menu_cursor reads `[bx + 0x1682]` with bx = menu_cursor * 2, giving the X for the current slot"
+    ],
+    "0x01683": [
+      "menu_cursor_y_table",
+      "byte table of per-slot Y coordinates interleaved with menu_cursor_x_table (0x1682). Same read shape -- `[bx + 0x1683]` with bx = menu_cursor * 2. Together they encode 19 (X, Y) pairs at bytes 0x1682..0x16A8 -- one per menu_action_dispatch slot"
     ],
     "0x01636": [
       "menu_move_up_targets",
@@ -2279,6 +2299,14 @@
     "0x00008": [
       "si",
       "sub-field of the 8-byte record (offset +8 = mask/count)"
+    ],
+    "0x000C8": [
+      "si",
+      "offset +0xC8 into the results-page sprite-frame record results_animate_c/d walks: the 'set bits' half. The routine reads `[es:di]` (screen), saves it to `[si]`, ANDs `[si + 0x190]` (the 'clear' mask) into the screen, then ORs `[si + 0xC8]` (the 'set' bits). Reduces a masked-sprite draw to two bitmap ops per byte"
+    ],
+    "0x00190": [
+      "si",
+      "offset +0x190 into the same results-page sprite record: the 'clear' mask half. Paired with the 0xC8 offset above; together they give a full mask-and-bits representation of a sprite frame the animation walks byte-by-byte"
     ]
   },
   "_data_spans": {
