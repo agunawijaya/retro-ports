@@ -92,7 +92,7 @@ itself around:
 ## Naming pass (2026-08-20)
 
 The walker fixes exposed 130 more call targets. The naming pass then walked
-outward from the entry, in five sittings:
+outward from the entry, in seven sittings, and closed the routine ladder:
 
 | after | routines | globals | call-target coverage | bracketed coverage |
 |---|---|---|---|---|
@@ -100,7 +100,14 @@ outward from the entry, in five sittings:
 | all 8 phases | 74 | 36 | 28 of 158 | 25 of 433 |
 | per_frame_step chain | 101 | 66 | 50 of 158 | 55 of 433 |
 | drawing subsystem | 131 | 85 | 70 of 158 | 71 of 433 |
-| 3D + rendering + bombrun | **168** | **127** | **104 of 158** | **111 of 433** |
+| 3D + rendering + bombrun | 168 | 127 | 104 of 158 | 111 of 433 |
+| object renderers + drawer variants + mission starts | 210 | 181 | 131 of 158 | 157 of 433 |
+| final pass — intelligence report, HUD, title, displacements | **241** | **277** | **158 of 158 (100%)** | **247 of 433 (57%) + 13 displacements** |
+
+The last pass also caught two orphan names (`hud_bomb_ready_frame` and
+`hud_start_sound` referred to addresses that were `nop` padding and
+mid-routine bytes respectively). Both were removed. `annotate.py`'s
+"landed nowhere" audit is what caught them.
 
 Two things learnt during the pass, worth keeping:
 
