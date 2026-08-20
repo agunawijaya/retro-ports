@@ -18,10 +18,13 @@ with the evidence for its name. Coverage:
   renderers, the three mission-start paths, the intelligence-report
   randomisers, and the two failure paths.
 
-**No `_data_spans` yet.** ~55 KB of data is named-but-not-partitioned; that
-is the next phase of the reading. See [CLAUDE.md](CLAUDE.md) for the
-current state, [docs/01-the-game.md](docs/01-the-game.md) for what the
-game is, and [BRIEF.md](BRIEF.md) for the triage and toolkit-fix history.
+**`_data_spans` covers 50% of the image contiguously** — 68 spans
+partitioning `0x07EFC..0x0FE04` (32,520 bytes: the results text bank,
+the sprite banks, the song table, the LFSR state, and the CGA row table).
+Extending the partition backwards to `0x0` is the next phase. See
+[CLAUDE.md](CLAUDE.md) for the current state,
+[docs/01-the-game.md](docs/01-the-game.md) for what the game is, and
+[BRIEF.md](BRIEF.md) for the triage and toolkit-fix history.
 
 ## Rebuilding it
 

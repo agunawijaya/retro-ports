@@ -26,7 +26,7 @@ routines and 127 globals**, each with the evidence for its name.
 | tail-call entries named | **6 of 6** |
 | bracketed constants named | 247 of 433 (57%) + 13 recorded as displacements |
 | routines / globals | 241 / 277 |
-| `_data_spans` | **not started** — the next rung |
+| `_data_spans` | **68 spans, 32,520 bytes covering 0x07EFC..0x0FE04 (50% of image)** |
 
 **Quote both numbers when you say "how much is decoded".** 25.9% is the file
 number and it describes the game — most of Dam Busters is text, sprites and
@@ -187,19 +187,21 @@ memory, and the writer has not been read.
 ## What is still open
 
 **All 158 direct-call targets are named. All 6 tail-call entries are named.**
-The routine ladder is closed. What is left is on the *data* side.
+**`_data_spans` covers 50% of the image contiguously** (0x07EFC..0x0FE04 --
+the whole back half of the file, from the results text bank through to the
+last sprite bank). What is left is on the *data* side.
 
-- **186 unnamed bracketed constants** (`annotate.py`'s count: covers 247 of
-  433 + 13 as displacements = 260 accounted for, so 173 remain). Most of
-  these are inside sprite/text tables that a proper `_data_spans` partition
-  will subsume rather than name individually. Some are small game state
-  variables that should still be named as globals -- read them as they come
-  up while reading the data.
-- **`_data_spans` has not been started.** This is the third denominator (bytes
-  of the whole image accounted for). Karateka finished at 100% by byte using
-  this; Dam Busters has ~55 KB of data in named-but-not-partitioned tables
-  (text at `0x7EFC..0xB4D8`, sprite tables at `0xB544..0xD1CF`, the LFSR
-  state at `0xE381`, and a lot more). **This is where the reading goes next.**
+- **The front half of the image (0x0..0x7EFC) is not yet in `_data_spans`.**
+  This is where code and data alternate most tightly -- 130+ small alternating
+  regions. Extending the partition backwards would follow the same pattern
+  the back half used: fine-grained named spans for identifiable data
+  (phase-dispatch, city names, cs:0x1610 menu-action table, cs:0x1045
+  region-effect dispatch, the flight-phase sprite indices around 0x2E8E and
+  0x3C38, the object pool at 0x51DD, and many more), with a coarse "code
+  region" span between them.
+- **186 unnamed bracketed constants** (247 of 433 covered + 13 as
+  displacements). Many of these are inside sprite/text tables that the
+  remaining `_data_spans` partition will subsume rather than name individually.
 - **One indirect not resolved** — the `jmp bx` at 0x06F53, where BX is loaded
   from memory that no static reading has traced (the pointer is at
   `jmp_bx_indirect_ptr` 0x6EAB → 0x6EAD, but its writer is not visible
@@ -212,13 +214,13 @@ The routine ladder is closed. What is left is on the *data* side.
 
 ## The order to work in
 
-1. **Build `_data_spans`** — the partition of the whole image, one span per
-   coherent region: text block, sprite table, per-region tile map, LFSR
-   state, and so on. Karateka's `symbols.json` has the shape to copy from.
-   This is the big remaining piece and is where any remaining unnamed
-   bracketed constants that are really inside data tables get accounted for.
-2. Fill in the small game-state globals as they surface while reading data
-   (~186 remaining, most inside tables that `_data_spans` will subsume).
+1. **Extend `_data_spans` backwards** to cover 0x0..0x07EFC. The pattern
+   is set: fine-grained named spans for identifiable tables (phase-dispatch,
+   city_name_pointers at 0x150, the region strings at 0x15C..0x1A4,
+   region_offsets at 0x118..0x130, menu_action_dispatch at 0x1610, and so on)
+   with coarse "code region" spans filling the gaps between named data.
+   This will bring the image coverage from 50% to close to 100%.
+2. Fill in the small game-state globals as they surface while reading data.
 3. Then documents 02-06 (01 is done — see [docs/01-the-game.md](docs/01-the-game.md)),
    in the order the root CLAUDE.md prescribes.
 4. Then the port. [`../karateka/PORT-BRIEF.md`](../karateka/PORT-BRIEF.md)

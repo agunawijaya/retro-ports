@@ -2228,5 +2228,348 @@
       "si",
       "sub-field of the 8-byte record (offset +8 = mask/count)"
     ]
+  },
+  "_data_spans": {
+    "_note": [
+      "Named spans, as distinct from the named addresses in globals. A",
+      "reference count of 100% says nothing about the bytes between the",
+      "references. The spans are the other denominator: every byte inside",
+      "a named extent that says what it is for.",
+      "",
+      "annotate.py refuses a gap or an overlap, so the spans have to",
+      "partition their region exactly. Named spans are given a short name",
+      "as the first element; unnamed spans (bytecode, sub-tables reached",
+      "from named routines) get just the length and reason."
+    ],
+    "_base": "0x0000",
+    "0x07EFC": [
+      "award_message_prefix",
+      26,
+      "'YOU HAVE BEEN AWARDED THE\\0' -- the intro line for the FLANDER'S FIELD posthumous award shown at end_run"
+    ],
+    "0x07F16": [
+      "award_flanders_field",
+      16,
+      "'FLANDER\\'S FIELD\\0' -- the award name (posthumous, per the Flanders Fields poem tradition)"
+    ],
+    "0x07F26": [
+      "award_suffix",
+      6,
+      "'AWARD\\0'"
+    ],
+    "0x07F2C": [
+      "crash_label",
+      16,
+      "'CAUSE OF CRASH:\\0' -- the header line for the seven crash-reason strings that follow"
+    ],
+    "0x07F3C": [
+      "crash_msg_stall",
+      28,
+      "'UNABLE TO COME OUT OF STALL\\0' -- end_run reason 1"
+    ],
+    "0x07F58": [
+      "crash_msg_belly_landing",
+      33,
+      "'LANDING GEAR RETRACTED ON GROUND\\0' -- end_run reason 2 (also part of the seven)"
+    ],
+    "0x07F79": [
+      "crash_msg_low_altitude",
+      19,
+      "'LOW ALTITUDE CRASH\\0'"
+    ],
+    "0x07F8C": [
+      "crash_msg_takeoff",
+      17,
+      "'TAKE OFF FAILURE\\0'"
+    ],
+    "0x07F9D": [
+      "crash_msg_shot_down",
+      20,
+      "'SHOT DOWN IN ACTION\\0'"
+    ],
+    "0x07FB1": [
+      "crash_msg_explosion",
+      10,
+      "'EXPLOSION\\0' -- displayed as an alternate crash reason label"
+    ],
+    "0x07FBB": [
+      "crash_msg_broke_up",
+      26,
+      "'AIRCRAFT BROKE UP IN DIVE\\0'"
+    ],
+    "0x07FD5": [
+      "crash_msg_out_of_fuel",
+      12,
+      "'OUT OF FUEL\\0' -- end_run reason 7 (altitude too high) reuses this per the reading, but the label matches the more general fuel-exhaustion case"
+    ],
+    "0x07FE1": [
+      "end_run_message_table",
+      18,
+      "9 word pointers indexed by end_run_reason*2. Entry 0 is 0x0000 (unused), then pointers to crash_msg_stall through crash_msg_out_of_fuel"
+    ],
+    "0x07FF3": [
+      437,
+      "the display-list bytecode programs end_run's sub-scripts run to compose each crash screen -- one program per reason, each opening with a wait_ticks and a text-draw opcode"
+    ],
+    "0x081A8": [
+      "result_msg_well_done",
+      17,
+      "'WELL DONE YOU\\'VE\\0'"
+    ],
+    "0x081B9": [
+      "result_msg_qualified",
+      18,
+      "'QUALIFIED FOR THE\\0'"
+    ],
+    "0x081CB": [
+      "result_msg_channel_level",
+      22,
+      "'ENGLISH CHANNEL LEVEL\\0' -- unlocks starting-position 2"
+    ],
+    "0x081E1": [
+      "result_msg_scampton_level",
+      24,
+      "'SCAMPTON AIRFIELD LEVEL\\0' -- unlocks starting-position 3, the full mission"
+    ],
+    "0x081F9": [
+      "result_msg_promoted_to",
+      17,
+      "'BEEN PROMOTED TO\\0'"
+    ],
+    "0x0820A": [
+      "result_msg_squadron_leader",
+      16,
+      "'SQUADRON LEADER\\0' -- the top promotion, one rank below Guy Gibson"
+    ],
+    "0x0821A": [
+      "result_msg_not_close",
+      15,
+      "'NOT EVEN CLOSE\\0'"
+    ],
+    "0x08229": [
+      "result_msg_far_too_high",
+      13,
+      "'FAR TOO HIGH\\0'"
+    ],
+    "0x08236": [
+      "result_msg_demoted",
+      24,
+      "'DEMOTED TO KITCHEN DUTY\\0' -- the failure ending"
+    ],
+    "0x0824E": [
+      49,
+      "bytecode programs that pick the right award/promotion combination based on the mission outcome flags; last 14 bytes are a 7-word pointer table to the approach-grade strings that follow"
+    ],
+    "0x0827F": [
+      "result_msg_unsuccessful",
+      30,
+      "'YOUR MISSION WAS UNSUCCESSFUL\\0'"
+    ],
+    "0x0829D": [
+      "result_msg_because",
+      9,
+      "'BECAUSE:\\0'"
+    ],
+    "0x082A6": [
+      "grade_msg_bomb_early",
+      24,
+      "'THE BOMB DROP WAS EARLY\\0'"
+    ],
+    "0x082BE": [
+      "grade_msg_bomb_late",
+      23,
+      "'THE BOMB DROP WAS LATE\\0'"
+    ],
+    "0x082D5": [
+      "grade_msg_high",
+      22,
+      "'THE APPROACH WAS HIGH\\0'"
+    ],
+    "0x082EB": [
+      "grade_msg_low",
+      21,
+      "'THE APPROACH WAS LOW\\0'"
+    ],
+    "0x08300": [
+      "grade_msg_slow",
+      22,
+      "'THE APPROACH WAS SLOW\\0'"
+    ],
+    "0x08316": [
+      "grade_msg_fast",
+      22,
+      "'THE APPROACH WAS FAST\\0'"
+    ],
+    "0x0832C": [
+      "grade_msg_not_centered",
+      30,
+      "'THE APPROACH WAS NOT CENTERED\\0'"
+    ],
+    "0x0834A": [
+      135,
+      "bytecode programs that select which grade messages get drawn based on the four release-quality axes (early/late, high/low, slow/fast, centred)"
+    ],
+    "0x083D1": [
+      "report_label_mission",
+      15,
+      "'MISSION REPORT\\0' -- the scoreboard header"
+    ],
+    "0x083E0": [
+      "report_label_flak_hits",
+      10,
+      "'FLAK HITS\\0'"
+    ],
+    "0x083EA": [
+      "report_label_me109_attacks",
+      14,
+      "'ME109 ATTACKS\\0'"
+    ],
+    "0x083F8": [
+      "report_label_searchlights_shot",
+      19,
+      "'SEARCH LIGHTS SHOT\\0'"
+    ],
+    "0x0840B": [
+      "report_label_flak_shot",
+      24,
+      "'FLAK INSTALLATIONS SHOT\\0'"
+    ],
+    "0x08423": [
+      "report_label_me109_shot",
+      13,
+      "'ME109\\'S SHOT\\0'"
+    ],
+    "0x08430": [
+      "report_label_damage",
+      14,
+      "'DAMAGE REPORT\\0'"
+    ],
+    "0x0843E": [
+      "report_label_yaw",
+      11,
+      "'YAW DAMAGE\\0'"
+    ],
+    "0x08449": [
+      "report_label_engine_1",
+      14,
+      "'ENGINE 1 DOWN\\0'"
+    ],
+    "0x08457": [
+      "report_label_engine_2",
+      14,
+      "'ENGINE 2 DOWN\\0'"
+    ],
+    "0x08465": [
+      "report_label_engine_3",
+      14,
+      "'ENGINE 3 DOWN\\0'"
+    ],
+    "0x08473": [
+      "report_label_engine_4",
+      14,
+      "'ENGINE 4 DOWN\\0'"
+    ],
+    "0x08481": [
+      "engine_down_pointers",
+      8,
+      "4 word pointers to report_label_engine_1..4 -- indexed by results_step when walking engine_states"
+    ],
+    "0x08489": [
+      "results_template_slots",
+      60,
+      "10 consecutive 6-byte slots (5 spaces + separator) that format_decimal fills with the ten counters results_step reads. The template is drawn as text once per frame with the numbers substituted in"
+    ],
+    "0x084C5": [
+      2,
+      "trailing zero bytes padding the data region to a word boundary"
+    ],
+    "0x084C7": [
+      900,
+      "code region -- bomb_run_end and its outcome-branching helpers, results_step and format_decimal. Called out here so the span partition spans the gap between the results-text bank above and the sprite/graphics bank below"
+    ],
+    "0x0884B": [
+      "sprite_output_buffer",
+      32,
+      "32 bytes of zero-filled scratch that CGA-sprite drawers stage output through before blit. Empty in the file because it is only written at run time"
+    ],
+    "0x0886B": [
+      "phase_sprite_bank_a",
+      5973,
+      "the first sprite/graphics bank -- 2bpp CGA sprite bytes for flight-view foreground objects. Contents not partitioned further -- individual sprites are picked from this by (offset + address) computations in the callers"
+    ],
+    "0x09FC0": [
+      334,
+      "code region -- draw_scoreboard_frame, draw_scoreboard_text, build_display_list_from_state, and the surrounding results-page rendering helpers"
+    ],
+    "0x0A10E": [
+      "results_sprite_bank",
+      3004,
+      "sprite/graphics bank for the results page and its animated score countup. The sprite indices at 0x9DFE (drawn by draw_scoreboard_frame at row (0, 0x70)) index into this. Also holds the countdown-animation frames used by build_display_list_from_state"
+    ],
+    "0x0ACCA": [
+      227,
+      "code region -- results_animate_a..d (the four scoreboard animation stages) plus their small helpers"
+    ],
+    "0x0ADAD": [
+      "song_table_and_data",
+      30,
+      "song_table itself -- 15 word pointers to song note streams for play_song and set_loop_song. Songs 0..14, though timer_isr's dispatch reads at most 8"
+    ],
+    "0x0ADCB": [
+      "song_note_streams",
+      522,
+      "the note streams themselves -- pairs of (duration, note-index) terminated by 0. timer_isr walks these two bytes at a time; each note-index picks a PIT count from the frequency table at 0xE151"
+    ],
+    "0x0AFD5": [
+      2,
+      "trailing padding after the last song note stream"
+    ],
+    "0x0AFD7": [
+      "title_sprite_row_a",
+      269,
+      "the 12-cell sprite index row draw_title_screen uses at (0, 0x26). Each byte selects a shape from sprite_base at 0xB544"
+    ],
+    "0x0B0E4": [
+      "title_sprite_row_b",
+      1012,
+      "second block of title-screen sprite indices plus the 7-cell row draw_title_screen draws below the first, plus more sprite tile bytes reached from within it"
+    ],
+    "0x0B4D8": [
+      108,
+      "code region -- draw_title_screen; the title-screen sprite tables above are what it reads"
+    ],
+    "0x0B544": [
+      "sprite_base_bank",
+      7307,
+      "the primary sprite bank at sprite_base (0xB544). Every draw_sprite_row_2x8 call reads a 16-byte-per-sprite frame from this bank; the 512-entry sprite table covers all the game's HUD icons, engine gauge segments, target-lock markers, and the font used by format_decimal. Also holds the tile-map sprite frames used by object_render_ground for the terrain view"
+    ],
+    "0x0D1CF": [
+      4530,
+      "mixed code+data region -- the keyboard ISR chain (save_kbd_isr, install_kbd_isr, restore_kbd_isr, peek_key, flush_key, wait_key_or_timeout), the timer/music ISR (install_timer_isr, timer_isr at 0xE24E, play_song, set_loop_song, wait_ticks, prng_step), and every drawer variant (blit_rect, blit_rect_or_xor, blit_shape, draw_sprite_row_2x8*, draw_shape_row_flexible, blit_masked, draw_masked_sprite, plot_pixel_xor, plot_marker_at_var, draw_bit_expansion_row, draw_display_list and all its opcodes). Interleaved with small drawer parameter blocks and buffers (10 bytes at 0xD627, etc.), the music PIT frequency table at 0xE151..0xE1F9 (84 word entries indexed by note value), and the bit-expansion table at 0xD7A2..0xD8A2 (128 words). Contents are named individually as routines and globals; span not partitioned further because the fine-grained alternation of small code/data blocks is not practical to sub-span"
+    ],
+    "0x0E381": [
+      "prng_state_bank",
+      256,
+      "the 256-byte LFSR state that prng_step walks -- the entire prng_state_table. Seed pattern in the file looks random; how it gets seeded at run-time has not been read"
+    ],
+    "0x0E481": [
+      33,
+      "33 bytes of unknown data between prng_state_bank and cga_row_table -- possibly a secondary lookup or unused padding"
+    ],
+    "0x0E4A2": [
+      "cga_row_scanline_addresses",
+      400,
+      "200 word entries at cga_row_table -- one per CGA scan line -- so blit_rect and friends can look up the destination base address without redoing the interleave arithmetic on every pixel. Entries: {0x0000, 0x2000} interleaved with row_stride 0x50 additions"
+    ],
+    "0x0E632": [
+      "sprite_bank_at_e632",
+      960,
+      "second sprite bank (referenced as sprite_base = 0xE632 by draw_map_border and similar). 60 x 16-byte sprite frames, mostly the map-view border and cursor sprites"
+    ],
+    "0x0E9F2": [
+      "sprite_bank_at_e9f2",
+      5138,
+      "third sprite bank -- the remaining game sprites including the map-cursor variants (sprite_map_cursor at 0xE9FE, sprite_map_prev_cursor at 0xEA2A), the heading_arrow_sprites table at 0xEA48, and the region_titles pointer table at 0xED26. Extends to the end of the load image at 0xFE04"
+    ]
   }
 }
