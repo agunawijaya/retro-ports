@@ -10,37 +10,74 @@ byte-identical reconstruction of `DAMB.EXE`.
 The point: if the reading is right, executing the drawers over the data
 yields the game.  If a single formula is wrong (sprite tile size, font
 base, pixel-per-blit-unit, the CGA-2bpp packing) the output turns to
-noise.  Every screen here fell out of the reading unchanged.
+noise.
 
 ## What each image is
 
+### Faithful reconstructions — pixels come from the game's own sprite data
+
 | file | what it is | drawn by |
 |---|---|---|
-| `01-title-screen.png` | the title -- "THE DAM BUSTERS" logo, Lancaster silhouette, dam scenery | `draw_title_screen` at `0xB4D8`, verbatim: 12 rows × 40 sprites from `sprite_base_bank` (`0xB544`) then 7 more from `0xC4E4` |
-| `02-intelligence-report.png` | pre-mission briefing with picks | `generate_intelligence_report` at `0x9EE`; text at `0x8E8..0x93B`, font at `0xF902` |
-| `03-map-screen-*.png` | the six-region raid map | `draw_map_border` at `0x2E0`; border sprites at `0xE632`, corners from `0xE9F2..0xE9FE`, region titles via `city_name_pointers` (`0x150`) |
-| `04-menu-cockpit.png` | phase 5 controls page | labels at `0x13A6` (`BOOSTER GAUGES`, `RPM GAUGES`, `THROTTLES`, `FIRE EXT.`, `BOOSTERS`) |
-| `05-bomb-options.png` | phase 3 YES/NO toggles | `bomb_options_init` / `draw_bomb_options` at `0x4C07` |
-| `06-mission-report.png` | phase 7 scoreboard | `results_step` at `0x8720`; labels at `0x83D1..0x843E` |
-| `07-crash-messages.png` | the eight end-run reasons | strings at `0x7F3C..0x7FD5` picked by `end_run_message_table` at `0x7FE1` |
-| `08-sprite-atlas.png` | `sprite_base_bank` at `0xB544` dumped as an 8x8 tile sheet | the 456 tiles the game draws from |
+| `01-title-screen.png` | the title -- "THE DAM BUSTERS" logo, Lancaster silhouette, dam scenery | `draw_title_screen` at `0xB4D8`, verbatim: 12 rows × 40 sprites from `sprite_base_bank` (`0xB544`) then 7 more from `0xC4E4`. Missing only the "Accolade PRESENTS" header at the very top (drawn by the display-list bytecode at `0xB4BF` which this generator does not interpret) |
+| `03-map-screen-*.png` | the six-region raid map | `draw_map_border` at `0x2E0`; border sprites at `0xE632`, corners from `0xE9F2..0xE9FE`, region terrain sprites via the pointer table at `0xED26`, region titles via `city_name_pointers` (`0x150`) |
+| `08-sprite-atlas.png` | `sprite_base_bank` at `0xB544` dumped as an 8×8 tile sheet | the 456 tiles the game draws from |
 | `09-font-sheet.png` | the ASCII font at `0xF902` | the 8×8 1bpp glyphs `draw_shape_row_flexible` at `0xD731` reads |
+
+### Text-faithful mockups — strings and layout from the reading, no sprite gauges
+
+The game's real menus and screens have graphical gauges, sliders and
+indicators (see the copyrighted reference images in `../reference/`,
+gitignored).  These reconstructions use the correct **text**, the
+correct **font** (rendered from the game's own 1bpp glyph data), and
+the correct **CGA palette**, but they do not reproduce the gauge/
+slider sprites.  Doing that faithfully would need a full display-list
+interpreter — that is the port, not the reading.
+
+| file | what it is | how it was composed |
+|---|---|---|
+| `02-intelligence-report.png` | pre-mission briefing with a plausible pick | `generate_intelligence_report` at `0x9EE`; strings at `0x8E8..0x93B`, cities at `0x966..0x9B8`, font at `0xF902` |
+| `04-menu-cockpit.png` | phase-5 controls page (labels only, no gauges) | labels from the doc for menu_main_init: `BOOSTER GAUGES`, `RPM GAUGES`, `THROTTLES`, `FIRE EXT.`, `BOOSTERS` |
+| `05-bomb-options.png` | phase-3 YES/NO toggles | `bomb_options_init` / `draw_bomb_options` at `0x4C07` |
+| `06-mission-report.png` | phase-7 scoreboard | `results_step` at `0x8720`; labels at `0x83D1..0x843E`; values are illustrative |
+| `07-crash-messages.png` | the eight end-run reasons in the file, all at once | strings at `0x7F3C..0x7FD5` picked at run time via `end_run_message_table` at `0x7FE1` |
 
 ## How the reconstruction works
 
-Two rendering primitives:
+Two rendering primitives translated from the ASM:
 
 - **`draw_sprite_row_2x8`** (`0xD631`) — for tiled sprite rows.  Each
   sprite is 16 bytes (2 bytes wide × 8 rows tall) at 2bpp, indexed by
   `(idx & 0x3F) * 16 + sprite_base`.  `blit_x` is in units of 2 pixels;
-  each 8-pixel sprite steps `blit_x` by 4.
+  each 8-pixel sprite steps `blit_x` by 4.  The sparse variant at
+  `0xD676` skips indices equal to zero.
 - **`draw_shape_row_flexible`** (`0xD731`) — for text.  Each ASCII byte
-  is turned into an 8-byte glyph at `font_base + ascii * 8`.  Each
-  byte is one row of 8 pixels at 1bpp.  The `draw_bit_expansion_row`
-  step at `0xD779` expands the 1bpp source into CGA 2bpp; the
-  screenshots use a simplified expansion (source bit → colour).
+  becomes an 8-byte glyph at `font_base + ascii * 8`.  Each byte is one
+  row of 8 pixels at 1bpp.  The `draw_bit_expansion_row` step at
+  `0xD779` expands the 1bpp source to CGA 2bpp; this generator uses a
+  simplified expansion (source bit → colour).
 
 CGA palette 1 throughout: **black / cyan / magenta / white**.
+
+## What is *not* here (and why)
+
+- **Actual screenshots of the running game.**  Copyrighted material.  A
+  screenshot of a copyrighted 1984 game is still the game.  Any reference
+  images used to check this generator live under `../reference/` which
+  is gitignored per the root `CLAUDE.md`.
+- **Sprites decoded to their pixel-perfect final positions on every
+  screen.**  This would require executing the display-list bytecode at
+  `0xB4BF` (title), `0x13A6` (menu_main), `0x21D9` (menu_second), etc.
+  through the ten-opcode interpreter at `dl_dispatch` (`0xDF18`).  That
+  is a whole subsystem; the reading documents it in
+  [`../docs/03-the-code.md`](../docs/03-the-code.md#6-draw_display_list--a-bytecode-interpreter-in-eight-instructions)
+  but reproducing every screen bytecode-perfect is the *port*, not the
+  reading.
+- **The bomb-run, forward-flight and rear-gunner views** (phases 0, 1,
+  2).  These are real-time 3D scenes composed from the object pool
+  through `render_object_pool` and `project_point_2d` in a way that
+  depends on frame-time inputs.  A single-frame static reconstruction
+  is possible but was not built — this set covers the static screens
+  where the reading is easiest to verify.
 
 ## Regenerate
 
