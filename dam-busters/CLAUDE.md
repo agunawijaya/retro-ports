@@ -6,7 +6,10 @@ to Dam Busters, so that facts already established are not re-derived.
 
 This file is the working reference. [BRIEF.md](BRIEF.md) is the historical
 triage from 2026-08-02 plus the toolkit-fix narrative from 2026-08-19 — read
-it once, then use this file.
+it once, then use this file. [docs/01-the-game.md](docs/01-the-game.md)
+explains what The Dam Busters is as a game — the 1943 raid it dramatises,
+the crew stations, the phases, and how to win it — read before working on
+the port.
 
 ## State of the work
 
