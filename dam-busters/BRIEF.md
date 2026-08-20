@@ -109,6 +109,31 @@ The last pass also caught two orphan names (`hud_bomb_ready_frame` and
 mid-routine bytes respectively). Both were removed. `annotate.py`'s
 "landed nowhere" audit is what caught them.
 
+## Span partition (2026-08-20, same day)
+
+The 68 spans that covered the back half went to **112 spans covering the
+whole image** in one sitting: the front half (0x0..0x7EFC) partitioned into
+coarse "code region" spans, fine spans for the identifiable data tables
+(the three dispatch tables `phase_dispatch`, `phase_init_dispatch`,
+`region_effect_dispatch` and the embedded `end_run_bomb_grade_dispatch`;
+the intelligence-report data block; the flight/menu/bomb-options state
+clusters; `scenery_pool`; `object_render_dispatch`; `object_pool`;
+`object_ground_sprite_frames`), and one span whose heading had to be moved
+back three bytes because the walker had documented flak_active_type_a/b
+as data addresses at 0x6B7D/0x6B7F when their bytes actually disassemble
+as instructions in the middle of `check_flak_hit_type4`. Two runtime
+addresses inside code, either misidentified or reached via an addressing
+pattern the reading has not followed — recorded as a note on the
+containing code-region span rather than papered over.
+
+`annotate.py` refuses a gap or an overlap in `_data_spans`, so getting
+this to 112 spans / 65,028 bytes at the same hash was the check. One
+arithmetic slip caught it: `0x02347 - 0x0174B = 3068`, not 2556; another
+slip put a data heading four bytes short because the last two 2-byte
+lock-slot-pointer globals had not been counted. Both were tool errors,
+both were caught by the tool refusing to accept the partition, both took
+one edit each.
+
 Two things learnt during the pass, worth keeping:
 
 - **A routine that touches four values in a row is not necessarily a slider

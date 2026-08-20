@@ -18,13 +18,14 @@ with the evidence for its name. Coverage:
   renderers, the three mission-start paths, the intelligence-report
   randomisers, and the two failure paths.
 
-**`_data_spans` covers 50% of the image contiguously** — 68 spans
-partitioning `0x07EFC..0x0FE04` (32,520 bytes: the results text bank,
-the sprite banks, the song table, the LFSR state, and the CGA row table).
-Extending the partition backwards to `0x0` is the next phase. See
-[CLAUDE.md](CLAUDE.md) for the current state,
-[docs/01-the-game.md](docs/01-the-game.md) for what the game is, and
-[BRIEF.md](BRIEF.md) for the triage and toolkit-fix history.
+**`_data_spans` covers 100% of the image contiguously** — 112 spans
+partitioning `0x00000..0x0FE04` (65,028 bytes) with no gap and no overlap:
+every byte in the load image sits inside a named or reasoned extent, from
+the startup and per-frame dispatch through the mission code, phase state
+clusters, sprite/text banks, the results text bank, the song table, the
+LFSR state, and the CGA row table. See [CLAUDE.md](CLAUDE.md) for the
+current state, [docs/01-the-game.md](docs/01-the-game.md) for what the
+game is, and [BRIEF.md](BRIEF.md) for the triage and toolkit-fix history.
 
 ## Rebuilding it
 

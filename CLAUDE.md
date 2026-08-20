@@ -30,12 +30,13 @@ only symptom is silence. Its `CLAUDE.md` has the evidence and the order.
 
 ### One reading in progress
 
-**Dam Busters is 66% of the way through the naming ladder.** 168 routines
-and 127 globals, `annotate.py` reports 104 of 158 call targets, all 5
-tail-call entries, 111 of 433 bracketed constants — still byte-identical
-at `D3657960…`. `_data_spans` has not been started; that is the largest
-remaining piece. [dam-busters/CLAUDE.md](dam-busters/CLAUDE.md) has the
-state and the order to work in.
+**Dam Busters is through the naming ladder.** 241 routines and 277 globals,
+`annotate.py` reports **158 of 158 call targets**, all 6 tail-call entries,
+247 of 433 bracketed constants (+13 more as displacements) — still
+byte-identical at `D3657960…`. `_data_spans` **now covers the whole image,
+112 spans partitioning 65,028 bytes with no gap or overlap.**
+[dam-busters/CLAUDE.md](dam-busters/CLAUDE.md) has the state and what is
+still open.
 
 Getting there needed three walker fixes in comrec, which took the decode
 rate from 12.3% to 26.7% at the same hash before any naming happened. The
