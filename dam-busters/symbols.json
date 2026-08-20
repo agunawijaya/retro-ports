@@ -65,9 +65,85 @@
       "draw_map_border",
       "draws the map screen's 4-piece border using sprite drawer L_0D631 with parameter block [0xD627..0xD62F]: sprite 0xE632 across the top and bottom edges at y=0x20/0xB8, then alternating figures 0x114/0x115/0x116/0x117 down the left and right edges; also draws the four corners with L_0DA39 at (0x16,0x25), (0x88,0x25), (0x16,0xB8), (0x88,0xB8), and the region title read from a table at 0xED26 indexed by [0xF8]"
     ],
+    "0x00461": [
+      "draw_map_current_pos_marker",
+      "draws the current-position cursor on the map at (x=[0xF4]/2 + 0x15, y=[0xF6] + 0x23) using sprite list at 0xED08 and image data at 0xE9FE. Called from map_screen_step every frame"
+    ],
+    "0x00482": [
+      "draw_map_heading_arrow",
+      "if [0x104] (current region) matches [0xF8] (cursor region), draws a heading arrow at the plane's world position ([0x100], [0x102]) with sprite frame picked by [0xBC0] (heading_tile) from the table at 0xEA48. Blinks with bit 3 or 4 of tick_counter -- the 'you are here, and pointing this way' indicator"
+    ],
+    "0x004C1": [
+      "draw_map_previous_pos_marker",
+      "if the cursor region [0xFE] matches the current [0xF8], draws a small sprite at the cached previous position ([0xFA]/2 + 0x15, [0xFC] + 0x23) with image at 0xEA2A. The 'you were here' marker"
+    ],
+    "0x004EB": [
+      "update_map_bearing_display",
+      "computes the bearing from previous position to current cursor via bearing_between_cursors, and if it changed since last frame ([0x108]), redraws the bearing arrow via draw_heading_arrow with drawing params (x=0x50, w=0x28, y=0xE, h=0x37)"
+    ],
+    "0x00513": [
+      "bearing_between_cursors",
+      "computes the bearing angle from cursor triple [0xFA..0xFE] to triple [0x100..0x104]. Uses region_offsets to add the per-region base to each, subtracts to get (dx, dy) in [0x10A]/[0x10C], then arctan2_lookup returns the angle in AX"
+    ],
+    "0x00549": [
+      "region_offsets",
+      "adds the per-region base offsets from tables at [bx*2 + 0x118] and [bx*2 + 0x124] to the (ax, dx) coordinate pair. Called twice by bearing_between_cursors -- once for each endpoint"
+    ],
+    "0x00554": [
+      "arctan2_lookup",
+      "computes the arctan of [0x10A]/[0x10C] and returns an angle 0..0x168 in AX. Handles the four quadrants around the atan lookup at L_01344. The map-bearing math"
+    ],
+    "0x005A0": [
+      "draw_heading_arrow",
+      "given an angle in AX (0..0x100), draws a 9-tile heading-arrow row using sprite base 0xE632. The arrow rotates with the input angle. Called by update_map_bearing_display"
+    ],
+    "0x005E7": [
+      "start_mission_dam_approach",
+      "cs:0x6f3e[0]: 'Position 1 -- DAM APPROACH'. Sets [0x8140] := 2 (starting-position tag), places the plane at (0x50, 0x50, region 0) with heading 0x5A and altitude 0. Zeroes every engine damage counter, initialises the object pool with type 6 objects, then falls into the shared per-run reset at L_006B1 which requests phase 4 (map_screen)"
+    ],
+    "0x006B1": [
+      "reset_per_run_counters",
+      "the shared body reached from all three start_mission_* handlers. Zeroes every per-run counter (score, damage, position, request), initialises the per-slot draw counters at 0x6372/0x6382/0x5502, sets [0x106] and [0x23A7] to their starting values, walks the object pool re-freshing type 6 slots, then requests phase 4 (map_screen) via requested_phase := 4 and calls check_phase_transition"
+    ],
+    "0x007B0": [
+      "start_mission_channel",
+      "cs:0x6f3e[1]: 'Position 2 -- ENGLISH CHANNEL'. Sets [0x8140] := 1, plane at (0x60, 0x50, region 1), initial distance [0xBCB] := 0x800, altitude [0xCE6] := 0xFA (250 units). Initialises each engine slider to (23, 21), pool with type 5 objects and pre-populated distance, then jumps to the shared per-run reset"
+    ],
+    "0x007F2": [
+      "mission_common_setup",
+      "shared body reached from both start_mission_channel and start_mission_scampton after they set their own initial (x, y, region, heading). Sets [0xBCB] := 0x800 (initial distance), [0xCE6] := 0xFA (starting altitude 250), initialises each engine slot with slider values (23, 21) and clears damage counters, populates the object pool with type 5 objects, then jumps to reset_per_run_counters. The take-off-with-fuel-and-height variant of start_mission_dam_approach"
+    ],
+    "0x00866": [
+      "start_mission_scampton",
+      "cs:0x6f3e[2]: 'Position 3 -- SCAMPTON AIRFIELD'. Sets [0x8140] := 0 (full mission). Plane at (0x60, 0x14, region 5 -- Great Britain), representing take-off from Scampton in the north. Populates the object pool with runway/airfield objects, then jumps into the shared per-run reset"
+    ],
     "0x008AB": [
       "check_phase_transition",
       "compares game_phase to requested_phase; if they differ and the current phase is not 8 (end), it sets the new phase, clears CGA to 0, resets the palette, and calls the phase-init handler from phase_init_dispatch (the cs:0x8d2 table)"
+    ],
+    "0x009EE": [
+      "generate_intelligence_report",
+      "clears the screen, draws the 'INTELLIGENCE REPORT' text at 0x8E2, then rolls four randomised entries: one radar hole, one night-fighter zone, four bombing-raid targets (with dedup), and one flak concentration. Called by post_boot as part of the pre-mission briefing. Also calls flush_key + peek_key_consume so the report displays until the player acknowledges"
+    ],
+    "0x00A19": [
+      "pick_radar_hole",
+      "rolls prng_step for a random index 0..7, uses it to pick from the 8-entry city table at 0x9B8. If non-zero, ORs 0x40 into the target region's map tiles (a 'safe' flag) and draws 'RADAR HOLE THROUGH ' + city name at (0, [0x9E4])"
+    ],
+    "0x00A76": [
+      "pick_night_fighter_target",
+      "rolls prng_step for 0..7, picks a night-fighter target from table 0x9C0. Stores the pick in [0x9E6] (target_region), then draws 'NIGHT FIGHTER ACTION OVER ' + city at (0, [0x9E4]+8)"
+    ],
+    "0x00ACF": [
+      "pick_bombing_raid_targets",
+      "picks up to 4 bombing-raid target cities (with dedup) from a 10-entry range. For each accepted target, ORs 0x80 into the tile region to mark it, then draws the label 'BOMBING RAID OVER' plus the city name. This is what fills the four dam-approach hint entries the player sees before flying"
+    ],
+    "0x00B4D": [
+      "pick_flak_concentration",
+      "rolls prng_step, picks from table 0x9C8. If non-zero, ORs 0x80 into the target's region tiles (flak flag) and draws 'FLAK CONCENTRATIONS IN ' + city at (0, [0x9E4])"
+    ],
+    "0x00BAA": [
+      "spawn_flight_pool_objects",
+      "populates the 20-slot object pool with initial airborne objects at mission start. Called from start_mission_channel and elsewhere as part of the per-run setup"
     ],
     "0x00D62": [
       "per_frame_step",
@@ -145,6 +221,10 @@
       "refresh_visible_tiles",
       "convenience wrapper: update_map_position + update_visible_tiles"
     ],
+    "0x01344": [
+      "atan_lookup",
+      "arctan of the 32-bit ratio in DX:AX; returns an angle 0..0x5A in AX. Uses a small lookup table for the 0..45 degree range and the four-quadrant fixup happens in arctan2_lookup"
+    ],
     "0x0136B": [
       "sin_deg_alt",
       "another sine variant taking heading in a different unit; used by step_plane_position"
@@ -213,6 +293,10 @@
       "adjust_engine_slider_top_1",
       "menu handler (cs:0x1610[0]): +/- adjust value at [0x1725] (engine 1). Value ranges 0..0x28 = 40. Test byte [0x171c] bit 0 = inc, bit 1 = dec. Redraws via L_01AC8 (border/gauge) and L_018D4 (the pointer-draw pass). One of the two per-engine slider rows on the cockpit page -- BOOSTER GAUGES, RPM GAUGES, THROTTLES are the labels shown from text at 0x13A6; which of them this row is has not been settled from the code"
     ],
+    "0x01920": [
+      "adjust_engine_slider_top_shared",
+      "the tail-call body reached from adjust_engine_slider_top_1..4 and adjust_engine_slider_top_all. BX indexes into engine_slider_top; bit 0 of menu_input_flags increments (cap 0x28), bit 1 decrements (floor 0). Then calls redraw_menu_gauges + menu_main_draw_top_row_gauges"
+    ],
     "0x01950": [
       "adjust_engine_slider_top_2",
       "menu handler (cs:0x1610[1]): engine 2 (bx=2) counterpart of adjust_engine_slider_top_1"
@@ -236,6 +320,10 @@
     "0x019B7": [
       "adjust_engine_slider_bottom_1",
       "menu handler (cs:0x1610[8]): +/- adjust value at [0x171D] (engine 1). Value ranges 0..0x18 = 24. Same shape as adjust_engine_slider_top_1 but with a different base and redraw (L_01970). Which cockpit label this row corresponds to has not been settled"
+    ],
+    "0x019BA": [
+      "adjust_engine_slider_bottom_shared",
+      "same as adjust_engine_slider_top_shared but for engine_slider_bottom, cap 0x18"
     ],
     "0x019EA": [
       "adjust_engine_slider_bottom_2",
@@ -329,6 +417,22 @@
       "physics_step",
       "the plane's per-frame physics. Reads control input bitfield [0x306B] (bit 0 = up, bit 1 = down, bit 2 = left, bit 3 = right), integrates pitch/roll into [0x3073] and [0x3075], and drives the altitude computation from [0xCE6] - [0x23A1]. Also triggers the crash branch (`jmp L_07DA3`) when [0x306D] falls below -0x2C"
     ],
+    "0x03256": [
+      "flight_render_sky",
+      "part of flight_forward_step's render chain. Draws the sky/horizon strip that changes as the plane pitches"
+    ],
+    "0x0328D": [
+      "flight_render_ground_grid",
+      "draws the ground grid that gives the flight view its sense of motion"
+    ],
+    "0x03332": [
+      "flight_render_instruments",
+      "draws the HUD instrument overlay (airspeed, altitude, compass)"
+    ],
+    "0x0335D": [
+      "flight_render_hud_ticks",
+      "draws small tick marks on the HUD"
+    ],
     "0x03ECB": [
       "flight_bombrun_init",
       "phase_init_dispatch[1]. Same shape as flight_forward_init but different text (SI=0x3C38), a larger drawing region (0x18..0xB8 y), initialises the target-lock state at [0x3EBD..0x3EC3] to the bomb-run sight rectangle (0x28,0x78,0x20,0xAC), and shows an alternate briefing at 0x3DB4 when [0xBBF] is set (that flag is set 30 frames after [0x4B61] is 1 in per_frame_step)"
@@ -348,6 +452,10 @@
     "0x0408C": [
       "bombrun_update_target_lock",
       "reads input flags into [0x306B] via the bomb-run's own mapping, then updates the target-lock rectangle at [0x3EBD..0x3EC3] toward the current cursor position [0x3EB9]/[0x3EBB]"
+    ],
+    "0x040F8": [
+      "bombrun_setup_targets",
+      "populates the four target-lock slots at target_lock_slots (0x3DC1) for the bomb-run. Called from flight_bombrun_init and flight_rearview_init"
     ],
     "0x040FF": [
       "reset_bombrun_state",
@@ -389,6 +497,14 @@
       "draw_bomb_options",
       "draws two YES/NO toggle boxes (positions y=0x29 and y=0x71) picked between text at 0x46D6 (off) and 0x4700 (on) by the flags [0x4B61] and [0x4B62]. Called from bomb_options_init and from the toggle handlers L_04BCF and L_04BEB when the player flips a choice"
     ],
+    "0x04C52": [
+      "bomb_options_blink_indicator",
+      "blinks the 'ARMED' or 'SELECTED' indicator on the bomb-options screen. Uses [0x4B60] as an accumulator and swaps sprite indices at 0x4B31/0x4B44 every 4 ticks"
+    ],
+    "0x04CE2": [
+      "bomb_options_render_selection",
+      "renders the current bomb-options selection state onto the screen. Called from bomb_options_step's arm-selected branch"
+    ],
     "0x04EDA": [
       "update_camera_transform",
       "recomputes the 2x2 camera matrix at [0x4D9F]/[0x4DA1] and the translation ([0x4DAE]/[0x4DB0]) from the current roll [0x4DA3] and pitch [0x4DA7]. Uses L_01373 (sin) and L_01394 (cos) as the trig helpers, and a small lookup at 0x4EC2 for the pitch-to-screen mapping. Called once per frame from each flight phase's step"
@@ -421,6 +537,10 @@
       "render_object_pool_rear",
       "the same shape as render_object_pool but with the world coord mirrored (`neg / add 0x1A4`); called for the rear view (flight_rearview_step) so the same object type dispatches produce the look-behind projection"
     ],
+    "0x05162": [
+      "project_pool_object_rear",
+      "coordinate transform used by flight_bombrun_step for objects whose position needs the rear-facing camera. Sibling of project_point_2d"
+    ],
     "0x051AD": [
       "draw_scenery_and_objects",
       "top-level per-frame render: draws the 16 scenery slots at [0x4D14] then calls render_object_pool. Called from map_screen_step, menu_main_step, menu_second_step, and every flight step"
@@ -449,6 +569,18 @@
       "step_bombrun_animation",
       "advances the bomb-drop animation over a series of frames. Called from flight_forward_step, flight_bombrun_step, flight_rearview_step"
     ],
+    "0x05BFC": [
+      "bombrun_animation_tick",
+      "advances one frame of the bomb-drop animation"
+    ],
+    "0x05C49": [
+      "bomb_release_check_maybe",
+      "called from bombrun_step_state_c. Checks whether the release conditions are met"
+    ],
+    "0x05C51": [
+      "bomb_release_effect",
+      "runs the visible effect of a bomb release"
+    ],
     "0x0638A": [
       "play_sound_effect",
       "call this with AX = an effect index to trigger a short PIT-channel-2 sound. Called 5 times (spawn_enemy_plane passes 2 or 3 for engine directions; other callers pass 1 for a click). Uses a per-effect note table that is not yet identified"
@@ -461,6 +593,10 @@
       "stop_sound_effect",
       "the counterpart to play_sound_effect. Called with the same effect ID to release/silence it"
     ],
+    "0x063BF": [
+      "hud_apply_effect",
+      "applies a sound effect from AX by dispatching through the effect table. Sibling of stop_sound_effect"
+    ],
     "0x063E6": [
       "bomb_release",
       "the bomb-release action: called when the bomb-run reaches its trigger condition. Sets several state bytes and triggers the drop animation via other calls"
@@ -469,6 +605,62 @@
       "draw_bomb_ready_icon",
       "per_frame_step[2]. When bit 5 of tick_counter is set, draws either a bomb armed (sprite 0x5882) or bomb selected indicator at HUD position (0x4A, 0xBA), edge-detected by [0x6371]. Also plays sound 7 (play_song 7) briefly when [0x6372] is set and [0x6370] decrements past zero"
     ],
+    "0x06462": [
+      "hud_switch_bomb_indicator",
+      "toggles the bomb-arm indicator between two sprite pointers at [0x6372] and [0x637C] depending on state. Called by draw_bomb_ready_icon on state changes"
+    ],
+    "0x06465": [
+      "hud_bomb_selected_frame",
+      "one frame of the 'bomb selected' animation, called via a small stub"
+    ],
+    "0x0646E": [
+      "hud_check_bomb_press",
+      "reads [0xBCB] distance and [0x306D] throttle to decide whether to arm the bomb this frame. Called at the head of the bomb-arm state check"
+    ],
+    "0x06483": [
+      "check_dam_target_reached",
+      "tail-call target reached from jmp L_06483 in hud_check_bomb_press. Checks whether the plane has arrived at the currently-selected target: if [0x104] region matches cursor region [0xFE], and (plane_x - cursor_x) <= 4 and (plane_y - cursor_y) <= 4, plays sound 5 (call queue_sound_effect AX=5) -- the target-acquired chirp. Otherwise plays stop-sound-5. This is what triggers the bomb-run entry when the plane crosses the target"
+    ],
+    "0x06574": [
+      "object_erase",
+      "sets [0xD9C2] := 0 and jumps into the shared object-render body at L_065C8, which writes the previous drawing back over itself using the saved source pointer at [si + 8]. Used when an object leaves the visible frustum -- render_object_pool_rear reads this from the 0x4EA2 offset for object type 3"
+    ],
+    "0x0657D": [
+      "object_render_with_hit",
+      "the primary object renderer. Computes screen position, calls check_object_hit_a to test whether the projected point lands inside any of the four target-lock slots at 0x3DC1, then draws using the shared body. On hit, check_object_hit_a increments [0x64BC] (one of the results-page counters). Object type 3 uses this at offset 0"
+    ],
+    "0x065C8": [
+      "object_render_shared_body",
+      "the shared draw body reached from object_erase and object_render_with_hit. Reads [si + 8] as the previously-written source; if non-zero, calls L_066AE with the pool slot's saved geometry to un-draw it. Then if [0xD9C2] != 0, updates [si] and neighbouring slot fields with the new draw parameters and stores the new source pointer, otherwise clears [si + 8]"
+    ],
+    "0x0664B": [
+      "check_object_hit_a",
+      "hit-test the projected position against the four target-lock slots at 0x3DC1 (each slot 0x10 bytes, first byte 1..3 = active, +2 = x, +8 = y). Match requires x within 4 and y within 8. On hit: inc [0x64BC] (score counter), set object type to 5 (destroyed), dec [0x5505], inc [0x5507], carry set"
+    ],
+    "0x066AE": [
+      "object_draw_from_state",
+      "reads the parameter block at [0x655A..0x656C] (position/velocity/source-pointer) and draws or erases the shape at the resolved screen position. The primitive that object_render_shared_body invokes for both the erase and draw halves of a redraw cycle"
+    ],
+    "0x067EA": [
+      "nav_update_bearing_reading",
+      "same for target-bearing reading"
+    ],
+    "0x06885": [
+      "nav_update_speed_reading",
+      "computes the current airspeed reading for the HUD from the flight state and writes it into the display"
+    ],
+    "0x06911": [
+      "nav_update_altitude_reading",
+      "same for altitude"
+    ],
+    "0x069AC": [
+      "nav_update_compass_reading",
+      "same for compass heading"
+    ],
+    "0x06A41": [
+      "object_draw_from_state_slow",
+      "sibling of object_draw_from_state used when the object crosses the drawable region -- iterates row by row with per-row clipping rather than a straight blit"
+    ],
     "0x06AD7": [
       "check_flak_hit",
       "per_frame_step[2]. Scans the object pool for type-3 objects landing in a specific screen rectangle around the plane (in-window [0x64..0x12C] and [-0x1E..0x1E]); if any are close and a probability check fails (based on table at 0x6ABF by count), triggers a hit: saves current phase into [0xD1CB], sets game_phase to 8 (idle), clears the screen, sets border white (0x0F). When the type-3 danger clears with the game already in phase 8, sets requested_phase to 0xFFFF and calls check_phase_transition to restore"
@@ -476,6 +668,50 @@
     "0x06B59": [
       "check_flak_hit_type4",
       "per_frame_step[2]. Same shape as check_flak_hit but for object type 4. Together the two check for hit close enough by any active projectile and force the hit-freeze state"
+    ],
+    "0x06C51": [
+      "object_render_small",
+      "small 4-frame sprite renderer. Reads (ax & 3) as a frame selector into a table at 0x6C07, sets sprite params, calls draw_sprite_at_variant. Used as the default renderer for object types 0, 1, 3, 4, 8 and 9 across most offsets -- the common shape"
+    ],
+    "0x06C77": [
+      "object_render_pillar",
+      "renders a 1-wide by 3-tall sprite whose frame comes from the camera roll ([0x4DA3] + 0x30) >> 4 as an index into the 8-entry table at 0x56AF. Used by object type 2 (a vertical thin object -- likely a mast, antenna or the target-marker post seen from cruise altitude)"
+    ],
+    "0x06CB4": [
+      "object_render_animated",
+      "multi-frame animation renderer. Calls check_object_hit_b for the target-lock test; on miss, advances the [si + 0x12] script pointer through a variable-length command stream (bytes: mask, add, w, h, sprite-addr-word). Used by object type 4 -- the search-lights class in the results-page ordering"
+    ],
+    "0x06D71": [
+      "check_object_hit_b",
+      "same shape as check_object_hit_a but writes different counters: inc [0x6C03], dec [0x5506], inc [0x5507]. Called by object_render_animated. [0x6C03] is another of the ten results-page counters"
+    ],
+    "0x06DCC": [
+      "object_render_column",
+      "1-wide by 8-tall sprite whose sprite pointer comes from a table at 0x584A indexed by |object.dist - 0xC8| >> 5. Used by object type 6 -- distance-picked column sprite (probably a tall structure whose apparent height varies with range)"
+    ],
+    "0x06E09": [
+      "object_render_ground",
+      "the most elaborate renderer. Computes a distance-scaled sprite index into a 25-entry table at 0x72AD (using [0xBCC] terrain offset), then picks a rotation frame using camera roll >> 4. Saves the sprite address and screen x into [0x6BFF] and [0x6C01] when the object is closer than 0xC8. Used by object type 7 -- the ground-feature class, most likely the dam itself and target-buildings that grow in size as you approach"
+    ],
+    "0x06E97": [
+      "object_render_none",
+      "a bare `ret` used as the renderer for object type 5 (destroyed) -- draws nothing"
+    ],
+    "0x06E98": [
+      "object_render_variant",
+      "sets [0xD9C4] := 0 (no clipping mask) and calls draw_sprite_at_variant. Used at higher offsets (0x4EA2/0x4EB2) for several types -- the plain sprite draw"
+    ],
+    "0x06EA1": [
+      "object_render_erase_via_blit",
+      "sets [0xD9C2] := 0 and calls blit_masked. The blit-based erase, used at the same higher offsets as object_render_variant"
+    ],
+    "0x06F44": [
+      "main_dispatch_periodic",
+      "called from main_loop's periodic-check chain. Handles background events that need to fire off-frame"
+    ],
+    "0x070C9": [
+      "main_dispatch_end_check",
+      "checks whether the run should transition to end_run this frame -- reads several outcome flags and calls end_run with the appropriate reason code"
     ],
     "0x07DA3": [
       "end_run",
@@ -513,6 +749,38 @@
       "results_draw_page_frame",
       "draws the outer frame of the results page (border, title, template). Called from results_step and elsewhere on the results screen"
     ],
+    "0x0A07F": [
+      "build_display_list_from_state",
+      "computes a display-list program at [0x9C8C] from state at [0x9FB8]/[0x9FBA], then calls draw_display_list with sprite base 0xA10E. Used to render the results-page scoring animation"
+    ],
+    "0x0A0CD": [
+      "draw_scoreboard_text",
+      "draws the results-page text via draw_display_list with SI = 0x9BF6"
+    ],
+    "0x0A0D4": [
+      "draw_scoreboard_frame",
+      "the frame around the scoreboard: clears the framebuffer, resets the palette, and draws a 40-cell wide row of border sprites from 0x9DFE at (0, 0x70) via draw_sprite_row_2x8_sparse"
+    ],
+    "0x0ACCA": [
+      "results_animate_a",
+      "animates one item of the results-page score countup"
+    ],
+    "0x0ACDA": [
+      "results_animate_b",
+      "second animation stage"
+    ],
+    "0x0AD37": [
+      "results_animate_c",
+      "third animation stage"
+    ],
+    "0x0AD7C": [
+      "results_animate_d",
+      "fourth animation stage -- most of the scoreboard sequence goes through the four in order"
+    ],
+    "0x0B4D8": [
+      "draw_title_screen",
+      "the title-screen renderer. Clears the framebuffer, draws the 'DAM BUSTERS PRESENTS' text from 0xB4BF via draw_display_list, then paints two decorative sprite rows: 12 sprites from the 0xAFD7 table at (0, 0x26) and 7 more from the 0xC4E4 table below it. Called from post_boot"
+    ],
     "0x0D1CF": [
       "save_kbd_isr",
       "reads the current INT 9 (keyboard) vector from `es:0x24`..`es:0x26` with ES = 0 and stores it in saved_kbd_isr_off/seg. Called once from post_boot"
@@ -541,6 +809,10 @@
       "peek_key_consume",
       "the AH=0 half of peek_key: BIOS INT 16h AH=0 reads the pending scancode and returns it in AX. Only reached by fall-through from peek_key when the AH=1 test said a key was waiting"
     ],
+    "0x0D476": [
+      "clamp_position_diff",
+      "computes the delta between two coordinate triples with sign handling. Called from map_screen_step as part of the map cursor motion"
+    ],
     "0x0D4B9": [
       "gauge_step_maybe",
       "called from per_frame_step when [0xD1C6] is set. Behaviour not yet read"
@@ -565,6 +837,10 @@
       "draw_shape_row_flexible",
       "sprite drawer with a variable width per shape, driven by [0xD62D..0xD62F] parameter block. Reads shape indices, expands each to a sprite (base [0xD627], indexed 8-bit into a shape header) and blits with dynamic width. Called ~11 times as the general-purpose row painter"
     ],
+    "0x0D779": [
+      "draw_bit_expansion_row",
+      "reads 8 source bytes at DS:SI, expands each through the 128-word table at 0xD7A2 (1 source bit -> 2 CGA bits for the mode-4 4-colour format), writes 8 words to a CGA row indexed by [0xD62B]. The 'expand a 1bpp source into CGA 2bpp' primitive"
+    ],
     "0x0D9D3": [
       "fill_rect",
       "fills a rectangle in CGA memory. Parameters at [0xD9A2..0xD9BE]. Called 4 times, always after clear_cga_frame to blank a subregion"
@@ -581,17 +857,33 @@
       "blit_rect_variant_3",
       "third blit variant, called by draw_sprite_row_2x8_xor. Behaviour not fully read"
     ],
+    "0x0DBB7": [
+      "blit_rect_clipped_xor",
+      "XOR blit with full 4-way clipping ([0xD9AE]/[0xD9B0] as left/right, [0xD9AC] as top, [0xD9B0] as bottom). Called twice for text or sprites that may cross the clip boundary of a phase's drawing region"
+    ],
+    "0x0DCD8": [
+      "plot_pixel_xor",
+      "single-pixel XOR blit with full clipping. AL is the pixel byte, position from [0xD9A6]/[0xD9AC]. Used to draw and erase point markers -- the current-position and previous-position map cursors both go through this"
+    ],
     "0x0DD0B": [
-      "draw_sprite_at_variant",
-      "sibling of draw_sprite_at. Behaviour not fully read"
+      "plot_marker_at_var",
+      "reads (x, y, val) from DS:SI, erases the previous marker via plot_pixel_xor, then writes the new (x, y, val) from [0xD9BE]/[0xD9C0]/[0xD9C4] into DS:SI and plots the new marker. The 'move a marker' primitive"
     ],
     "0x0DD37": [
       "draw_sprite_at",
       "a specialised sprite drawer used for cursor/pointer sprites. Reads position from [0xD9BE]/[0xD9C0], sprite from [0xD9C2] and stride 0x1FFB. Called 16 times, most often from draw_menu_cursor and its variants"
     ],
+    "0x0DD9D": [
+      "blit_rect_masked",
+      "blit variant that uses a mask byte stored in the parameter block (probably [0xD9C9]) to conditionally set/leave each pixel. Called twice from HUD-drawing paths"
+    ],
     "0x0DE04": [
       "blit_masked",
       "another blit variant. Reads sprite bytes and applies a mask -- specific behaviour depends on parameter block flags. Called 7 times"
+    ],
+    "0x0DE7B": [
+      "draw_sprite_masked_at",
+      "reads a sprite header (width, height, x, y, source-addr) at DS:SI into the blit_rect parameter block, then calls blit_rect_or_xor. The mask-aware counterpart to draw_sprite_at"
     ],
     "0x0DEA2": [
       "blit_shape",
@@ -691,6 +983,10 @@
       "saved_sp",
       "SP saved at boot in post_boot, restored on restart in restart_run"
     ],
+    "0x00CC": [
+      "saved_sp",
+      "SP saved at boot in post_boot, restored on restart in restart_run (bare form)"
+    ],
     "0x000DB": [
       "title_line2",
       "the string 'SQUADRON 617' plus terminator"
@@ -711,6 +1007,18 @@
       "cursor_region_working",
       "the current map region working copy (offset +4 from cursor_x_working); the value that clamp_map_position increments/decrements when the cursor wraps between adjacent regions"
     ],
+    "0x00FA": [
+      "cursor_x_saved",
+      "the saved (previous) cursor X position. Copied to/from cursor_x_working by update_map_view/save_map_pos"
+    ],
+    "0x00FC": [
+      "cursor_y_saved",
+      "saved cursor Y"
+    ],
+    "0x00FE": [
+      "cursor_region_saved",
+      "saved cursor region"
+    ],
     "0x00100": [
       "plane_x",
       "the plane's world X-coordinate (word). Advanced by step_plane_position using cos(heading) * distance/frame, clamped by clamp_map_position"
@@ -723,9 +1031,41 @@
       "map_region",
       "the current map region -- indexes phase_init_dispatch[4] behaviour and the region title lookup at 0xED26"
     ],
+    "0x00106": [
+      "bearing_display_value",
+      "bearing angle displayed on the map header; set by update_map_bearing_display and compared to [0x108] to detect changes"
+    ],
     "0x00108": [
-      "target_region",
-      "the region containing the selected target. Set to 0xFFFF by map_screen_init as the 'no target' sentinel"
+      "bearing_display_prev",
+      "previous frame's bearing_display_value; the compare that triggers a redraw"
+    ],
+    "0x0010A": [
+      "bearing_dx",
+      "x-delta between the two cursor points; input to arctan2_lookup"
+    ],
+    "0x0010C": [
+      "bearing_dy",
+      "y-delta between the two cursor points"
+    ],
+    "0x0010E": [
+      "map_toggle_state",
+      "single-bit toggle written by update_map_view. XOR'd on each cursor input to swap between the two cached positions"
+    ],
+    "0x0010F": [
+      "map_toggle_guard",
+      "guard flag that prevents update_map_view from re-triggering on a held key"
+    ],
+    "0x00118": [
+      "region_offsets_x",
+      "per-region 2-word offset table for the map-cursor coordinate math. Indexed by region * 2, holds the X base of each region"
+    ],
+    "0x00124": [
+      "region_offsets_y",
+      "per-region 2-word offset table; the Y bases"
+    ],
+    "0x00150": [
+      "city_name_pointers",
+      "pointer table for city name strings, indexed from the picker tables via [bx + 0x150]. Each entry points at a city string in the 0x966..0x9A8 name block"
     ],
     "0x005DB": [
       "game_phase",
@@ -735,9 +1075,53 @@
       "phase_init_dispatch",
       "8 code addresses, indexed by requested_phase*2, called from check_phase_transition after the palette and framebuffer are reset. Runs the one-shot setup that a phase needs before its per-frame handler at phase_dispatch takes over"
     ],
+    "0x00952": [
+      "bombing_target_name_pointers",
+      "pointer table used by pick_bombing_raid_targets. Sibling of city_name_pointers"
+    ],
     "0x00966": [
       "target_city_names",
       "adjacent 0-terminated strings BRUSSELS, PARIS, AMSTERDAM, HANNOVER, ANTWERP, DUSSELDORF, KOLN, DORTMUND, HAMBURG, BERLIN -- the cities the raid can be flown over. Order matches the pointer table two rows above"
+    ],
+    "0x009B8": [
+      "radar_hole_city_table",
+      "8-entry byte table indexed by prng_step & 7 -- picks which city gets the RADAR HOLE THROUGH label on the intelligence report"
+    ],
+    "0x009C0": [
+      "night_fighter_city_table",
+      "8-entry byte table for NIGHT FIGHTER ACTION OVER"
+    ],
+    "0x009C8": [
+      "flak_city_table",
+      "8-entry byte table for FLAK CONCENTRATIONS IN"
+    ],
+    "0x009D0": [
+      "bombing_raid_target_table",
+      "10-word pointer table for bombing_raid targets; indexed by city id * 2"
+    ],
+    "0x009E4": [
+      "report_y_cursor",
+      "current Y position for the intelligence-report text output; each picker adds to this so successive lines stack"
+    ],
+    "0x009E6": [
+      "selected_night_fighter_region",
+      "the region picked by pick_night_fighter_target; used later by spawn_enemy_plane to decide which region has active fighter cover"
+    ],
+    "0x009E8": [
+      "bombing_raid_target_slots",
+      "4-byte array of picked bombing-raid targets (with dedup)"
+    ],
+    "0x009EC": [
+      "bombing_raid_slot_count",
+      "count-down counter used by pick_bombing_raid_targets to fill 4 slots"
+    ],
+    "0x00BBD": [
+      "bombrun_approach_timer",
+      "counter incremented while [0x4B61] is set; when >= 0x1E, bombrun_ready_flag becomes 1"
+    ],
+    "0x00BBF": [
+      "bombrun_ready_flag",
+      "set after bombrun's approach timer [0xBBD] reaches 0x1E; per_frame_step's bomb-arm branch reads this"
     ],
     "0x00BC0": [
       "heading_tile",
@@ -758,6 +1142,10 @@
     "0x00BCB": [
       "distance_travelled",
       "distance from mission start; integrated by integrate_distance. Compared against 0x200 and 0x1000 thresholds for various events"
+    ],
+    "0x0BCC": [
+      "terrain_horizon_offset",
+      "horizon offset that object_render_ground uses to bias its distance-to-sprite mapping. Written elsewhere in the flight physics"
     ],
     "0x00BCF": [
       "damage_flag",
@@ -821,15 +1209,35 @@
     ],
     "0x00CBF": [
       "music_theme_index",
-      "index into the engine-based music theme table at 0xCC3/0xCCF, read by altitude_step to pick the current loop song"
+      "index into the engine-based music theme tables at 0xCC3/0xCCF, read by altitude_step"
     ],
     "0x00CC1": [
       "current_music_theme",
-      "the theme in play; altitude_step calls set_loop_song when this changes"
+      "cached currently-playing music theme; altitude_step calls set_loop_song when it changes"
+    ],
+    "0x00CC3": [
+      "music_theme_table_low",
+      "low-throttle music theme lookup used by altitude_step"
+    ],
+    "0x00CCF": [
+      "music_theme_table_high",
+      "high-throttle music theme lookup"
+    ],
+    "0x00CDB": [
+      "altitude_engine_effect_table",
+      "8-entry table read by altitude_step indexed by engine average -- picks the altitude-integration coefficient"
+    ],
+    "0x00CE5": [
+      "altitude_frac_lo",
+      "low byte of the altitude accumulator; integrated with the high word at altitude_frac_hi"
     ],
     "0x00CE6": [
       "altitude",
       "the plane's altitude, integrated by altitude_step. > 0x186 = crash (reason 7), == 0 = clamped at ground"
+    ],
+    "0x00CE7": [
+      "altitude_frac_hi",
+      "high byte of the altitude accumulator"
     ],
     "0x00CE8": [
       "tile_pattern_north",
@@ -879,6 +1287,10 @@
       "engine_slider_top",
       "4-byte array of the top row slider values on the cockpit menu (menu_main). Cap 0x28 = 40, adjusted by adjust_engine_slider_top_1..4 and read by the update chain"
     ],
+    "0x0172D": [
+      "engine_damage_counter",
+      "4-word array (one per engine) reset by use_fire_ext_shared, incremented as damage accumulates"
+    ],
     "0x01735": [
       "engine_load",
       "4-word engine load values, averaged and integrated by altitude_step and compute_yaw_torque"
@@ -899,6 +1311,10 @@
       "engine_states",
       "4-byte per-engine status array. Tested against 2 in L_01A0A (redraw), against 0 in L_01A10, against 1 in L_01877. Walked by results_step (bx = 0..3) to point at per-engine result rows"
     ],
+    "0x01741": [
+      "engine_priority_slot",
+      "4-byte array used by menu_main's engine gauge rendering to pick which engine to highlight"
+    ],
     "0x01749": [
       "menu_main_cursor_save",
       "menu_main's cursor save slot; menu_main_step writes menu_cursor here and menu_main_init restores it"
@@ -910,6 +1326,10 @@
     "0x0234A": [
       "selector_b_strings",
       "table of 3 word pointers to strings indexed by selector_b*2. Read by menu_second_draw_row_string"
+    ],
+    "0x02397": [
+      "engine_damage_timers",
+      "4-word array (one per engine) of per-engine damage-progression timers; aged by count_engines_alive"
     ],
     "0x0239F": [
       "selector_a",
@@ -927,6 +1347,14 @@
       "target_altitude",
       "the altitude the player should reach at the target; set by menu_second_sync_selection, subtracted from altitude in altitude_step"
     ],
+    "0x023A7": [
+      "approach_min_altitude",
+      "minimum altitude the plane must be above during approach; per_frame_step checks this"
+    ],
+    "0x023A9": [
+      "approach_altitude_delta",
+      "delta added to target_altitude in altitude_step; the difference between selected altitude and current"
+    ],
     "0x023AB": [
       "menu_second_cursor_save",
       "the same for menu_second"
@@ -939,9 +1367,25 @@
       "altitude_by_option_a",
       "3-entry table of altitudes indexed by selector_a. Copied to [0x23A5] by menu_second_sync_selection"
     ],
+    "0x03044": [
+      "flight_forward_state_b",
+      "second state accumulator"
+    ],
+    "0x0304E": [
+      "flight_forward_state_a",
+      "one of the flight_forward_init's state accumulators (0 at init)"
+    ],
+    "0x03058": [
+      "flight_forward_state_c",
+      "third"
+    ],
+    "0x03062": [
+      "flight_forward_state_d",
+      "fourth"
+    ],
     "0x0306B": [
       "physics_input_flags",
-      "per-frame copy of input_flags used by physics_step (bit 0 up, bit 1 down, bit 2 left, bit 3 right; the plane control mapping)"
+      "per-frame copy of input_flags used by physics_step -- bit 0 up, bit 1 down, bit 2 left, bit 3 right (the plane control mapping)"
     ],
     "0x0306D": [
       "throttle",
@@ -953,7 +1397,115 @@
     ],
     "0x03072": [
       "auto_stabilise",
-      "when zero, integrate_heading saturates the accumulated rate to [-6, +6]; nonzero lets it climb freely. Probably an auto-pilot toggle"
+      "when zero, integrate_heading saturates the accumulated rate to [-6, +6]; nonzero lets it climb freely -- probably the auto-pilot toggle"
+    ],
+    "0x03073": [
+      "roll_input_accum",
+      "accumulator for roll input, integrated by physics_step and read by integrate_heading"
+    ],
+    "0x03075": [
+      "pitch_input_accum",
+      "accumulator for pitch input, integrated by physics_step and read by integrate_heading"
+    ],
+    "0x03077": [
+      "pitch_input_last",
+      "last frame's pitch input, cached by physics_step for the delta computation"
+    ],
+    "0x03099": [
+      "flight_bomb_target_x",
+      "cached bomb-target X, set to 0xFFFF sentinel by phase inits"
+    ],
+    "0x0309B": [
+      "flight_bomb_target_y",
+      "cached bomb-target Y sentinel"
+    ],
+    "0x0309D": [
+      "flight_bomb_target_z",
+      "cached bomb-target Z sentinel"
+    ],
+    "0x03DC1": [
+      "target_lock_slots",
+      "four 16-byte target-lock slots read by check_object_hit_a and check_object_hit_b. Also read by bombrun_draw_target_locks to render the on-screen bomb-sight rectangle. Each slot: [+0] state 0..3, [+2] x, [+8] y"
+    ],
+    "0x03E64": [
+      "bombrun_hold_timer",
+      "how many frames the target has been continuously locked; must reach a threshold before the bomb releases"
+    ],
+    "0x03E6E": [
+      "bombrun_release_timer",
+      "the second half of the release timer -- once the hold-timer passes threshold, this counts down the release delay"
+    ],
+    "0x03EA4": [
+      "bombrun_transition_flag",
+      "flag set when the bombrun leaves the target lock and starts the drop animation"
+    ],
+    "0x03EA6": [
+      "bombrun_arm_state",
+      "flag mirroring input_fire while the bombrun is armed"
+    ],
+    "0x03EAF": [
+      "bombrun_frame_counter",
+      "per-frame counter used by bombrun_step_state_a"
+    ],
+    "0x03EB1": [
+      "bombrun_lock_x_saved",
+      "saved lock X for return-to-bombrun state"
+    ],
+    "0x03EB3": [
+      "bombrun_lock_y_saved",
+      "saved lock Y"
+    ],
+    "0x03EB5": [
+      "rearview_lock_x_saved",
+      "saved lock X for the rear-view state"
+    ],
+    "0x03EB7": [
+      "rearview_lock_y_saved",
+      "saved lock Y for the rear-view state"
+    ],
+    "0x03EB9": [
+      "bombrun_lock_x",
+      "current X of the target-lock centre during a bomb run"
+    ],
+    "0x03EBB": [
+      "bombrun_lock_y",
+      "current Y of the target-lock centre during a bomb run"
+    ],
+    "0x03EBD": [
+      "bombrun_target_rect_left",
+      "left edge of the bomb-sight rectangle drawn on-screen"
+    ],
+    "0x03EBF": [
+      "bombrun_target_rect_right",
+      "right edge"
+    ],
+    "0x03EC1": [
+      "bombrun_target_rect_top",
+      "top edge"
+    ],
+    "0x03EC3": [
+      "bombrun_target_rect_bottom",
+      "bottom edge"
+    ],
+    "0x03EC7": [
+      "bombrun_lock_slot_ptr_di",
+      "cached DI pointer into the target-lock slot bombrun_step_state_b is currently drawing"
+    ],
+    "0x03EC9": [
+      "bombrun_lock_slot_ptr_si",
+      "cached SI pointer into the same slot's second half"
+    ],
+    "0x04B31": [
+      "bomb_options_sprite_a",
+      "one of two swapped-in sprite indices for the blinking bomb-armed indicator"
+    ],
+    "0x04B44": [
+      "bomb_options_sprite_b",
+      "the other one"
+    ],
+    "0x04B60": [
+      "bomb_options_blink_counter",
+      "accumulator for bomb_options_blink_indicator; each frame it increments, bit 2 selects between two sprite variants"
     ],
     "0x04B61": [
       "bomb_option_1",
@@ -961,7 +1513,7 @@
     ],
     "0x04B62": [
       "bomb_option_2",
-      "the second YES/NO toggle on the bomb_options screen"
+      "the second YES/NO toggle on the bomb_options screen; adjust with toggle_bomb_option_2"
     ],
     "0x04D14": [
       "scenery_pool",
@@ -997,7 +1549,7 @@
     ],
     "0x04E82": [
       "object_render_dispatch",
-      "10-entry function table indexed by object type ([si + 0xA] in the pool at 0x51DD). Each entry is a renderer for one object class -- flak burst, night fighter, dam wall, target, and so on. Read by render_object_pool at four offsets (0x4E82, 0x4E92, 0x4EA2, 0x4EB2) for different render passes"
+      "40-byte per-object-type function table. Ten object types (0..9) x four handler slots each (spaced 20 bytes apart). Type 0: default small; type 2: pillar; type 3: primary with hit check; type 4: animated (searchlights); type 5: destroyed (all ret_stub); type 6: column sprite; type 7: ground feature; type 8/9: default. render_object_pool reads `[di + 0x4E82]` (slot 0); other passes read `[di + 0x4E92]`, `[di + 0x4EA2]`, `[di + 0x4EB2]` (slots 1, 2, 3)"
     ],
     "0x04EC2": [
       "pitch_offset_table",
@@ -1007,9 +1559,277 @@
       "object_pool",
       "20-slot object pool, each slot 14 bytes (0x14). Byte [+0xA] holds the type (0 = free, 1..10 = active object class); [+0xB..+0xF] holds position and velocity. Managed by spawn_flak, update_flak, render_object_pool, deactivate_object, check_flak_hit, check_flak_hit_type4"
     ],
+    "0x05505": [
+      "object_hit_count_a",
+      "internal decrement counter that check_object_hit_a modifies alongside the score counter. Purpose not yet settled"
+    ],
+    "0x05506": [
+      "object_hit_count_b",
+      "same for check_object_hit_b"
+    ],
+    "0x05507": [
+      "object_hit_count_shared",
+      "shared inc counter -- both hit-checkers bump this on any successful hit"
+    ],
+    "0x05512": [
+      "bomb_dropped_flag",
+      "set to 1 by spawn_flak when a critical damage combination is reached; read in check_flight_conditions and by the region-effect handlers to pick harder physics paths"
+    ],
+    "0x05513": [
+      "flak_next_tick",
+      "countdown-to-next-flak-spawn -- when it reaches 0, spawn_flak may spawn another object"
+    ],
+    "0x05515": [
+      "engine_fire_severity",
+      "engine-fire severity accumulator; bled down over time by spawn_flak (-4 per 100 ticks), affects the flak spawn probability"
+    ],
+    "0x056AF": [
+      "object_pillar_sprite_frames",
+      "8-word roll-frame table used by object_render_pillar; indexed by ((camera_roll + 0x30) >> 4)"
+    ],
+    "0x0584A": [
+      "object_column_sprite_frames",
+      "distance-picked sprite table used by object_render_column; indexed by |dist - 0xC8| >> 5"
+    ],
+    "0x05982": [
+      "enemy_direction_flag",
+      "bit-flag for enemy_plane movement direction (used by spawn_enemy_plane and update_enemy_plane)"
+    ],
+    "0x05983": [
+      "enemy_speed_flag",
+      "second bit-flag for enemy_plane variation"
+    ],
+    "0x05984": [
+      "enemy_lift_flag",
+      "prior-frame lift/dive state read by spawn_enemy_plane's spawn-probability calculation"
+    ],
+    "0x05985": [
+      "enemy_attack_timer",
+      "attack-timer decrementing counter for the airborne enemy"
+    ],
+    "0x05987": [
+      "enemy_active_state",
+      "state machine on the currently-airborne enemy fighter (0 = none, 1 = active/countdown, 0xFD/0x11E = terminal). Used by spawn_enemy_plane and update_enemy_plane"
+    ],
+    "0x0598A": [
+      "enemy_screen_x",
+      "on-screen X of the currently-airborne enemy"
+    ],
+    "0x0598D": [
+      "enemy_screen_y",
+      "on-screen Y"
+    ],
+    "0x0598F": [
+      "enemy_shot_count",
+      "how many enemies the player has shot down (a results counter)"
+    ],
+    "0x05991": [
+      "enemy_hit_count",
+      "how many times the enemy has hit the player"
+    ],
+    "0x0599B": [
+      "bombrun_sub_state",
+      "sub-state used by flight_forward_step and the bombrun chain to track sub-frame position"
+    ],
+    "0x06370": [
+      "hud_bomb_ready_countdown",
+      "decrement counter that draw_bomb_ready_icon reads; when it hits 0 the sound plays and the indicator resets"
+    ],
+    "0x06371": [
+      "hud_bomb_ready_state",
+      "0 or 1, tracks which bomb-ready indicator variant is currently on screen"
+    ],
+    "0x06372": [
+      "hud_bomb_ready_sprite_a",
+      "sprite pointer used for the 'unarmed' state of the bomb indicator"
+    ],
+    "0x0637A": [
+      "bombrun_status_indicator",
+      "status byte written by per_frame_step; drives the HUD arm/ready indicator"
+    ],
+    "0x0637C": [
+      "hud_bomb_ready_sprite_b",
+      "sprite pointer for the 'armed' state"
+    ],
+    "0x0655A": [
+      "object_draw_x_low",
+      "low word of the fixed-point x for object_draw_from_state"
+    ],
+    "0x0655B": [
+      "object_draw_x_lo_byte",
+      "low byte within object_draw_x_low"
+    ],
+    "0x0655C": [
+      "object_draw_x_frac",
+      "fractional part of object_draw_x"
+    ],
+    "0x0655D": [
+      "object_draw_dx_step",
+      "per-scanline dx step"
+    ],
+    "0x0655F": [
+      "object_draw_y",
+      "y position (word)"
+    ],
+    "0x06561": [
+      "object_draw_run_height",
+      "height for the drawing loop"
+    ],
+    "0x06565": [
+      "object_draw_end_x",
+      "right edge x for the drawing loop"
+    ],
+    "0x06567": [
+      "object_draw_last_x",
+      "last-known X of the drawn object row; used to spot loop termination"
+    ],
+    "0x06569": [
+      "object_draw_next_src",
+      "next source pointer for the row"
+    ],
+    "0x0656A": [
+      "object_draw_source_ptr",
+      "sprite base pointer"
+    ],
+    "0x0656B": [
+      "object_draw_next_row_dx",
+      "next-row X advance for object_draw_from_state's inner loop"
+    ],
+    "0x0656C": [
+      "object_draw_source_dx",
+      "per-scanline advance of the source pointer"
+    ],
+    "0x0656D": [
+      "object_draw_next_row_dy",
+      "next-row Y advance"
+    ],
+    "0x0656E": [
+      "object_draw_si_save",
+      "pool slot pointer saved across object_draw_from_state"
+    ],
+    "0x06570": [
+      "object_render_ground_frame",
+      "cached rotation-frame pointer from object_render_ground"
+    ],
+    "0x06572": [
+      "object_render_ground_sprite",
+      "cached sprite pointer from object_render_ground; if [si] doesn't equal this, the sprite changed and the object gets redrawn"
+    ],
+    "0x06ABF": [
+      "flak_hit_probability_table",
+      "per-active-object-count probability table read by check_flak_hit to decide whether a close type-3 object triggers a hit"
+    ],
+    "0x06AD3": [
+      "player_shot_count",
+      "results-page counter for player_shots (probably ME109 ATTACKS survived, from the results-step ordering)"
+    ],
+    "0x06AD5": [
+      "player_shot_active",
+      "flag set while a player-shot animation is in flight"
+    ],
+    "0x06AD6": [
+      "border_flash_timer",
+      "countdown for the CGA border flash effect (initialised by check_flak_hit)"
+    ],
+    "0x06B7D": [
+      "flak_active_type_b",
+      "sub-state counter for check_flak_hit_type4"
+    ],
+    "0x06B7F": [
+      "flak_active_type_a",
+      "sub-state counter for check_flak_hit"
+    ],
+    "0x06BFF": [
+      "near_object_sprite",
+      "sprite pointer of the nearest close object (dist < 0xC8), saved by object_render_ground for the mission-outcome logic in bomb_run_end"
+    ],
+    "0x06C01": [
+      "near_object_x",
+      "screen x of the nearest close object; the companion to near_object_sprite"
+    ],
+    "0x06C03": [
+      "results_counter_c",
+      "one of the ten results-page counters (position 4 in the results_step readout). Incremented by check_object_hit_b when the player hits an animated object (search-light class). Displayed as one of the SEARCH LIGHTS SHOT / FLAK INSTALLATIONS SHOT / ME109'S SHOT tallies -- exact mapping to be settled by reading results_step's template layout"
+    ],
+    "0x06C07": [
+      "object_small_sprite_frames",
+      "4-byte frame table used by object_render_small (variant selector byte per (ax & 3) value)"
+    ],
+    "0x06EAB": [
+      "jmp_bx_indirect_ptr",
+      "the callback pointer that the L_06F53 `jmp bx` reads via `mov si, [0x6EAB] / mov bx, [si]`. The one indirect jump not resolved by static reading -- writer not yet identified"
+    ],
+    "0x06EAD": [
+      "jmp_bx_target_slot",
+      "the memory the jmp_bx_indirect_ptr points into; contains the code address the L_06F53 dispatch jumps to"
+    ],
+    "0x072AD": [
+      "object_ground_sprite_frames",
+      "25-entry sprite table used by object_render_ground; each entry is a rotation-frame subtable read at 16 offsets"
+    ],
     "0x07D33": [
       "end_run_reason",
-      "the reason code passed to end_run, used to pick a message from the table at 0x7FE1"
+      "the reason code passed to end_run, used to pick a message from the 9-entry table at end_run_message_table"
+    ],
+    "0x07D35": [
+      "end_run_bonus",
+      "score bonus/penalty accumulator visible on the results page"
+    ],
+    "0x07D77": [
+      "end_run_message_ptr",
+      "message pointer looked up from end_run_message_table (at 0x7FE1) using end_run_reason"
+    ],
+    "0x07D7D": [
+      "end_run_delay",
+      "delay counter for the end_run animation"
+    ],
+    "0x07D7F": [
+      "engine_death_counter",
+      "4-word per-engine dead-counter (aged by count_engines_alive; overflow ends the run with reason 6)"
+    ],
+    "0x07D87": [
+      "crew_position_accumulator",
+      "4-word crew-position damage accumulator; overflow ends the run with reason 8 (all crew dead)"
+    ],
+    "0x07D8F": [
+      "end_run_score_ptr",
+      "pointer to the score-threshold table entry for the current level"
+    ],
+    "0x07D91": [
+      "end_run_score_threshold",
+      "score threshold, indexed by 0x7D8F, for promoting the player"
+    ],
+    "0x07E9E": [
+      "end_run_bomb_grade_dispatch",
+      "3-entry dispatch table (cs:0x7E9E) selecting the bomb-drop grade path"
+    ],
+    "0x07FE1": [
+      "end_run_message_table",
+      "9-entry pointer table indexed by end_run_reason*2. Each entry points at the crash-cause message shown by end_run (UNABLE TO COME OUT OF STALL, etc)"
+    ],
+    "0x08140": [
+      "starting_position_id",
+      "0 = SCAMPTON AIRFIELD (full mission), 1 = ENGLISH CHANNEL, 2 = DAM APPROACH. Set by the start_mission_* handlers; read by later logic to tailor difficulty"
+    ],
+    "0x0824E": [
+      "bomb_run_state",
+      "state accumulator used inside bomb_run_end to combine the four release-quality checks into a single result index"
+    ],
+    "0x08489": [
+      "results_template_slots",
+      "10 consecutive 6-byte slots in the results-page template that format_decimal fills with formatted numbers"
+    ],
+    "0x084C5": [
+      "format_decimal_leading",
+      "flag that format_decimal uses to track whether it is still emitting leading spaces"
+    ],
+    "0x084C6": [
+      "bomb_run_end_active",
+      "set to 1 by bomb_run_end when the outcome sequence is running; blocks re-entry"
+    ],
+    "0x0ADAD": [
+      "song_table",
+      "song pointer table for play_song and set_loop_song; indexed by song_id * 2"
     ],
     "0x0D1BE": [
       "saved_kbd_isr_off",
@@ -1075,6 +1895,10 @@
       "sprite_row_count",
       "count of shape indices to draw"
     ],
+    "0x0D7A2": [
+      "bit_expansion_table",
+      "128-word table used by draw_bit_expansion_row. Each entry expands 4 source bits (index) into 8 output bits (2 CGA bits per source bit) -- the 1-bit-to-2-bit expansion for CGA mode 4"
+    ],
     "0x0D9A2": [
       "blit_src",
       "source address for blit_rect and blit_shape"
@@ -1086,6 +1910,14 @@
     "0x0D9A6": [
       "blit_x",
       "destination X for blit_rect and blit_shape (odd values trigger the nibble-shift path)"
+    ],
+    "0x0D9A8": [
+      "clip_x_left",
+      "left X clip boundary for the current phase's drawing region -- 35 references, checked by every clipped drawer"
+    ],
+    "0x0D9AA": [
+      "clip_x_right",
+      "right X clip boundary"
     ],
     "0x0D9AC": [
       "blit_y",
@@ -1107,6 +1939,18 @@
       "blit_height",
       "height in rows for blit_rect and blit_shape"
     ],
+    "0x0D9B8": [
+      "blit_row_scratch",
+      "row scratchpad used by blit_rect and blit_rect_or_xor as a temporary during the inner loop"
+    ],
+    "0x0D9BA": [
+      "blit_width_extra",
+      "additional width tracking for blit_masked -- used when the sprite crosses a byte boundary"
+    ],
+    "0x0D9BC": [
+      "blit_height_extra",
+      "additional height tracking for blit_masked"
+    ],
     "0x0D9BE": [
       "sprite_at_x",
       "X for draw_sprite_at"
@@ -1118,6 +1962,34 @@
     "0x0D9C2": [
       "sprite_at_addr",
       "source for draw_sprite_at"
+    ],
+    "0x0D9C4": [
+      "pixel_marker_value",
+      "the pixel value for plot_pixel_xor / plot_marker_at_var"
+    ],
+    "0x0D9C7": [
+      "sprite_header_ptr",
+      "saved SI pointer to the current sprite header used by draw_masked_sprite and draw_sprite_masked_at"
+    ],
+    "0x0D9C9": [
+      "sprite_mask_byte",
+      "mask byte for blit_shape and draw_sprite_masked_at (per-pixel mask for transparent regions)"
+    ],
+    "0x0D9CC": [
+      "blit_src_step",
+      "byte-count to add to the source pointer per scanline for blit_rect_clipped_xor"
+    ],
+    "0x0D9CE": [
+      "blit_run_width",
+      "post-clip width for blit_rect_clipped_xor"
+    ],
+    "0x0D9D0": [
+      "blit_last_pixel_edge",
+      "flag indicating whether the last pixel of a row needs merging into the trailing byte"
+    ],
+    "0x0D9D1": [
+      "blit_src_align_odd",
+      "flag: 1 if the source X starts on an odd nibble (so the row shifts by 4 bits per scanline)"
     ],
     "0x0DF18": [
       "dl_dispatch",
@@ -1187,9 +2059,174 @@
       "cga_row_table",
       "table of 200 word offsets, one per CGA scan line, indexed by blit_y * 2. Handles the interleaved CGA memory layout so the blitters can write into any line without doing the interleave arithmetic themselves"
     ],
+    "0x0E9FE": [
+      "sprite_map_cursor",
+      "the map's current-position cursor sprite, referenced by draw_map_current_pos_marker"
+    ],
+    "0x0EA2A": [
+      "sprite_map_prev_cursor",
+      "the map's previous-position cursor sprite"
+    ],
+    "0x0EA48": [
+      "heading_arrow_sprites",
+      "16-word table of sprite pointers indexed by heading_tile*2. Each is a heading-arrow sprite for one of the 16 compass directions. Referenced from draw_map_heading_arrow as [bx - 0x15B8] (= 0x0100 + BX offset that wraps to 0xEA48)"
+    ],
+    "0x0ED08": [
+      "sprite_list_map_cursor",
+      "sprite-list address for draw_map_current_pos_marker (a small (address, x, y) list terminated by 0)"
+    ],
+    "0x0ED12": [
+      "sprite_list_map_prev_cursor",
+      "sprite-list address for draw_map_previous_pos_marker"
+    ],
+    "0x0ED1C": [
+      "sprite_list_map_heading",
+      "sprite-list address for draw_map_heading_arrow"
+    ],
     "0x0ED26": [
       "region_titles",
       "table of 6 word pointers to region-title strings, indexed by map_region*2. Referenced as [bx - 0x12DA] from draw_map_border because [0x100 + BX*2 - 0x12DA] wraps to 0xED26"
+    ]
+  },
+  "_displacements": {
+    "_note": [
+      "Bracketed constants in the listing that are displacements, not",
+      "addresses: each appears only with a base register (bx, si, di, bp)",
+      "and never on its own. Almost all of them are field offsets into",
+      "either the 20-byte object_pool slots (0x51DD..0x536D), the small",
+      "record types used by menu handlers, or negative-displacement",
+      "table bases that reduce to a labelled address by 16-bit wrap.",
+      "Listing them here gives the coverage number a denominator that",
+      "means something, and stops the next reader hunting for a variable",
+      "at 0x000A."
+    ],
+    "0x0000A": [
+      "si",
+      "object_pool slot +0xA = type (0..9, 0 = free, 5 = destroyed)"
+    ],
+    "0x0000C": [
+      "si",
+      "object_pool slot +0xC = world x (word)"
+    ],
+    "0x0000D": [
+      "si",
+      "object_pool slot +0xD = world dx / velocity component"
+    ],
+    "0x0000E": [
+      "si",
+      "object_pool slot +0xE = world x high byte"
+    ],
+    "0x0000F": [
+      "si",
+      "object_pool slot +0xF = y-low"
+    ],
+    "0x00010": [
+      "si",
+      "object_pool slot +0x10 = distance from plane"
+    ],
+    "0x00012": [
+      "si",
+      "object_pool slot +0x12 = animation frame or script cursor"
+    ],
+    "0x01B5E": [
+      "bx",
+      "displacement to cga_row_table (0xE4A2 = 0 - 0x1B5E mod 0x10000)"
+    ],
+    "0x0285E": [
+      "di",
+      "displacement to bit_expansion_table (0xD7A2 = 0 - 0x285E mod 0x10000)"
+    ],
+    "0x12DA": [
+      "bx",
+      "displacement to region_titles / tile map addressing tables around 0xED26"
+    ],
+    "0x15B8": [
+      "bx",
+      "displacement to heading_arrow_sprites (0xEA48 = 0x100 - 0x15B8 mod 0x10000 -- table reached via a base 0x100 addressing pattern)"
+    ],
+    "0x1EAF": [
+      "si",
+      "displacement to the music PIT-frequency table at 0xE151 (0 - 0x1EAF mod 0x10000)"
+    ],
+    "0x20E8": [
+      "bx",
+      "displacement to dl_dispatch at 0xDF18 (0 - 0x20E8 mod 0x10000)"
+    ],
+    "0x285E": [
+      "di",
+      "same as above (0xD7A2)"
+    ],
+    "0x1C7F": [
+      "si",
+      "displacement to prng_state_table (0xE381 = 0 - 0x1C7F mod 0x10000)"
+    ],
+    "0x1D3F": [
+      "si",
+      "another displacement pattern near prng_state_table"
+    ],
+    "0x5133": [
+      "bx",
+      "displacement into spawn-flak per-type table near 0x51DD (used by spawn_flak in the type-picker)"
+    ],
+    "0x5253": [
+      "si",
+      "displacement to song_table at 0xADAD (0 - 0x5253 mod 0x10000)"
+    ],
+    "0x6331": [
+      "si",
+      "displacement into build_display_list_from_state's cached score table"
+    ],
+    "0x631B": [
+      "si",
+      "same block"
+    ],
+    "0x6305": [
+      "si",
+      "same block"
+    ],
+    "0x6382": [
+      "bx",
+      "displacement into a per-slot HUD-state array; used by reset_per_run_counters and hud_check_bomb_press"
+    ],
+    "0x7B7F": [
+      "bx",
+      "displacement into a per-slot results table (0x173D-based)"
+    ],
+    "0x7F00": [
+      "bx",
+      "another results-page addressing base"
+    ],
+    "0x64BE": [
+      "bx",
+      "displacement into a per-target-lock frame index table"
+    ],
+    "0x64DE": [
+      "bx",
+      "companion table to 0x64BE (target-lock sprite pointers)"
+    ],
+    "0x64F2": [
+      "bx",
+      "another target-lock addressing base"
+    ],
+    "0x6506": [
+      "bx",
+      "target-lock sprite selection base"
+    ],
+    "0x03D9": [
+      "bx",
+      "byte-field offset used in the object-pool clip test"
+    ],
+    "0x00004": [
+      "si",
+      "sub-field of a small 8-byte record used by clamp_map_position and coord helpers"
+    ],
+    "0x00006": [
+      "si",
+      "sub-field of the 8-byte record (offset +6 = distance/index)"
+    ],
+    "0x00008": [
+      "si",
+      "sub-field of the 8-byte record (offset +8 = mask/count)"
     ]
   }
 }

@@ -6,20 +6,22 @@ region-select map, a three-view cockpit (pilot, bomb-aimer, rear-gunner),
 and per-engine controls for the Lancaster's four Merlin engines.
 
 **It rebuilds byte-identically** from a copy you own — checked on every
-run. **168 routines and 127 globals** are named in `symbols.json`, each
+run. **241 routines and 277 globals** are named in `symbols.json`, each
 with the evidence for its name. Coverage:
 
-- **104 of 158 call targets** named
-- All 5 tail-call entries named
-- 111 of 433 bracketed constants named
+- **All 158 call targets named (100%)**
+- **All 6 tail-call entries named**
+- 247 of 433 bracketed constants named + 13 recorded as displacements
 - The reading covers the entry stub, the frame loop, all 9 game phases,
   the timer/music/keyboard/video subsystems, the CGA blitter, the drawing
-  DSL, the 3D projection, and the object pool.
+  DSL, the 3D projection, the 20-slot object pool with all 10 object-type
+  renderers, the three mission-start paths, the intelligence-report
+  randomisers, and the two failure paths.
 
 **No `_data_spans` yet.** ~55 KB of data is named-but-not-partitioned; that
 is the next phase of the reading. See [CLAUDE.md](CLAUDE.md) for the
-current state and [BRIEF.md](BRIEF.md) for the triage and toolkit-fix
-history.
+current state, [docs/01-the-game.md](docs/01-the-game.md) for what the
+game is, and [BRIEF.md](BRIEF.md) for the triage and toolkit-fix history.
 
 ## Rebuilding it
 

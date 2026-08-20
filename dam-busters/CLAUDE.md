@@ -22,10 +22,11 @@ routines and 127 globals**, each with the evidence for its name.
 | rebuild | `D3657960A00AAC6548C47EE35A8AC008EF0BB254F94AE2A335B04431F26C380D` byte-identical |
 | bytes as code | 16,838 / 65,028 (25.9%), 17,364 with pins (26.7%) |
 | instructions | 5,690 (262 pinned) |
-| call targets named | **104 of 158 (66%)** |
-| tail-call entries named | **5 of 5** |
-| bracketed constants named | 111 of 433 (26%) |
-| `_data_spans` | **not started** |
+| call targets named | **158 of 158 (100%)** |
+| tail-call entries named | **6 of 6** |
+| bracketed constants named | 247 of 433 (57%) + 13 recorded as displacements |
+| routines / globals | 241 / 277 |
+| `_data_spans` | **not started** — the next rung |
 
 **Quote both numbers when you say "how much is decoded".** 25.9% is the file
 number and it describes the game — most of Dam Busters is text, sprites and
@@ -185,46 +186,42 @@ memory, and the writer has not been read.
 
 ## What is still open
 
-**~54 direct-call targets unnamed**, in three groups:
+**All 158 direct-call targets are named. All 6 tail-call entries are named.**
+The routine ladder is closed. What is left is on the *data* side.
 
-1. **The 10 per-type object renderers** under `object_render_dispatch`
-   (cs:0x4E82). Each handles one object class — flak burst, night fighter,
-   dam wall, target, and so on. These are called from `render_object_pool`
-   and `render_object_pool_rear`; the pool at 0x51DD has 20 slots and each
-   entry's type byte at `[+0xA]` selects one.
-2. **Small blit variants** in the 0xDBBA..0xDE70 range. 2-3 callers each.
-   They differ in mask/XOR behaviour; reading them takes minutes and would
-   settle the last of the drawing subsystem.
-3. **Intro/attract-loop details** — the boot path from `entry` past the
-   subsystem inits into whatever plays before `main_loop` starts is thin.
-   `L_0006B` is the frame loop but the pre-frame animation has not been walked.
-
-**`_data_spans` has not been started.** This is the third denominator (bytes
-of the whole image accounted for). Karateka finished at 100% by byte using
-this; Dam Busters has ~55 KB of data in named-but-not-partitioned tables
-(text at `0x7EFC..0xB4D8`, sprite tables at `0xB544..0xD1CF`, the LFSR state
-at `0xE381`, and a lot more). This is where the reading goes next.
-
-**One indirect not resolved** — the `jmp bx` mentioned above, where BX is
-loaded from memory that no static reading has traced. Solving it would need
-a runtime hook (see `../../DOS-Decompiler/knowledge/12-hooking-the-right-thing.md`).
-
-**Six of eight jump table sets not yet fully walked** — `cs:0x6F3E` (3
-targets), `cs:0x7E9E` (3), and the four remaining entries of
-`menu_action_dispatch`. Each is quick reading; each nails down another
-handful of routines.
+- **186 unnamed bracketed constants** (`annotate.py`'s count: covers 247 of
+  433 + 13 as displacements = 260 accounted for, so 173 remain). Most of
+  these are inside sprite/text tables that a proper `_data_spans` partition
+  will subsume rather than name individually. Some are small game state
+  variables that should still be named as globals -- read them as they come
+  up while reading the data.
+- **`_data_spans` has not been started.** This is the third denominator (bytes
+  of the whole image accounted for). Karateka finished at 100% by byte using
+  this; Dam Busters has ~55 KB of data in named-but-not-partitioned tables
+  (text at `0x7EFC..0xB4D8`, sprite tables at `0xB544..0xD1CF`, the LFSR
+  state at `0xE381`, and a lot more). **This is where the reading goes next.**
+- **One indirect not resolved** — the `jmp bx` at 0x06F53, where BX is loaded
+  from memory that no static reading has traced (the pointer is at
+  `jmp_bx_indirect_ptr` 0x6EAB → 0x6EAD, but its writer is not visible
+  statically). Solving it would need a runtime hook (see
+  `../../DOS-Decompiler/knowledge/12-hooking-the-right-thing.md`).
+- **Two dispatchers still un-decoded** — `cs:0x7E9E` (3 targets) and the
+  4-slot cs:0x4EB2 has a couple of entries with values `0x300` and `0xA06`
+  which the walker refused as too-early. These are false-positive targets;
+  the real table sizes are smaller than 10.
 
 ## The order to work in
 
-1. Read the 10 object-type renderers under `object_render_dispatch`. Each
-   is small and each names a distinct game object.
-2. Walk the 6 unresolved menu handlers and the two small dispatchers.
-3. Read the remaining blit variants.
-4. Build `_data_spans` — the partition of the whole image, one span per
-   coherent region (text block, sprite table, LFSR state, etc). Karateka's
-   symbols.json has the shape to copy from.
-5. Then documents 01-06, in the order the root CLAUDE.md prescribes.
-6. Then the port. [`../karateka/PORT-BRIEF.md`](../karateka/PORT-BRIEF.md)
+1. **Build `_data_spans`** — the partition of the whole image, one span per
+   coherent region: text block, sprite table, per-region tile map, LFSR
+   state, and so on. Karateka's `symbols.json` has the shape to copy from.
+   This is the big remaining piece and is where any remaining unnamed
+   bracketed constants that are really inside data tables get accounted for.
+2. Fill in the small game-state globals as they surface while reading data
+   (~186 remaining, most inside tables that `_data_spans` will subsume).
+3. Then documents 02-06 (01 is done — see [docs/01-the-game.md](docs/01-the-game.md)),
+   in the order the root CLAUDE.md prescribes.
+4. Then the port. [`../karateka/PORT-BRIEF.md`](../karateka/PORT-BRIEF.md)
    is the reference for what that looks like.
 
 ## Before you commit
