@@ -2,10 +2,1194 @@
   "_about": [
     "Names for The Dam Busters's routines and globals, with the evidence for each.",
     "",
-    "Empty: nothing has been read yet. See BRIEF.md for what triage found and the order the work is worth doing in.",
+    "Routine keys are image offsets, the coordinate comrec's labels use. Global keys are the addresses the program sees. In a single-segment MZ they are the same, but keeping the two sections separate keeps the intent explicit. Getting them the wrong way round is the mistake that costs a session, and the only symptom is silence.",
     "",
-    "Routine keys are image offsets, the coordinate comrec's labels use. Global keys are the addresses the program sees. Getting those the wrong way round is the mistake that costs a session, and the only symptom is silence."
+    "This is the start of the reading, not the end. What is named here is the entry point, the main loop, the timer/music/keyboard/video subsystems, and the top-level game phases. Every name carries the evidence that established it; something without evidence stays unnamed rather than becoming a plausible guess.",
+    "",
+    "The three toolkit fixes that took the decode rate from 12.3% to 26.7% are recorded in BRIEF.md, not here -- they are facts about comrec, not facts about this game."
   ],
-  "routines": {},
-  "globals": {}
+  "routines": {
+    "0x00000": [
+      "entry",
+      "the MZ entry (CS:IP -> 0000:0000 from mzinfo); sets DS := CS in the first two instructions, which is what a single-segment .COM-in-MZ program does"
+    ],
+    "0x0002D": [
+      "detection_failure_halt",
+      "an infinite `jmp $` reached from the detection loop's dead exit at 0x2C. In the shipped file the loop always falls through to post_boot, but the failure branch is preserved"
+    ],
+    "0x0002F": [
+      "post_boot",
+      "reached from the head of the file after a 16-round hardware detection loop falls through. Saves SP into [saved_sp] so restart_run can restore it, then calls init_cga_mode, set_default_palette, save_kbd_isr, spins a 65,536-iteration delay, then install_timer_isr, install_kbd_isr, and two subsystem init routines before falling through into the main-loop setup"
+    ],
+    "0x00053": [
+      "restart_run",
+      "the target of `jmp L_00053` in main_loop when both end_of_run_flag and restart_ready_flag are set. Restores SP from saved_sp, clears end_of_run_flag, zeroes SI, then falls through to main_setup"
+    ],
+    "0x0005F": [
+      "main_setup",
+      "called on every run start (from post_boot and from restart_run). set_loop_song(0), a pinned call to 0x6EB8, install_kbd_isr, install_timer_isr -- then falls through into main_loop"
+    ],
+    "0x0006B": [
+      "main_loop",
+      "the per-frame loop. Atomically moves tick_flags -> tick_flags_working under CLI/STI, waits for bit 0 (the frame tick), calls per_frame_step then check_phase_transition, then dispatches to the current phase handler via `call word [bx*2 + phase_dispatch]`. If end_of_run_flag becomes non-zero the code spins waiting for restart_ready_flag and jumps to restart_run; otherwise it polls ack_pending_flag and, when set, waits for the '1' key before reinstalling the keyboard ISR"
+    ],
+    "0x000CB": [
+      "ret_stub",
+      "a single `ret`. Table entry for the phase-dispatch slot that does nothing"
+    ],
+    "0x001A4": [
+      "map_screen_init",
+      "phase_init_dispatch[4]. Draws the header (draw_map_border) with 'GREAT BRITAIN' etc., resets the target-region field to 0xFFFF, then falls through into map_screen_step for the first frame"
+    ],
+    "0x001B0": [
+      "map_screen_step",
+      "phase_dispatch[4]. Per-frame update of the map-selection screen: reads and applies cursor input via update_map_view, clamps the position with clamp_map_position (which wraps between adjacent regions), redraws on movement, and calls the map's sub-updates"
+    ],
+    "0x001DA": [
+      "update_map_view",
+      "if the cursor-input flag [0xD1C3] is set, toggles [0x10E] between the two cached positions ([0xF4..0xF8] and [0xFA..0xFE]) and calls draw_map_border. The [0x10F] guard rejects re-entrancy from held keys"
+    ],
+    "0x00226": [
+      "save_map_pos",
+      "if the save-position flag [0xD1C5] is set, copies the working position [0xF4..0xF8] into the cached slot [0xFA..0xFE]. Called from map_screen_step after movement is applied"
+    ],
+    "0x00240": [
+      "clamp_map_position",
+      "clamps the (x, y, region) triple at DS:SI: x is folded into 0..0xDF (0..223) and y into 0..0x8F (0..143); when x wraps around, the region index at offset +4 steps to the adjacent map (with 0<->3 and 2<->5 acting as edges that clamp rather than wrap). Returns carry set when a wrap occurred"
+    ],
+    "0x002BF": [
+      "draw_map_border_and_header",
+      "sets the text drawer's parameter block (draw at [0xD9A2..0xD9BE]) to the header slot and text address 0xEBD8, calls draw_text, then falls through into draw_map_border to redraw the whole frame"
+    ],
+    "0x002E0": [
+      "draw_map_border",
+      "draws the map screen's 4-piece border using sprite drawer L_0D631 with parameter block [0xD627..0xD62F]: sprite 0xE632 across the top and bottom edges at y=0x20/0xB8, then alternating figures 0x114/0x115/0x116/0x117 down the left and right edges; also draws the four corners with L_0DA39 at (0x16,0x25), (0x88,0x25), (0x16,0xB8), (0x88,0xB8), and the region title read from a table at 0xED26 indexed by [0xF8]"
+    ],
+    "0x008AB": [
+      "check_phase_transition",
+      "compares game_phase to requested_phase; if they differ and the current phase is not 8 (end), it sets the new phase, clears CGA to 0, resets the palette, and calls the phase-init handler from phase_init_dispatch (the cs:0x8d2 table)"
+    ],
+    "0x00D62": [
+      "per_frame_step",
+      "the first of the two calls out of main_loop. Times out a border-flash counter at [0x6AD6], runs six model-update routines and six render/audio routines when bit 5 of tick_flags_working is set, then drains music_bar_count via a loop that calls four sub-steps. Deep enough to be worth splitting later"
+    ],
+    "0x00E46": [
+      "integrate_heading",
+      "per_frame_step[1]. Reads [0x3070] (roll input), scales by 4, integrates into [0xBC4] (accumulated heading rate); saturates to [-6,+6] when [0x3072]==0 (auto-stabilise). Copies to [0xBC6] (heading rate), then integrates it into [0xBC8]/[0xBCA] as a signed word; wraps [0xBC9] mod 0x168 (360). [0xBC9] is the plane heading in degrees"
+    ],
+    "0x00E8D": [
+      "altitude_step",
+      "per_frame_step[1]. Averages the four engine-load bytes at [0x1735..0x173B] (skipping zeros), maps through table at 0xCDB, subtracts [0x23A5] (target altitude), scales by throttle and integrates into [0xCE6] (current altitude). Ends the run with reason 7 if [0xCE6] > 0x186 (over the ceiling); clamps to 0 when it dips below. Also picks a music-loop pointer based on engine average (call set_loop_song)"
+    ],
+    "0x00F4F": [
+      "compute_yaw_torque",
+      "per_frame_step[1]. Averages the engine outputs from left pair ([0x1735], [0x1737]) minus right pair ([0x173B], [0x1739]), divides by 16, adds [0x23A9] and [0x7D35] offsets, stores in [0xBC4]. Engine imbalance drives the heading rate that integrate_heading reads next"
+    ],
+    "0x00F80": [
+      "integrate_distance",
+      "per_frame_step[1]. Combines throttle [0x306D] and roll magnitude [0x3070] into a speed, scales by altitude [0xCE6]/2, calls L_01373 (a trig helper), and accumulates into distance [0xBCB]. Sets damage flag [0xBCF] when it saturates non-zero"
+    ],
+    "0x00FBF": [
+      "check_flight_conditions",
+      "per_frame_step[1]. Multiple crash checks against combined roll/distance thresholds: reason 4 = stalled below target ([0x23A3]==2 and [0xBD2] < 12), reason 3 = damage-flag-with-fuel-out condition, reason 2 = throttle-and-distance conflict. Each triggers `jmp end_run`"
+    ],
+    "0x01031": [
+      "apply_region_flight_effect",
+      "per_frame_step[1]. Reads throttle [0x306D], transforms via L_01394, multiplies by altitude [0xCE6], then dispatches through cs:0x1045 by [0x104] (map_region). Each of the six region cases modifies the accumulated distance/altitude by a region-specific rule"
+    ],
+    "0x01051": [
+      "region_effect_shift_left",
+      "cs:0x1045[0] and cs:0x1045[3]: multiplies the incoming value by 2 (shl) then calls region_effect_default. Reached from apply_region_flight_effect for map_region = 0 or 3"
+    ],
+    "0x01058": [
+      "region_effect_conditional",
+      "cs:0x1045[1]: branches on [0xBE3]; if non-zero, shifts and double-invokes region_effect_default; otherwise the plain path"
+    ],
+    "0x01062": [
+      "region_effect_shift_right",
+      "cs:0x1045[5]: shifts right depending on [0x5512]; halves the distance contribution"
+    ],
+    "0x0106D": [
+      "region_effect_default",
+      "cs:0x1045[2] and cs:0x1045[4]: adds AX to [0xBD0] (distance-fine), and on wrap increments [0xBD2] (whole distance), then advances the plane position via step_plane_position"
+    ],
+    "0x01074": [
+      "step_plane_position",
+      "per_frame_step[1] inner step. Increments the whole-distance counter [0xBD2], reads heading [0xBC9], scales the fractional sin/cos into [0xBD4]/[0xBD6], and integrates the high bytes into world position [0x100]/[0x102]. Then calls update_map_position"
+    ],
+    "0x010BC": [
+      "update_map_position",
+      "clamps the world position [0x100]/[0x102] via clamp_map_position, and if the tile coordinate ([0x100]>>3 or [0x102]>>3) changed, calls update_visible_tiles. Detects tile crossings that require a redraw"
+    ],
+    "0x010F7": [
+      "update_visible_tiles",
+      "writes 10 map tile bytes into [0xBDA..0xBE3] by walking a per-heading pattern (from table at 0xBFB/0xC4B) around the current tile position [0xBD8]/[0xBD9]. These are the tiles the drawing code reads to build the terrain view"
+    ],
+    "0x010FA": [
+      "update_visible_tiles_from_bx",
+      "the body of update_visible_tiles reached without recomputing the direction (BX already holds the direction index)"
+    ],
+    "0x0112E": [
+      "yaw_to_direction",
+      "reads [0xBC9] heading, shifts right 4 (16-directional slice), indexes into table at 0xBE4 for the direction code returned in BX"
+    ],
+    "0x01141": [
+      "get_map_tile",
+      "reads a byte from the world tile map at (dl=col, dh=row, di=region), with wrap: column wraps every 0x1C into di+/-1 (region step), row wraps every 0x12 across three-region rows. Rows are indexed via table at 0xC9B, columns via cs:0xED26 (from -0x12DA)"
+    ],
+    "0x011C4": [
+      "check_heading_tile_change",
+      "per_frame_step[1]. Calls yaw_to_direction; if the 16-directional heading tile at [0xBC0] changed, jumps to update_visible_tiles to redraw"
+    ],
+    "0x011D1": [
+      "refresh_visible_tiles",
+      "convenience wrapper: update_map_position + update_visible_tiles"
+    ],
+    "0x0136B": [
+      "sin_deg_alt",
+      "another sine variant taking heading in a different unit; used by step_plane_position"
+    ],
+    "0x01373": [
+      "sin_deg",
+      "sine of AX (heading in degrees), returned in AX scaled to 64. Used by integrate_distance and update_camera_transform"
+    ],
+    "0x0138C": [
+      "cos_deg_alt",
+      "the cosine partner of sin_deg_alt"
+    ],
+    "0x01394": [
+      "cos_deg",
+      "cosine of AX (heading in degrees), returned in AX scaled to 64. Used by apply_region_flight_effect and update_camera_transform"
+    ],
+    "0x0174B": [
+      "menu_main_init",
+      "phase_init_dispatch[5]. A menu screen: restores the cursor position from [0x1749] into [0x1718], calls L_0DF0E to draw text at SI=0x13A6, zeroes 8 per-row counters at 0x16C0..0x1706 (10 bytes apart, one per menu row), sets up the input state via L_01826, and calls L_01A37/L_01A81 for the initial paint"
+    ],
+    "0x017AC": [
+      "menu_main_step",
+      "phase_dispatch[5]. Calls menu_input (L_017C8) with the base text at 0x1B57, updates the visible options, then saves the cursor back to [0x1749] so the next entry to this phase restores where the player was"
+    ],
+    "0x017C8": [
+      "menu_input",
+      "shared menu-input handler used by phases 5 and 6. When [0xD1C5] is set (the fire/select trigger), it dispatches through cs:0x1610 by the current menu index [0x1718]. Otherwise it steps the cursor from held-key state ([0xD1C2] bit 0 up, bit 1 down) with a 0x10-tick repeat delay held in [0x171A]"
+    ],
+    "0x01823": [
+      "set_menu_cursor",
+      "tail-call entry to draw_menu_cursor: stores AL into [0x1718] first, then falls through. Three jump sites in menu_input's directional-key branches all read a next-position byte from tables at 0x1636/0x1649/0x165C/0x166F (per-direction) and jump here"
+    ],
+    "0x01826": [
+      "draw_menu_cursor",
+      "reads two coordinate bytes from tables at 0x1682/0x1683 indexed by [0x1718]*2, writes them into the drawing block [0xD9BE]/[0xD9C0], and calls L_0DD37 with SI=0x21CF to draw the cursor sprite"
+    ],
+    "0x01871": [
+      "menu_main_draw_engine_gauges",
+      "draws all four engine gauges by walking [0x173D] engine_states and picking display sprite 2 or 3 based on whether the engine is running. Called from menu_main_init and use_fire_ext_shared"
+    ],
+    "0x01895": [
+      "use_fire_ext_engine_1",
+      "menu handler (cs:0x1610[4]): activates the fire extinguisher on engine 1 (bx=0). Tail-jumps into use_fire_ext_shared with bx=0"
+    ],
+    "0x01898": [
+      "use_fire_ext_shared",
+      "the tail-call target of use_fire_ext_engine_1..4. If input_flags bit 1 is set and [bx + engine_states] bit 0 is clear, sets that bit (marking the extinguisher used on that engine), clears the two damage counters at [(bx*2) + 0x172D] and [(bx*2) + 0x1735], and calls L_01871 (redraw) and L_063BD with AX=6 (probably the whoosh sound effect)"
+    ],
+    "0x018C5": [
+      "use_fire_ext_engine_2",
+      "menu handler (cs:0x1610[5]): engine 2 (bx=1)"
+    ],
+    "0x018CA": [
+      "use_fire_ext_engine_3",
+      "menu handler (cs:0x1610[6]): engine 3 (bx=2)"
+    ],
+    "0x018CF": [
+      "use_fire_ext_engine_4",
+      "menu handler (cs:0x1610[7]): engine 4 (bx=3)"
+    ],
+    "0x018D4": [
+      "menu_main_draw_top_row_gauges",
+      "redraws the top row of engine gauges from the four engine_slider_top values. Called after any adjust_engine_slider_top_* handler"
+    ],
+    "0x0191D": [
+      "adjust_engine_slider_top_1",
+      "menu handler (cs:0x1610[0]): +/- adjust value at [0x1725] (engine 1). Value ranges 0..0x28 = 40. Test byte [0x171c] bit 0 = inc, bit 1 = dec. Redraws via L_01AC8 (border/gauge) and L_018D4 (the pointer-draw pass). One of the two per-engine slider rows on the cockpit page -- BOOSTER GAUGES, RPM GAUGES, THROTTLES are the labels shown from text at 0x13A6; which of them this row is has not been settled from the code"
+    ],
+    "0x01950": [
+      "adjust_engine_slider_top_2",
+      "menu handler (cs:0x1610[1]): engine 2 (bx=2) counterpart of adjust_engine_slider_top_1"
+    ],
+    "0x01955": [
+      "adjust_engine_slider_top_3",
+      "menu handler (cs:0x1610[2]): engine 3 (bx=4)"
+    ],
+    "0x0195A": [
+      "adjust_engine_slider_top_4",
+      "menu handler (cs:0x1610[3]): engine 4 (bx=6)"
+    ],
+    "0x0195F": [
+      "adjust_engine_slider_top_all",
+      "menu handler (cs:0x1610[15]): loops bx=0,2,4,6 calling the shared body -- adjusts all four engines' top-row slider together"
+    ],
+    "0x01970": [
+      "menu_main_draw_bottom_row_gauges",
+      "redraws the bottom row of engine gauges from engine_slider_bottom. Called after any adjust_engine_slider_bottom_* handler"
+    ],
+    "0x019B7": [
+      "adjust_engine_slider_bottom_1",
+      "menu handler (cs:0x1610[8]): +/- adjust value at [0x171D] (engine 1). Value ranges 0..0x18 = 24. Same shape as adjust_engine_slider_top_1 but with a different base and redraw (L_01970). Which cockpit label this row corresponds to has not been settled"
+    ],
+    "0x019EA": [
+      "adjust_engine_slider_bottom_2",
+      "menu handler (cs:0x1610[9]): engine 2 (bx=2)"
+    ],
+    "0x019EF": [
+      "adjust_engine_slider_bottom_3",
+      "menu handler (cs:0x1610[10]): engine 3 (bx=4)"
+    ],
+    "0x019F4": [
+      "adjust_engine_slider_bottom_4",
+      "menu handler (cs:0x1610[11]): engine 4 (bx=6)"
+    ],
+    "0x019F9": [
+      "adjust_engine_slider_bottom_all",
+      "menu handler (cs:0x1610[16]): loops bx=0,2,4,6 for the bottom row"
+    ],
+    "0x01A0A": [
+      "menu_main_draw_engine_lights",
+      "walks all four engine states and updates each engine's status light -- non-2 states blink at half-second cadence via bit 5 of tick_counter"
+    ],
+    "0x01A37": [
+      "menu_main_draw_selectors",
+      "draws small numeric selectors on the menu_main page"
+    ],
+    "0x01A81": [
+      "menu_main_draw_footer",
+      "the bottom-of-screen footer text on menu_main"
+    ],
+    "0x01AC8": [
+      "redraw_menu_gauges",
+      "called after any menu handler updates a slider value. Redraws all four engine-gauge overlays from [0x1725..0x172B] (engine_slider_top) and [0x171D..0x1723] (engine_slider_bottom)"
+    ],
+    "0x023B9": [
+      "menu_second_init",
+      "phase_init_dispatch[6]. Same shape as menu_main_init but with different tables and text (SI=0x21D9, text base 0x25B1, 5 per-row counters at 0x2365..0x2395 spaced by 10). The state [0x1718] is restored from [0x23AB] (a different save slot than menu_main uses, so the two menus keep their own cursor positions)"
+    ],
+    "0x02408": [
+      "menu_second_step",
+      "phase_dispatch[6]. Uses the same menu_input handler as menu_main_step but writes the cursor back to [0x23AB]"
+    ],
+    "0x02421": [
+      "menu_second_draw_option_letter",
+      "reads the current option index [0x239F] to pick a letter from the table at 0x2347, patches the template at [0x2288 + 5], and calls draw_display_list. Called by cycle_selector_a redraws"
+    ],
+    "0x02433": [
+      "cycle_selector_a",
+      "3-position selector driven by [0xD1C2] bits 2 (increment) and 3 (decrement) on [0x239F], clamped to 0..2. Uses the tick_flags_working bit 4 as a repeat gate. Redraws via L_02421 (which reads the selected option's letter from a table at 0x2347) and then reads a distance/altitude pair from tables at 0x23AD/0x23B3"
+    ],
+    "0x0244D": [
+      "cycle_selector_a_apply",
+      "tail-call target: redraws the letter (menu_second_draw_option_letter) then syncs the (distance, altitude) pair (menu_second_sync_selection). Reached from cycle_selector_a's increment and decrement paths after [0x239F] moves"
+    ],
+    "0x02450": [
+      "menu_second_sync_selection",
+      "after cycle_selector_a moves, copies the pair (distance, altitude) from tables at [0x23AD]/[0x23B3] into [0x23A1]/[0x23A5]"
+    ],
+    "0x02483": [
+      "menu_second_draw_row_string",
+      "reads [0x23A3]*2 as a pointer into the row-string table at 0x234A, calls draw_display_list. Called by cycle_selector_b redraws"
+    ],
+    "0x02491": [
+      "cycle_selector_b",
+      "identical to cycle_selector_a but operating on [0x23A3] with different key bits ([0xD1C2] bits 0/1) and a different text lookup. The two selectors together set the two-parameter option shown on the menu_second screen"
+    ],
+    "0x024C3": [
+      "menu_second_draw_extra",
+      "third of the three initial draw calls in menu_second_init"
+    ],
+    "0x024FA": [
+      "menu_option_14",
+      "menu handler (cs:0x1610[14]) on menu_second. Behaviour not yet read"
+    ],
+    "0x02532": [
+      "menu_second_draw_selectors",
+      "draws the two 3-position selectors and their labels on menu_second"
+    ],
+    "0x02581": [
+      "menu_second_draw_footer",
+      "the bottom-of-screen text on menu_second"
+    ],
+    "0x0309F": [
+      "flight_forward_init",
+      "phase_init_dispatch[0]. Draws text at SI=0x2E8E, zeroes flight state ([0x304E], [0x3044], [0x3058], [0x3062], [0x599B]), sets three unknowns at [0x3099..0x309D] to 0xFFFF (sentinels), then calls L_04F5B and L_0508E. Falls through into flight_forward_step"
+    ],
+    "0x030E1": [
+      "flight_forward_step",
+      "phase_dispatch[0]. Reads input flags from [0xD1C2] into [0x306B] (used bit-wise as up/down/left/right by physics_step), copies plane position ([0xBC6], [0x3070], [0x306D]) into the camera slots [0x4DA5]/[0x4DA3]/[0x4DA7], sets a drawing region 0x10..0x40 x 0x10..0x80, and calls a chain of update+draw routines"
+    ],
+    "0x0312A": [
+      "physics_step",
+      "the plane's per-frame physics. Reads control input bitfield [0x306B] (bit 0 = up, bit 1 = down, bit 2 = left, bit 3 = right), integrates pitch/roll into [0x3073] and [0x3075], and drives the altitude computation from [0xCE6] - [0x23A1]. Also triggers the crash branch (`jmp L_07DA3`) when [0x306D] falls below -0x2C"
+    ],
+    "0x03ECB": [
+      "flight_bombrun_init",
+      "phase_init_dispatch[1]. Same shape as flight_forward_init but different text (SI=0x3C38), a larger drawing region (0x18..0xB8 y), initialises the target-lock state at [0x3EBD..0x3EC3] to the bomb-run sight rectangle (0x28,0x78,0x20,0xAC), and shows an alternate briefing at 0x3DB4 when [0xBBF] is set (that flag is set 30 frames after [0x4B61] is 1 in per_frame_step)"
+    ],
+    "0x03F4B": [
+      "flight_bombrun_step",
+      "phase_dispatch[1]. Same camera setup as flight_forward_step, then either the normal per-frame chain (L_0408C..L_0420B) when [0xBBF]==0, or a transition path when it is set: displays a message, waits for input via [0xD1C5], and eventually jumps to L_084C7 -- reaching flight_bombrun_end and the results phase"
+    ],
+    "0x03FDD": [
+      "flight_rearview_init",
+      "phase_init_dispatch[2]. Same shape as the other flight phase inits but with text SI=0x3CF3, initialises target-lock bounds [0x3EBD..0x3EC3] to (0x28,0x78,0x20,0xA0) using [0x3EB5]/[0x3EB7] rather than [0x3EB1]/[0x3EB3], and a slightly shorter y drawing range (0x18..0xA8)"
+    ],
+    "0x04046": [
+      "flight_rearview_step",
+      "phase_dispatch[2]. Distinctive: negates all three camera coordinates (`neg ax` on [0xBC6], [0x3070], [0x306D]) before writing them into [0x4DA5..0x4DA7]. Reversed sign of the camera turns the same 3D drawing pipeline into a look-behind view -- almost certainly the rear-gunner station"
+    ],
+    "0x0408C": [
+      "bombrun_update_target_lock",
+      "reads input flags into [0x306B] via the bomb-run's own mapping, then updates the target-lock rectangle at [0x3EBD..0x3EC3] toward the current cursor position [0x3EB9]/[0x3EBB]"
+    ],
+    "0x040FF": [
+      "reset_bombrun_state",
+      "the head of the bomb-run per-phase state -- called from flight_bombrun_init and flight_rearview_init. Zeroes several counters at [0x3EAF..0x3EBB]"
+    ],
+    "0x0411E": [
+      "bombrun_step_state_a",
+      "one of the bomb-run per-frame update calls. Reads a state timer at [0x3EAF] and drives a small state machine over target-lock and release-arming"
+    ],
+    "0x04180": [
+      "bombrun_step_state_b",
+      "second bomb-run update call. Fires the actual bomb-release when the target-lock has been held long enough (checks the counter at [0x3E64])"
+    ],
+    "0x041B5": [
+      "bombrun_draw_target_locks",
+      "tail-call target inside bombrun_step_state_b: walks four target-lock slots at [0x3DC1]/[0x3E01] and draws each active one via draw_sprite_at with sprite 0x42A2. Reached via jmp when the state update path finishes physics but must still render the locks"
+    ],
+    "0x0420B": [
+      "bombrun_step_state_c",
+      "third bomb-run update call. Handles the animation from bomb-release through impact, and drives the phase-7 transition when the outcome is decided"
+    ],
+    "0x04B63": [
+      "bomb_options_init",
+      "phase_init_dispatch[3]. A smaller drawing region than the flight phases (0x28..0x98 y), sprite base [0xD627]=0xF902, text SI=0x4A3A and 0x42A4, then a chain that includes draw_bomb_options -- two YES/NO toggle boxes drawn from strings at 0x46D6 (off) and 0x4700 (on)"
+    ],
+    "0x04BA2": [
+      "bomb_options_step",
+      "phase_dispatch[3]. Reads plane position into camera slots (with [0x4DA3] zeroed rather than following [0x3070]), calls the option-page input dispatch (L_017C8, the shared menu handler that dispatches through cs:0x1610), and either draws the two toggle indicators via draw_bomb_options or a fallback text screen at 0x4B1F"
+    ],
+    "0x04BCF": [
+      "toggle_bomb_option_1",
+      "input handler reached through cs:0x1610: bit 0 of [0xD1C2] sets [0x4B61] := 0, bit 1 sets it to 1; then redraws via draw_bomb_options"
+    ],
+    "0x04BEB": [
+      "toggle_bomb_option_2",
+      "same shape as toggle_bomb_option_1 but writes [0x4B62]; the second of the two YES/NO options on the bomb_options screen"
+    ],
+    "0x04C07": [
+      "draw_bomb_options",
+      "draws two YES/NO toggle boxes (positions y=0x29 and y=0x71) picked between text at 0x46D6 (off) and 0x4700 (on) by the flags [0x4B61] and [0x4B62]. Called from bomb_options_init and from the toggle handlers L_04BCF and L_04BEB when the player flips a choice"
+    ],
+    "0x04EDA": [
+      "update_camera_transform",
+      "recomputes the 2x2 camera matrix at [0x4D9F]/[0x4DA1] and the translation ([0x4DAE]/[0x4DB0]) from the current roll [0x4DA3] and pitch [0x4DA7]. Uses L_01373 (sin) and L_01394 (cos) as the trig helpers, and a small lookup at 0x4EC2 for the pitch-to-screen mapping. Called once per frame from each flight phase's step"
+    ],
+    "0x04F5B": [
+      "spawn_scenery",
+      "populates the 16-slot scenery table at [0x4D14] with random-but-distinct X positions (a rejection loop that re-rolls if the value collides with an existing one). Called from three phase inits, always with the object pool freshly cleared"
+    ],
+    "0x04F92": [
+      "spawn_scenery_maybe",
+      "with 1-in-32 probability (via prng_step), replaces one of the 16 scenery slots [0x4D14] with a new (row, col) picked from prng_step. Called once per frame -- keeps the scenery drifting"
+    ],
+    "0x0504D": [
+      "project_point_2d",
+      "2x2 matrix-multiply of (AX, BX) by the camera matrix at [0x4D9F..0x4DA1] (sin/cos of roll), scaled by 64 (arith shift right 6), plus translation ([0x4DAE], [0x4DB0]). Returns the screen-space point in (AX, BX). The projection primitive every 3D drawer builds on"
+    ],
+    "0x0508E": [
+      "clear_flak_pool",
+      "walks the 20-slot object pool at 0x51DD, resetting [+4] and [+8] fields on each. Called from every flight phase init"
+    ],
+    "0x050A3": [
+      "render_object_pool",
+      "walks the 20-slot object pool at 0x51DD; for each live entry (type != 0), projects its world coord via project_point_2d, culls if beyond 0xC8 or above the screen threshold, and dispatches through cs:0x4E82 by the object type ([+0xA], 0..9). This is the object-render dispatcher for forward view"
+    ],
+    "0x050A6": [
+      "render_object_pool_loop",
+      "the top of render_object_pool's per-slot loop"
+    ],
+    "0x050FE": [
+      "render_object_pool_rear",
+      "the same shape as render_object_pool but with the world coord mirrored (`neg / add 0x1A4`); called for the rear view (flight_rearview_step) so the same object type dispatches produce the look-behind projection"
+    ],
+    "0x051AD": [
+      "draw_scenery_and_objects",
+      "top-level per-frame render: draws the 16 scenery slots at [0x4D14] then calls render_object_pool. Called from map_screen_step, menu_main_step, menu_second_step, and every flight step"
+    ],
+    "0x051C5": [
+      "deactivate_object",
+      "frees an object pool slot by writing 0 to its type at [si + 0xA]. Called by render_object_pool when a slot has aged out"
+    ],
+    "0x05517": [
+      "spawn_flak",
+      "per_frame_step[2]. Ages the flak counter at [0x5513] (decrement, then bleed [0x5515] by 4 per 100 ticks). Walks the 20-slot object pool at 0x51DD..0x536D (14 bytes per slot) for a free entry (type at [+0xA] == 0), then rolls the prng to decide what to spawn -- either a light flare (type 7) or a random-type object -- based on damage flags [0xBDA]/[0xBDB]/[0xBDD] and [0xBE3]"
+    ],
+    "0x0564D": [
+      "update_flak",
+      "per_frame_step[3]. Advances every live entry in the object pool at 0x51DD by the plane's current motion ([0xBC6] * 2). Slots move toward the plane; when they cross a threshold, life ticks down at [+0xA] and eventually the slot frees itself"
+    ],
+    "0x05ABC": [
+      "spawn_enemy_plane",
+      "per_frame_step[2]. If no enemy currently active ([0x5987] == 0), rolls a probability based on region [0x104], distance [0xBCB] > 0x1000, prior lift flag [0x5984], any tile-of-value-0xB in the visible set, [0x5515] engine load, and whether current region matches [0x9E6] (target region). On success: sets a new enemy at random screen coords ([0x598A]/[0x598D]), sets [0x5987]=1 and [0x5985]=0xA (attack timer), and starts a sound (call L_0638A AX=2 or 3 for direction)"
+    ],
+    "0x05B78": [
+      "update_enemy_plane",
+      "per_frame_step[3]. State machine on [0x5987]: while == 1 it decrements [0x5985] and either completes or resets, then transitions through terminal states 0xFD and 0x11E which stop the sound"
+    ],
+    "0x05BF4": [
+      "step_bombrun_animation",
+      "advances the bomb-drop animation over a series of frames. Called from flight_forward_step, flight_bombrun_step, flight_rearview_step"
+    ],
+    "0x0638A": [
+      "play_sound_effect",
+      "call this with AX = an effect index to trigger a short PIT-channel-2 sound. Called 5 times (spawn_enemy_plane passes 2 or 3 for engine directions; other callers pass 1 for a click). Uses a per-effect note table that is not yet identified"
+    ],
+    "0x063B3": [
+      "queue_sound_effect",
+      "called from L_06465 during bomb-run icon animation. Wraps play_sound_effect with a state check"
+    ],
+    "0x063BD": [
+      "stop_sound_effect",
+      "the counterpart to play_sound_effect. Called with the same effect ID to release/silence it"
+    ],
+    "0x063E6": [
+      "bomb_release",
+      "the bomb-release action: called when the bomb-run reaches its trigger condition. Sets several state bytes and triggers the drop animation via other calls"
+    ],
+    "0x063F0": [
+      "draw_bomb_ready_icon",
+      "per_frame_step[2]. When bit 5 of tick_counter is set, draws either a bomb armed (sprite 0x5882) or bomb selected indicator at HUD position (0x4A, 0xBA), edge-detected by [0x6371]. Also plays sound 7 (play_song 7) briefly when [0x6372] is set and [0x6370] decrements past zero"
+    ],
+    "0x06AD7": [
+      "check_flak_hit",
+      "per_frame_step[2]. Scans the object pool for type-3 objects landing in a specific screen rectangle around the plane (in-window [0x64..0x12C] and [-0x1E..0x1E]); if any are close and a probability check fails (based on table at 0x6ABF by count), triggers a hit: saves current phase into [0xD1CB], sets game_phase to 8 (idle), clears the screen, sets border white (0x0F). When the type-3 danger clears with the game already in phase 8, sets requested_phase to 0xFFFF and calls check_phase_transition to restore"
+    ],
+    "0x06B59": [
+      "check_flak_hit_type4",
+      "per_frame_step[2]. Same shape as check_flak_hit but for object type 4. Together the two check for hit close enough by any active projectile and force the hit-freeze state"
+    ],
+    "0x07DA3": [
+      "end_run",
+      "the run-ending routine. Silences the music (set_loop_song(0) then play_song(8), the death jingle), reads the reason code from [0x7D33] and picks the matching message pointer from a table at 0x7FE1, draws it, calls restore_kbd_isr, drains and consumes one key, then jmp restart_run. Reached by jmp L_07DA3 from physics_step (altitude below -0x2C), from L_07E01 (all crew dead), from L_07E31 (crew position accumulator at 0x7D87 reached 0x190), and from L_03162"
+    ],
+    "0x07DDA": [
+      "count_engines_alive",
+      "per_frame_step[2]. Ages counters at [bx + 0x2397] (per-engine damage stage), then walks [0x173D] (engine_states): if any engine is state 2 (dead), accumulates its position counter and can end the run (reason 8 = all crew dead, or reason 6 = crew position accumulator > 0x190)"
+    ],
+    "0x084C7": [
+      "bomb_run_end",
+      "post-bomb-run outcome handler. Sets [0x84C6] := 1, silences music, clears the framebuffer, then branches on [0xBE3] (0 or 0x12 = normal outcome, else crash) and [0xBCB] (distance from target) into one of several result-screen paths -- hit, near miss, miss. Reached by jmp L_084C7 from flight_bombrun_step when the bomb release condition fires"
+    ],
+    "0x086C7": [
+      "results_draw_score_row",
+      "draws one score row on the results page. Called for each of the crew-position entries walked by results_step"
+    ],
+    "0x086D1": [
+      "results_draw_score_cell",
+      "draws a single score cell within a score row"
+    ],
+    "0x08714": [
+      "results_init",
+      "phase_init_dispatch[7]. Simply draws the results-page frame from SI=0x834A and falls through into results_step for the first tally"
+    ],
+    "0x08720": [
+      "results_step",
+      "phase_dispatch[7]. Reads ten game counters ([0x6AD3], [0x598F], [0x64BC], [0x6C03], [0x5991], [0xCE6], [0xBDB], [0xBDD], [0xBE3], [0x5515]) and formats each as text via format_decimal into consecutive 6-byte slots at 0x8489..0x84BF in the pre-composed template. Then walks a 4-entry per-crew-position list at 0x173D, pointing at row addresses via a table 0x7F00 below (bx*2 - 0x7B7F), before drawing the whole page with SI=0x8375"
+    ],
+    "0x087C7": [
+      "format_decimal",
+      "converts AX (0..65535) into 5 ASCII digits at DS:DI, one per position, replacing leading zeros with spaces. Leading-space state is kept in [0x84C5] and reset per call. Called ten times from results_step, once per statistic on the results page"
+    ],
+    "0x09FC0": [
+      "results_draw_page_frame",
+      "draws the outer frame of the results page (border, title, template). Called from results_step and elsewhere on the results screen"
+    ],
+    "0x0D1CF": [
+      "save_kbd_isr",
+      "reads the current INT 9 (keyboard) vector from `es:0x24`..`es:0x26` with ES = 0 and stores it in saved_kbd_isr_off/seg. Called once from post_boot"
+    ],
+    "0x0D1E2": [
+      "install_kbd_isr",
+      "masks IRQs 0 and 1 in the PIC, writes cs:0xD271 into the INT 9 vector and cs:0xD445 into the INT 0 vector, then restores the PIC mask. INT 0 is the divide-by-zero override; INT 9 is the game's own keyboard handler"
+    ],
+    "0x0D20B": [
+      "restore_kbd_isr",
+      "the inverse of install_kbd_isr: puts the offset/segment stashed at boot back into the INT 9 vector, under the same PIC-mask discipline"
+    ],
+    "0x0D22E": [
+      "wait_key_or_timeout",
+      "sets tick_counter := 0 and loops calling prng_step and peek_key until either peek_key returns non-zero (a key) or tick_counter reaches 0x301. Returns AX = the key value or the timeout state"
+    ],
+    "0x0D24B": [
+      "peek_key",
+      "BIOS INT 16h AH=1 (keyboard status). Returns AX = 0 if nothing waiting, or falls into the AH=0 path (peek_key_consume) which reads the scancode+char and returns it in AX"
+    ],
+    "0x0D255": [
+      "flush_key",
+      "drains the BIOS keyboard buffer by calling peek_key in a loop until it returns 0"
+    ],
+    "0x0D25E": [
+      "peek_key_consume",
+      "the AH=0 half of peek_key: BIOS INT 16h AH=0 reads the pending scancode and returns it in AX. Only reached by fall-through from peek_key when the AH=1 test said a key was waiting"
+    ],
+    "0x0D4B9": [
+      "gauge_step_maybe",
+      "called from per_frame_step when [0xD1C6] is set. Behaviour not yet read"
+    ],
+    "0x0D631": [
+      "draw_sprite_row_2x8",
+      "draws a horizontal row of 2-byte-wide, 8-pixel-tall sprites. Reads [0xD62F] shape indices from [0xD62D], multiplies each (masked with 0x3F) by 16 and adds base [0xD627] to compute the sprite address, blits at (X=[0xD629], Y=[0xD62B]) stepping X by 4 per sprite. Called ~8 times, the standard 2x8-tile row painter"
+    ],
+    "0x0D676": [
+      "draw_sprite_row_2x8_sparse",
+      "same as draw_sprite_row_2x8 but skips indices equal to zero (transparent). Called 5 times"
+    ],
+    "0x0D6BD": [
+      "draw_sprite_row_2x8_xor",
+      "same shape row painter, but uses blit_rect_variant_3 as the per-cell blitter. XOR/toggling blit"
+    ],
+    "0x0D700": [
+      "draw_sprite_list",
+      "walks a list at DS:SI of (word address, byte X, byte Y) triples, drawing each with draw_shape_row_flexible until the terminating (address=0) record. Used to paint a whole panel from a pre-authored list"
+    ],
+    "0x0D731": [
+      "draw_shape_row_flexible",
+      "sprite drawer with a variable width per shape, driven by [0xD62D..0xD62F] parameter block. Reads shape indices, expands each to a sprite (base [0xD627], indexed 8-bit into a shape header) and blits with dynamic width. Called ~11 times as the general-purpose row painter"
+    ],
+    "0x0D9D3": [
+      "fill_rect",
+      "fills a rectangle in CGA memory. Parameters at [0xD9A2..0xD9BE]. Called 4 times, always after clear_cga_frame to blank a subregion"
+    ],
+    "0x0DA39": [
+      "blit_rect",
+      "the CGA blitter. ES := 0xB800, reads sprite bytes from [0xD9A2], width [0xD9B2], height [0xD9B6], at Y coord [0xD9AC] (indexed into a row-address table at cs:0xE4A2 to skip the interlaced CGA memory layout), X coord [0xD9A6]. Even X coordinates use rep movsb; odd X hits a nibble-blending path. Called ~11 times directly and by every other drawer as their per-row blit"
+    ],
+    "0x0DAA5": [
+      "blit_rect_or_xor",
+      "variant of blit_rect that OR-then-XORs each pixel (creating a transparent blit that leaves what was already there when the sprite pixel is zero). Even-X and odd-X paths mirror blit_rect"
+    ],
+    "0x0DB14": [
+      "blit_rect_variant_3",
+      "third blit variant, called by draw_sprite_row_2x8_xor. Behaviour not fully read"
+    ],
+    "0x0DD0B": [
+      "draw_sprite_at_variant",
+      "sibling of draw_sprite_at. Behaviour not fully read"
+    ],
+    "0x0DD37": [
+      "draw_sprite_at",
+      "a specialised sprite drawer used for cursor/pointer sprites. Reads position from [0xD9BE]/[0xD9C0], sprite from [0xD9C2] and stride 0x1FFB. Called 16 times, most often from draw_menu_cursor and its variants"
+    ],
+    "0x0DE04": [
+      "blit_masked",
+      "another blit variant. Reads sprite bytes and applies a mask -- specific behaviour depends on parameter block flags. Called 7 times"
+    ],
+    "0x0DEA2": [
+      "blit_shape",
+      "sprite variant of blit_rect: reads sprite bytes from [0xD9A2] using [0xD9B4] as a stride, with clipping via [0xD9C9]. Called by opcodes 2 and 7 of the display list interpreter"
+    ],
+    "0x0DF0E": [
+      "draw_display_list",
+      "the display-list interpreter. Walks a bytecode program at DS:SI, dispatching each opcode through cs:0xDF18 (10 entries): 0 = end, 1 = draw text (blit_rect), 2 = draw sprite (blit_shape), 3 = wait_ticks, 4 = set_border_color, 5 = draw sprite at coords via draw_shape_row_flexible, 6 = draw text with clipping, 7 = draw sprite with clipping, 8/9 = further sprite variants. Called 34 times -- every phase's init and every menu-page redraw is a display-list program"
+    ],
+    "0x0DF2C": [
+      "dl_opcode_1_text",
+      "display-list opcode 1: pulls 5 bytes of text-draw parameters plus a 6-byte address slot into blit_rect's parameter block ([0xD9B2], [0xD9B6], [0xD9A6], [0xD9AC], [0xD9A2] via [bx*2 + 0xD9A4]), calls blit_rect, then loops back to draw_display_list"
+    ],
+    "0x0DF62": [
+      "dl_opcode_2_sprite",
+      "display-list opcode 2: same as dl_opcode_1_text but with stride [0xD9B4] and mask [0xD9C9], invokes blit_shape instead of blit_rect"
+    ],
+    "0x0DF92": [
+      "dl_opcode_3_wait",
+      "display-list opcode 3: read a word AX after SI, call wait_ticks, continue"
+    ],
+    "0x0DF9E": [
+      "dl_opcode_4_border",
+      "display-list opcode 4: read a byte AL after SI, call set_border_color, continue"
+    ],
+    "0x0DFAA": [
+      "dl_opcode_5_sprite_at",
+      "display-list opcode 5: draw a sprite at (X, Y) coordinates given in the stream, using draw_shape_row_flexible. Width is computed as (0xA0 - x) / 4 if the width byte is zero"
+    ],
+    "0x0DFDF": [
+      "dl_opcode_6_text_clip",
+      "display-list opcode 6: draw text with clipping to [0xD9AE]/[0xD9B0] bounds; height and width are pre-clipped before invoking blit_rect"
+    ],
+    "0x0E044": [
+      "dl_opcode_7_sprite_clip",
+      "display-list opcode 7: sprite version of dl_opcode_6_text_clip -- clips and invokes blit_shape"
+    ],
+    "0x0E099": [
+      "dl_opcode_8",
+      "display-list opcode 8: another sprite variant. Full behaviour not yet read"
+    ],
+    "0x0E0A9": [
+      "dl_opcode_9",
+      "display-list opcode 9: another sprite variant"
+    ],
+    "0x0E0DE": [
+      "dl_end",
+      "display-list opcode 0 (end): a bare ret that terminates draw_display_list's dispatch"
+    ],
+    "0x0E0DF": [
+      "clear_cga_frame",
+      "`stosw` of 0x2000 zeros through ES:DI. 0x4000 bytes is one CGA-mode-4 framebuffer, and callers set ES to 0xB800 before invoking"
+    ],
+    "0x0E0F2": [
+      "init_cga_mode",
+      "sets CGA mode 4 (320x200, 4 colours) via INT 10h AH=0 AL=4, clears the framebuffer at 0xB800, and patches the BIOS equipment word at 0040:0010 so the video-type field reads as CGA"
+    ],
+    "0x0E123": [
+      "set_default_palette",
+      "INT 10h AH=0Bh BX=0x0101 -- palette 1 (cyan/magenta/white), background colour 1"
+    ],
+    "0x0E12D": [
+      "set_border_color",
+      "INT 10h AH=0Bh BH=0 BL=AL -- writes AL to the CGA border/background register"
+    ],
+    "0x0E1F9": [
+      "install_timer_isr",
+      "programs PIT channel 2 for the speaker (mode 3, square wave), initialises the music sequencer state (music_note_ptr and music_loop_ptr both aimed at the silence byte at [0xE14A]), installs cs:0xE24E as the INT 1Ch handler, and reprograms PIT channel 0 to 0x2000 (the ordinary 18.2 Hz rate). Unmasks IRQ 0 and 1 on the way out"
+    ],
+    "0x0E24E": [
+      "timer_isr",
+      "the INT 1Ch handler. Increments tick_count_free_running, then either forces tick_flags to 0xFFFF (if end_of_run_flag is set) or drives the frame tick and music. Every 2 ticks it advances the music sequencer inner counter; every 8 measures it wraps and increments music_bar_count. The frame flag reaches main_loop by an `xor before/after inc` of tick_counter (which sets bit 0 on the first increment of each pair), OR'd into tick_flags"
+    ],
+    "0x0E31F": [
+      "play_song",
+      "atomically switches music_note_ptr to song SI in the song table at cs:0xADAD, resetting music_note_ticks_left. Silently returns if music_enabled is zero"
+    ],
+    "0x0E33A": [
+      "set_loop_song",
+      "sets music_loop_ptr to song SI, which timer_isr uses when the current song runs out of notes. Called from main_setup with SI=0 (whatever song word 0 points at) as the ambient background song"
+    ],
+    "0x0E355": [
+      "wait_ticks",
+      "sets tick_counter := 0 and spins until it reaches AX. Delay in timer ticks"
+    ],
+    "0x0E366": [
+      "prng_step",
+      "an 8-bit LFSR. Reads byte at prng_state_table[(--prng_index) & 0xFF], rotates it left through carry, writes it back. Called from wait_key_or_timeout and elsewhere -- there is no `random(n)` wrapper; callers mask AL themselves"
+    ]
+  },
+  "globals": {
+    "0x000B9": [
+      "phase_dispatch",
+      "9 code addresses, indexed by game_phase*2, called from main_loop. Entries include ret_stub (index 0 -> no-op state)"
+    ],
+    "0x000CC": [
+      "saved_sp",
+      "SP saved at boot in post_boot, restored on restart in restart_run"
+    ],
+    "0x000DB": [
+      "title_line2",
+      "the string 'SQUADRON 617' plus terminator"
+    ],
+    "0x000E8": [
+      "title_line1",
+      "the string 'DAM BUSTERS' plus terminator"
+    ],
+    "0x00F4": [
+      "cursor_x_working",
+      "the map cursor x-coordinate working copy: clamp_map_position operates on this triple starting at SI=0xF4"
+    ],
+    "0x00F6": [
+      "cursor_y_working",
+      "the map cursor y-coordinate working copy (offset +2 from cursor_x_working)"
+    ],
+    "0x00F8": [
+      "cursor_region_working",
+      "the current map region working copy (offset +4 from cursor_x_working); the value that clamp_map_position increments/decrements when the cursor wraps between adjacent regions"
+    ],
+    "0x00100": [
+      "plane_x",
+      "the plane's world X-coordinate (word). Advanced by step_plane_position using cos(heading) * distance/frame, clamped by clamp_map_position"
+    ],
+    "0x00102": [
+      "plane_y",
+      "the plane's world Y-coordinate (word). Advanced by step_plane_position using -sin(heading) * distance/frame"
+    ],
+    "0x00104": [
+      "map_region",
+      "the current map region -- indexes phase_init_dispatch[4] behaviour and the region title lookup at 0xED26"
+    ],
+    "0x00108": [
+      "target_region",
+      "the region containing the selected target. Set to 0xFFFF by map_screen_init as the 'no target' sentinel"
+    ],
+    "0x005DB": [
+      "game_phase",
+      "0..8; indexes phase_dispatch. Read by main_loop each frame, compared to requested_phase by check_phase_transition"
+    ],
+    "0x008D2": [
+      "phase_init_dispatch",
+      "8 code addresses, indexed by requested_phase*2, called from check_phase_transition after the palette and framebuffer are reset. Runs the one-shot setup that a phase needs before its per-frame handler at phase_dispatch takes over"
+    ],
+    "0x00966": [
+      "target_city_names",
+      "adjacent 0-terminated strings BRUSSELS, PARIS, AMSTERDAM, HANNOVER, ANTWERP, DUSSELDORF, KOLN, DORTMUND, HAMBURG, BERLIN -- the cities the raid can be flown over. Order matches the pointer table two rows above"
+    ],
+    "0x00BC0": [
+      "heading_tile",
+      "the 16-directional heading tile computed by yaw_to_direction; check_heading_tile_change triggers a redraw when it moves"
+    ],
+    "0x00BC4": [
+      "heading_accum",
+      "the heading-rate accumulator written by integrate_heading and read by yaw_to_direction"
+    ],
+    "0x00BC6": [
+      "heading_rate",
+      "the current heading rate. Saved copy of heading_accum after saturation; drives the world-position stepping and is read by every frame's camera-x setter"
+    ],
+    "0x00BC9": [
+      "heading",
+      "the plane heading in degrees (0..0x167 = 0..359), integrated from heading_rate by integrate_heading"
+    ],
+    "0x00BCB": [
+      "distance_travelled",
+      "distance from mission start; integrated by integrate_distance. Compared against 0x200 and 0x1000 thresholds for various events"
+    ],
+    "0x00BCF": [
+      "damage_flag",
+      "set by integrate_distance when the flight speed saturates non-zero; consumed by check_flight_conditions and per_frame_step's counter logic"
+    ],
+    "0x00BD0": [
+      "distance_fine",
+      "the fractional-distance accumulator that region_effect_default adds into; on wrap it increments distance_step_counter"
+    ],
+    "0x00BD2": [
+      "distance_step_counter",
+      "distance step counter incremented by step_plane_position each time a whole-distance step is taken. Compared against 12 by check_flight_conditions"
+    ],
+    "0x00BD4": [
+      "plane_x_frac",
+      "fractional part of plane_x accumulator, integrated by step_plane_position"
+    ],
+    "0x00BD6": [
+      "plane_y_frac",
+      "fractional part of plane_y accumulator, integrated by step_plane_position"
+    ],
+    "0x00BD8": [
+      "plane_tile_x",
+      "the integer tile coordinate derived from plane_x, tracked by update_map_position"
+    ],
+    "0x00BD9": [
+      "plane_tile_y",
+      "the integer tile coordinate derived from plane_y"
+    ],
+    "0x00BDA": [
+      "visible_tiles",
+      "10 bytes of tile-codes for the tiles the player currently sees, written by update_visible_tiles. Read by every renderer that needs to know what terrain is under the plane"
+    ],
+    "0x00BDB": [
+      "engine_status_1",
+      "engine 1's summary state (0..17). Read by check_flight_conditions and results_step"
+    ],
+    "0x00BDD": [
+      "engine_status_2",
+      "engine 2's summary state"
+    ],
+    "0x00BE3": [
+      "engine_status_3",
+      "engine 3's summary state; drives the bomb_run_end branching"
+    ],
+    "0x00BE4": [
+      "direction_table",
+      "16-entry direction lookup used by yaw_to_direction; converts the high nibble of heading into a 16-directional index"
+    ],
+    "0x00BFB": [
+      "visible_tile_offsets_col",
+      "10-byte table of column offsets that update_visible_tiles walks around the current tile to compute the 10 visible tile bytes"
+    ],
+    "0x00C4B": [
+      "visible_tile_offsets_row",
+      "the row-offset half of visible_tile_offsets_col"
+    ],
+    "0x00C9B": [
+      "map_row_addr_table",
+      "row-address table for the world tile map; get_map_tile indexes into this for row starts"
+    ],
+    "0x00CBF": [
+      "music_theme_index",
+      "index into the engine-based music theme table at 0xCC3/0xCCF, read by altitude_step to pick the current loop song"
+    ],
+    "0x00CC1": [
+      "current_music_theme",
+      "the theme in play; altitude_step calls set_loop_song when this changes"
+    ],
+    "0x00CE6": [
+      "altitude",
+      "the plane's altitude, integrated by altitude_step. > 0x186 = crash (reason 7), == 0 = clamped at ground"
+    ],
+    "0x00CE8": [
+      "tile_pattern_north",
+      "64-byte tile-pattern lookup used by get_map_tile for the north-facing view"
+    ],
+    "0x00D16": [
+      "tile_pattern_south",
+      "the companion 64-byte tile pattern lookup used when the plane faces south"
+    ],
+    "0x01045": [
+      "region_effect_dispatch",
+      "6-entry table read by apply_region_flight_effect. Values: 0x1058, 0x1051, 0x106D, 0x1051, 0x106D, 0x1062 -- each a region-specific flight-effect handler"
+    ],
+    "0x01610": [
+      "menu_action_dispatch",
+      "19-entry table read by menu_input when the fire key is pressed. Indexed by menu_cursor*2, each entry is a menu action handler (adjust_engine_slider_*, use_fire_ext_engine_*, toggle_bomb_option_*, cycle_selector_*, or one of the 'all four' variants)"
+    ],
+    "0x01636": [
+      "menu_move_up_targets",
+      "per-slot table of next-menu-slot indices for the 'up' direction; read by menu_input's directional-key branch"
+    ],
+    "0x01649": [
+      "menu_move_down_targets",
+      "next-slot indices for the 'down' direction"
+    ],
+    "0x0165C": [
+      "menu_move_left_targets",
+      "next-slot indices for the 'left' direction"
+    ],
+    "0x0166F": [
+      "menu_move_right_targets",
+      "next-slot indices for the 'right' direction"
+    ],
+    "0x01718": [
+      "menu_cursor",
+      "the current menu cursor position; index into cs:0x1610 when the fire key is pressed"
+    ],
+    "0x0171C": [
+      "menu_input_flags",
+      "menu_input's copy of input_flags (bit 0 = up, bit 1 = down, bit 2 = left, bit 3 = right); consumed by the cs:0x1610 dispatcher handlers"
+    ],
+    "0x0171D": [
+      "engine_slider_bottom",
+      "4-byte array of the bottom row slider values on the cockpit menu. Cap 0x18 = 24, adjusted by adjust_engine_slider_bottom_1..4"
+    ],
+    "0x01725": [
+      "engine_slider_top",
+      "4-byte array of the top row slider values on the cockpit menu (menu_main). Cap 0x28 = 40, adjusted by adjust_engine_slider_top_1..4 and read by the update chain"
+    ],
+    "0x01735": [
+      "engine_load",
+      "4-word engine load values, averaged and integrated by altitude_step and compute_yaw_torque"
+    ],
+    "0x01737": [
+      "engine_load_r2",
+      "offset within engine_load range used by compute_yaw_torque"
+    ],
+    "0x01739": [
+      "engine_load_l2",
+      "offset within engine_load_right range used by compute_yaw_torque"
+    ],
+    "0x0173B": [
+      "engine_load_right",
+      "the second engine-load pair (right side), read by compute_yaw_torque"
+    ],
+    "0x0173D": [
+      "engine_states",
+      "4-byte per-engine status array. Tested against 2 in L_01A0A (redraw), against 0 in L_01A10, against 1 in L_01877. Walked by results_step (bx = 0..3) to point at per-engine result rows"
+    ],
+    "0x01749": [
+      "menu_main_cursor_save",
+      "menu_main's cursor save slot; menu_main_step writes menu_cursor here and menu_main_init restores it"
+    ],
+    "0x02347": [
+      "selector_a_letters",
+      "table of letters indexed by selector_a's 0..2 value; menu_second_draw_option_letter patches [0x2288 + 5] with the picked letter"
+    ],
+    "0x0234A": [
+      "selector_b_strings",
+      "table of 3 word pointers to strings indexed by selector_b*2. Read by menu_second_draw_row_string"
+    ],
+    "0x0239F": [
+      "selector_a",
+      "the 3-position value adjusted by cycle_selector_a on the menu_second page (0..2)"
+    ],
+    "0x023A1": [
+      "target_distance",
+      "the distance from mission start to the target; set by menu_second_sync_selection, compared against distance_travelled in physics_step"
+    ],
+    "0x023A3": [
+      "selector_b",
+      "the 3-position value adjusted by cycle_selector_b on the menu_second page (0..2)"
+    ],
+    "0x023A5": [
+      "target_altitude",
+      "the altitude the player should reach at the target; set by menu_second_sync_selection, subtracted from altitude in altitude_step"
+    ],
+    "0x023AB": [
+      "menu_second_cursor_save",
+      "the same for menu_second"
+    ],
+    "0x023AD": [
+      "distance_by_option_a",
+      "3-entry table of distances indexed by selector_a. Copied to [0x23A1] by menu_second_sync_selection"
+    ],
+    "0x023B3": [
+      "altitude_by_option_a",
+      "3-entry table of altitudes indexed by selector_a. Copied to [0x23A5] by menu_second_sync_selection"
+    ],
+    "0x0306B": [
+      "physics_input_flags",
+      "per-frame copy of input_flags used by physics_step (bit 0 up, bit 1 down, bit 2 left, bit 3 right; the plane control mapping)"
+    ],
+    "0x0306D": [
+      "throttle",
+      "the plane's throttle setting; read by physics_step, altitude_step, integrate_distance, and copied into camera-y at [0x4DA7] each frame"
+    ],
+    "0x03070": [
+      "roll",
+      "the plane's roll input; read by physics_step, integrate_heading, integrate_distance, and copied into camera-x at [0x4DA3] each frame"
+    ],
+    "0x03072": [
+      "auto_stabilise",
+      "when zero, integrate_heading saturates the accumulated rate to [-6, +6]; nonzero lets it climb freely. Probably an auto-pilot toggle"
+    ],
+    "0x04B61": [
+      "bomb_option_1",
+      "the first YES/NO toggle on the bomb_options screen; adjust with toggle_bomb_option_1"
+    ],
+    "0x04B62": [
+      "bomb_option_2",
+      "the second YES/NO toggle on the bomb_options screen"
+    ],
+    "0x04D14": [
+      "scenery_pool",
+      "16 slots x 8 bytes: the on-screen scenery objects (stars, terrain features). spawn_scenery seeds it, spawn_scenery_maybe refreshes it, and draw_scenery_and_objects walks it"
+    ],
+    "0x04D9F": [
+      "camera_matrix_sin",
+      "sin(roll) * 64. Half of the 2x2 camera matrix used by project_point_2d"
+    ],
+    "0x04DA1": [
+      "camera_matrix_cos",
+      "cos(roll) * 64. The other half of the camera matrix"
+    ],
+    "0x04DA3": [
+      "camera_roll",
+      "the roll input (from roll) copied into the camera state each frame by flight_forward_step and friends"
+    ],
+    "0x04DA5": [
+      "camera_x",
+      "the heading_rate copied into the camera state each frame"
+    ],
+    "0x04DA7": [
+      "camera_pitch",
+      "throttle copied into the camera state each frame"
+    ],
+    "0x04DAE": [
+      "camera_offset_x",
+      "screen-space origin X of the camera transform"
+    ],
+    "0x04DB0": [
+      "camera_offset_y",
+      "screen-space origin Y of the camera transform"
+    ],
+    "0x04E82": [
+      "object_render_dispatch",
+      "10-entry function table indexed by object type ([si + 0xA] in the pool at 0x51DD). Each entry is a renderer for one object class -- flak burst, night fighter, dam wall, target, and so on. Read by render_object_pool at four offsets (0x4E82, 0x4E92, 0x4EA2, 0x4EB2) for different render passes"
+    ],
+    "0x04EC2": [
+      "pitch_offset_table",
+      "9-byte lookup that maps a small |pitch/2| index (0..8) into a Y offset for the camera transform. Read by update_camera_transform"
+    ],
+    "0x051DD": [
+      "object_pool",
+      "20-slot object pool, each slot 14 bytes (0x14). Byte [+0xA] holds the type (0 = free, 1..10 = active object class); [+0xB..+0xF] holds position and velocity. Managed by spawn_flak, update_flak, render_object_pool, deactivate_object, check_flak_hit, check_flak_hit_type4"
+    ],
+    "0x07D33": [
+      "end_run_reason",
+      "the reason code passed to end_run, used to pick a message from the table at 0x7FE1"
+    ],
+    "0x0D1BE": [
+      "saved_kbd_isr_off",
+      "offset of the INT 9 vector at boot, stored by save_kbd_isr"
+    ],
+    "0x0D1C0": [
+      "saved_kbd_isr_seg",
+      "segment of the INT 9 vector at boot"
+    ],
+    "0x0D1C2": [
+      "input_flags",
+      "per-frame input bitfield written by the game's INT 9 keyboard handler. Bit 0 = up, bit 1 = down, bit 2 = left, bit 3 = right (deduced from consistent bit tests in menu handlers). Also holds a select bit (bit 0 or 1) tested at bomb_options toggles. Copied into per-menu locals like [0x171C], [0x306B]"
+    ],
+    "0x0D1C3": [
+      "input_cursor",
+      "the \"cursor-input active\" flag read by update_map_view to gate the position-toggle logic"
+    ],
+    "0x0D1C5": [
+      "input_fire",
+      "the trigger/select bit -- when non-zero, menu_input dispatches through cs:0x1610 rather than moving the cursor. Also read at map_screen_step (save_map_pos) as the \"commit position\" trigger"
+    ],
+    "0x0D1C6": [
+      "gauge_step_enabled",
+      "when set, per_frame_step calls gauge_step_maybe (0xD4B9). Effect not yet read"
+    ],
+    "0x0D1C7": [
+      "end_of_run_flag",
+      "0 = playing, non-zero = the run has ended and timer_isr should stop driving the frame. main_loop, on seeing this set, waits for restart_ready_flag and jumps to restart_run"
+    ],
+    "0x0D1C8": [
+      "restart_ready_flag",
+      "acknowledged by main_loop after end_of_run_flag; the two together trigger the jmp restart_run"
+    ],
+    "0x0D1C9": [
+      "ack_pending_flag",
+      "non-zero -> main_loop polls for the '1' key (scan/char 0x31) and, when pressed, calls install_kbd_isr and clears this flag"
+    ],
+    "0x0D1CB": [
+      "phase_before_hit",
+      "the previous game_phase saved when check_flak_hit forces phase 8; restored when the hit clears"
+    ],
+    "0x0D1CD": [
+      "requested_phase",
+      "written by game logic to request a phase change; check_phase_transition compares it to game_phase and, if different (and current phase != 8), performs the transition"
+    ],
+    "0x0D627": [
+      "sprite_base",
+      "base address of the sprite table; sprite index * 16 + this = sprite data address, for draw_sprite_row_2x8 and its variants"
+    ],
+    "0x0D629": [
+      "sprite_row_x",
+      "X for draw_sprite_row_2x8; steps by 4 per sprite drawn"
+    ],
+    "0x0D62B": [
+      "sprite_row_y",
+      "Y for draw_sprite_row_2x8"
+    ],
+    "0x0D62D": [
+      "sprite_row_data",
+      "pointer to the array of shape indices for draw_sprite_row_2x8"
+    ],
+    "0x0D62F": [
+      "sprite_row_count",
+      "count of shape indices to draw"
+    ],
+    "0x0D9A2": [
+      "blit_src",
+      "source address for blit_rect and blit_shape"
+    ],
+    "0x0D9A4": [
+      "dl_string_base",
+      "text-string base pointer used by draw_display_list; per-phase display lists set this at init time"
+    ],
+    "0x0D9A6": [
+      "blit_x",
+      "destination X for blit_rect and blit_shape (odd values trigger the nibble-shift path)"
+    ],
+    "0x0D9AC": [
+      "blit_y",
+      "destination Y for blit_rect and blit_shape; indexes cs:0xE4A2 for the CGA scan-line address"
+    ],
+    "0x0D9AE": [
+      "blit_clip_left",
+      "left clip boundary for dl_opcode_6_text_clip and dl_opcode_7_sprite_clip"
+    ],
+    "0x0D9B0": [
+      "blit_clip_right",
+      "right clip boundary for the clipping opcodes"
+    ],
+    "0x0D9B2": [
+      "blit_width",
+      "width in bytes for blit_rect and blit_shape"
+    ],
+    "0x0D9B6": [
+      "blit_height",
+      "height in rows for blit_rect and blit_shape"
+    ],
+    "0x0D9BE": [
+      "sprite_at_x",
+      "X for draw_sprite_at"
+    ],
+    "0x0D9C0": [
+      "sprite_at_y",
+      "Y for draw_sprite_at"
+    ],
+    "0x0D9C2": [
+      "sprite_at_addr",
+      "source for draw_sprite_at"
+    ],
+    "0x0DF18": [
+      "dl_dispatch",
+      "10-entry jump table used by draw_display_list. Values: 0xE0DE (end), 0xDF2C, 0xDF62, 0xDF92, 0xDF9E, 0xDFAA, 0xDFDF, 0xE044, 0xE099, 0xE0A9 (each an opcode handler)"
+    ],
+    "0x0E138": [
+      "music_inner_counter",
+      "decremented by timer_isr; resets to 2 on wrap and steps music_outer_counter"
+    ],
+    "0x0E13C": [
+      "music_outer_counter",
+      "decremented on each music_inner_counter wrap; resets to 4 on its own wrap and increments music_bar_count"
+    ],
+    "0x0E13E": [
+      "music_bar_count",
+      "incremented once per 8 timer ticks (2*4). per_frame_step drains this back to 0 with its inner-loop sub-steps, so it is effectively 'how many music bars have elapsed since the last frame'"
+    ],
+    "0x0E140": [
+      "tick_counter",
+      "incremented by timer_isr; used by wait_ticks (spin until it reaches AX) and wait_key_or_timeout (clear then spin until 0x301)"
+    ],
+    "0x0E142": [
+      "tick_count_free_running",
+      "a second tick count also incremented by timer_isr. Not cleared by anything the initial reading has found; kept as a free-running timestamp"
+    ],
+    "0x0E144": [
+      "tick_flags",
+      "bits OR'd in by timer_isr and consumed by main_loop. Bit 0 is the frame tick, set on the first tick of each music_inner_counter pair; when end_of_run_flag is set, timer_isr forces this to 0xFFFF"
+    ],
+    "0x0E146": [
+      "tick_flags_working",
+      "main_loop's atomic copy of tick_flags (moved with a CLI/STI pair). All frame code reads this rather than tick_flags, so a bit set mid-frame does not double-count"
+    ],
+    "0x0E148": [
+      "music_note_ptr",
+      "the sequencer's read cursor into the current song. timer_isr advances it two bytes per note (duration + note index)"
+    ],
+    "0x0E14A": [
+      "silence_stream",
+      "the byte the sequencer is aimed at when nothing is playing -- both music_note_ptr and music_loop_ptr are initialised to this address by install_timer_isr"
+    ],
+    "0x0E14C": [
+      "music_enabled",
+      "0 -> play_song and set_loop_song are no-ops. Set to 1 by post_boot"
+    ],
+    "0x0E14D": [
+      "music_loop_ptr",
+      "the song timer_isr resumes when music_note_ptr runs out. Written by set_loop_song"
+    ],
+    "0x0E14F": [
+      "music_note_ticks_left",
+      "how many timer ticks the current note still has to play"
+    ],
+    "0x0E150": [
+      "music_note_release",
+      "when music_note_ticks_left reaches this value, timer_isr stops driving the speaker (releasing the note)"
+    ],
+    "0x0E364": [
+      "prng_index",
+      "the cursor prng_step walks backwards through prng_state_table. Only the low byte is used"
+    ],
+    "0x0E381": [
+      "prng_state_table",
+      "256 bytes of LFSR state; prng_step reads one, rotates through carry, writes it back. Whoever seeds this at boot has not been read yet"
+    ],
+    "0x0E4A2": [
+      "cga_row_table",
+      "table of 200 word offsets, one per CGA scan line, indexed by blit_y * 2. Handles the interleaved CGA memory layout so the blitters can write into any line without doing the interleave arithmetic themselves"
+    ],
+    "0x0ED26": [
+      "region_titles",
+      "table of 6 word pointers to region-title strings, indexed by map_region*2. Referenced as [bx - 0x12DA] from draw_map_border because [0x100 + BX*2 - 0x12DA] wraps to 0xED26"
+    ]
+  }
 }
