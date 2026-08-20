@@ -5,9 +5,10 @@ explain it again.
 
 ## Where this stands, and what to do next
 
-*Last measured 2026-08-02. If you change anything, re-measure and edit this —
-the counts below drift the moment a tool improves, and eleven of them had gone
-stale within a single session before `tools/docaudit.py` existed.*
+*Last measured 2026-08-20 (dam-busters + comrec walker fixes; other games
+2026-08-02). If you change anything, re-measure and edit this — the counts
+below drift the moment a tool improves, and eleven of them had gone stale
+within a single session before `tools/docaudit.py` existed.*
 
 Six games are reconstructed. All six rebuild **byte-identically**, which
 `build.ps1` checks and refuses to report success without.
@@ -27,7 +28,23 @@ paragraphs on, and every name written before that is fixed would be in the
 wrong coordinate — the mistake this project has already paid for twice, whose
 only symptom is silence. Its `CLAUDE.md` has the evidence and the order.
 
-### Seven more, triaged and waiting
+### One reading in progress
+
+**Dam Busters is 66% of the way through the naming ladder.** 168 routines
+and 127 globals, `annotate.py` reports 104 of 158 call targets, all 5
+tail-call entries, 111 of 433 bracketed constants — still byte-identical
+at `D3657960…`. `_data_spans` has not been started; that is the largest
+remaining piece. [dam-busters/CLAUDE.md](dam-busters/CLAUDE.md) has the
+state and the order to work in.
+
+Getting there needed three walker fixes in comrec, which took the decode
+rate from 12.3% to 26.7% at the same hash before any naming happened. The
+narrative is in [dam-busters/BRIEF.md](dam-busters/BRIEF.md); the code went
+into `DOS-Decompiler` as `8907d76` (`comrec: follow near-branch wrap and
+bare-bx dispatch tables`). Karateka and the 11 `.COM` regression fixtures
+still pass unchanged.
+
+### Six more, triaged and waiting
 
 Set up on 2026-08-02 with the binary in place, a `build.ps1`, an empty
 `symbols.json`, and a `BRIEF.md` whose numbers were **measured, not guessed**.
@@ -37,13 +54,12 @@ Each brief names the one thing to do first.
 |---|---|---|---|
 | [championship-boxing](championship-boxing/) | `4A64A595…` | **93.7%** | a 2.5 KB loader plus `BOXING.OVR` and five overlays — a class none of the six belong to |
 | [rampage](rampage/) | `8925744E…` | 34.7% | entry twenty bytes from the end of the image |
-| [dam-busters](dam-busters/) | `D3657960…` | 12.3% | 124 bytes past the load image; the build drops them unless it is told not to |
 | [jungle-hunt](jungle-hunt/) | `ECF3BD75…` | 8.8% | `hunt.com` is a PTL Club **crack loader**; the game is `hunt.ptl` |
 | [moon-patrol](moon-patrol/) | `FF12627C…` | **0.5%** | control leaves the entry almost at once and the walk cannot follow |
 | [alley-cat](alley-cat/) | `4979C886…` | 41.4% | 9 relocations — one over a threshold set for Karateka |
 | [ancient-art-of-war](ancient-art-of-war/) | `B26326CE…` | 73.2% | 67 relocations; a 12 KB load image with 87 KB behind it |
 
-All seven rebuild. The last two only after a correction worth keeping.
+All six rebuild. The last two only after a correction worth keeping.
 
 They were first written up here as *"comrec takes the `.COM` route only when
 there are no relocations"*. That was an inference from four games, and the code
@@ -57,6 +73,15 @@ against something real. **A byte-identical rebuild does not prove the address
 base was right.** Frogger rebuilds exactly while reading half its code from the
 wrong segment, and the only symptom is a decode rate that stays low for no
 visible reason. Hash first, decode rate second, and neither alone is enough.
+
+Dam Busters added three more walker fixes on 2026-08-19: near-branch
+targets that Capstone sign-extends when they wrap the segment, dispatch
+tables that use bare `[bx + disp]` instead of `[cs:bx + disp]`, and
+negative displacements in those tables. Same class of correction as
+`nreloc > 8` — a guard tuned to one game's shape, missed on another. The
+first is a hard bug (any single-segment program with a call that wraps);
+the second and third fire whenever a `.COM` uses `bx`-relative tables.
+Details in [dam-busters/BRIEF.md](dam-busters/BRIEF.md#where-control-went-that-the-walk-could-not-follow-2026-08-19).
 
 For the other five: every call target, every tail-call entry and every
 bracketed constant in the listing is named or explicitly accounted for, and

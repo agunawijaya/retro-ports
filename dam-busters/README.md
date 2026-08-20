@@ -1,17 +1,25 @@
 # The Dam Busters (1984, DOS)
 
-Sydney Development, published by Accolade.
+Sydney Development, published by Accolade. A flight sim of Operation
+Chastise — the RAF 617 Squadron raid on the Ruhr dams — with a
+region-select map, a three-view cockpit (pilot, bomb-aimer, rear-gunner),
+and per-engine controls for the Lancaster's four Merlin engines.
 
-**It rebuilds byte-identically** from a copy you own — checked on every run. **Nothing here has been read yet.** What exists is the triage and the
-scaffolding: a `build.ps1` that reconstructs the game from a copy you own and
-checks the result byte for byte, an empty `symbols.json`, and
-[BRIEF.md](BRIEF.md) with what the triage found and where to start.
+**It rebuilds byte-identically** from a copy you own — checked on every
+run. **168 routines and 127 globals** are named in `symbols.json`, each
+with the evidence for its name. Coverage:
 
-**This is the same shape as Karateka**, and Karateka is the
-worked example: an MZ with no relocations is a single-segment program, and
-comrec reconstructs it by stripping the header, treating the image as a `.COM`,
-and putting the header back on the way out. `build.ps1` here already does
-that, copied from Karateka's.
+- **104 of 158 call targets** named
+- All 5 tail-call entries named
+- 111 of 433 bracketed constants named
+- The reading covers the entry stub, the frame loop, all 9 game phases,
+  the timer/music/keyboard/video subsystems, the CGA blitter, the drawing
+  DSL, the 3D projection, and the object pool.
+
+**No `_data_spans` yet.** ~55 KB of data is named-but-not-partitioned; that
+is the next phase of the reading. See [CLAUDE.md](CLAUDE.md) for the
+current state and [BRIEF.md](BRIEF.md) for the triage and toolkit-fix
+history.
 
 ## Rebuilding it
 
@@ -23,10 +31,12 @@ copy <your copy>\* original\
 .\build.ps1 -Toolkit ..\..\DOS-Decompiler -Nasm C:\path\to\nasm.exe
 ```
 
+Expected output: `BYTE-IDENTICAL D3657960A00AAC6548C47EE35A8AC008EF0BB254F94AE2A335B04431F26C380D`.
+
 ## What this repository does not contain
 
-No game files. `original/`, `recovered/` and `reference/` are gitignored,
-because a byte-identical reconstruction is the game in another form and a
-sprite pulled out of it is still the game. What is kept is the reading: names,
-evidence, documentation, and the tools that re-derive the rest from a copy you
-already own.
+No game files. `original/`, `recovered/` and the extracted release folder
+are gitignored, because a byte-identical reconstruction is the game in
+another form and a sprite pulled out of it is still the game. What is
+kept is the reading: names, evidence, documentation, and the tools that
+re-derive the rest from a copy you already own.
