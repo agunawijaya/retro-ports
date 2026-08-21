@@ -5,10 +5,11 @@ explain it again.
 
 ## Where this stands, and what to do next
 
-*Last measured 2026-08-20 (dam-busters + comrec walker fixes; other games
-2026-08-02). If you change anything, re-measure and edit this — the counts
-below drift the moment a tool improves, and eleven of them had gone stale
-within a single session before `tools/docaudit.py` existed.*
+*Last measured 2026-08-21 (alley-cat first reading pass + a fourth comrec
+walker fix; dam-busters 2026-08-20; other games 2026-08-02). If you change
+anything, re-measure and edit this — the counts below drift the moment a
+tool improves, and eleven of them had gone stale within a single session
+before `tools/docaudit.py` existed.*
 
 Six games are reconstructed. All six rebuild **byte-identically**, which
 `build.ps1` checks and refuses to report success without.
@@ -57,7 +58,7 @@ Each brief names the one thing to do first.
 | [rampage](rampage/) | `8925744E…` | 34.7% | entry twenty bytes from the end of the image |
 | [jungle-hunt](jungle-hunt/) | `ECF3BD75…` | 8.8% | `hunt.com` is a PTL Club **crack loader**; the game is `hunt.ptl` |
 | [moon-patrol](moon-patrol/) | `FF12627C…` | **0.5%** | control leaves the entry almost at once and the walk cannot follow |
-| [alley-cat](alley-cat/) | `4979C886…` | 41.4% | 9 relocations — one over a threshold set for Karateka |
+| [alley-cat](alley-cat/) | `4979C886…` | **46.3%** | 9 relocations — one over a threshold set for Karateka; first reading pass 2026-08-21, 47 routines / 46 globals named, phase machine surfaced |
 | [ancient-art-of-war](ancient-art-of-war/) | `B26326CE…` | 73.2% | 67 relocations; a 12 KB load image with 87 KB behind it |
 
 All six rebuild. The last two only after a correction worth keeping.
@@ -83,6 +84,24 @@ negative displacements in those tables. Same class of correction as
 first is a hard bug (any single-segment program with a call that wraps);
 the second and third fire whenever a `.COM` uses `bx`-relative tables.
 Details in [dam-busters/BRIEF.md](dam-busters/BRIEF.md#where-control-went-that-the-walk-could-not-follow-2026-08-19).
+
+Alley Cat added a fourth on 2026-08-21, in exactly the same shape:
+`jmp word [cs:bx + disp]` dispatch was being read flat, because the
+walker was written for the single-segment .COM case where `cs_base = 0`
+and CS-relative offsets are file offsets directly. For a MZ that takes
+the .COM route with `CS != 0` in the header — Alley Cat's `CS = 0x0723`,
+so `cs_base = 0x7230` — the CS-relative displacement has to be added to
+`cs_base` to reach the actual dispatch table, and the words the table
+holds are themselves CS-relative and need the same treatment. Missing it,
+Alley Cat's main-loop phase selector at CS:0x479 looked for its table at
+image 0x0250 (zero-fill inside the data segment) instead of at image
+0x7480, and the 7 per-phase handlers stayed data. The fix (`comrec.py`
+carries `cs_base` and `detect_jump_tables` captures the `cs:` prefix and
+adds `cs_base` when present) took Alley Cat from **41.4% to 46.3%**
+decoded at the same byte-identical hash; Karateka rebuilds unchanged
+(`C8736BBA…`), Dam Busters rebuilds unchanged (`D3657960…`), and all
+`.COM` regression fixtures still pass with a new `mzdispatchcs` fixture
+locking in the new case.
 
 For the other five: every call target, every tail-call entry and every
 bracketed constant in the listing is named or explicitly accounted for, and

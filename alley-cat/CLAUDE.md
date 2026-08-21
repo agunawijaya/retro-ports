@@ -7,16 +7,113 @@ Bill Williams for Synapse Software, published by Datasoft.
 
 ## Where this stands
 
+*Last measured 2026-08-21.*
+
 | | |
 |---|---|
 | rebuild | **byte-identical**, `4979C886…` |
-| decoded as code | 41.4% of the 54,555-byte load image |
-| routines named | **0 of N call targets** — nothing read yet |
-| variables named | **0 of N bracketed constants** — nothing read yet |
+| decoded as code | 25,250 / 54,555 bytes (46.3%), 26,291 with pins (48.2%) |
+| instructions | 9,171 disassembled (518 pinned) |
+| call targets named | **29 of 258** |
+| bracketed constants named | **41 of 685** |
+| routines / globals | 47 / 46 |
 | data spans | none yet |
 
-Triaged on 2026-08-02 and set up to rebuild; nothing above the naming line has
-been read. See [BRIEF.md](BRIEF.md) for the triage.
+Triaged on 2026-08-02, orientation done on 2026-08-21 in three passes
+plus a `DOS-Decompiler` walker fix (see the section below).
+The named routines cover the entry; the video/keyboard/timer/sound
+primitives; the CGA blitter family (`blit_cga_interleaved` and its
+ES-prefixed twin); the sprite save/draw/restore trio
+(`snapshot_video_rect` / `sprite_draw_saving_bg` /
+`restore_video_from_snapshot`); the mask-blit underneath
+(`sprite_and_mask_blit`); the sprite-list interpreter (`blit_sprite_list`);
+the PRNG and its seed; a boxes-overlap utility; the sound-effect and beep
+primitives (`sfx_start_tone`, `beep_blocking`,
+`speaker_write_divisor_and_gate`, `advance_pit_pattern_step`,
+`init_sound_state`); the CGA-screen clear (`clear_cga_screen`); the BIOS
+teletype helpers (`bios_print_string`, `bios_set_cursor_row`,
+`print_next_message`); and the **main-loop structure**
+(`attract_loop_start`, `attract_show_title`, `attract_show_title_and_wait`,
+`new_game_setup`, `game_frame_top`, `game_frame_body`,
+`end_of_room_pick_next`, `dispatch_current_phase`). See [BRIEF.md](BRIEF.md)
+for the triage; `symbols.json` holds the evidence for every name.
+
+The confirmed master mute flag is at DS:0 (`sound_enabled`) -- set to 0xFF
+at boot, toggled by `not byte [0]` when key state byte 0x6C7 fires, and
+tested at the top of 22+ sound routines. That single flag alone matches on
+25 bracketed references, most of the coverage jump from pass 1 to pass 2.
+
+The main-loop reading (pass 3) surfaced the game's phase machine:
+`[current_phase]` at DS:4 is a value 0..7 that indexes the 8-word dispatch
+table at CS:0x250 (image 0x7480). Each level exit runs
+`end_of_room_pick_next`, which PRNG-picks the next phase from one of two
+tables (weighted `phase_select_table_weighted` at DS:0x421 or uniform
+`phase_select_table_uniform` at DS:0x42D) with two-slot history dedup.
+That is the "cat picks its next room" logic. The specific mapping from
+phase number to Alley Cat room (birdcage, aquarium, cheese/mice, dog,
+sleeping woman, kittens) needs a runtime hook -- see
+`knowledge/12-hooking-the-right-thing.md`.
+
+### Segment layout is being read correctly
+
+The 2026-08-02 concern from BRIEF was whether the .COM route was reading
+segments right. It is. Evidence:
+
+- Only one distinct segment value is patched by the loader — `0010h` (all 9
+  relocations write it).
+- The entry code at image 0x7230 does `mov ax, 0x10 / mov ds, ax` at image
+  offset 0x7239 (file 0x7439). That matches relocation [0] which patches
+  segment 0x0010 at file 0x7439 exactly.
+- All DS-relative loads that follow (`[0x690]`, `[0x697]`, `[0x412]`, ...)
+  point into the 27.9 KB pre-entry data region as expected.
+- The walker followed both INT 09h handlers — at CS:0x14B3 (image 0x86E3)
+  for standard PC and CS:0x14FB (image 0x872B) for PCjr. Both decode as
+  clean ISRs with `in al, 0x60 / EOI 0x20`.
+
+The 1,348 "code" bytes at image 0x0-0x544 are zero-fill disassembling as
+`add byte [bx+si], al` (opcode 0x00 0x00). Not real code — inflates the
+decoded-bytes number by ~2.4%. Real code is contiguous from the entry.
+
+## The walker gap this game surfaced, and what fixed it
+
+*Found and fixed 2026-08-21.*
+
+**comrec was silently reading `jmp word [cs:bx + disp]` dispatch as
+flat-model.** The main loop's phase selector at L_07479 is exactly this
+form:
+
+```
+mov bx, word [4]         ; current_phase
+cmp bx, 7
+jbe L_07479
+sub bx, bx
+L_07479:
+shl bx, 1
+jmp word [cs:bx + 0x250] ; -- comrec used to stop here
+```
+
+For a single-segment .COM (Karateka, all 11 .COM regression fixtures) CS
+is set to the load segment at boot and CS-relative offsets are the same as
+flat file offsets. The walker was written for that case. But for a MZ that
+took the .COM route with a CS != 0 in the header (Alley Cat: CS = 0x0723,
+so cs_base = 0x7230), the CS-relative displacement 0x250 has to be added
+to cs_base to reach the actual dispatch table at image 0x7480 -- not read
+as image 0x0250, which is zero-fill in the data segment. Same story for
+the *words inside* the table: they are CS-relative offsets, not flat.
+
+The fix is small: `mz_load_image` returns cs_base = cs << 4, the
+Reconstructor carries it, and `detect_jump_tables` -- which already
+captured the `cs:` prefix in its regex -- adds cs_base whenever that
+prefix was present. When cs_base is 0 (Karateka, Dam Busters, all the
+fixtures), nothing changes.
+
+At Alley Cat: decode rate **41.4% -> 46.3%**, instructions **8,293 ->
+9,171**, call targets **203 -> 258** (all 7 phase handlers plus every
+routine they reach), bracketed constants **628 -> 685**. Same
+byte-identical hash. Regression: Karateka rebuilds unchanged
+(`C8736BBA...`, 218 routines / 165 of 165 call targets), Dam Busters
+rebuilds unchanged (`D3657960...`, 158 of 158, 112 spans), and all 11
+`.COM` fixtures still pass.
 
 ## The one thing to know before touching it
 
@@ -72,22 +169,42 @@ reconstruction is the game, named or not.
 
 ## What is open, in the order it is worth doing
 
-1. **Confirm the segment layout is being read correctly.** If the decode rate
-   does not move much past 41% as naming progresses, the multi-segment layout
-   is the suspect and `--segment` is the lever.
-2. Name the call targets, with evidence, from `tools/profile.py` output.
-3. Name the bracketed constants, and record the ones that are displacements
-   rather than addresses in `_displacements`.
-4. Name every **tail-call entry** — an address a `jmp` reaches from outside
-   the routine containing it. Karateka read "165 of 165 direct calls" while
-   39 tail-call entries had no name; the direct-call count is not the
-   denominator that matters.
-5. `_data_spans`: a contiguous partition of all 54,555 bytes, no gap and no
-   overlap, each extent saying what it is for. This is the denominator that
-   catches a symbol file which names every reference and has never looked at
-   half the file.
-6. Documents `01`–`06`, and a port. [ParaTrooper](../paratrooper/) is the
+1. ~~Confirm the segment layout is being read correctly.~~ Done 2026-08-21.
+2. Name the remaining **175 of 203** call targets, with evidence. Still
+   unnamed: L_09EFC (a colored/patterned blit variant that reads a byte
+   from DS:SI and does pattern manipulation with the 0x30C0/0xFF0 masks --
+   more study needed to name confidently), L_08430 (a delta-tick check
+   reading INT 1Ah AH=0 into DS:[0x69F], mixed with a joystick-port read
+   at 0x201), L_08396 (a sprite blit at row [0x57B]/col [0x579] from
+   source 0x1679 with dims 0x1205 -- specific game object, not yet
+   identified), L_08568 (a keyboard-event observer that reads
+   key_tick_counter and dispatches on state-byte bits), and the phase
+   entries below. Working outward from the main loop is likely more
+   productive than picking off hotness.
+3. **The main loop is unread.** L_072B1 (outer), L_072C0 (inner) call a
+   sequence including L_08F61 (`apply_palette`, named), L_0CD51 (named),
+   L_0CEE0, L_0CD84 (also named as start of the sound-tick tracker but not
+   fully -- it uses `[0x59BE]` and `[0x59C0]`), and dispatch tables.
+   Reading L_072B1..L_073A6 all the way through will surface the phase
+   dispatch, at which point the game's structure becomes visible.
+4. Name the remaining **599 of 628** bracketed constants; record the ones
+   that are displacements rather than addresses in `_displacements`.
+5. Name every **tail-call entry** -- annotate reports zero unnamed today,
+   but that is because it counts only tail-calls reaching a currently
+   unnamed address; as call targets get named it will find more.
+6. `_data_spans`: a contiguous partition of all 54,555 bytes, no gap and
+   no overlap. The 30 KB pre-entry data region alone will need several
+   spans (palette tables 0x1853/0x183B/0x1843/0x184B, key tables at
+   0x6A1/0x6B7, blit scratch at 0x2AE0, sprite scratch at 0x5FA,
+   messages/rows at 0x6D37/0x6D63, etc.).
+7. Documents `01`-`06`, and a port. [ParaTrooper](../paratrooper/) is the
    worked example of both.
+
+Note: the CLAUDE.md previously listed `tools/profile.py` as the way to
+enumerate unnamed routines. That tool does not exist in the toolkit today
+(2026-08-21 check of `E:\Projects\DOS-Decompiler\tools\`). `annotate.py`
+prints the unnamed-target list in its own report; that is the source of
+truth used above.
 
 ## Where to look
 
