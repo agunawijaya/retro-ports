@@ -189,35 +189,42 @@ That is the "cat picks its next room" logic, and it explains why an Alley Cat
 session feels random-but-fair even though the underlying PRNG is a single
 16-bit linear-feedback shift register.
 
-## What isn't in the binary
+## The seven rooms, mapped
 
-The **six mini-games** — birdcage, aquarium, cheese/mice, bookshelf,
-sleeping bedroom, kittens rendezvous — are only partially mapped. The
-phase-handler bodies for phases 3..7 are decoded and named generically
-(`phase_3_handler` etc.), and their init routines (`init_phase_3_state_a`,
-`init_phase_4_actors`, ...) name the state blocks they touch, but the file
-does not say "this phase draws the birdcage."
+The phase-to-room mapping came from a runtime hook: `comrun.py
+--call phase_N_handler --stop-at inner_loop_top --stop-after 1`
+runs each phase's init sequence (including the scene-drawing
+`init_phase_screen_pattern` branch and the sprite-list blits) and
+stops at the first iteration of the inner loop, *before* the
+exit-OR check has a chance to fire on uninitialised state. Dumping
+the CGA framebuffer at that moment shows each room fully drawn.
+The captures are in `reference/screens/` (gitignored).
 
-A runtime hook settled part of this. Running `comrun.py --call
-phase_N_handler` on the reconstructed executable and dumping the CGA
-framebuffer to PNG revealed:
+| phase | room | what the render shows |
+|---|---|---|
+| 0, 1 | **the courtyard/room** | chairs, coffee table, floor lamp, brick fireplace — Freddy's starting room, entered via the alley window. Both phases dispatch to `L_07612`, but phase 0 asserts itself as 1 at entry. |
+| 2 | **aquarium/fishbowl** | empty cyan pond with pink rim (fish appear on later inner-loop iterations from `cycle_phase_1_bg_pattern`). Reached from phase 1 by `phase_1_to_2_trigger` at DS:0x554 — an *in-scene* transition confirming the code-level finding. |
+| 3 | **library / bookshelf** | large bookshelf full of colored books, plus chairs, floor lamps, and the fireplace. The dog room. |
+| 4 | **swiss cheese wall** | large cyan diagonal cheese wall with pink circular mouse holes. Mice emerge from the holes for the cat to catch. |
+| 5 | **birdcage room** | a birdcage on a small table, chairs, floor lamp, and a framed portrait on the wall (Felicia). |
+| 6 | **kittens / family** | floor covered with white kittens around food bowls, plus a framed Felicia portrait. The scene after Freddy meets Felicia. |
+| 7 | **cupids & hearts finale** | border of pink cupids running with arrows, interior filled with rows of pink and dark hearts, a small pink gift box at the bottom. Not a normal gameplay phase (its exit-OR skips `[0x552]`) — this is the romantic scoreboard / "you saved Felicia" screen. |
 
-- **Phases 0 and 1** (both dispatch to `L_07612`, and phase 0 asserts
-  itself as phase 1 at entry): **the fishbowl / aquarium**. The cat is
-  drawn on the top edge (leaning down into the water) with 8 fish sprites
-  swimming below, on a cyan pond with a pink border rim.
-- **Phase 2** (`L_07689`): a **variant of the aquarium** — the cat is
-  drawn *sitting* on top instead of leaning in, with the fish still
-  visible below. This is the "cat pauses on the edge" state, which
-  confirms the code-level finding that `phase_1_to_2_trigger` (DS:0x554)
-  causes an in-scene transition, not a room change.
+Every room draw comes from `init_phase_screen_pattern`'s per-phase
+branch (phase-2 branch at `L_099C0` itself; phase 3..7 branches at
+`L_09AEE`, `L_09ABD`, `L_09A6E`, `L_09A29`, `L_09A1E` respectively;
+phase 1 falls through to the default L_09B39 branch). Each branch
+issues 5–10 `blit_sprite_list` calls, drawing composite sprites for
+each room's furniture and decoration.
 
-Phases 3..7 come out as black frames when called directly from the
-boot-time state — the inner loop's exit-OR triggers on state that is
-uninitialised for a cold call, and the handler returns before drawing.
-Mapping those five phases needs the `--call` to be preceded by
-`new_game_setup` state, or the pokes explicit. See
-[knowledge/12](../../DOS-Decompiler/knowledge/12-hooking-the-right-thing.md).
+The one thing still not resolved from runtime alone: **whether phase
+1's "courtyard room" is the actual alley-with-fence** that the game
+starts in, or a first room reached by jumping through a window. The
+code reading has `attract_loop_start` setting `current_phase := 0`
+before dispatch, and phase 0 lands in the same handler as phase 1
+which draws this room. If the game's very first frame is this room,
+this IS the alley scene, drawn as an interior. That is not settled
+from the render alone; it needs actual gameplay observation.
 
 The **author's name and publisher** are settled by the title-screen render
 (see the "what it is" section above): **Bill Williams**, **SynSoft**,

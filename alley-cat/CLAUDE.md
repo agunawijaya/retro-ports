@@ -180,13 +180,27 @@ captured the CGA framebuffer to PNG. The title screen came out reading
 which settled three claims that docs/01 had marked `[inferred]` (Bill
 Williams, SynSoft, 1984) and revealed a fourth that had not been in the
 document at all (IBM co-published this release, consistent with the
-extensive PCjr support). Running `--call phase_N_handler` for each phase
-identified phases 0/1/2 as the **fishbowl/aquarium**: cat on the top rim
-with 8 fish swimming below; phase 2 draws a "cat sits down" variant of
-the same scene, confirming that `phase_1_to_2_trigger` is an in-scene
-transition. Phases 3..7 come out black when called cold because their
-inner-loop exit-OR triggers on uninitialised state; mapping those five
-requires poking the state or running `new_game_setup` first.
+extensive PCjr support).
+
+Pass 21 (2026-08-21, later still) mapped ALL SEVEN phases to their
+actual rooms. The trick was `--stop-at inner_loop_top --stop-after 1`
+combined with `--call phase_N_handler` -- catches the framebuffer
+right after every init routine has drawn its room but before the
+inner-loop exit-OR check has any chance to fire. All 7 rooms:
+
+  phase 0/1 : courtyard/room (chairs, table, floor lamp, fireplace)
+  phase 2   : aquarium/fishbowl (empty pond -- fish drawn later)
+  phase 3   : library / bookshelf (dog room)
+  phase 4   : swiss cheese wall (mouse holes for the mice minigame)
+  phase 5   : birdcage room (birdcage on table, Felicia portrait)
+  phase 6   : kittens / family (kittens on floor with bowls)
+  phase 7   : cupids & hearts finale (border of cupids, hearts
+              filling the interior -- NOT a gameplay phase, this is
+              the "you saved Felicia" romantic scoreboard)
+
+Every room draw comes from init_phase_screen_pattern's per-phase
+branch, invoked at the top of every phase handler's init sequence.
+Captures live in `reference/screens/` (gitignored).
 
 Passes 13-19 (2026-08-21) drove call-target coverage from 31% to
 **100%** across six focused naming batches: hot-caller helpers (BCD
