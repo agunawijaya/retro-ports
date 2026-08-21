@@ -1434,6 +1434,558 @@
     "0x6E00": [
       "key_tick_threshold",
       "16-bit value set to key_tick_counter + 0x0240 by the entry code. Compared against key_tick_counter later in L_08568 as a threshold event"
+    ],
+    "0x0550": [
+      "cat_walk_state",
+      "byte set to 2 by end_of_room_pick_next when continuing a game session, or 0 when starting fresh. Tracks whether the cat is walking or in a special state"
+    ],
+    "0x0558": [
+      "cat_anim_frame",
+      "byte, the cat's current animation frame index. Set to 3 by initialize_cat_start_position (facing frame); referenced by frame-timer and sprite-lookup code"
+    ],
+    "0x0559": [
+      "cat_anim_timer",
+      "byte, ticks-until-next-cat-frame counter. Set to 0xC (12) by initialize_cat_start_position and decremented by the movement scheduler"
+    ],
+    "0x055B": [
+      "cat_frame_variant",
+      "byte, a secondary cat frame selector used together with cat_anim_frame to pick among per-direction sprite variants"
+    ],
+    "0x055C": [
+      "cat_hit_counter",
+      "byte, a hit/collision counter for the cat. `cmp byte [0x55C], 1 / jae` in check_cat_row_in_zone gates a zone action on this being >= 1"
+    ],
+    "0x0571": [
+      "cat_movement_gate",
+      "byte, a movement-permission flag. Checked in L_0B717 (`cmp byte [0x571], 0 / jne`) and movement_tick_scheduler; when non-zero, blocks certain per-frame cat movements. 42 references -- one of the most-checked flags in the game"
+    ],
+    "0x0572": [
+      "cat_speed",
+      "16-bit speed accumulator. Reset to 2 by set_movement_speed on direction change; clamped at 8 max. Drives how many pixels the cat moves per tick"
+    ],
+    "0x0576": [
+      "cat_sound_timer",
+      "byte, tick-until-next-sound counter for cat sounds. Set to 8 by sfx_meow and decremented per frame; when zero, releases the next sound event. 30 references from various sound routines"
+    ],
+    "0x0577": [
+      "cat_frame_flag_b",
+      "byte, secondary frame-timer flag set to 8 by init_movement_and_frame_animation. Used together with cat_anim_timer for compound animation timing"
+    ],
+    "0x0578": [
+      "cat_input_period",
+      "byte, input-poll interval. Set to 0x20 by end_of_room_pick_next; decremented per tick, drives when the cat responds to input changes"
+    ],
+    "0x057F": [
+      "level_start_tick",
+      "16-bit INT 1Ah tick captured at draw_score_digit_at_pos time. Used together with end_of_level_tick to measure time-in-level"
+    ],
+    "0x0698": [
+      "startup_state_2",
+      "byte flag set to 1 by check_cat_at_left_edge when the cat is near the left edge of the screen. A per-frame edge-position latch"
+    ],
+    "0x0699": [
+      "startup_state_3",
+      "byte state field alongside startup_state_2, in the same 0x69x cluster with machine_id, joystick state, key tables. 16 references from various boot / setup paths"
+    ],
+    "0x069C": [
+      "pit_delay_shadow",
+      "16-bit PIT counter shadow used by wait_pit_delta_calibrated to measure the 0xF5E6 delay"
+    ],
+    "0x0418": [
+      "force_phase_7_flag",
+      "byte tested by end_of_room_pick_next: if non-zero, the next phase is forced to 7 (the cupids/hearts finale) and this flag is cleared. Set by other paths when a game-completion condition is met"
+    ],
+    "0x0414": [
+      "score_bcd_tail",
+      "16-bit part of the score-record structure. Incremented by advance_scoring_tick. Adjacent to the BCD score-record fields at 0x0416..0x041C"
+    ],
+    "0x0416": [
+      "score_bcd_high",
+      "16-bit high word of the current running score. Zeroed at entry, updated by BCD-add routines"
+    ],
+    "0x1665": [
+      "attract_obj_type",
+      "byte, the current attract-mode object type. Zeroed by clear_attract_object_state; set to a specific type when an attract-mode object is spawned"
+    ],
+    "0x1666": [
+      "attract_obj_x",
+      "16-bit x-position of the attract-mode object. Read by check_object_overlaps_cat_1666 for the boxes_overlap test against the cat"
+    ],
+    "0x1668": [
+      "attract_obj_y",
+      "byte y-position of the attract-mode object"
+    ],
+    "0x166A": [
+      "attract_obj_timer",
+      "byte, tick countdown for the attract-mode object animation (decrement_or_reset_counter_166A). Reset to 0xD when it hits zero"
+    ],
+    "0x166C": [
+      "attract_obj_lifetime",
+      "16-bit lifetime counter for the attract-mode object. Initialised to 9 by clear_attract_object_state"
+    ],
+    "0x1671": [
+      "attract_obj_x_alt",
+      "16-bit alternate x-position for the attract-mode object, read by check_attract_collision"
+    ],
+    "0x1673": [
+      "attract_obj_present",
+      "byte, 'attract-mode object present' flag. Zero means no object; non-zero means active. Checked at the top of many attract-mode routines as an early-return guard"
+    ],
+    "0x1677": [
+      "attract_obj_state_a",
+      "byte, attract-mode object secondary state"
+    ],
+    "0x1678": [
+      "attract_obj_state_b",
+      "byte, attract-mode object third state field"
+    ],
+    "0x17DF": [
+      "attract_obj_dims",
+      "16-bit packed dimensions (width, height) of the attract-mode object, read by check_attract_collision"
+    ],
+    "0x17E3": [
+      "attract_obj_blit_width",
+      "16-bit blit width for the attract-mode object, read by blit_object_at_17E5"
+    ],
+    "0x17E5": [
+      "attract_obj_blit_dst",
+      "16-bit destination video offset for the attract-mode object blit"
+    ],
+    "0x17EC": [
+      "attract_obj_last_tick",
+      "16-bit INT 1Ah tick shadow for the attract-mode object animator (advance_attract_object_animation)"
+    ],
+    "0x327D": [
+      "shared_object_x",
+      "16-bit x-position of the shared object slot (used across multiple phases -- phase-1 object, phase-4/5 collision targets). Adjacent to shared_object_y at 0x327F"
+    ],
+    "0x327F": [
+      "shared_object_y",
+      "byte y-position of the shared object slot"
+    ],
+    "0x3280": [
+      "shared_object_flag_a",
+      "byte state flag for the shared object slot, set to 0 by init_object_slot_32XX"
+    ],
+    "0x3281": [
+      "shared_object_flag_b",
+      "byte state flag adjacent to shared_object_flag_a"
+    ],
+    "0x3282": [
+      "shared_object_dst",
+      "16-bit destination video offset for the shared object's sprite draw"
+    ],
+    "0x3286": [
+      "shared_object_present",
+      "byte, 'shared object present' flag. Set to 1 by init_object_slot_32XX; checked by erase_phase_1_object as gate"
+    ],
+    "0x1F6C": [
+      "actor_list_head",
+      "16-bit head-index of the active actor list. Read by check_actor_1F6C_overlaps_cat and blit_actor_at_1F6C to select which actor to test/draw"
+    ],
+    "0x1CBF": [
+      "gameplay_trigger_a",
+      "byte gameplay-event trigger flag. Zeroed by init_gameplay_state and by init_phase_screen_pattern for phase 2. Set by gameplay code when a specific event fires; consumed by check_cat_at_trigger_zone via the OR of 0x1CBF/0x1CC0/0x1CC1"
+    ],
+    "0x1CC0": [
+      "gameplay_trigger_b",
+      "byte gameplay-event trigger, part of the OR-cluster with gameplay_trigger_a and _c"
+    ],
+    "0x1CC1": [
+      "gameplay_trigger_c",
+      "byte gameplay-event trigger. Decremented by advance_frame_scheduler; when it hits zero, calls speaker_off and does phase-transition writes"
+    ],
+    "0x1CC6": [
+      "trigger_zone_ref_col",
+      "16-bit reference column for check_cat_at_trigger_zone. The trigger zone spans [-0x38, +0x20] around this column"
+    ],
+    "0x1CC8": [
+      "trigger_zone_ref_row",
+      "byte reference row (initial 0xB1); paired with trigger_zone_ref_col to define the fence-jump trigger zone"
+    ],
+    "0x1CBD": [
+      "pattern_dst_offset",
+      "16-bit video destination offset used by blit_object_at_1CBD when drawing pattern-based gameplay objects"
+    ],
+    "0x1CC2": [
+      "pattern_blit_width",
+      "16-bit blit width used by blit_object_at_1CBD"
+    ],
+    "0x1CC4": [
+      "cat_frame_dims_packed",
+      "16-bit packed (width,height) for the cat's current animation frame. Cached by capture_cat_frame_state, read by blit_captured_cat_frame"
+    ],
+    "0x1CCF": [
+      "input_cycle_counter",
+      "byte counter cycled 0..7 by update_gameplay_input_state. Bit-masked with 6 to cycle a 4-way input rotation"
+    ],
+    "0x1D59": [
+      "hit_counter_1D59",
+      "byte hit counter. Checked by check_hit_at_1D59 and check_hit_1D59_at_1A (compare vs 0x1A = 26 hits)"
+    ],
+    "0x1D5A": [
+      "hit_1D59_last_tick",
+      "16-bit BIOS tick shadow for hit_counter_1D59's rate limiter (tick_1D59_gated)"
+    ],
+    "0x1D5C": [
+      "hit_object_x",
+      "16-bit x-position of the object hit_counter_1D59 tests"
+    ],
+    "0x1D64": [
+      "hit_object_dims",
+      "16-bit packed dimensions of the hit-test object"
+    ],
+    "0x1F65": [
+      "tick_1F65_last",
+      "16-bit tick shadow for tick_1F65_gated (per-frame update variant)"
+    ],
+    "0x2634": [
+      "sprite_list_batch_base",
+      "16-bit base-offset cache for blit_sprite_lists_4x / _5x / _5x_alt. Each batch renderer stores its AX argument here and reloads it for each sprite in the list. Also the START of a small pointer-table area at 0x2634..0x2646"
+    ],
+    "0x2653": [
+      "pattern_prev_pick",
+      "byte, the previously-picked value from init_phase_screen_pattern's PRNG loop. Used to avoid drawing the same random variation twice in a row"
+    ],
+    "0x2AC2": [
+      "wipe_position_counter",
+      "16-bit position counter used by animate_range_103E_to_1090 and wipe_effect_from_di. Steps from 0x103E toward 0x1090 by 2 each iteration"
+    ],
+    "0x2AC4": [
+      "draw_pass_counter",
+      "byte, multi-pass draw iteration counter set to 4 by draw_at_2680_striped and used by draw_score_multi_pass"
+    ],
+    "0x2AC9": [
+      "draw_bh_cache",
+      "byte BH value cached by draw_score_multi_pass"
+    ],
+    "0x2E8A": [
+      "attract_anim_state",
+      "byte set to 0xBF by init_attract_animation_2E24"
+    ],
+    "0x2E8D": [
+      "attract_anim_state_b",
+      "byte in the attract animation cluster near 0x2E8A"
+    ],
+    "0x3510": [
+      "phase_2_actor_head",
+      "16-bit head index for the phase-2 actor list managed by init_phase_2_actors"
+    ],
+    "0x3509": [
+      "phase_2_tick_animate_shadow",
+      "16-bit tick shadow for phase_2_tick_actor_animate"
+    ],
+    "0x350F": [
+      "phase_2_tick_movement_shadow",
+      "16-bit tick shadow for phase_2_tick_actor_movement"
+    ],
+    "0x3511": [
+      "phase_2_state_head",
+      "16-bit head index used by iterate_object_list_3511"
+    ],
+    "0x351B": [
+      "phase_2_iter_flag",
+      "byte flag cleared by iterate_object_list_3511 at loop start"
+    ],
+    "0x39CA": [
+      "phase_3_sprite_dst",
+      "16-bit destination offset for phase-3 sprite draws (draw_phase_3_sprite_at_39CA)"
+    ],
+    "0x39E0": [
+      "phase_3_scene_state_a",
+      "byte cleared by init_phase_3_scene_39E0"
+    ],
+    "0x39E1": [
+      "phase_3_scene_state_b",
+      "byte, adjacent to phase_3_scene_state_a"
+    ],
+    "0x40A6": [
+      "phase_5_sprite_dst_cache",
+      "16-bit cache of the phase-5 sprite's destination offset, saved by draw_phase_5_sprite for erase_phase_5_sprite to read"
+    ],
+    "0x40B2": [
+      "phase_5_actor_x",
+      "16-bit x-position of the phase-5 moving actor (used by compute_phase_5_direction, check_phase_5_obj_overlaps_cat)"
+    ],
+    "0x40B4": [
+      "phase_5_actor_y",
+      "byte y-position of the phase-5 moving actor"
+    ],
+    "0x40B7": [
+      "phase_5_actor_state",
+      "byte state field for the phase-5 actor"
+    ],
+    "0x40CA": [
+      "phase_5_actor_direction",
+      "byte 1/0xFF direction toward or away from cat, set by compute_phase_5_direction"
+    ],
+    "0x43A0": [
+      "phase_6_sprite_scratch",
+      "starts a save/scratch buffer for the phase-6 sprite. erase_phase_6_sprite reads from here to restore the background"
+    ],
+    "0x43DC": [
+      "phase_6_dst_pending",
+      "16-bit destination offset staged by prepare_phase_6_sprite_slot before commit"
+    ],
+    "0x43DE": [
+      "phase_6_dst_current",
+      "16-bit current destination offset for the phase-6 sprite (used by both draw and erase companions)"
+    ],
+    "0x43E0": [
+      "phase_6_sprite_present",
+      "byte 'phase-6 sprite present' flag. Guards erase_phase_6_sprite"
+    ],
+    "0x43E1": [
+      "phase_6_sprite_positions",
+      "table start of phase-6 sprite (x,y) positions read by phase_6_position_update"
+    ],
+    "0x44BD": [
+      "phase_6_sprite_active_flag",
+      "byte 'is a phase-6 sprite currently active' flag consumed by erase_phase_6_if_active"
+    ],
+    "0x44D0": [
+      "phase_6_source_selector",
+      "byte selector determining which sprite source to use in prepare_phase_6_sprite_slot"
+    ],
+    "0x44D1": [
+      "phase_6_source_ptr",
+      "16-bit source-pointer word used by prepare_phase_6_sprite_slot"
+    ],
+    "0x44D7": [
+      "phase_6_tick_shadow",
+      "16-bit BIOS tick shadow for phase_6_tick_a"
+    ],
+    "0x44D9": [
+      "phase_6_transition_flag",
+      "byte flag consumed by phase_6_state_transition"
+    ],
+    "0x454B": [
+      "phase_7_sprite_y",
+      "byte y-position of the phase-7 primary sprite, read by check_phase_7_sprite_overlaps_cat"
+    ],
+    "0x454C": [
+      "phase_7_second_dst",
+      "16-bit destination offset for the phase-7 secondary sprite"
+    ],
+    "0x70F0": [
+      "phase_7_frame_selector",
+      "16-bit frame selector for render_phase_7_sprite: `([0x70F0] & 0x1E0) + 0x6F30` picks the sprite frame"
+    ],
+    "0x70F2": [
+      "phase_7_animate_flag",
+      "byte 'phase-7 sprite active/dirty' flag consumed by phase_7_should_draw and phase_7_should_draw_second"
+    ],
+    "0x70F3": [
+      "phase_7_sprite_x",
+      "16-bit x-position of the phase-7 animated sprite, read by phase_7_should_draw for the overlap test against the cat"
+    ],
+    "0x70F5": [
+      "phase_7_sprite_row",
+      "byte y-position of the phase-7 animated sprite. advance_phase_7_sprite_row aligns it to an 8-row grid"
+    ],
+    "0x70F6": [
+      "phase_7_frame_alt",
+      "byte, when 0xFF, render_phase_7_sprite adds 0xC0 offset -- alternate-frame selector"
+    ],
+    "0x70F7": [
+      "phase_7_erase_gate",
+      "byte, gate for restore_phase_7_sprite_bg -- when non-zero, the restore is skipped (sprite stays drawn)"
+    ],
+    "0x70F8": [
+      "phase_7_sprite_dst",
+      "16-bit destination offset saved by render_phase_7_sprite for restore_phase_7_sprite_bg to erase from"
+    ],
+    "0x70FA": [
+      "phase_7_sprite_new_dst",
+      "16-bit next destination offset for the phase-7 sprite"
+    ],
+    "0x2650": [
+      "phase_scene_center_x",
+      "16-bit reference x-position used across per-phase scene setups (set to different values by each phase's init_phase_screen_pattern branch)"
+    ],
+    "0x2652": [
+      "phase_scene_center_y",
+      "byte reference y-position paired with phase_scene_center_x"
+    ],
+    "0x5A16": [
+      "sound_pit_shadow_5A16",
+      "16-bit PIT counter shadow used by spin_pit_delta_from_5A16"
+    ],
+    "0x5A14": [
+      "sound_tick_shadow_5A14",
+      "16-bit BIOS tick shadow used by wait_bios_tick_from_5A14"
+    ],
+    "0x5A10": [
+      "boot_music_tick",
+      "16-bit BIOS tick captured by init_boot_music_5A10"
+    ],
+    "0x5A12": [
+      "boot_music_divisor",
+      "16-bit PIT divisor set to 0x338 by init_boot_music_5A10"
+    ],
+    "0x5A80": [
+      "sound_state_5A80",
+      "16-bit BIOS tick shadow for advance_sound_state_5A80"
+    ],
+    "0x5A83": [
+      "sound_state_5A83",
+      "16-bit BIOS tick shadow for advance_sound_state_5A83"
+    ],
+    "0x5A85": [
+      "sound_state_5A85",
+      "16-bit sound state field, zeroed by sound_delay_start_5A83"
+    ],
+    "0x5A62": [
+      "sound_state_5A62",
+      "16-bit sound state field zeroed by reset_sound_state_5A62"
+    ],
+    "0x5A82": [
+      "sound_state_5A82",
+      "byte sound state field zeroed by reset_sound_state_5A62"
+    ],
+    "0x5A40": [
+      "sound_beat_tick",
+      "16-bit BIOS tick captured by sound_beat_startup_init"
+    ],
+    "0x5A42": [
+      "sound_beat_counter",
+      "16-bit counter zeroed by sound_beat_startup_init"
+    ],
+    "0x5A56": [
+      "melody_pattern_pit_shadow",
+      "note: distinct from pit_pattern_index at DS:0x5A56 -- one of these is misnamed and needs verification. Update: 0x5A56 IS pit_pattern_index for advance_pit_pattern_step -- disregard this entry"
+    ],
+    "0x5ACB": [
+      "beep_divisor",
+      "16-bit PIT divisor used by beep_blocking_alt and beep_sweep_1F4_to_0"
+    ],
+    "0x5ACD": [
+      "boot_anim_slow_counter",
+      "16-bit slow counter incremented every 0x40 fast-ticks by advance_boot_animation_counter"
+    ],
+    "0x5ACF": [
+      "boot_anim_fast_counter",
+      "byte fast counter incremented every tick by advance_boot_animation_counter"
+    ],
+    "0x5AD0": [
+      "sound_indexed_counter",
+      "16-bit counter incremented by advance_boot_sound_counter and shifted down 9 for high-bit indexing"
+    ],
+    "0x52C4": [
+      "melody_tick_shadow",
+      "16-bit BIOS tick shadow for advance_melody_pattern's 1-tick rate limit"
+    ],
+    "0x52C6": [
+      "melody_step_index",
+      "16-bit index into melody_step_table, advanced by 2 per firing"
+    ],
+    "0x52C8": [
+      "melody_terminator",
+      "16-bit terminator value: when the picked note matches this, the speaker is silenced and the melody ends"
+    ],
+    "0x52CA": [
+      "melody_step_table",
+      "table of 16-bit PIT divisors that advance_melody_pattern steps through (as a melody, not a repeating pattern)"
+    ],
+    "0x5F60": [
+      "boot_loop_state",
+      "16-bit state word zeroed by boot_animation_loop before its main iteration"
+    ],
+    "0x5F66": [
+      "boot_loop_tick",
+      "16-bit BIOS tick captured by boot_animation_loop"
+    ],
+    "0x5F6C": [
+      "boot_intro_tick_shadow",
+      "16-bit BIOS tick shadow for tick_boot_intro_5F6C_gated"
+    ],
+    "0x501": [
+      "keyboard_isr_pcjr_ptr_alt",
+      "when annotate sees the raw offset 0x14FB as a bracketed constant, the CS-relative ISR install pointer for PCjr. See install_keyboard_handler"
+    ],
+    "0x06D0": [
+      "cat_sprite_frames",
+      "13 CGA sprite frames for the cat, 3 words (12 pixels) wide × 9..14 rows tall each. Frames 0..7 form a walking cycle (frames 0/2/4 alternate with reuse of frame 1 at slots 3/7 -- a 4-frame walk mirrored). Frames 8..12 are the jump/climb poses (2 words wide instead of 3). Pointed to by cat_sprite_src_table at 0x09A6"
+    ],
+    "0x09A6": [
+      "cat_sprite_src_table",
+      "13-entry word table of source addresses into cat_sprite_frames. Indexed by movement_tick_scheduler using direction+step bits packed into BX. Last 3 slots are sentinels (0xFFFF, 0x0F0F, 0xFFFF) and never reached"
+    ],
+    "0x09C0": [
+      "cat_sprite_dims_table",
+      "13-entry word table parallel to cat_sprite_src_table, giving packed (height:width) for each cat frame. Frames 0..7: 0x0C03..0x0D03 (12..13 rows, 3 words); frames 8..12: 0x0E03..0x0E02, 0x0D02, 0x0902 (jump/climb, thinner 2-word variants)"
+    ],
+    "0x1050": [
+      "phase_4_mouse_rows",
+      "16-byte table of row positions for the mice in the swiss-cheese room. Values: 20 20 28 48 40 50 68 60 68 78 88 80 90 98 A0 A0. Read by phase_4_tick_a via [si + 0x1050]"
+    ],
+    "0x1137": [
+      "phase_4_mouse_dst_offsets",
+      "16-entry word table of column positions parallel to phase_4_mouse_rows. Together they describe the 16 mouse-hole positions on the cheese wall"
+    ],
+    "0x2540": [
+      "wall_tile_sprites",
+      "three 2w × 8r wall/border tiles used by every room's init_phase_screen_pattern. Stamped many times each by the sprite list at 0x2570 to build up the framing walls, corners, and skirtings"
+    ],
+    "0x2570": [
+      "wall_border_sprite_list",
+      "a blit_sprite_list-format sprite list, CX=0x0802 (2 words × 8 rows). Called with different base offsets per phase to stamp wall tiles into the room border shape"
+    ],
+    "0x25E4": [
+      "fireplace_sprites",
+      "sprite data for the fireplace/window frames used in phase 3 (library) and phase 5 (birdcage). Stamped three times by the sprite list at 0x2624"
+    ],
+    "0x2624": [
+      "fireplace_sprite_list",
+      "3-entry blit_sprite_list-format list, CX=0x1004 (4 words × 16 rows). Stamps the fireplace/window frame sprites three times side-by-side"
+    ],
+    "0x263E": [
+      "sprite_list_5x_ptr_table",
+      "5-entry word table of sprite-list pointers used by blit_sprite_lists_5x: 0x2270, 0x2278, 0x2298, 0x22A0, 0x22A8. Each entry is a full sprite-list-formatted composite"
+    ],
+    "0x2636": [
+      "sprite_list_4x_ptr_table",
+      "4-entry word table of sprite-list pointers used by blit_sprite_lists_4x: 0x23EE, 0x23F6, 0x24B2, 0x24BA. Each entry is a full sprite-list-formatted composite"
+    ],
+    "0x2648": [
+      "sprite_list_5x_alt_ptr_table",
+      "4-entry word table of sprite-list pointers used by blit_sprite_lists_5x_alt: 0x218A, 0x2192, 0x219A, 0x21A2"
+    ],
+    "0x2E24": [
+      "attract_sprite_list",
+      "the attract-mode / phase-7-cupids composite sprite list. Called from init_attract_animation_2E24; draws the cupid border and the heart-filled interior of the finale screen"
+    ],
+    "0x32B8": [
+      "phase_1_object_frames",
+      "5 CGA sprite frames for the phase-1 falling/animated object, 10 bytes each (1 word × 5 rows). Located by sprite_index_to_offset_32B8: `ax = al*0xA + 0x32B8`"
+    ],
+    "0x3300": [
+      "phase_2_small_fish_frames",
+      "4 sprite frames for the small fish that swim in the aquarium, 12 bytes each (1 word × 6 rows). Selected by phase_2_tick_actor_animate with XOR toggle 0xC (left/right flip) and direction offset 0x18"
+    ],
+    "0x3330": [
+      "phase_2_big_fish_frames",
+      "4 sprite frames for the big fish (0x3330..0x335F), same shape as phase_2_small_fish_frames but a different sprite set. Selected via mask 0x18 by the same tick routine"
+    ],
+    "0x3404": [
+      "phase_2_actor_scratch",
+      "24-slot per-actor scratch/state area used by update_phase_2_actor_slot for the fish that render in the aquarium"
+    ],
+    "0x38BC": [
+      "phase_3_dog_frames",
+      "sprite data for the dog in the library (phase 3), 84 bytes per frame (3 words × 14 rows). ~2 frames. Selected by draw_phase_3_sprite_at_39CA via [0x396B] + 0x38BC. Drawn with sprite_colored_blit_with_save (the coloured/masked variant)"
+    ],
+    "0x3EF0": [
+      "phase_5_bird_frames",
+      "4 sprite frames for the bird/mouse in the birdcage room, 10 bytes each (1 word × 5 rows). A +0x1E offset selects the flipped-direction variant"
+    ],
+    "0x40C0": [
+      "phase_5_sprite_frame_ptrs",
+      "4-entry word table of pointers into phase_5_bird_frames, indexed by the current animation frame"
+    ],
+    "0x3C5A": [
+      "phase_4_mouse_ptr_table",
+      "4 dwords: (0x0516, 0x3B92), (0x051C, 0x3B92), (0x0660, 0x3B12), (0x0A06, 0x3B12). First word is a source address for one of the four mouse sprites (all inside sprite_data_bank_a); second word is a shared destination offset"
     ]
   },
   "_data_spans": {

@@ -16,8 +16,8 @@ Bill Williams for Synapse Software, published by Datasoft.
 | instructions | 9,171 disassembled (518 pinned) |
 | call targets named | **258 of 258 (100%)** |
 | tail-call entries named | **3 of 3 (100%)** |
-| bracketed constants named | **69 of 685** (10.1% -- next slice) |
-| routines / globals | **280 / 75** |
+| bracketed constants named | **187 of 685** (27.3%) |
+| routines / globals | **280 / 212** |
 | data spans | **54 spans covering 100%** (31 named + 3 sprite banks + 20 unread gaps) |
 
 Triaged on 2026-08-02, orientation done on 2026-08-21 in three passes
@@ -181,6 +181,45 @@ which settled three claims that docs/01 had marked `[inferred]` (Bill
 Williams, SynSoft, 1984) and revealed a fourth that had not been in the
 document at all (IBM co-published this release, consistent with the
 extensive PCjr support).
+
+Pass 22 (2026-08-22) parallel-tracked: drafted
+[`docs/04-porting.md`](docs/04-porting.md) (241 lines, following the
+paratrooper/dam-busters pattern -- portability analysis, sprite-format
+blocker, four language options with recommendation of HTML/Canvas), and
+delegated sprite-bank research to a sub-agent that surfaced the actual
+sprite pointer tables and per-phase moving-sprite addresses.
+
+The sub-agent's findings changed the picture of the three big "sprite
+banks" (A/B/C) from Pass 9. Only the CAT frames actually live inside
+bank A (cat_sprite_frames at DS:0x06D0..0x0992, with parallel tables at
+0x09A6 for src pointers and 0x09C0 for packed dims -- 13 frames total,
+frames 0..7 the walking cycle, 8..12 the jump/climb poses). Most other
+per-phase sprites (phase 2 fish at 0x3300/0x3330, phase 3 dog at
+0x38BC, phase 5 bird at 0x3EF0, phase 1 falling object at 0x32B8,
+phase 4 mice ptrs at 0x3C5A + rows/cols at 0x1050/0x1137) live in the
+small "unread gaps" between the misclassified banks. Banks B and C
+(image 0x46BA..0x5A1F and 0x6230..0x6E36) still hold what looks like
+title/attract composite scenes and message-screen backgrounds. The
+sprite-list format is now documented: 2-byte header (width_words,
+height_rows), then N × 4-byte (src_ptr, dst_offset) entries terminated
+by 0xFFFF; each `blit_sprite_lists_4x/5x/5x_alt` batch has its own
+pointer table at 0x2636/0x263E/0x2648.
+
+Named this pass: ~130 more globals covering the cat sprite tables, the
+per-phase sprite frame regions, per-phase moving-actor state, sound
+engine sub-state (0x5A80..0x5A85 cluster, boot music/animation state at
+0x5A10..0x5AD0, melody stepper at 0x52C4..0x52CA), attract-mode object
+cluster (0x1665..0x17EC), phase-6 sprite state (0x43A0..0x44D9),
+phase-7 sprite state (0x70F0..0x70FA), and the shared object slot
+(0x327D..0x3286). Bracketed constants: 69 -> 187 (10.1% -> 27.3%).
+
+The next-level refinement of `_data_spans` is now more informed but not
+yet applied: the three misclassified sprite banks should be split into
+named per-sprite spans (e.g. `cat_sprite_frames` becomes its own span
+at DS:0x06D0..0x0992, phase-2 fish tables split out, etc.) and banks
+B/C need actual reading rather than "sprite bank C" as a placeholder.
+That is a mechanical follow-up; deferred to keep the partition invariant
+sound while the naming pass lands.
 
 Pass 21 (2026-08-21, later still) mapped ALL SEVEN phases to their
 actual rooms. The trick was `--stop-at inner_loop_top --stop-after 1`
