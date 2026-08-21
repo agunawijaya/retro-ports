@@ -47,31 +47,967 @@
     ],
     "0x07490": [
       "phase_7_handler",
-      "phase 7 entry (highest slot in phase_dispatch_table, offset 0x260 word = CS:0260 = image 0x7490). Self-identifies with `mov word [4], 7` in case entered outside the dispatch path, then calls a fixed ~15-routine per-frame sequence, then loops on `or al, [0x551] / or al, [0x553] / or al, [0x41C] / or al, [0x41B] / je back` -- exits when any of the four level-end triggers fires. Specific room this phase draws not yet identified"
+      "phase 7 entry (highest dispatch slot, offset 0x260 -> image 0x7490). Two structural anomalies mark it as NOT a normal gameplay phase: its exit OR is `[0x551] | [0x553] | [0x41C] | [0x41B]` (missing 0x552, the level-end flag every other phase watches), and it does not call the per-frame updates L_09093 / L_0A380 that the gameplay phases share. Init sequence: screen_transition_wipe / init_phase_screen_pattern / set_cat_position_for_phase / init_gameplay_state / init_object_slot_32XX / phase_7_init_a (L_0D330, sets [0x70F2]=0) / init_phase_7_state (L_0C189, sets up state at 0x4548..0x45B6 with a PRNG-picked value). Per-frame: handle_keyboard_events, poll_joystick_or_delay, update_speaker_sweep, movement_tick_scheduler, phase_7_animated_sprite (L_0D336), L_0A196, L_0A090, L_0BE40. This is most likely the game-over / scoreboard screen"
     ],
     "0x074DA": [
       "phase_6_handler",
-      "phase 6 entry (offset 0x2AA -> image 0x74DA), same shape as phase_7_handler -- self-identify + subsystem calls + level-end OR-loop. Room unmapped"
+      "phase 6 entry (offset 0x2AA -> image 0x74DA). Distinct from all other phases in one way: its per-frame update BRANCHES on `[0x1CB8]` (a gameplay-active gate) -- when zero, calls L_0A380; when non-zero, calls L_09093. Every other phase always calls both. Init: transition + phase_init trio + init_phase_6_state_noop (L_0BE30, single `ret` -- phase 6 has no state to init). Per-frame: standard core plus phase_6_tick_b (L_0BB73) and phase_6_tick_a (L_0BA06). Exit OR includes all five triggers (0x551, 0x552, 0x553, 0x41B, 0x41C)"
     ],
     "0x0752E": [
       "phase_5_handler",
-      "phase 5 entry (offset 0x2FE -> image 0x752E), same shape. Room unmapped"
+      "phase 5 entry (offset 0x2FE -> image 0x752E). Standard init + init_phase_5_state (L_0B7AA, sets up position at (0x90, 0x86) and state at 0x40A8..0x40C8). Per-frame: standard core plus phase_5_tick_b (L_0B7DB) and phase_5_tick_a (L_0B570). Normal exit OR"
     ],
     "0x07579": [
       "phase_4_handler",
-      "phase 4 entry (offset 0x349 -> image 0x7579), same shape. Room unmapped"
+      "phase 4 entry (offset 0x349 -> image 0x7579). Init: standard trio then init_phase_4_actors (L_0B2C0, initializes 4 actor slots at 0x3EAE..0x3EDA with random offsets). Per-frame: standard core plus phase_4_tick_a (L_0B0C0) and phase_4_tick_b (L_0B2F2). Normal exit OR"
     ],
     "0x075C4": [
       "phase_3_handler",
-      "phase 3 entry (offset 0x394 -> image 0x75C4), same shape. Room unmapped"
+      "phase 3 entry (offset 0x394 -> image 0x75C4). Init: standard trio then init_phase_3_state_a (L_0AD60, inits [0x37AF..0x37B4]) then init_phase_3_state_b (L_0AEC0, inits [0x3964..0x396D]). Per-frame: standard core plus phase_3_tick_a (L_0AEE1) and phase_3_tick_b (L_0AD72). Normal exit OR"
+    ],
+    "0x0AD60": [
+      "init_phase_3_state_a",
+      "zero-inits and seeds the first phase-3 state block: `[0x37AF]` := 3, then `[0x37B0]`, `[0x37B2]`, `[0x37B4]` := 1. Called from phase_3_handler init"
+    ],
+    "0x0AEC0": [
+      "init_phase_3_state_b",
+      "initializes the second phase-3 state block: `[0x3966]` := 8, `[0x396A]` := 1, `[0x3967]` := 0, `[0x396D]` := 2, `[0x3964]` := 0x0118, `[0x396B]` := 0. Called from phase_3_handler init"
+    ],
+    "0x0B2C0": [
+      "init_phase_4_actors",
+      "4-slot loop initializing phase-4 actors. For each slot bx (0..3): `[bx + 0x3EAE]` := 1, `[bx + 0x3EB2]` := 0, calls L_0B4A7 (per-slot helper), picks PRNG value dl, `dl = (dl & 0xF) + 0x14`, stores at `[bx + 0x3EB6]`. Zeros `[0x3EDA]` after the loop. The four actors are almost certainly the moving objects of phase 4 -- given Alley Cat's rooms, likely the mice in the cheese room or the birds in the birdcage"
+    ],
+    "0x0B7AA": [
+      "init_phase_5_state",
+      "initializes the phase-5 layout: sets `[0x40A8]` := 0x90 (col), `[0x40AA]` := 0x86 (row), computes CGA offset via cga_row_col_to_offset and stores at `[0x40AB]`, calls L_0B989 (sprite prep?), then zero-inits `[0x40AF]`, `[0x40B1]`, `[0x40B8]`, sets `[0x40B9]` := 1 and `[0x40C8]` := 0xFF"
+    ],
+    "0x0BE30": [
+      "init_phase_6_state_noop",
+      "single `ret` -- phase_6_handler calls this in its init slot but the phase has no state to initialize. Present so the phase's init sequence has the same shape as the others"
+    ],
+    "0x0C189": [
+      "init_phase_7_state",
+      "zero-inits and seeds phase-7 state. Zeros `[0x45B6]`; PRNG-picks dx, masks to 0..0x7F, adds 0x60, stores at `[0x4548]`. Various flags at `[0x454A]` := 0, `[0x454E]` := 1, `[0x4551]` := 0, `[0x4553]` := 0. Reads INT 1Ah tick, stores in `[0x45B4]` (approx)"
+    ],
+    "0x0D330": [
+      "phase_7_init_a",
+      "single-byte init: `[0x70F2]` := 0. Called from phase_7_handler init. Likely a shared flag between phase_7_handler's frame body and phase_7_animated_sprite (L_0D336), which zeros the same byte on the non-drawn branch"
+    ],
+    "0x0D336": [
+      "phase_7_animated_sprite",
+      "rate-limited to once per BIOS tick change (`cmp dx, [0x70EE]`). When the tick moves, calls L_0D4D6 -- if the return CF says 'draw', does the classic sprite-flicker cycle: restore_video_from_snapshot (erase the old frame) / L_0D45B (advance sprite/position) / sprite_draw_saving_bg (paint the new one). Zero `[0x70F2]` on the erase path. This is an animated sprite in phase 7 (the game-over screen)"
+    ],
+    "0x0AD72": [
+      "phase_3_tick_a",
+      "phase-3 per-frame tick, rate-limited by comparing INT 1Ah tick DX to `[0x37B8]`. When the tick moves, sets `[0x37B8]` := DX and `[0x37B6]` := 4, then does phase-3-specific work. Caller: phase_3_handler inner loop only"
+    ],
+    "0x0AEE1": [
+      "phase_3_tick_b",
+      "phase-3 per-frame tick, rate-limited to 2+ BIOS ticks against `[0x39C8]`. Caller: phase_3_handler inner loop only. Distinct state block from phase_3_tick_a"
+    ],
+    "0x0B0C0": [
+      "phase_4_tick_a",
+      "phase-4 per-frame update. Caller: phase_4_handler inner loop only"
+    ],
+    "0x0B2F2": [
+      "phase_4_tick_b",
+      "phase-4 per-frame update, distinct from phase_4_tick_a. Caller: phase_4_handler inner loop only"
+    ],
+    "0x0B570": [
+      "phase_5_tick_a",
+      "phase-5 per-frame update. Caller: phase_5_handler inner loop only"
+    ],
+    "0x0B7DB": [
+      "phase_5_tick_b",
+      "phase-5 per-frame update, distinct from phase_5_tick_a. Caller: phase_5_handler inner loop only"
+    ],
+    "0x0BA06": [
+      "phase_6_tick_a",
+      "phase-6 per-frame update. Caller: phase_6_handler inner loop only"
+    ],
+    "0x0BB73": [
+      "phase_6_tick_b",
+      "phase-6 per-frame update. Caller: phase_6_handler inner loop only"
+    ],
+    "0x0BE40": [
+      "phase_7_tick_a",
+      "phase-7 per-frame update, rate-limited against `[0x45B8]`. Advances `[0x45B6]` counter (increments, then dispatches on specific values 1 and 4). Caller: phase_7_handler inner loop only"
+    ],
+    "0x0A090": [
+      "phase_7_tick_b",
+      "phase-7 per-frame update. Caller: phase_7_handler inner loop only"
+    ],
+    "0x0A196": [
+      "phase_7_tick_c",
+      "phase-7 per-frame update. Caller: phase_7_handler inner loop only"
+    ],
+    "0x08DAA": [
+      "check_attract_collision",
+      "collision test between an object drawn during attract mode and the cat sprite. Only fires when `[current_phase] == 0` (i.e. during the outer attract loop where main_loop zeros [4] just before dispatch) AND `[0x1673]` is non-zero. Calls boxes_overlap (L_0A059) with rectangle (`[0x1671]`, `[0x1673]`, `[0x17DF]`) vs the cat's (`[0x579]`, `[0x57B]`, 10, 8). CF-based branch on overlap"
+    ],
+    "0x09093": [
+      "advance_frame_scheduler",
+      "per-frame internal counter advance, called from every phase handler. Reads INT 1Ah tick; runs only if the delta from `[scheduler_last_tick]` (0x1CC9) is >= 1+([scheduler_counter] & 1), so alternates between 1-tick and 2-tick thresholds. Also gates on check_cga_vretrace_bit -- skips if not in vretrace. When it fires: updates scheduler_last_tick, increments scheduler_counter, decrements `[0x1CC1]` if non-zero (which triggers speaker_off and phase-transition writes when it hits zero)"
+    ],
+    "0x09325": [
+      "check_cat_at_trigger_zone",
+      "detects when the cat has reached a specific bottom-of-screen trigger area. Guarded on `[sound_gate_flag]` (0x1CB8) == 0 AND at least one of `[0x1CBF] | [0x1CC0] | [0x1CC1]` set. Requires cat_row >= 0xA3 (near bottom of the 320x200 screen), `[0x558]` == 0, and cat_col in range `[[0x1CC6] - 0x38 .. [0x1CC6] + 0x20]` (a ~90-pixel horizontal band). On match, calls L_09366 -- this is the trigger for the cat's fence-to-window jump animation"
+    ],
+    "0x09B88": [
+      "blit_sprite_lists_4x",
+      "stores AX at [0x2634], then calls blit_sprite_list 4 times with BX loaded from a 4-entry pointer table at [0x2636..0x263C] (loop SI = 8 down by 2 until 0). Renders 4 composed sprites in sequence"
+    ],
+    "0x09BA0": [
+      "blit_sprite_lists_5x",
+      "same shape as blit_sprite_lists_4x but calls blit_sprite_list 5 times from a pointer table starting at [0x263E..0x2646] (loop SI = 0xA down by 2)"
+    ],
+    "0x09BD0": [
+      "blit_sprite_and_clear_columns",
+      "blits one sprite list at [0x251C] then clears three 0x24-word (72-byte) horizontal strips in CGA video RAM at offsets `[0x267E] + 0x284`, `+ 0x1184`, and `+ 0x2284` -- likely the trailing/blanking columns behind a moving sprite so its old positions get erased"
+    ],
+    "0x09EFC": [
+      "sprite_colored_blit_with_save",
+      "colored-sprite blit for CGA mode 4 (2 bits per pixel). Same width/height cache pattern as blit_cga_interleaved but with per-pixel masking: for each byte, reads current video at ES:DI, saves at DS:BP, loads sprite word from DS:SI, then does bit-manipulation with masks 0x30C0/0xFF0 to combine the sprite color pattern with the underlying video. The most-called unnamed blitter (12 sites); it is the routine that draws animated color sprites"
+    ],
+    "0x0CD93": [
+      "advance_sound_timer",
+      "guarded on `sound_enabled`; every 2+ BIOS ticks (delta from `[0x59C0]` >= 2), advances a sound counter at `[0x59BE]`. When the counter's masked value reaches 0x86, does phase-specific sound state updates. Called from many per-frame updates -- this is the beat-clock for the sound engine"
+    ],
+    "0x0D42A": [
+      "render_phase_7_sprite",
+      "renders a specific sprite in phase_7 (the game-over screen). Selects sprite by `([0x70F0] & 0x1E0) + 0x6F30`, with a 0xC0-byte offset when `[0x70F6] == 0xFF` (alternate frame). Draws to CGA video at `[0x70FA]` using scratch at `[0x70CC]`, dimensions 8x2. Companion to restore_phase_7_sprite_bg"
+    ],
+    "0x0D45B": [
+      "restore_phase_7_sprite_bg",
+      "restores the background behind the phase-7 sprite. Guarded on `[0x70F7]` == 0. Blits from scratch at `[0x70CC]` to CGA video at `[0x70F8]` via blit_cga_interleaved. Called by phase_7_animated_sprite between erase and redraw"
+    ],
+    "0x076D0": [
+      "spawn_countdown_tick",
+      "periodic spawner. Decrements `[0x531]`; when it reaches zero (once per period) tries to spawn: increments back to 1, gates on check_cga_vretrace_bit, requires `[0x55A]` == 0 and `[0x1673]` == 0 (spawn slot empty), then reads INT 1Ah tick and checks it differs from `[0x544]` to serialize. Chooses a spawn type by indexing `[bx + 0x532]` where bx = phase_history_index, then reads more state at [0x52F] and calls L_07888"
+    ],
+    "0x07863": [
+      "shift_sprite_column_rcr",
+      "5-iteration rotate-through-carry-RIGHT of the byte at `[bx + 0x1016]` where bx = `[0x52F] + [table@0x541]`. `lahf/sahf` around it preserves the shift's carry bit across the loop. If the table entry is 9, jumps to shift_sprite_column_rcl (L_0787E) which does the opposite direction. This is pixel-column scrolling on a saved sprite buffer"
+    ],
+    "0x0787E": [
+      "shift_sprite_column_rcl",
+      "opposite direction of shift_sprite_column_rcr: `rcl byte [bx + 0x1016], 1` in a loop with `lahf/sahf` carry preservation. dec bx per iteration (walks backward through the buffer). Reached from shift_sprite_column_rcr when the direction table holds 9"
+    ],
+    "0x07888": [
+      "check_cat_row_in_zone",
+      "range check on cat_row_plus_50 against a per-object table at `[bx + 0x53A..0x53D]`. Sets flag byte `[0x4D6]` := 1 if cat is inside the zone AND `[0x55C]` >= 1, else 0"
+    ],
+    "0x078AD": [
+      "draw_speaker_pattern",
+      "draws a randomized speaker/mouth animation pattern: fills 0x20 words (64 bytes) at ES:DI with 0xAAAA, patches 4 bytes at +4..+7 with 0x4444, then uses PRNG to choose a variation. Called for the cat's meow/talk animation"
+    ],
+    "0x0790E": [
+      "pick_random_from_4_ptr_table",
+      "picks a random pointer from a 4-entry table at `[bx + 0x4D0]`. PRNG-picks a 3-bit value; if it lands on 6 returns AL=0 (a null pick), otherwise reads word from `[bx + dx + 0x4D0]` and loops through 8 lodsw operations. bx is the caller's context"
+    ],
+    "0x07930": [
+      "reset_movement_scheduler",
+      "3-instruction routine: zeros movement_last_tick (0x57D) and movement_countdown (0x684). Called to reset the cat's movement timing at phase transitions"
+    ],
+    "0x0793D": [
+      "initialize_cat_start_position",
+      "initializes the cat's starting position on entering a new game. If saved cat_col `[0x579]` is < 0xA0 (left half of screen), cat starts at col=0 facing right (direction ah=1). Else cat starts at col=0x128 facing left (direction ah=0xFF). Sets movement direction `[0x56E]`, animation frame `[0x558]` := 3, frame timer `[0x559]` := 0xC, row := 0xB4 (row 180, near bottom of the 320x200 screen). Then computes the CGA offset via cga_row_col_to_offset, stores in sprite_dst_offset, and sets sprite_width_cache := 0xB03"
+    ],
+    "0x07AA2": [
+      "sfx_meow",
+      "starts a meow-style sound effect. Sets speaker_pit_divisor := 0x400 (a specific pitch). If `[0x584]` is non-zero, returns without playing (already meowing?). Otherwise sets sound duration counter `[0x576]` := 8, chooses pitch direction based on cat row vs `[0x2652]` -- the cat has a different meow when on top of vs below a reference row"
+    ],
+    "0x081F9": [
+      "set_screen_bounds_for_phase",
+      "picks horizontal movement bounds for the current phase. Default: `[0x5F6]` := 8 (left bound), `[0x5F8]` := 0x123 (right bound). For phase 7 (game-over screen): `[0x5F6]` := 0x24, `[0x5F8]` := 0x10F -- narrower bounds. Then computes movement clamping based on cat_col, direction `[0x56E]`, and step size `[0x572]`"
+    ],
+    "0x08F9E": [
+      "set_pcjr_palette_register",
+      "the PCjr palette-set primitive called 3x by apply_palette on PCjr. `mov ax, 0x1000 / int 10h` -- INT 10h AH=10h AL=00h with BL = palette register index (1/2/3) and BH = color. `push si / pop si` preserves the caller's palette-selector index"
+    ],
+    "0x0994E": [
+      "add_score_bcd_7_digits",
+      "adds two 7-digit BCD numbers (score arithmetic). Loops CX=7 down; for each digit reads [bx+di] and [bx+si], does `adc + aaa` (add with carry + ASCII adjust for addition, i.e. BCD add), stores back at [bx+di]. `pushf/popf` preserves the carry between iterations. Classic 8088 multi-digit BCD adder"
+    ],
+    "0x08B52": [
+      "blit_object_at_17E5",
+      "one-shot sprite blit for an object whose destination is [0x17E5], source is fixed at 0x17EE, and width comes from [0x17E3]. ES:=B800, then blit_cga_interleaved. Likely an attract-mode or menu object"
+    ],
+    "0x08D35": [
+      "check_object_overlaps_cat_1666",
+      "boxes_overlap test between an object at (col [0x1666], row [0x1668]) with dims (0x20, 0x18) and the cat at (cat_col, cat_row) with dims (0xE, 0xF). CF-based return per boxes_overlap"
+    ],
+    "0x09311": [
+      "blit_object_at_1CBD",
+      "sprite blit for an object at [0x1CBD] with source 0x1C40 and width from [0x1CC2]. Same shape as blit_object_at_17E5 but different addresses; likely a gameplay object drawn at variable position"
+    ],
+    "0x0992C": [
+      "compare_and_copy_score_block",
+      "calls L_09969 (a 7-byte compare+copy helper) with bx=0x1F82 (candidate score) and di=0x143C (destination). Related to the maybe-promote-high-score pattern -- another `if score > record: copy 7 bytes`. Reached from new_game_setup"
+    ],
+    "0x09CF6": [
+      "draw_score_multi_pass",
+      "multi-pass sprite drawer with state at [0x2AC4] (pass counter) and [0x2AC9] (bh cache). Loops indexing [bx + 0x2ABA] where bx = phase_history_index. Called from screen-setup paths"
+    ],
+    "0x09DA1": [
+      "draw_at_2680_striped",
+      "repeated sprite draw stepping DI by 0x14 (20 bytes) each iteration. Sets [0x2AC4] := 4 as iteration count. Source = 0x2680 with dims 0x1005 = width 5 words, height 0x10 rows. Stripe/pattern renderer"
+    ],
+    "0x09527": [
+      "check_hit_at_1D59",
+      "hit-test guard for objects at [0x1D5C]. If [0x1D59] is zero returns CF=0; else reads packed dims from [0x1D64], swaps halves via `xchg cl, ch`, tests overlap with something. Likely per-mouse or per-actor hit check"
+    ],
+    "0x09252": [
+      "update_gameplay_input_state",
+      "if [sound_gate_flag] non-zero, returns bh=0. Else increments an input-cycle byte at [0x1CCF], masks with 6 to cycle 4-way, ORs with 8, then dispatches. Runs every frame; likely translates raw key state into gameplay input direction"
+    ],
+    "0x0A569": [
+      "walk_object_list_head",
+      "linked-list traversal: reads bx = [0x327A] (head pointer), follows [bx + 0x3260] as next-pointer, updates head if link is 0 (list ended) and retries from top. On finding a valid link, blits the object from scratch to video via mask-blit at BP=0x31E8, ES=B800, CX=0x1E02"
+    ],
+    "0x0A5D0": [
+      "erase_phase_1_object",
+      "erases the phase-1 object at [0x3282] by blitting from scratch at 0x31E8. Guarded on [0x3286] (a 'sprite present' flag). Companion to walk_object_list_head"
+    ],
+    "0x0B989": [
+      "draw_phase_5_sprite",
+      "phase-5-specific sprite draw via sprite_and_mask_blit: BP=0x401E (scratch save), SI=0x3FBE (sprite source), DI=[0x40AB] (dest), CX=0x1003 (dims: width 3 words, height 0x10 rows). Caches DI at [0x40A6] for erase companion"
+    ],
+    "0x0B9A3": [
+      "erase_phase_5_sprite",
+      "erase companion to draw_phase_5_sprite: blits from 0x401E scratch to [0x40A6] cached dest via blit_cga_interleaved"
+    ],
+    "0x0BD33": [
+      "erase_phase_6_sprite",
+      "erases the phase-6 sprite at [0x43DE] by restoring from scratch at 0x43A0. Guarded on [0x43E0] (a 'sprite present' flag)"
+    ],
+    "0x0BDF8": [
+      "draw_phase_7_sprite_indexed",
+      "picks a sprite frame from a per-index table at [bx + 0x44C4], multiplies the index by 32 (`shl 5`) to compute an offset into the sprite bank starting at 0x41FC, and blits to video via blit_cga_interleaved. CX=0x802 dims (2 words wide, 8 rows tall)"
+    ],
+    "0x0C17A": [
+      "update_phase_7_secondary_sprite",
+      "conditional draw of a second phase-7 sprite: if [0x454E] is zero returns; else loads DI from [0x454C] and calls L_0C238 (the actual drawer)"
+    ],
+    "0x0C290": [
+      "clamp_cat_col_and_prepare",
+      "clamps cat_col to <= 0x116 (max screen col), then subtracts 0x10 to compute a related position. Called from L_0C4BB during the boot / reset path"
+    ],
+    "0x0C37A": [
+      "init_bonus_table_from_source",
+      "3-iteration loop copying from source blocks at 0x4DA4/0x4DAA into [0x4D6A]. Sets up per-round bonus data or similar during boot"
+    ],
+    "0x0C4BB": [
+      "advance_intro_state_step",
+      "one step of the boot/intro sequence: calls sound_delay_start, sets CGA palette (INT 10h AH=0Bh BX=0x101), then chains through L_0C290 / L_0C37A / L_0CDEF, and increments [main_state] if it is below 9. Advances the intro/attract animation one step at a time"
+    ],
+    "0x0C500": [
+      "advance_melody_pattern",
+      "a second PIT-ch2 pattern stepper (distinct from advance_pit_pattern_step). Guards on sound_enabled and 1-tick BIOS-tick rate limit ([0x52C4]). Cycles through a table at 0x52CA indexed by [0x52C6] advancing by 2 each firing; silences speaker when the picked value matches the terminator at [0x52C8]. Plays a melody phrase, not a repeating 4-note pattern"
+    ],
+    "0x0C99E": [
+      "beep_blocking_alt",
+      "blocking beep like beep_blocking but with a fixed CX=0x1000 iteration count (halved on standard PC via `shr cx, 1`) and divisor from [0x5ACB]. Used for a specific boot/intro chime rather than as a general primitive"
+    ],
+    "0x0C9D6": [
+      "advance_boot_animation_counter",
+      "boot-animation timer: increments byte [0x5ACF], and every 0x40 ticks (when the low 6 bits wrap) also increments word [0x5ACD]. Then computes bl from ([0x5ACD] >> 2) & 0x1F and compares against the byte counter, setting a decision value in dl (0 or 2). Drives the intro-screen pacing"
+    ],
+    "0x0CB8D": [
+      "sfx_random_meow_tone",
+      "plays a random-pitch tone as an SFX. Guarded on sound_enabled and sfx_playing_state==0 (no other SFX active). PRNG-picks a byte, masks to 0..0x7F, adds 0xAA to compute BX (duration param), then adds 0x1E to compute AX (frequency), calls sfx_start_tone. Frequencies range 0xC8..0x147 -- percussion/noise range; probably the random meow"
+    ],
+    "0x0CBAF": [
+      "sfx_sweeping_tone",
+      "plays a sweeping tone effect. Guarded on sound_enabled. Adds [0x5B08] (a sweep phase) to 0x1200 and 0x1312 to compute AX (freq) and BX (param), advances [0x5B08] by 0x15E, then calls sfx_start_tone. Each call produces a slightly higher pitch than the last -- a rising melody"
+    ],
+    "0x0CDEF": [
+      "wait_sound_beat_78",
+      "spins on advance_sound_timer until the sound counter [0x59BE] reaches 0x7C. Guarded on sound_enabled (returns immediately if muted). Called from the intro/boot path to wait for a specific sound phase before proceeding"
+    ],
+    "0x0CECE": [
+      "print_string_with_ds_reset",
+      "wrapper for bios_print_string that first ensures DS := 0x10 (the data segment). Called by startup_video_probe which momentarily sets DS to video (0xB800) for the memory test and then needs to print the failure message from data"
+    ],
+    "0x0D06B": [
+      "cycle_2_pattern_bg_blit",
+      "2-slot cyclic background pattern: advances counter [0x6A8D] by 2, masks with 2 (giving 0/2 = 2 slots), picks source pointer from `[bx + 0x6A8F]`, blits pattern of dims 0xC0A (width 0xA words, height 0xC rows) to CGA video at 0x1D38. Half the size of cycle_phase_1_bg_pattern's 4-slot version"
+    ],
+    "0x0D4D6": [
+      "phase_7_should_draw",
+      "decision routine for phase_7_animated_sprite: if [0x70F2] is zero returns CF=0 (skip draw); else builds a bounding box from ([0x70F3], [0x70F5]) with dims (0x10, 0x18) and boxes_overlap-tests it against the cat at (cat_col, cat_row) with dims (0x18, ...). CF-based return"
+    ],
+    "0x0CD84": [
+      "sound_delay_start",
+      "starts a sound-delay measurement: zeroes counter word [0x59BE], reads INT 1Ah tick DX and stores at [0x59C0]. Paired with advance_sound_timer (L_0CD93) which increments [0x59BE] every 2 BIOS ticks"
+    ],
+    "0x0B4A7": [
+      "pick_random_actor_position_phase_4",
+      "picks a random position for a phase-4 actor slot, avoiding duplicates. Sets [0x3ED9] := 0x20 as retry ceiling; loops calling prng_step, masking to 0..0xF, and cross-checking against existing slots. Called from init_phase_4_actors for each of 4 slots"
+    ],
+    "0x0B4E4": [
+      "compute_phase_4_actor_display_col",
+      "computes an actor's on-screen column from its slot state. Reads [si + 0x3EBA] to di, then indexes a table at [di + 0x1050]. For slot indices >= 3, uses value 0xA; else subtracts 0"
+    ],
+    "0x0B50B": [
+      "check_phase_4_actor_overlaps_cat",
+      "boxes_overlap test: actor at ([si + 0x3ECC], [bx + 0x3ED4]) with dims (0x10, 0x18) vs cat at (cat_col, cat_row) with dims (?, ?). Returns per boxes_overlap's CF convention"
+    ],
+    "0x0B52C": [
+      "check_phase_4_actor_overlaps_object_327D",
+      "same shape as check_phase_4_actor_overlaps_cat but tests against the object at ([0x327D], [0x327F]) instead. That object is the phase-1 object slot (init_object_slot_32XX), suggesting shared object state across phase transitions"
+    ],
+    "0x0B54C": [
+      "compute_actor_cat_distance",
+      "computes the absolute distance in each axis between an actor at ([si + 0x3ECC], [bx + 0x3ED4]) and the cat. Uses `not ax` on negative results to get absolute value"
+    ],
+    "0x0B96E": [
+      "check_phase_5_sprite_overlaps_cat",
+      "boxes_overlap between the phase-5 sprite at ([0x40A8], [0x40AA]) with dims (0x18, 0xE) and the cat with dims (0x10, ?)"
+    ],
+    "0x0B9E0": [
+      "check_phase_5_object_left_of_cat",
+      "similar overlap test but with the cat shifted left by 8 pixels first (`sub bx, 8 / jae + zero`), so the test is 'is the object in the region 8 pixels to the left of the cat'"
+    ],
+    "0x0BD4D": [
+      "prepare_phase_6_sprite_slot",
+      "captures the phase-6 sprite's destination from [0x43DC], stores at [0x43DE], preps the scratch buffer at 0x43A0 from [0x44D1], and clears the 'sprite present' flag [0x43E0]. Setup step for a new phase-6 sprite"
+    ],
+    "0x0C000": [
+      "check_phase_7_sprite_overlaps_cat",
+      "boxes_overlap between the phase-7 sprite at ([0x4548], [0x454B]) with dims (0xC, 0xE) and the cat with dims (0x18, ?)"
+    ],
+    "0x0C0A5": [
+      "iterate_8_object_slots",
+      "8-slot loop iterating a per-slot state table starting at [0x2B6A] with active-flag at [0x2B72]. For each slot bx (7..0), if [bx + 0x2B72] is non-zero, does per-slot work with [bx + 0x2B6A] as the parameter. Object animator or hit-test loop"
+    ],
+    "0x0C1EB": [
+      "save_phase_7_state_indexed",
+      "copies 12 bytes from source table at [bx*2 + 0x45A8] to the phase-7 state block at [0x4548]. bx is a slot index; the table holds N saved snapshots of phase-7 state. Restore counterpart is L_0C1FD"
+    ],
+    "0x0C1FD": [
+      "restore_phase_7_state_indexed",
+      "restore counterpart of save_phase_7_state_indexed: copies 12 bytes from the phase-7 state block at [0x4548] to [bx*2 + 0x45A8]. Together they let phase 7 keep N versioned snapshots of its state"
+    ],
+    "0x0C25D": [
+      "phase_7_should_draw_second",
+      "second decision routine for phase 7 (paired with phase_7_should_draw at 0x0D4D6). Same shape: if [0x70F2] zero returns CF=0; else builds a bounding box at ([0x70F3], [0x70F5]) and tests against the cat. Two separately-decidable sprites in phase 7"
+    ],
+    "0x0CA14": [
+      "advance_sound_state_5A83",
+      "third sound-clock advance (distinct from advance_sound_timer at 0x0CD93 and advance_sound_state at 0x0CA14 -- this one uses [0x5A83] as its tick shadow). Rate-limited to 2+ BIOS ticks. Guarded on sound_enabled"
+    ],
+    "0x0D1C7": [
+      "wait_joystick_button_released",
+      "if joystick_calibration_done ([0x69B]) is zero returns immediately; else spin-waits on port 0x201 bit 4 (fire button) until released. Called before reading a fresh button press"
+    ],
+    "0x0D23F": [
+      "calibrate_joystick",
+      "joystick calibration: writes AL to port 0x201 (strobe), reads INT 1Ah tick DX into [0x6DFA] (start time), then spins reading port 0x201 until a specific bit clears -- measures the RC-timer capacitance discharge time that encodes the joystick position"
+    ],
+    "0x09969": [
+      "compare_and_copy_7_bytes",
+      "the shared 7-byte compare-and-copy helper. Caches the destination pointer at [0x1F90], the source at [0x1F93], and a flag byte at [0x1F92]. Walks 7 bytes comparing source > destination; if so, copies. Called by both L_098C0 (high score at 0x1F82/0x1F89) and its two wrappers L_09922 (bx=0x1F89, di=0x12CA) and L_0992C (bx=0x1F82, di=0x143C) which promote high-score / score records"
+    ],
+    "0x09922": [
+      "compare_copy_score_1F89_to_12CA",
+      "thin wrapper around compare_and_copy_7_bytes with bx=0x1F89, di=0x12CA. Called during new_game_setup to promote the second 7-byte record to a display location"
+    ],
+    "0x09B75": [
+      "blit_2_sprite_lists",
+      "small batch renderer: calls blit_sprite_list twice with tables at 0x2384 and 0x238C. AX is the shared base offset for both lists"
+    ],
+    "0x09BB8": [
+      "blit_sprite_lists_5x_alt",
+      "5-iteration batch renderer over pointer table at [0x2646] (loop SI = 8 down by 2 until 0). Different pointer table from blit_sprite_lists_5x at 0x263E; likely a variant renderer for a different composed sprite"
+    ],
+    "0x09C11": [
+      "fill_column_95_vertical",
+      "vertical fill of 95 (0x5F) bytes at ES:DI stepping down the CGA framebuffer with the two-bank XOR flip and +0x50 row-pair advance. Writes AL to each. Uses the same interleave-aware stride as blit_cga_interleaved but for a single-byte-wide column"
+    ],
+    "0x09C98": [
+      "blit_pattern_by_phase_history",
+      "reads [attract_history_word] & 3 to pick one of 4 pattern pointers from a table at [0x2AD1]; blits the 0x801-sized pattern to CGA at 0x1902. Used during phase transitions to draw the background element that varies by phase-history"
+    ],
+    "0x09DCE": [
+      "animate_range_103E_to_1090",
+      "animated draw stepping [0x2AC2] from 0x103E to 0x1090 by 2 each iteration. For each position, uses PRNG (L_0A02D) to pick a variation. Used for iris-like or star-field effects"
+    ],
+    "0x09EB4": [
+      "walk_object_list_2A86",
+      "walks a linked list at [bx + 0x2A86] where bx starts at [phase_history_index + 0x2AB2]. Advances via link-pointer at each node. Similar shape to walk_object_list_head but for a different list"
+    ],
+    "0x09FA0": [
+      "blit_cga_scaled",
+      "blitter variant with an extra scale byte at [0x2AEB] (initialised from AL << 1) and a destination cache at [0x2AE9] (SI on entry). Otherwise same interleave-aware pattern as blit_cga_interleaved. Used when the caller needs the destination pointer cached for a follow-up operation"
+    ],
+    "0x0A313": [
+      "draw_sprite_at_bx_offset_2E20",
+      "sprite draw indexed by bx: computes source from [bx + 0x2E20], destination from cga_row_col_to_offset (uses cat position on entry), dims 0x802 to CGA video. Used for the moving cat sprite frame"
+    ],
+    "0x0A9F1": [
+      "update_phase_2_actor_slot",
+      "per-slot update for phase-2 actors: checks [bx + 0x348F] (active flag). If active, computes source 0x3404, destination [bx + 0x34BF] shifted by bx*2, blits dims 0x601 to CGA. The 24-slot loop in phase_2_handler calls this once per slot"
+    ],
+    "0x0AAE0": [
+      "advance_scoring_tick",
+      "if [previous_phase] is 7, does one path; else increments word [0x414] (score-like counter), sets [0x418] := 1 (game-over trigger?), sets DX := 0xAAAA fill pattern. Called from screen_transition_wipe when entering phase 0 after game-over"
+    ],
+    "0x0AC6A": [
+      "set_cursor_from_36A0",
+      "sets BIOS text cursor via INT 10h AH=2: row = [0x369E] >> 3, column = 0x12. Then initialises byte [0x36A0] := 3. Called before printing digit/character data at a computed screen position"
+    ],
+    "0x0ACC6": [
+      "copy_pattern_table_to_ds_0E",
+      "30-word (60-byte) copy from data at 0x35E0 to ES:0x0E where ES has just been set to the data segment (0x10). Effectively copies a pattern table down to a low DS location for faster access. Called during phase-3 setup"
+    ],
+    "0x0ACDC": [
+      "render_phase_3_scene",
+      "renders the phase-3 scene: sets ES=B800, stores AX (destination offset) at [0x369A], calls L_0CA59 (a helper), then loops from AX = 0x1B80 downward, indexing sprite pointers at [0x361C] via bx. Draws the phase-3 background composition"
+    ],
+    "0x0B044": [
+      "draw_phase_3_sprite_at_39CA",
+      "phase-3 sprite draw via sprite_and_mask_blit: destination [0x39CA] cached at [0x3968], scratch save at 0x396F, source from [0x396B] + 0x38BC. Clears [0x396A] as the 'sprite present' flag setup"
+    ],
+    "0x0B068": [
+      "erase_phase_3_sprite",
+      "erase companion to draw_phase_3_sprite_at_39CA: guarded on [0x396A] (present flag), blits from scratch 0x396F to cached destination [0x3968] via blit_cga_interleaved with dims 0xE03"
+    ],
+    "0x0B082": [
+      "check_phase_3_obj_overlaps_object_327D",
+      "boxes_overlap between phase-3 sprite at ([0x3964], [0x3966]) with dims (0x18, 0x10) and the shared object at ([0x327D], [0x327F]) with dims (0x1E, 0xE)"
+    ],
+    "0x0B09E": [
+      "check_phase_3_obj_overlaps_cat",
+      "boxes_overlap between phase-3 sprite at ([0x3964], [0x3966]) with dims (0x18, ?) and the cat at (cat_col, cat_row) with dims (0xE, 0xE)"
+    ],
+    "0x0B484": [
+      "draw_next_phase_4_actor",
+      "picks the next phase-4 actor slot from [0x3EDA] (round-robin index). Reads slot state via [bx*2 + 0x3EA6] (dest) and [bx*2 + 0x3EC2] (source), blits dims 0xC02 if the slot's active flag [bx + 0x3EAE] is non-zero"
+    ],
+    "0x0B717": [
+      "check_cat_at_row_88",
+      "returns CF=1 if cat is on a specific row band: (cat_row & 0xF8) == 0x88 AND gate byte [0x571] is zero. This is a per-row zone check for a specific game event trigger"
+    ],
+    "0x0B72B": [
+      "compute_phase_5_direction",
+      "computes the signed delta between phase-5 sprite position [0x40B2] and cat_col; stores direction byte at [0x40CA] (1 or 0xFF). The sprite chases the cat horizontally"
+    ],
+    "0x0B75D": [
+      "check_phase_5_obj_overlaps_cat",
+      "boxes_overlap between phase-5 sprite at ([0x40B2], [0x40B4]) with dims (8, 0xE) and the cat"
+    ],
+    "0x0B787": [
+      "check_phase_5_obj_overlaps_object_327D",
+      "boxes_overlap between phase-5 sprite at ([0x40B2], [0x40B4]) with dims (8, 0x1E) and the shared object at ([0x327D], [0x327F])"
+    ],
+    "0x0B9A3": [
+      "erase_phase_5_object",
+      "erase companion for phase-5 object: reads DI from cache [0x40A6], blits from scratch 0x401E to video with dims 0x1003 via blit_cga_interleaved"
+    ],
+    "0x08250": [
+      "set_movement_speed",
+      "compares current movement direction [0x56E] to previous [0x56F]; on direction change, resets speed accumulator [0x572] to 2. Then clamps [0x572] at 8 max"
+    ],
+    "0x08342": [
+      "snapshot_bg_at_cat_position",
+      "computes the sprite destination offset from cat position (cat_col, cat_row) via cga_row_col_to_offset, stores in sprite_dst_offset, then calls snapshot_video_rect to save the background pixels the cat will cover"
+    ],
+    "0x084D1": [
+      "wait_pit_delta_calibrated",
+      "spins reading PIT channel 0 counter (via read_pit_counter) until the delta from [0x69C] exceeds 0xF5E6. A calibrated ~55ms delay independent of CPU speed, used before joystick calibration"
+    ],
+    "0x084F1": [
+      "read_control_alt_reset",
+      "reads whether the Ctrl+Alt combination is currently held. On standard PC, ANDs three key state bytes ([0x6BA], [0x6BD], [0x6BE]); on PCjr, only reads [0x6BA]. Used to detect the game's reset combination"
+    ],
+    "0x087A2": [
+      "key_isr_extra_state_check",
+      "tail of the keyboard ISRs. OR-combines multiple key state bytes to detect specific modifier combinations (Ctrl+Alt with number keys). Returns the combined state; callers use it to dispatch specific hotkey actions"
+    ],
+    "0x08838": [
+      "dispatch_by_phase_scoreboard",
+      "phase-dependent scoreboard dispatch: if current_phase is 7 calls L_0A32A; if 0 does one thing; else another. Used when the game needs to draw phase-specific UI elements at frame boundaries"
+    ],
+    "0x08A60": [
+      "clear_attract_object_state",
+      "zeros the attract-mode object slot: [0x1665], [0x1673] (object-present flag), [0x1677], [0x1678], and sets [0x166C] := 9 (object type or initial state). Called by init_attract_screen"
+    ],
+    "0x08A7B": [
+      "advance_attract_object_animation",
+      "if [0x1673] (attract object present) is zero returns; else rate-limits at BIOS tick delta vs [0x17EC]. On tick edge, advances the object's animation state"
+    ],
+    "0x08B66": [
+      "decrement_or_reset_counter_166A",
+      "decrements byte [0x166A]; on hitting zero, resets to 0xD (13) and does per-cycle work. Simple frame-throttled counter"
+    ],
+    "0x09289": [
+      "capture_cat_frame_state",
+      "captures the current animation-frame state for the cat: computes packed dims from AL, stores at [0x1CC4]. When AH is 0xFF, does the setup path"
+    ],
+    "0x092CB": [
+      "blit_captured_cat_frame",
+      "blits the cat's current animation frame using state captured by capture_cat_frame_state. Reads dims from [0x1CC4] into [0x1CC2], picks video vs data ES based on sound_gate_flag, then draws"
+    ],
+    "0x09366": [
+      "commit_cat_pos_for_trigger",
+      "if current_phase is 6, saves cat_row into [0x1CC8] and cat_col into [0x1CC6]. Called by check_cat_at_trigger_zone when the trigger fires to record where the cat was"
+    ],
+    "0x09410": [
+      "check_gameplay_trigger_and_hit",
+      "checks if any of [0x1CBF] / [0x1CC0] / [0x1CC1] gameplay flags is set. If so, tests the object at ([0x327D], [0x327F]) via boxes_overlap. Used to know when a game-play event has picked up an object"
+    ],
+    "0x09560": [
+      "init_actor_direction_by_cat_col",
+      "zeros head field [0x1F6C]; then based on cat_col picks direction: if cat is on right half (>0xA0), sets ax=0x12C and dl=1; else the mirror values. Initialises the moving actors' entry direction based on where the cat started"
+    ],
+    "0x09797": [
+      "check_actor_1F6C_overlaps_cat",
+      "reads the actor at index [0x1F6C] via parallel tables [0x1F30] (position words) and [0x1F36] (row bytes), does boxes_overlap vs cat position with dims (0x10, ...). Per-actor hit test"
+    ],
+    "0x0988E": [
+      "check_attract_object_and_actor_hit",
+      "if [0x1673] (attract object) is zero returns CF=0; else chains check_actor_1F6C_overlaps_cat and additional hit tests. Used in attract mode to know if the demo object hit something"
+    ],
+    "0x098E3": [
+      "apply_main_state_transition",
+      "detects main_state change: reads [0x1F80], compares to [0x1F81]. If different, applies the transition (updates shadow, shifts ax by 4 to compute offset into a state table at 0x2720, does per-state setup)"
+    ],
+    "0x0990A": [
+      "zero_score_1F82",
+      "clears the 7-byte score record at [0x1F82]. Wrapper for zero_7_bytes_at_di. Called during new game setup"
+    ],
+    "0x09911": [
+      "zero_score_1F89",
+      "clears the 7-byte high-score record at [0x1F89]. Wrapper for zero_7_bytes_at_di"
+    ],
+    "0x09918": [
+      "zero_7_bytes_at_di",
+      "shared 7-byte zeroer: `rep stosb` CX=7, AL=0. Called by zero_score_1F82 (0x1F82) and zero_score_1F89 (0x1F89) to clear the two 7-byte score-record blocks"
+    ],
+    "0x09C60": [
+      "fill_full_screen_dither",
+      "fills the entire CGA framebuffer at B800:0 with the 0xAAAA dither pattern (0xFA0 = 4000 words = 8000 bytes = one bank; the other bank is presumably done separately). Used before drawing over a clean patterned background"
+    ],
+    "0x09CB0": [
+      "zero_sprite_column_state",
+      "clears 15 bytes at [0x1015]..[0x1023] and sets [0x140] direction-related state. Prepares the column-shift sprite state used by shift_sprite_column_rcr / rcl"
+    ],
+    "0x0CBFB": [
+      "sound_beat_startup_init",
+      "kills speaker (port 0x61 bit 0 clear), captures INT 1Ah tick DX into [0x5A40], zeros [0x5A42]. Initialises the sound-beat clock at boot"
+    ],
+    "0x0CEE0": [
+      "init_attract_screen",
+      "sets current_phase := 0, calls clear_attract_object_state + init_actor_direction_by_cat_col + fill_full_screen_dither, then blits multiple sprite blocks from source addresses 0x6152, 0x63D0, 0x6638, 0x6680, 0x6760, 0x6868 to compose the title/attract screen"
+    ],
+    "0x0D0A0": [
+      "on_idle_timeout_action",
+      "the timeout action when key_tick_counter reaches key_tick_threshold with no key press. Silences speaker, captures INT 1Ah tick, does complex screen work with sprite at data 0xDCA. Likely the attract-mode screen-saver hook -- draws an animated cat or similar when the player is idle at the menu"
+    ],
+    "0x0D270": [
+      "init_menu_screen",
+      "36-byte zero-fill at DS:E, then sets [0x6F24] := 0x25, then screen setup. Initialises the menu / help screen"
+    ],
+    "0x0D475": [
+      "advance_phase_7_sprite_row",
+      "computes new row for phase 7 animated sprite: reads [0x70F5], subtracts 8, masks with 0xF8 to align to 8-row grid. 7-iteration loop that does per-row state updates"
+    ],
+    "0x0BE18": [
+      "phase_7_index_to_offset",
+      "computes destination offset and dims from a phase-7 index bx: reads dl from [bx + 0x4499], shl 1 to word-index, reads cx from [bx + 0x4481], then calls cga_row_col_to_offset. Used by draw_phase_7_sprite_indexed to translate a slot number into a video offset"
+    ],
+    "0x0C20F": [
+      "fill_video_dither_c_rows",
+      "fills 12 rows (dh=0xC) of the CGA framebuffer with a dither pattern. Used for menu/score-screen backgrounds"
+    ],
+    "0x0C238": [
+      "fill_video_5555_c_rows",
+      "same shape as fill_video_dither_c_rows but with fill pattern 0x5555 -- the alternate CGA dither. Called by update_phase_7_secondary_sprite as the underlay"
+    ],
+    "0x0C543": [
+      "compute_bonus_multiplier_display",
+      "computes and displays the bonus-multiplier score element (see 'BONUS MULTIPLIER: 12' string at image 0x0380E). Requires phase_history_index >= 2 (i.e. at least 3 rooms completed), resets [0x5016] tick, then does the multi-digit BCD update"
+    ],
+    "0x0C630": [
+      "init_phase_history_indexed_state",
+      "reads phase_history_index & 7, shifts left by 1 (word index), then does phase-specific initialisation via a table lookup. Sets up per-room parameters that vary by how many rooms have been visited"
+    ],
+    "0x0C680": [
+      "init_speaker_sweep_state",
+      "initialises the speaker sweep engine: [0x5B0F] := 0xC, [0x5B0C] := 1, [0x5B12] := 0x1FF (initial sweep frequency), [0x5B0A] := 0xF, [0x5B0E] := 1. Called by init_gameplay_state at phase entry"
+    ],
+    "0x0C8C1": [
+      "reset_palette_and_capture_tick",
+      "silences speaker, sets CGA palette to background color 4 (INT 10h AH=0Bh BX=4), captures tick DX. Preparatory sequence before a longer screen operation"
+    ],
+    "0x0C924": [
+      "pause_frames_pcjr_aware",
+      "counted loop for a fixed pause. CX iterations = 0x200 (doubled to 0x400 on PCjr via `shl ax, 1`), compensating for PCjr's slower CPU. Used for boot/intro delays"
+    ],
+    "0x0C934": [
+      "advance_boot_sound_counter",
+      "increments word [0x5AD0], then shifts down by 9 to compute a decision value from the high bits. Drives boot-animation sound stepping"
+    ],
+    "0x0C9C7": [
+      "reset_boot_animation_state",
+      "silences speaker, then resets [0x5ACF] := 0 and [0x5ACD] := 8. Companion to advance_boot_animation_counter -- called at the start of each intro/boot phase"
+    ],
+    "0x0CA05": [
+      "sound_delay_start_5A83",
+      "third sound-delay starter (distinct from sound_delay_start at 0x0CD84): zeros [0x5A85], captures INT 1Ah tick DX at [0x5A83]. Paired with advance_sound_state_5A83"
+    ],
+    "0x0CA59": [
+      "reset_sound_state_5A62",
+      "zeros [0x5A62] and [0x5A82]. Two-word reset for sound state"
+    ],
+    "0x0CA65": [
+      "advance_sound_state_5A80",
+      "rate-limited sound state advance using [0x5A80] as tick shadow. Guarded on sound_enabled. Advances a counter block starting at 0x5A80"
+    ],
+    "0x0CA99": [
+      "program_pit_ch2_from_5A80_state",
+      "programs PIT ch2 mode 3, writes divisor derived from state at [0x5A80..0x5A85], gates speaker. Guarded on sound_enabled"
+    ],
+    "0x0CAC6": [
+      "bare_ret",
+      "single `ret` instruction. Used as a no-op / trampoline / phase-init placeholder (e.g. some paths in init_phase_6_state_noop reach this)"
+    ],
+    "0x0CB28": [
+      "beep_390_or_silent",
+      "if [0x1CBF] (gameplay trigger) is zero plays beep at PIT divisor 0x390 for CX=0x1800 iterations. Otherwise no-op. Also clears byte [0x127C]"
+    ],
+    "0x0CB3E": [
+      "beep_400_or_silent",
+      "same shape as beep_390_or_silent but with divisor 0x400. Different pitch for a different game event"
+    ],
+    "0x0CB4F": [
+      "beep_double_high_low",
+      "plays two blocking beeps in sequence at divisors 0x7D0 (high) then 0xA6E (lower). Used for a specific two-tone SFX -- likely the mouse-catch or bonus indicator"
+    ],
+    "0x0CC4C": [
+      "spin_pit_delta_from_5A16",
+      "spins reading PIT counter until delta from cached [0x5A16] exceeds threshold. Precise short delay used inside sound sequences"
+    ],
+    "0x0CCC0": [
+      "wait_bios_tick_from_5A14",
+      "rate-limited wait against BIOS tick shadow at [0x5A14]. Guarded on sound_enabled"
+    ],
+    "0x0CCF2": [
+      "init_boot_music_5A10",
+      "initializes boot-music state: [0x5A12] := 0x338, captures INT 1Ah tick at [0x5A10], calls read_pit_counter"
+    ],
+    "0x0CE10": [
+      "boot_animation_loop",
+      "the main boot-animation loop. Reads INT 1Ah tick DX, stores in [0x5F66], zeros [0x5F60], then iterates through the intro sequence. Called from the boot path after the CGA probe"
+    ],
+    "0x0D004": [
+      "check_cat_at_left_edge",
+      "if cat_col <= 0x20 (near the left edge), sets [0x698] := 1 -- likely a 'cat is at the fence-jump position' flag for phase transitions"
+    ],
+    "0x0D115": [
+      "wait_key_menu_loop",
+      "silences speaker, calls clear_cga_screen, sets message_index := 0, then loops printing menu messages and waiting for keypresses via key state polling. Handles the (H)ouse Cat / (T)omcat / (A)lley Cat skill selection and the joystick/keyboard choice"
+    ],
+    "0x0D215": [
+      "check_gameport_and_calibrate",
+      "INT 11h to check the equipment word; if bit 12 (game port installed) is set, calls calibrate_joystick twice for X and Y axes. If not, sets message_index := 0x24 to jump to the 'Game Control Adapter is not present' error message"
+    ],
+    "0x09440": [
+      "clear_hit_flag_1D59",
+      "sets byte [0x1D59] := 0 -- the hit-flag used by check_hit_at_1D59"
+    ],
+    "0x09446": [
+      "tick_1D59_gated",
+      "rate-limited to [0x1D5A] BIOS ticks; when tick advances, does gameplay logic gated on [0x1D59]"
+    ],
+    "0x095AB": [
+      "tick_1F65_gated",
+      "rate-limited on [0x1F65] BIOS tick shadow. Per-frame update gated on tick edge"
+    ],
+    "0x0977D": [
+      "blit_actor_at_1F6C",
+      "blits the actor at index [0x1F6C], shl 1 for word indexing. Uses B800 video segment"
+    ],
+    "0x098C0": [
+      "maybe_promote_high_score",
+      "7-byte compare-and-copy from [0x1F82] (candidate score) to [0x1F89] (record) if candidate is greater. Called by attract_loop_start on every outer-loop iteration; the earliest and simplest form of the promotion pattern"
+    ],
+    "0x09936": [
+      "iterate_6_slots_reverse",
+      "6-slot reverse iteration (CX from 6 down). For each slot bx = CX, does per-slot init or check"
+    ],
+    "0x09C30": [
+      "fill_screen_dither_alt",
+      "fills full CGA framebuffer with dither pattern. Companion to fill_full_screen_dither; distinct code path"
+    ],
+    "0x09DBB": [
+      "draw_two_striped_columns",
+      "calls draw_at_2680_striped twice with destinations 0x3C5 and 0x8C5 -- two vertical stripes on the screen"
+    ],
+    "0x09E6D": [
+      "wipe_effect_from_di",
+      "wipe/transition effect using DI as position and [0x2AC2] as scratch. Multi-step decorative animation"
+    ],
+    "0x0A23F": [
+      "init_attract_animation_2E24",
+      "initializes attract-mode animation state: calls blit_sprite_list with pointer at 0x2E24, then sets [0x2E8A] := 0xBF"
+    ],
+    "0x0A32A": [
+      "compute_cat_row_aligned_and_7iter",
+      "aligns cat_row down to 8-row grid (`sub 5 / and 0xF8`), then 7-iteration loop that does per-row updates. Called by dispatch_by_phase_scoreboard for phase 7 (score display alignment)"
+    ],
+    "0x0A5EA": [
+      "check_gate_and_dispatch_phase",
+      "checks [sound_gate_flag] and current_phase. If not phase 6 does one path; if phase 6 does another. Frame-body dispatch for phase-specific object updates"
+    ],
+    "0x0A675": [
+      "check_cat_at_bottom_ready_to_jump",
+      "if cat_row >= 0xB4 (near bottom) AND [movement_direction] != 0, does the fence-jump animation setup. Detects when the cat is at the position/direction combo that triggers jumping to a window"
+    ],
+    "0x0A6AF": [
+      "sprite_index_to_offset_32B8",
+      "converts a sprite index in AL to a source offset: `ax = al * 0xA + 0x32B8` -- 10-byte per sprite frame, base 0x32B8. Used for indexed sprite lookup in phase 1"
+    ],
+    "0x0A6D0": [
+      "iterate_object_list_3511",
+      "iterates a list at [0x3511] with terminator; per-node work indexed by [bx + 0x3511]. Clears [0x351B] at start"
+    ],
+    "0x0A86D": [
+      "iterate_12_slots_at_B",
+      "12-slot iteration (CX from 0xC), each slot at bx = CX + 0xB. Per-slot state update; likely per-mouse or per-actor state advance for phase 2"
+    ],
+    "0x0A8A5": [
+      "phase_2_tick_actor_animate",
+      "phase-2 actor animation tick, rate-limited on [0x3509]. Advances the 24-actor list initialised by init_phase_2_actors"
+    ],
+    "0x0AA15": [
+      "phase_2_tick_actor_movement",
+      "phase-2 actor movement tick, rate-limited on [0x350F]. Companion to phase_2_tick_actor_animate"
+    ],
+    "0x0AC2A": [
+      "init_phase_3_scene_state",
+      "phase-3 scene state initialisation. Called from phase-3 render path"
+    ],
+    "0x0AC4C": [
+      "phase_3_scene_step",
+      "phase-3 scene stepper. Advances the phase-3 scene animation one frame"
+    ],
+    "0x0AC9C": [
+      "phase_3_draw_columns",
+      "phase-3 column-draw routine. Used for the phase-3 scene composition"
+    ],
+    "0x0AD24": [
+      "phase_3_animate_object_37AF",
+      "phase-3 object animator using state at [0x37AF]. Per-frame animation update"
+    ],
+    "0x0ADD3": [
+      "phase_3_check_object_37B2",
+      "phase-3 object-checker using state at [0x37B2]. Per-frame collision check"
+    ],
+    "0x0AE0B": [
+      "phase_3_maybe_update_object",
+      "conditional phase-3 object update. Runs only when conditions on [0x37B4] etc. are met"
+    ],
+    "0x0AE73": [
+      "phase_3_score_step",
+      "phase-3 scoring update. Called on hit event"
+    ],
+    "0x0B1CE": [
+      "init_phase_3_scene_39E0",
+      "phase-3 scene setup at [0x39E0]. Zeros two bytes at 0x39E0/0x39E1 and preps ES=B800"
+    ],
+    "0x0B295": [
+      "check_object_327D_overlaps_cat",
+      "boxes_overlap between the shared object at ([0x327D], [0x327F]) and cat position. Used across phases for cat-vs-object hit tests"
+    ],
+    "0x0B9B6": [
+      "check_phase_5_object_at_row_66",
+      "phase-5 conditional: if [0x327F] < 0x66 do one path; else compute AX from [0x40A8] - 0x14 for a related check. Row-band decision for phase-5 sprite behaviour"
+    ],
+    "0x0BABD": [
+      "erase_phase_6_if_active",
+      "if [0x44BD] active flag is set, calls erase_phase_6_sprite and clears the flag. Idempotent erase"
+    ],
+    "0x0BAD1": [
+      "zero_16_bytes_at_ds_e",
+      "clears 16 bytes at DS:0xE (via ES := DS then rep stosw). A low-DS scratch reset"
+    ],
+    "0x0BAF1": [
+      "phase_6_state_transition",
+      "phase-6 state transition: checks [0x44D9] and [0x44BD] active flags, dispatches accordingly"
+    ],
+    "0x0BB07": [
+      "phase_6_position_update",
+      "clears [0x44D9], then computes new position from [bx + 0x43E1] (X word) and [bx + 0x43F9] (Y word), subtracts 0x14 to align. Phase-6 sprite movement step"
+    ],
+    "0x0BB46": [
+      "phase_6_sprite_source_index",
+      "computes phase-6 sprite source: reads word from [bx + 0x4411] as AX, [bx + 0x4459] as SI, shl 1, adds 0x4100 base"
+    ],
+    "0x0BD77": [
+      "zero_data_at_4441",
+      "zeros a chunk of data at [0x4441]. Setup for phase-6 or a sub-state reset"
+    ],
+    "0x0C06E": [
+      "phase_7_state_save_and_reset",
+      "phase-7 state save: sets [0x45BE] := 1, pushes/pops the [0x45B6] counter, does state advance"
+    ],
+    "0x0C140": [
+      "phase_7_secondary_state_init",
+      "phase-7 secondary state init: clears [0x454E], sets SI := 0x4500 as source, checks [0x454A]"
+    ],
+    "0x0C3CB": [
+      "iterate_8_slots_at_4D91",
+      "8-slot iteration (CX from 8) with active flag at [0x4D91]. Per-slot state work for phase 7 UI"
+    ],
+    "0x0C45A": [
+      "read_score_digit_at_bx",
+      "reads AX from [bx + 0x4D4A] (score-digit table), compares against [bx + 0x4D6F] (mask), does score-display update logic"
+    ],
+    "0x0C598": [
+      "blit_phase_history_indexed_element",
+      "blits an element indexed by phase_history_index * 2 to CGA video. Draws phase-history-dependent UI"
+    ],
+    "0x0C5E0": [
+      "tick_boot_intro_5F6C_gated",
+      "boot-intro rate-limited tick using [0x5F6C]. Guarded on sound_enabled. Advances the intro animation"
+    ],
+    "0x0C95E": [
+      "beep_sweep_1F4_to_0",
+      "downward sweep of beeps: starts [0x5ACB] = 0x1F4, calls beep_blocking_alt, subtracts 0x1E each iteration. Descending pitch bell sound"
+    ],
+    "0x081B7": [
+      "set_sprite_dim_by_al",
+      "computes packed sprite dimensions from AL: cx = 0xB03 - al (width shrinks by AL). Stores in [sprite_dim_packed]"
+    ],
+    "0x08299": [
+      "init_movement_and_frame_animation",
+      "sets [speed] := 2, [0x577] := 8 (frame timer), then compares [sprite_width_cache] to 0xC02. Initialises the cat's frame animation state"
+    ],
+    "0x0830D": [
+      "reset_gameplay_key_state",
+      "clears [0x55C], [0x571], [0x576], [0x578] to 1 or 2. Resets per-frame gameplay-input state at phase boundaries"
+    ],
+    "0x08396": [
+      "draw_score_digit_at_pos",
+      "reads cat_row into DL, cat_col into CX (subtracts 0xC to clamp), calls cga_row_col_to_offset, then blits from source 0x1679 with dims 0x1205 = 5 wide, 0x12 tall to video. Also captures INT 1Ah tick at [0x57F] and zeros [0x5A3C], [0x5A3E]. Draws a specific in-game element -- likely the fish/target sprite for phase 2"
+    ],
+    "0x086AF": [
+      "restore_and_return_to_dos",
+      "restores the saved INT vectors from cs:[0x13DF..0x13E7] (INT 09h and INT 48h), then falls through to DOS terminate via the far pointer entry pushed"
+    ],
+    "0x08800": [
+      "pick_random_frame_bx_100E",
+      "picks a random animation frame indexed by [phase_history_index + 0x100E], then PRNG-selects among that many options"
+    ],
+    "0x08887": [
+      "compute_row_aligned_index",
+      "aligns (cat_row + 2) down to 8-row grid, computes index bx from phase_history_index. Used for row-based table indexing"
+    ],
+    "0x088F6": [
+      "phase_1_animate_scene",
+      "phase-1 scene animation: reads [0x2650], updates state based on [0x571]. Draws phase-1-specific scene element"
+    ],
+    "0x089C9": [
+      "shift_bx_3_for_row_index",
+      "shifts BX right by 3 (divides by 8) and copies bl to ch. Row-index conversion helper"
+    ],
+    "0x089DD": [
+      "compute_row_zone_bx",
+      "aligns cat_row to 8-row grid, then decides row zone: bx = 0 if dl < 8, else computed from row"
+    ],
+    "0x08D1A": [
+      "select_from_1658_by_dl",
+      "picks a value from table at [0x1658] indexed by (dl & 3) * 2. Setup helper for attract-mode object type"
+    ],
+    "0x08D7C": [
+      "check_object_1669_frame",
+      "if [0x1669] < 8 sets bx = 2 as branch; otherwise other paths. Frame counter check for an object"
+    ],
+    "0x09047": [
+      "copy_from_1C2E_source",
+      "copies data from source at [0x1C2E]. Rep movs sequence -- likely a sprite pointer follow"
+    ],
+    "0x0950C": [
+      "check_hit_1D59_at_1A",
+      "checks if hit counter [0x1D59] equals 0x1A (26 hits?). If so does one path; else draws to video"
+    ],
+    "0x08FA6": [
+      "phase_transition_dispatch",
+      "if previous_phase is 7 calls init_menu_screen and returns; else calls sound_delay_start_5A83 and does more setup work. Phase-transition dispatch chooses menu vs game path"
+    ],
+    "0x07323": [
+      "tail_check_restart_flags",
+      "tail-call entry inside the main loop's exit-flag check chain. If main_state is zero returns to attract_loop_start; if request_new_game is set returns to new_game_setup; if request_attract_mode is set returns to attract_show_title_and_wait. Reached by falling through from the phase handlers' exit-OR checks"
+    ],
+    "0x07657": [
+      "tail_return_to_new_game_or_attract",
+      "tail-call entry inside phase 1/2 handlers' exit paths. If request_new_game returns to new_game_setup; else if request_attract_mode returns to attract_show_title_and_wait; else falls through. Reached by `jmp L_07657` from every phase handler's exit OR-chain"
+    ],
+    "0x08787": [
+      "warm_boot_via_bios_reboot",
+      "reboots the machine: sets SS := 0xF000, DS := 0x40 (BIOS data area), writes 0x1234 to 40:0072 (the 'warm boot' magic value that tells BIOS POST to skip memory test), then presumably issues a reboot trigger. Reached by tail-call from a Ctrl+Alt+Del-style keyboard combination handler"
     ],
     "0x07612": [
-      "phase_01_handler",
-      "shared entry for phase 0 AND phase 1 (both dispatch_table slots hold 0x3E2 -> image 0x7612). Same shape -- subsystem calls then level-end OR-loop. Given that current_phase is zeroed at attract_loop_start (so the game boots into phase 0), this is very likely the main courtyard / alley scene the cat returns to between rooms"
+      "phase_1_handler",
+      "phase 1 entry (dispatch_table slots 0 AND 1 both hold 0x03E2 -> image 0x7612, so phase 0 lands here too but the handler asserts `mov word [4], 1` at its top and phase becomes 1 for the rest of its body). Init sequence: `screen_transition_wipe` -> `init_phase_screen_pattern` -> `set_cat_position_for_phase` -> `L_0A635` (init_object_slot_32XX) -> `L_09070` -> `init_sound_state`. Inner loop calls the shared per-frame set (keyboard_event_observer, delta_tick_scheduler, update_speaker_sweep, movement_tick_scheduler, L_09093, plus phase-1-specific L_0A380 and L_0AA80), then checks `[0x554]` -- non-zero triggers an internal `jmp phase_2_handler` without going through end_of_room_pick_next, i.e. an in-scene transition to phase 2. Loop exits when any of `[0x552]`, `[0x551]`, `[0x41B]`, `[0x41C]` is set. This is the game's initial/return-to-alley state -- the cat is on the fence at boot"
     ],
     "0x07689": [
       "phase_2_handler",
-      "phase 2 entry (offset 0x459 -> image 0x7689), same shape. Room unmapped"
+      "phase 2 entry (offset 0x459 -> image 0x7689). Reached from phase 1 via `[0x554] != 0` (an in-scene transition, not through end_of_room_pick_next). Init sequence: `screen_transition_wipe` -> `init_phase_screen_pattern` -> `L_0A7F9` -> `set_cat_position_for_phase`, plus zeroing `[0x1CBF]` and `[0x1CB8]`. Loop calls the same per-frame set as phase 1 but with phase-2-specific `L_0A8A5` and `L_0AA15` replacing phase 1's `L_0A380` and `L_0AA80`. Exits on `[0x552]`, `[0x553]`, `[0x41C]`, or `[0x41B]`"
+    ],
+    "0x079D1": [
+      "set_cat_position_for_phase",
+      "picks the cat's starting position for the current phase. For phase 0 uses the saved position (`[1]` for col, `[3]` for row -- copied there by end_of_room_pick_next when leaving the previous phase); otherwise indexes per-phase tables `phase_start_col_table` (0x5D9, 16-bit words) and `phase_start_row_table` (0x5E9, bytes) by `bx = [current_phase]`. Stores col into `[0x579]`, row into `[0x57B]`, row+0x32 into `[0x57C]`, computes CGA offset via cga_row_col_to_offset, writes to `[sprite_dst_offset]`, then reads three sprite params from `[0xFB2]` and `[0xFBE]` into `[0x569]`, `[0x567]`, `[0x561]`, and finally snapshots the sprite background via snapshot_video_rect"
+    ],
+    "0x07B15": [
+      "movement_tick_scheduler",
+      "time-based movement ticker. Reads INT 1Ah tick DX; if same as `[0x57D]` decrements a `[0x684]` countdown and returns early. When the tick moves, sets `[0x684]` := 0x20 (or 0x10 on PCjr, halved via `shr` because PCjr runs at a different clock), then dispatches on phase == 2 or checks input flags at `[0x571]` / `[0x56E]`. Roughly `every 0x20 BIOS ticks (~1 second), advance the cat`"
+    ],
+    "0x08E20": [
+      "screen_transition_wipe",
+      "phase-transition screen wipe. Sets CGA background color to 0 (INT 10h AH=0Bh BH=0), does game-over handling for the phase-7 exit path (reposition to (0x98, 0x5F), call L_0C4BB), then draws the outward iris via draw_transition_iris with fill pattern 0 the first time, then chooses a phase-specific fill (0xAAAA for most phases, 0x5555 for phase 2 or 7) and draws the iris again. Called at the top of every phase handler's init"
+    ],
+    "0x08E97": [
+      "draw_transition_iris",
+      "the outward-growing iris wipe used by screen_transition_wipe. Starts at the cat's current position ([0x579], [0x57B]), quantised down to a 16-column grid and shifted right by 8 rows. Each iteration advances the pattern-step sound (`advance_pit_pattern_step`), grows the wipe radius `[0x1835]`, and does a `rep stosw` with the fill from `[0x1839]` while handling the CGA two-bank interleave. `[0x1837]` is the row count per iteration (8), `[0x1838]` is the iteration counter"
+    ],
+    "0x099C0": [
+      "init_phase_screen_pattern",
+      "phase-specific screen initialization. For phase 2 fills the top 0xA0 words of both CGA banks with 0xAAAA (a dithered background pattern), then loops picking random 3-bit values via prng_step to draw a specific decorative pattern at DS:[0x2653+]. Other phases likely have their own paths past L_09A1E; this reading covers only the phase-2 branch"
+    ],
+    "0x0A635": [
+      "init_object_slot_32XX",
+      "zero-initializes the 40-byte object state at DS:[0x328E] (`rep stosw` CX=0x14), then sets defaults: `[0x32B6]` := 0xFF, `[0x327A]`, `[0x327D]` := 0, `[0x327F]` := 0xA0, `[0x3286]` := 1, `[0x3280]`, `[0x3281]` := 0. Seeds `[0x32EB]` from prng_step. `[0x32EA]` := 0x6C. Called from phase_1_handler init"
+    ],
+    "0x0C69D": [
+      "update_speaker_sweep",
+      "time-driven downward-sweeping speaker tone. Guarded on `sound_enabled` and `[0x1CB8]` (a phase state gate). Every INT 1Ah tick, programs PIT ch2 mode 3 with divisor = `([0x5B12] & 0x1FF) + 0xC8` and gates the speaker, then subtracts 0x4B from `[0x5B12]` -- a falling tone. `[0x5B0F]` gates a second branch that decrements a counter instead of sweeping. Called every frame from all phase handlers"
+    ],
+    "0x08430": [
+      "poll_joystick_or_delay",
+      "rate-limited to at most once per 2 BIOS ticks (`sub ax, [0x69F] / cmp ax, 2 / jae L_08440 / ret`). When it fires: if `[0x69B]` is zero (some 'joystick calibration not done' latch), calls L_084F1 and does a PIT-counter busy-wait of 0xF8ED counts (a fixed short delay). Otherwise reads joystick fire button state from port 0x201 bit 4 into `[0x69A]`. Called every frame from all phase handlers"
+    ],
+    "0x08568": [
+      "handle_keyboard_events",
+      "keyboard-tick-driven event dispatcher. Reads key_tick_counter (0x693); if unchanged from key_tick_shadow (0x691) and not enough time has passed since last event, returns. Otherwise updates shadow, then checks specific key state bytes -- 0x6C0 (bit 7) is the trigger key; when pressed, branches into L_08588 which dispatches on 0x6C9, 0x6CC (`mov byte [0x1F80], 9` = main_state to game-over), 0x6C1, 0x6CB, 0x6C7 (sound-toggle via `not byte [sound_enabled]`). When the trigger key is NOT held but key_tick_counter has reached key_tick_threshold, calls L_0D0A0 -- the idle-timeout action"
+    ],
+    "0x09070": [
+      "init_gameplay_state",
+      "zero-inits the per-game-play state bytes at 0x1CB8..0x1CC1 (`[0x1CBF]`, `[0x1CE1]`, `[0x1CC0]`, `[0x1CC1]`, `[0x1CB8]`), sets `[0x1CC8]` := 0xB1, and calls L_0C680. Called by phase_1_handler init"
+    ],
+    "0x0A380": [
+      "phase_1_object_tick",
+      "tick-driven animation for the phase-1 object stored at 0x328E. Fires every `[bx + 0x32F2]` ticks where bx = current_phase*2, so the interval is per-phase. Advances by reading `[0x328C]` (previous tick), setting a new one, calling L_0A5EA (test?) and L_09410 (advance?), then incrementing `[0x32EA]` -- the object's animation step counter set by init_object_slot_32XX"
+    ],
+    "0x0A7F9": [
+      "init_phase_2_actors",
+      "initializes 24 actor slots for phase 2. Zeros head fields `[0x3411]`, `[0x3415]`; sets `[0x3410]` := 0x0C. Then loops CX = 0x18 down through per-slot byte tables (at 0x348F, 0x34A7, 0x3477 seeded from 0x34F1, 0x342F, 0x3417 seeded from PRNG & 1 with an occasional NOT). This is the setup for the moving objects in phase 2 -- likely birds or fish given Alley Cat's rooms"
+    ],
+    "0x0AA80": [
+      "cycle_phase_1_bg_pattern",
+      "every 6+ BIOS ticks, advances a 4-entry pattern index at `[0x35D8]` (mod 8 via `& 6`) and blits the next pattern block from `[bx + 0x35D0]` into CGA video at offset 0x15C9, dimensions CX = 0x0A02. A cyclic background animation for phase 1"
     ],
     "0x08354": [
       "snapshot_video_rect",
@@ -214,6 +1150,122 @@
     "0x0004": [
       "current_phase",
       "the game's current phase (0..7), used as the index into phase_dispatch_table by dispatch_current_phase. Zeroed at attract_loop_start; set by end_of_room_pick_next after a PRNG pick; re-asserted by each phase handler at its entry (`mov word [4], N`) in case that handler was entered outside the dispatch path"
+    ],
+    "0x0006": [
+      "previous_phase",
+      "the value of current_phase at the moment of the last exit-to-attract path (L_07677: `mov ax, [4] / mov [6], ax / mov [4], 0`). screen_transition_wipe reads this to detect the phase-7 game-over exit (`cmp word [6], 7`)"
+    ],
+    "0x0552": [
+      "level_end_flag_a",
+      "byte tested in the exit-OR of every phase handler. Non-zero causes the inner loop to break and the transition sequence to run. `set to 0 at L_0766B` when the exit path clears game_session_active"
+    ],
+    "0x0553": [
+      "game_over_flag",
+      "byte tested by screen_transition_wipe together with `previous_phase == 7` to select the game-over exit path (reposition to (0x98, 0x5F), call L_0C4BB). Also OR'd into phase 2's exit condition. Distinct from level_end_flag_a: 0x552 is 'this level ended', 0x553 is 'game is ending'"
+    ],
+    "0x0554": [
+      "phase_1_to_2_trigger",
+      "byte tested inside phase_1_handler's inner loop. When non-zero, phase_1_handler jumps DIRECTLY to phase_2_handler (L_07689) without going through end_of_room_pick_next -- an in-scene transition, not a room change. This is the cat leaving the fence/alley for an adventure and coming back to the same scene without needing a fresh PRNG pick"
+    ],
+    "0x057C": [
+      "cat_row_plus_50",
+      "byte := `[cat_row] + 0x32`, computed by set_cat_position_for_phase. Used elsewhere as a below-cat coordinate (row + 50 pixels, for the shadow or foot-position hitbox)"
+    ],
+    "0x057D": [
+      "movement_last_tick",
+      "16-bit INT 1Ah tick cached by movement_tick_scheduler. When the current tick differs from this, the scheduler fires"
+    ],
+    "0x05D9": [
+      "phase_start_col_table",
+      "8-entry, 16-word table (16 bytes) of the cat's starting column for each phase. Indexed by `bx*2` where bx = current_phase, read by set_cat_position_for_phase"
+    ],
+    "0x05E9": [
+      "phase_start_row_table",
+      "8-entry byte table of the cat's starting row for each phase. Indexed by `bx` where bx = current_phase, read by set_cat_position_for_phase"
+    ],
+    "0x0684": [
+      "movement_countdown",
+      "16-bit countdown decremented by movement_tick_scheduler on each same-tick call. Reset to 0x20 (0x10 on PCjr) each time the tick advances. When it reaches zero, triggers a movement update"
+    ],
+    "0x1832": [
+      "iris_col",
+      "current column of the iris wipe being drawn by draw_transition_iris"
+    ],
+    "0x1834": [
+      "iris_row",
+      "current row of the iris wipe"
+    ],
+    "0x1835": [
+      "iris_radius",
+      "current radius (in row-pairs) of the iris wipe -- grows outward each iteration"
+    ],
+    "0x1837": [
+      "iris_row_count",
+      "how many rows per iteration draw_transition_iris fills (initialised to 8 by screen_transition_wipe)"
+    ],
+    "0x1838": [
+      "iris_iteration",
+      "outer-loop counter for draw_transition_iris"
+    ],
+    "0x1839": [
+      "iris_fill_pattern",
+      "16-bit fill pattern used by draw_transition_iris. Zeroed on first pass, then set to 0xAAAA or 0x5555 (phase-specific) on the second pass"
+    ],
+    "0x1CB8": [
+      "sound_gate_flag",
+      "byte gating update_speaker_sweep. When zero, the sweep is inhibited"
+    ],
+    "0x1CC9": [
+      "scheduler_last_tick",
+      "16-bit last INT 1Ah tick cached by L_09093 (the per-frame scheduler)"
+    ],
+    "0x1CE1": [
+      "scheduler_counter",
+      "16-bit counter incremented by L_09093 each firing; its low bit alternates the tick-delta threshold between 1 and 2"
+    ],
+    "0x5B0F": [
+      "speaker_sweep_state",
+      "byte gating the alternate branch of update_speaker_sweep. Non-zero puts the sweep into a decrement-per-tick mode instead of the freq-sweep"
+    ],
+    "0x5B10": [
+      "speaker_sweep_last_tick",
+      "16-bit INT 1Ah tick cached by update_speaker_sweep for delta detection"
+    ],
+    "0x5B12": [
+      "speaker_sweep_freq",
+      "16-bit divisor being swept downward by update_speaker_sweep. Each firing: divisor = (this & 0x1FF) + 0xC8, then this -= 0x4B -- a falling tone"
+    ],
+    "0x069A": [
+      "joystick_fire_state",
+      "byte cached by poll_joystick_or_delay from port 0x201 bit 4 (the fire button). 0x10 = pressed, 0 = released"
+    ],
+    "0x069B": [
+      "joystick_calibration_done",
+      "latch that gates the calibration path in poll_joystick_or_delay. When zero the routine takes the calibration/delay path (call L_084F1, spin on PIT for 0xF8ED counts); non-zero means calibration has run and reading the fire button is safe"
+    ],
+    "0x069F": [
+      "poll_last_tick",
+      "16-bit INT 1Ah tick cached by poll_joystick_or_delay for its 2-tick rate limit"
+    ],
+    "0x328C": [
+      "object_1_last_tick",
+      "16-bit tick shadow for phase_1_object_tick. Rate-limits the object's animation to whatever interval `[bx + 0x32F2]` holds for the current phase"
+    ],
+    "0x32EA": [
+      "object_1_anim_step",
+      "byte animation step for the phase-1 object at 0x328E. Incremented by phase_1_object_tick when the tick delta exceeds the phase-specific threshold. init_object_slot_32XX seeds it to 0x6C"
+    ],
+    "0x35D8": [
+      "bg_pattern_index",
+      "byte index into bg_pattern_table, advanced by cycle_phase_1_bg_pattern by 2 each firing and masked with 6 -- cycles 0/2/4/6/0/2/... through 4 pattern slots"
+    ],
+    "0x35D0": [
+      "bg_pattern_table",
+      "4-entry table of 16-bit pointers to background pattern blits used by cycle_phase_1_bg_pattern"
+    ],
+    "0x35DA": [
+      "bg_pattern_last_tick",
+      "16-bit INT 1Ah tick cached by cycle_phase_1_bg_pattern for its 6-tick rate limit"
     ],
     "0x0412": [
       "startup_time_low",
@@ -382,6 +1434,263 @@
     "0x6E00": [
       "key_tick_threshold",
       "16-bit value set to key_tick_counter + 0x0240 by the entry code. Compared against key_tick_counter later in L_08568 as a threshold event"
+    ]
+  },
+  "_data_spans": {
+    "_note": [
+      "Second-pass partition of the 54,555-byte load image on 2026-08-21. 52 spans cover the file with no gap and no overlap; each carries a reason. Every named global's cluster gets its own span; the 22 'unread' spans between them make explicit what has NOT been read as data. The pre-DS zero-fill and the CS code region are single-span for now (the code region will need per-routine partitioning eventually, matching Dam Busters' style).",
+      "",
+      "Keys are IMAGE offsets (base 0x0), not DS-relative like the globals section. Alley Cat's DS is loaded with 0x0010 at boot, so DS-relative offset X = image offset X + 0x0100. When a span reason refers to a global by name, the global's DS-relative address is the same as it appears in the globals section; the physical image offset the span sits at is that value + 0x100. Getting the two coordinate systems mixed is the mistake this file exists to make hard.",
+      "",
+      "Dam Busters has 112 spans covering 65 KB; Alley Cat has 52 covering 54 KB, but most of the DS-segment coverage is still 'unread'. The named clusters here are what has been READ; the unread spans are what remains."
+    ],
+    "0x00000": [
+      "pre_ds_zero_fill",
+      256,
+      "pre-DS-segment 256 bytes at LOAD_SEG:0000..LOAD_SEG:00FF. Not addressed via DS (which starts at load_seg + 0x0010 = image 0x100) or CS (load_seg + 0x0723 = image 0x7230). 100% zero-fill in the shipped image -- disassembles as `add byte [bx+si], al` (opcode 00 00) if the walker sweeps it, inflating the decoded-bytes count by ~2%"
+    ],
+    "0x00100": [
+      "ds_page_0_game_state",
+      8,
+      "sound_enabled (byte at 0x100), saved_col (word at 0x101), saved_row (byte at 0x103), current_phase (word at 0x104), previous_phase (word at 0x106). The eight bytes DS points at when it is first loaded, holding the most-touched game control words"
+    ],
+    "0x00108": [
+      1031,
+      "unread DS data (image 0x0108..0x050E, DS 0x0008..0x040E). Nothing in the symbol file references this region"
+    ],
+    "0x0050F": [
+      "startup_control_and_phase_select_tables",
+      35,
+      "frame_throttle_counter (0x50F byte), end_of_level_tick (0x510 word), startup_time_low (0x512 word), then the game-restart flag cluster at 0x519..0x51C (game_session_active / attract_shown_latch / request_new_game / request_attract_mode), phase_history_last (0x51D word), phase_history_prev (0x51F word), phase_select_table_weighted (0x521..0x52C, 12 bytes indexed by phase_history_index*4 + PRNG&3), phase_select_table_uniform (0x52D..0x531, 5 bytes indexed by PRNG&7 rejected until <5). This is the machinery end_of_room_pick_next uses to choose the next phase"
+    ],
+    "0x00532": [
+      254,
+      "unread DS data (image 0x0532..0x062F, DS 0x0432..0x052F). Includes the pointer-tables at DS:0x4D0..0x4D6 that pick_random_from_4_ptr_table reads via [bx + 0x4D0] but whose contents have not been decoded"
+    ],
+    "0x00630": [
+      "spawn_and_cat_sprite_state",
+      85,
+      "the cat's per-frame state block: spawn_countdown (0x531 byte), spawn scratch at 0x540/0x544, level-end triggers 0x552..0x554 (level_end_flag_a / game_over_flag / phase_1_to_2_trigger), spawn slot at 0x55A/0x55C, sprite draw params sprite_src_offset / sprite_dst_offset / sprite_width_cache / sprite_dim_packed (0x55D..0x565), movement direction 0x56E, cat position and animation cat_col/cat_row/cat_row_plus_50 and movement_last_tick (0x579..0x57D), sprite_state_flag (0x583), sfx_meow gate (0x584)"
+    ],
+    "0x00685": [
+      84,
+      "unread DS data (image 0x0685..0x06D8, DS 0x0585..0x05D8). No symbols reference this block"
+    ],
+    "0x006D9": [
+      "phase_start_tables_and_screen_bounds",
+      33,
+      "phase_start_col_table (0x5D9..0x5E8, 16 bytes = 8 word entries, one per phase) and phase_start_row_table (0x5E9..0x5F0, 8 bytes = 8 byte entries), both read by set_cat_position_for_phase. Then screen_bounds_left (0x5F6 word) and screen_bounds_right (0x5F8 word) set per-phase by set_screen_bounds_for_phase"
+    ],
+    "0x006FA": [
+      "sprite_bg_scratch",
+      138,
+      "the sprite background snapshot buffer at DS:0x5FA. snapshot_video_rect saves the video area behind the cat here (size = sprite_width_cache * sprite_dim_packed rows, dynamically sized), and restore_video_from_snapshot reads it back. Runs from 0x6FA up to somewhere before movement_countdown at 0x784 -- exact ceiling depends on the largest sprite ever drawn. Named as this whole span because no other symbols land in the range"
+    ],
+    "0x00784": [
+      "movement_startup_and_keyboard_state",
+      73,
+      "movement_countdown (0x684 word), startup_mode_value (0x690 byte), key_tick_shadow (0x691 word), key_tick_counter (0x693 word, incremented by the keyboard ISR), machine_id (0x697 byte, 0xFD = PCjr), joystick_fire_state (0x69A byte), joystick_calibration_done (0x69B byte), poll_last_tick (0x69F word), then key_scancode_table (0x6A1..0x6B6, 22 bytes) and key_state_table (0x6B7..0x6CC, 22 bytes with bit 7 = released) written by the keyboard ISR"
+    ],
+    "0x007CD": [
+      "sprite_data_bank_a",
+      4453,
+      "4,453 bytes of CGA sprite/graphics data (image 0x07CD..0x1931, DS 0x06CD..0x1831). Sampled bytes are 2-bits-per-pixel packed patterns typical of CGA mode 4 sprite banks: `FC 0F FF FF FF FF FF C3 FF FF FF FF FF 0F FF FF FF FF 0C 3F FF FF FF FF FF C0 3C 03 FC 3F ...`. Per-sprite structure (frame count, dimensions, per-frame offsets) not yet parsed; individual sprites here are referenced from various fixed DS offsets by sprite draw calls in the phase handlers, but a per-sprite partition of this bank has not been done"
+    ],
+    "0x01932": [
+      "iris_and_palette_tables",
+      34,
+      "iris wipe state used by draw_transition_iris (iris_col 0x1832 word, iris_row 0x1834 byte, iris_radius 0x1835 word, iris_row_count 0x1837 byte, iris_iteration 0x1838 byte, iris_fill_pattern 0x1839 word), then the PCjr-per-phase palette tables at 0x183B/0x1843/0x184B (byte per phase) and the CGA-per-phase palette table at 0x1853, all indexed by current_phase from apply_palette"
+    ],
+    "0x01954": [
+      988,
+      "unread DS data (image 0x1954..0x1D2F, DS 0x1854..0x1C2F). Contains sprite pointer tables that apply_palette and the message-list stepper read via `[bx + 0x1853]` etc.; extents and per-entry meaning not yet resolved"
+    ],
+    "0x01D30": [
+      "gameplay_flags_and_scheduler_state",
+      180,
+      "0x1C30 zeroed at new_game_setup; then game-play trigger cluster: sound_gate_flag (0x1CB8 byte), 0x1CBF/0x1CC0/0x1CC1 (game-play triggers checked by check_cat_at_trigger_zone), 0x1CC6 (trigger-zone reference col), 0x1CC8 (0xB1 initial value), scheduler_last_tick (0x1CC9 word) and scheduler_counter (0x1CE1 word) both used by advance_frame_scheduler"
+    ],
+    "0x01DE4": [
+      668,
+      "unread DS data (image 0x1DE4..0x207F, DS 0x1CE4..0x1F7F)"
+    ],
+    "0x02080": [
+      "main_state_and_score_block",
+      20,
+      "main_state (0x1F80 byte -- 0 attract, 3 playing, 9 game-over), 0x1F81 sync byte set to 0xFF, then two 7-byte blocks at 0x1F82..0x1F88 and 0x1F89..0x1F8F which L_098C0 promotes-if-greater (likely score / high-score records)"
+    ],
+    "0x02094": [
+      1696,
+      "unread DS data (image 0x2094..0x2733, DS 0x1F94..0x2633). Includes attract-mode state referenced by check_attract_collision at 0x1671/0x1673/0x17DF but not carved out here"
+    ],
+    "0x02734": [
+      "sprite_list_pointer_tables",
+      33,
+      "the pointer-table area feeding blit_sprite_lists_4x (starts at 0x2634..0x263C, 4 word entries) and blit_sprite_lists_5x (0x263E..0x2646, 5 word entries), then 0x2652 (reference row for sfx_meow branching), 0x2653 (byte for init_phase_screen_pattern pattern reject), and 0x2654 (16-bit index into a pattern list)"
+    ],
+    "0x02755": [
+      1138,
+      "unread DS data (image 0x2755..0x2BC6, DS 0x2655..0x2AC6). Includes sprite scratch fields at DS:0x2A** used by blit_sprite_list (sprite_list_cx_cache 0x2AC7, sprite_list_base_dst 0x2ACC, sprite_list_width_cache 0x2ACE, sprite_list_height_cache 0x2AD0) but the intervening bytes are unread"
+    ],
+    "0x02BC7": [
+      "blit_scratch_and_prng_state",
+      31,
+      "sprite_list_cx_cache (0x2AC7 word), sprite_list_base_dst (0x2ACC word), sprite_list_width_cache (0x2ACE byte), sprite_list_height_cache (0x2AD0 byte), then blit_row_bytes (0x2AE0 byte), blit_row_count (0x2AE2 byte), 0x2AE3 (word used inside sprite_colored_blit_with_save), and prng_state (0x2AE5 word) read/written every prng_step call"
+    ],
+    "0x02BE6": [
+      1960,
+      "unread DS data (image 0x2BE6..0x338D, DS 0x2AE6..0x328D)"
+    ],
+    "0x0338E": [
+      "phase_1_object_slot",
+      103,
+      "the 40-byte object state at DS:0x328E zero-initialised by init_object_slot_32XX (with defaults at 0x32B6=0xFF, 0x327F=0xA0, 0x3286=1, and a PRNG-seeded byte at 0x32EB), plus animation state read by phase_1_object_tick (object_1_last_tick 0x328C, object_1_anim_step 0x32EA, and the per-phase tick-interval table at 0x32F2..0x32FF)"
+    ],
+    "0x033F5": [
+      731,
+      "unread DS data (image 0x33F5..0x36CF, DS 0x32F5..0x35CF)"
+    ],
+    "0x036D0": [
+      "bg_pattern_state_phase_1",
+      11,
+      "bg_pattern_table (0x35D0..0x35D7, 4 word pointers) plus bg_pattern_index (0x35D8 byte, cycles 0/2/4/6) and bg_pattern_last_tick (0x35DA word), all used by cycle_phase_1_bg_pattern"
+    ],
+    "0x036DB": [
+      468,
+      "unread DS data (image 0x36DB..0x38AE, DS 0x35DB..0x37AE)"
+    ],
+    "0x038AF": [
+      "phase_3_state_block_a",
+      11,
+      "the first phase-3 state block written by init_phase_3_state_a: `[0x37AF]` := 3, then `[0x37B0]`, `[0x37B2]`, `[0x37B4]` := 1. Plus 0x37B6 (=4 tick reset) and 0x37B8 (word tick shadow for phase_3_tick_a)"
+    ],
+    "0x038BA": [
+      426,
+      "unread DS data (image 0x38BA..0x3A63, DS 0x37BA..0x3963)"
+    ],
+    "0x03A64": [
+      "phase_3_state_block_b",
+      102,
+      "the second phase-3 state block written by init_phase_3_state_b: `[0x3964]` := 0x118 (word), `[0x3966]` := 8, `[0x3967]` := 0, `[0x396A]` := 1, `[0x396B]` := 0 (word), `[0x396D]` := 2. Plus 0x39C8 (word tick shadow for phase_3_tick_b) and other unread bytes to the next cluster"
+    ],
+    "0x03ACA": [
+      1252,
+      "unread DS data (image 0x3ACA..0x3FAD, DS 0x39CA..0x3EAD)"
+    ],
+    "0x03FAE": [
+      "phase_4_actor_state",
+      46,
+      "4 phase-4 actor slots initialised by init_phase_4_actors. Per-slot byte fields at 0x3EAE + bx (flag=1), 0x3EB2 + bx (=0), 0x3EB6 + bx (PRNG-picked position in [0x14, 0x23]) for bx in 0..3. Head field 0x3EDA (word) zeroed after the loop"
+    ],
+    "0x03FDC": [
+      460,
+      "unread DS data (image 0x3FDC..0x41A7, DS 0x3EDC..0x40A7)"
+    ],
+    "0x041A8": [
+      "phase_5_state_block",
+      34,
+      "phase-5 layout initialised by init_phase_5_state: position (0x40A8 word = 0x90 col, 0x40AA byte = 0x86 row), computed CGA offset 0x40AB (word), then 0x40AF/0x40B1/0x40B8 zeroed, 0x40B9 := 1, and 0x40C8 (word) := 0xFF"
+    ],
+    "0x041CA": [
+      1150,
+      "unread DS data (image 0x41CA..0x4647, DS 0x40CA..0x4547)"
+    ],
+    "0x04648": [
+      "phase_7_state_block",
+      114,
+      "phase-7 (scoreboard/game-over screen) state initialised by init_phase_7_state: 0x4548 (word) := PRNG-picked 0..0x7F + 0x60, 0x454A := 0, 0x454E := 1, 0x4551 := 0 (word), 0x4553 := 0, and the 0x45B6 counter used by phase_7_tick_a"
+    ],
+    "0x046BA": [
+      "sprite_data_bank_b",
+      4966,
+      "4,966 bytes of CGA sprite/graphics data (image 0x46BA..0x5A1F, DS 0x45BA..0x591F). Sampled bytes at 0x4600 area: `00 03 C0 C0 00 00 00 03 FF C0 00 00 00 0F 3F 30 00 00 00 3F FF FC 00 00 00 0F FF F0 ...` -- CGA mode 4 2-bpp sprite patterns. Positioned right after phase_7_state_block, so likely holds artwork for phases 3..7 (the room scenes). Referenced by render_phase_7_sprite via `[0x70F0] + 0x6F30 = image 0x7030 + [phase_7_frame]` (that's in the CS segment, so the phase-7 sprite base pointer is CS-relative, but its indirect targets could reach here). Per-sprite parsing not yet done"
+    ],
+    "0x05A20": [
+      "sfx_and_speaker_state",
+      17,
+      "sound state initialised by init_sound_state: 0x5920 sfx_playing_state, 0x5921 sfx_start_tick (word), 0x5923 sfx_bx_param (word), 0x5927..0x5929 with 0x80 defaults, speaker_pit_divisor (0x592A word, initial 0x0500), 0x592C..0x592D scratch, sound_delay_threshold (0x592E word) used by speaker_start_tone's duration loop"
+    ],
+    "0x05A31": [
+      141,
+      "unread DS data (image 0x5A31..0x5ABD, DS 0x5931..0x59BD)"
+    ],
+    "0x05ABE": [
+      "sound_tick_state",
+      4,
+      "0x59BE (word) and 0x59C0 (word) -- INT 1Ah tick captured by sound_delay_start and read by advance_sound_timer for the beat clock"
+    ],
+    "0x05AC2": [
+      148,
+      "unread DS data (image 0x5AC2..0x5B55, DS 0x59C2..0x5A55)"
+    ],
+    "0x05B56": [
+      "pit_pattern_state",
+      12,
+      "pit_pattern_index (0x5A56 byte, cycles 0/2/4/6 via mask 6) and pit_pattern_table (0x5A5A..0x5A61, 4 word entries -- PIT ch2 divisors), both used by advance_pit_pattern_step for the 4-note repeating pattern"
+    ],
+    "0x05B62": [
+      165,
+      "unread DS data (image 0x5B62..0x5C06, DS 0x5A62..0x5B06)"
+    ],
+    "0x05C07": [
+      "sound_state_2_and_speaker_sweep",
+      14,
+      "second sound state block also initialised by init_sound_state: 0x5B07 := 0, 0x5B08 (word) := 0, 0x5B0C (word) := 1, 0x5B0E := 1. Plus speaker sweep state used by update_speaker_sweep: speaker_sweep_state 0x5B0F, speaker_sweep_last_tick 0x5B10 (word), speaker_sweep_freq 0x5B12 (word)"
+    ],
+    "0x05C15": [
+      1499,
+      "unread DS data (image 0x5C15..0x61EF, DS 0x5B15..0x60EF)"
+    ],
+    "0x061F0": [
+      "startup_message_strings",
+      64,
+      "the two ASCII messages printed by startup_video_probe at boot: the success banner (DS:0x60F0) and the CGA-detection-failed error (DS:0x6112) which is followed by the infinite jmp $ halt. Each is a null-or-$-terminated string"
+    ],
+    "0x06230": [
+      "sprite_data_bank_c",
+      3079,
+      "3,079 bytes of what is very likely additional CGA sprite/graphics data (image 0x6230..0x6E36, DS 0x6130..0x6D36). Positioned between the startup message strings and the message tables, so it sits in the tail of the DS data region. Content not sampled yet -- included as a bank for spans-partition accounting; the 'sprite' label is inferred from position and size, not from reading"
+    ],
+    "0x06E37": [
+      "message_tables_and_index",
+      89,
+      "message_string_table (DS:0x6D37, ~44 bytes of 16-bit string pointers) and message_row_table (DS:0x6D63, ~44 bytes of cursor rows) walked in parallel by print_next_message; message_index (DS:0x6D8F word) the current position"
+    ],
+    "0x06E90": [
+      104,
+      "unread DS data (image 0x6E90..0x6EF7, DS 0x6D90..0x6DF7). May hold the strings the message_string_table points at"
+    ],
+    "0x06EF8": [
+      "attract_history_word",
+      2,
+      "16-bit state word zeroed at entry; copied into [8] phase_history_index by new_game_setup to thread history from one game to the next"
+    ],
+    "0x06EFA": [
+      6,
+      "unread DS data (image 0x6EFA..0x6EFF, DS 0x6DFA..0x6DFF)"
+    ],
+    "0x06F00": [
+      "key_tick_threshold",
+      2,
+      "16-bit key_tick_threshold set to key_tick_counter + 0x0240 by the entry code, compared against key_tick_counter by handle_keyboard_events to detect the idle-timeout"
+    ],
+    "0x06F02": [
+      714,
+      "unread DS data (image 0x6F02..0x71CB, DS 0x6E02..0x70CB)"
+    ],
+    "0x071CC": [
+      "phase_7_sprite_scratch_and_state",
+      46,
+      "the phase-7 sprite scratch buffer at DS:0x70CC (used by render_phase_7_sprite / restore_phase_7_sprite_bg) and its state fields at 0x70EE..0x70FA (last_tick 0x70EE word, position/frame words at 0x70F0/0x70F2/0x70F6/0x70F7/0x70F8/0x70FA)"
+    ],
+    "0x071FA": [
+      54,
+      "unread DS data (image 0x71FA..0x722F, DS 0x70FA..0x712F). Trailing 54 bytes of the DS segment"
+    ],
+    "0x07230": [
+      "cs_segment_code",
+      25323,
+      "the entire CS segment (image 0x7230..0xD51B, 25,323 bytes = 0x62EB). Contains the entry at 0x7230, the phase dispatch table at 0x7480 (16 bytes, 8 CS-relative word entries), the two keyboard ISRs at 0x86E3 (standard PC) and 0x872B (PCjr), and every decoded routine. Also contains some inline data (per-phase call tables, cached ISR-vectors area at CS:0x13DF..0x13E7 = image 0x860F..0x8617, message strings) that has not been separated out yet. 46.3% of these bytes are decoded as instructions; the rest is data interspersed with code. Per-routine partitioning of this span is future work"
     ]
   }
 }
