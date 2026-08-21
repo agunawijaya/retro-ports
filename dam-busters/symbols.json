@@ -415,7 +415,7 @@
     ],
     "0x0312A": [
       "physics_step",
-      "the plane's per-frame physics. Reads control input bitfield [0x306B] (bit 0 = up, bit 1 = down, bit 2 = left, bit 3 = right), integrates pitch/roll into [0x3073] and [0x3075], and drives the altitude computation from [0xCE6] - [0x23A1]. Also triggers the crash branch (`jmp L_07DA3`) when [0x306D] falls below -0x2C"
+      "the plane's per-frame physics. Reads control input bitfield [0x306B] (bit 0 = up, bit 1 = down, bit 2 = right, bit 3 = left -- decoded from the ISR at cs:0xD271, not the previous inference), integrates pitch/roll into [0x3073] and [0x3075], and drives the altitude computation from [0xCE6] - [0x23A1]. Also triggers the crash branch (`jmp L_07DA3`) when [0x306D] falls below -0x2C"
     ],
     "0x03256": [
       "flight_render_sky",
@@ -1349,7 +1349,7 @@
     ],
     "0x0171C": [
       "menu_input_flags",
-      "menu_input's copy of input_flags (bit 0 = up, bit 1 = down, bit 2 = left, bit 3 = right); consumed by the cs:0x1610 dispatcher handlers"
+      "menu_input's copy of input_flags (bit 0 = up, bit 1 = down, bit 2 = right, bit 3 = left -- decoded from the ISR at cs:0xD271; earlier comment had 2/3 swapped); consumed by the cs:0x1610 dispatcher handlers"
     ],
     "0x0171D": [
       "engine_slider_bottom",
@@ -1457,7 +1457,7 @@
     ],
     "0x0306B": [
       "physics_input_flags",
-      "per-frame copy of input_flags used by physics_step -- bit 0 up, bit 1 down, bit 2 left, bit 3 right (the plane control mapping)"
+      "per-frame copy of input_flags used by physics_step -- bit 0 up, bit 1 down, bit 2 right, bit 3 left (decoded from the ISR at cs:0xD271; earlier comment had 2/3 swapped)"
     ],
     "0x0306D": [
       "throttle",
@@ -1913,7 +1913,7 @@
     ],
     "0x0D1C2": [
       "input_flags",
-      "per-frame input bitfield written by the game's INT 9 keyboard handler. Bit 0 = up, bit 1 = down, bit 2 = left, bit 3 = right (deduced from consistent bit tests in menu handlers). Also holds a select bit (bit 0 or 1) tested at bomb_options toggles. Copied into per-menu locals like [0x171C], [0x306B]"
+      "per-frame input bitfield written by the game's INT 9 keyboard handler. Bit 0 = up (scancode 0x48), bit 1 = down (0x50), bit 2 = right (0x4D), bit 3 = left (0x4B) -- decoded directly from the ISR at cs:0xD271 which does `or [0xD1C2], 1/2/4/8` per arrow. Note the earlier ASM comments guessed bit 2=left/bit 3=right from bit ordering; the ISR says the opposite. Copied into per-menu locals like [0x171C], [0x306B]. Bit 5 (input_fire, at 0xD1C5, set by SPACE scancode 0x39) is a separate flag; a select trigger tested at bomb_options toggles"
     ],
     "0x0D1C3": [
       "input_cursor",
