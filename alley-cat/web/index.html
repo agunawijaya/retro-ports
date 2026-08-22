@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alley Cat (1984) — reimagined</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Alley Cat</h1>
+  <p class="sub">
+    A reimagining of Bill Williams' 1984 game. Two screens rendered here — the
+    <strong>title</strong> and the <strong>courtyard (phase&nbsp;0)</strong> —
+    keeping the shape of the CGA original but drawing everything procedurally
+    at 3&times; the resolution, with lighting, animation, and colour the 1984
+    hardware could not give it.
+  </p>
+</header>
+
+<div class="frame">
+  <canvas id="screen" width="960" height="600"></canvas>
+  <div class="tabs" role="tablist" aria-label="Scene">
+    <button class="tab active" data-scene="title"  role="tab" aria-selected="true" >Title</button>
+    <button class="tab"        data-scene="phase0" role="tab" aria-selected="false">Phase 0 — courtyard</button>
+    <button class="tab"        data-scene="phase2" role="tab" aria-selected="false">Phase 2 — pond</button>
+    <button class="tab"        data-scene="phase3" role="tab" aria-selected="false">Phase 3 — library</button>
+    <button class="tab"        data-scene="phase4" role="tab" aria-selected="false">Phase 4 — cheese wall</button>
+    <button class="tab"        data-scene="phase5" role="tab" aria-selected="false">Phase 5 — birdcage</button>
+    <button class="tab"        data-scene="phase6" role="tab" aria-selected="false">Phase 6 — kittens</button>
+    <button class="tab"        data-scene="phase7" role="tab" aria-selected="false">Phase 7 — finale</button>
+  </div>
+</div>
+
+<section class="notes">
+  <div class="col">
+    <h3>What the original looked like</h3>
+    <p>
+      CGA mode 4: 320&times;200, four colours — magenta, cyan, white, black.
+      The title screen showed a wooden fence with five trash cans, a tiny cat
+      silhouette on the fence, and the game name in cursive script. Phase&nbsp;0
+      was a sparse room: two chairs, a table, a small round table, a floor
+      lamp, and a fireplace with a black opening.
+    </p>
+    <p>
+      Both frames are captured in <code>reference/screens/</code>; the
+      reconstruction rebuilds byte-identically and every reference frame here
+      came from the <em>rebuild</em>, not the shipped binary.
+    </p>
+  </div>
+  <div class="col">
+    <h3>What this port changes</h3>
+    <p>
+      No file matches the original pixel for pixel. The <em>arrangement</em> is
+      preserved — same furniture in the same places, same fence composition —
+      but the palette is unshackled, the surfaces are shaded, the fireplace
+      burns, the lampshade actually casts light, and the trash cans look like
+      metal instead of stacked hoops.
+    </p>
+    <p>
+      Everything on the canvas is drawn from JavaScript. No image files, no
+      external fonts loaded at runtime beyond the browser's own cursive
+      fallback. Open <code>index.html</code> directly — no build step, no
+      server.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <p>
+    The 1984 original is © Datasoft / Synapse Software. This page ships none of
+    it. The reading that made this port possible lives in
+    <code>../docs/</code> and <code>../symbols.json</code>.
+  </p>
+</footer>
+
+<script>
+  // ?raw=1 strips the surrounding page so screenshots capture just the canvas
+  if (new URLSearchParams(location.search).get('raw') === '1') {
+    document.documentElement.style.background = '#000';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    for (const el of document.body.children) el.style.display = 'none';
+    const c = document.getElementById('screen');
+    c.style.display = 'block';
+    // Optional zoom for inspection: ?zoom=2 renders at 2x pixel size
+    const zoom = parseFloat(new URLSearchParams(location.search).get('zoom') || '1');
+    c.style.width = (960 * zoom) + 'px';
+    c.style.height = (600 * zoom) + 'px';
+    c.style.imageRendering = zoom > 1 ? 'pixelated' : 'auto';
+    c.style.borderRadius = '0';
+    c.style.boxShadow = 'none';
+    document.body.appendChild(c);
+  }
+</script>
+<script src="game.js"></script>
+</body>
+</html>

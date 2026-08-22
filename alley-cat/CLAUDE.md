@@ -5,7 +5,27 @@ prints, not this file's memory of them.**
 
 Bill Williams for Synapse Software, published by Datasoft.
 
-## Where this stands
+## The port exists at [`web/`](web/)
+
+Eight scenes render — title, phase 0 (courtyard), phase 2 (pond), phase 3
+(library), phase 4 (cheese wall), phase 5 (birdcage), phase 6 (kittens),
+phase 7 (finale). Open [`web/index.html`](web/index.html) directly — no
+build, no server, no asset files. Everything drawn from JavaScript in one
+file. Preview PNGs of each scene are in [`web/previews/`](web/previews/).
+
+The port is documented in [`docs/05-web-architecture.md`](docs/05-web-architecture.md)
+(the four decisions that shape it) and [`docs/06-web-code.md`](docs/06-web-code.md)
+(the code walkthrough, function by function).
+
+Gameplay is NOT wired up — no score, no lives, no input handling, no
+sound. The rooms exist as art demos. What is animated: fire, ripples,
+walking cats, popping cats throwing bones, an AI cat that walks / jumps
+between platforms / falls through broken hearts in phase 7. The porting
+brief in [`docs/04-porting.md`](docs/04-porting.md) argues the sprite-bank
+decode is the real blocker for gameplay; this port skips it by drawing
+sprites procedurally.
+
+## Where this stands (reverse-engineering)
 
 *Last measured 2026-08-21.*
 
