@@ -2170,7 +2170,8 @@
     ctx.restore();
   }
 
-  function drawSideTable(cx, cy) {
+  function drawSideTable(cx, cy, withVase) {
+    if (withVase === undefined) withVase = true;
     ctx.save();
     // shadow
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
@@ -2203,46 +2204,193 @@
     ctx.fillStyle = topGrad;
     ctx.beginPath(); ctx.ellipse(cx, cy, 42, 6, 0, 0, TAU); ctx.fill();
 
-    // A ceramic vase — larger than before so the flowers have somewhere to sit.
+    if (withVase) {
+      // A ceramic vase — larger than before so the flowers have somewhere to sit.
+      ctx.fillStyle = '#4a5a8a';
+      roundedRect(ctx, cx - 10, cy - 30, 20, 26, 4);
+      ctx.fill();
+      // side highlight (glaze reflection)
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(cx - 8, cy - 27, 2, 20);
+      // darker seam on the right (curvature shadow)
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(cx + 7, cy - 27, 2, 20);
+      // rim
+      ctx.fillStyle = '#2f3f70';
+      ctx.fillRect(cx - 10, cy - 30, 20, 2);
+      // rim highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(cx - 8, cy - 30, 12, 1);
+
+      // Three stems curving out of the vase
+      ctx.strokeStyle = '#2f5a2a';
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx - 2, cy - 30); ctx.quadraticCurveTo(cx - 8, cy - 46, cx - 12, cy - 60);
+      ctx.moveTo(cx + 1, cy - 30); ctx.quadraticCurveTo(cx + 2, cy - 52, cx + 1, cy - 70);
+      ctx.moveTo(cx + 3, cy - 30); ctx.quadraticCurveTo(cx + 10, cy - 44, cx + 14, cy - 56);
+      ctx.stroke();
+
+      // Two leaves
+      ctx.fillStyle = '#3a6a2a';
+      ctx.beginPath();
+      ctx.ellipse(cx - 5, cy - 42, 4, 2, -0.6, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx + 6, cy - 40, 4, 2, 0.6, 0, TAU);
+      ctx.fill();
+
+      // Three bigger flowers with real petals
+      drawFlower(cx + 1,  cy - 72, 8, '#ff5a9a', '#ffcc44');
+      drawFlower(cx - 12, cy - 62, 7, '#c070ff', '#ffcc44');
+      drawFlower(cx + 14, cy - 58, 7, '#ffa060', '#ffcc44');
+    }
+
+    ctx.restore();
+  }
+
+  // The Phase 4 side table + vase, with a break state. When the vase has
+  // been broken by the cat, draw shards on the table top, scatter flowers
+  // and vase pieces on the floor, and animate a briefly-visible splash
+  // right after the moment of impact.
+  function drawPhase4SideTable(t) {
+    const cx = 830, cy = 515;
+    if (!PHASE4.vaseBroken) {
+      drawSideTable(cx, cy, true);
+      return;
+    }
+    // Broken — table itself has no vase now
+    drawSideTable(cx, cy, false);
+
+    // Vase shards left on the table top
+    ctx.save();
+    ctx.fillStyle = '#3f4e78';
+    ctx.beginPath();
+    ctx.moveTo(cx - 10, cy - 2);
+    ctx.lineTo(cx - 4, cy - 6);
+    ctx.lineTo(cx + 2, cy - 3);
+    ctx.lineTo(cx + 8, cy - 5);
+    ctx.lineTo(cx + 11, cy - 1);
+    ctx.lineTo(cx - 10, cy - 1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(cx - 8, cy - 4, 3, 1);
+    ctx.restore();
+
+    // Scattered flower + vase shard pieces on the floor around the table.
+    // Shards drawn LARGER and with a bright edge highlight so they read
+    // clearly against the dark wooden floor.
+    const bits = PHASE4_VASE_DEBRIS;
+    for (const b of bits) {
+      const bx = cx + b.dx;
+      const by = PHASE4_FLOOR_Y + b.dy;
+      if (b.kind === 'shard') {
+        drawVaseShard(bx, by, b.rot, b.size, b.shape);
+      } else {
+        drawFlower(bx, by, b.size, b.color, '#ffcc44');
+        // Broken stem next to each fallen flower
+        ctx.strokeStyle = '#2f5a2a'; ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(bx - 3, by + 4);
+        ctx.lineTo(bx + 3, by + 8);
+        ctx.stroke();
+      }
+    }
+
+    // A brief "poof" animation for the first 0.6 s after breaking
+    const age = t - PHASE4.vaseBreakT;
+    if (age >= 0 && age < 0.6) {
+      const p = age / 0.6;
+      ctx.save();
+      ctx.globalAlpha = 1 - p;
+      ctx.strokeStyle = '#c8ccd8';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 8; i++) {
+        const a = i * (TAU / 8);
+        const r0 = 10, r1 = 24 + p * 30;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r0, cy - 12 + Math.sin(a) * r0);
+        ctx.lineTo(cx + Math.cos(a) * r1, cy - 12 + Math.sin(a) * r1);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // Deterministic scatter pattern for vase debris on the floor around the
+  // side table. `shape` picks between a few different broken-piece silhouettes.
+  const PHASE4_VASE_DEBRIS = [
+    { kind: 'flower', dx: -30, dy:  4, size: 8, color: '#ff5a9a' },
+    { kind: 'flower', dx: -10, dy: 10, size: 7, color: '#c070ff' },
+    { kind: 'flower', dx:  22, dy:  6, size: 8, color: '#ffa060' },
+    { kind: 'shard',  dx: -38, dy:  2, rot:  0.4, size: 9,  shape: 'tri' },
+    { kind: 'shard',  dx: -22, dy: 10, rot: -0.6, size: 10, shape: 'curve' },
+    { kind: 'shard',  dx:  -4, dy:  6, rot: -1.1, size: 8,  shape: 'tri' },
+    { kind: 'shard',  dx:  10, dy: 12, rot:  0.3, size: 11, shape: 'curve' },
+    { kind: 'shard',  dx:  30, dy:  8, rot: -0.4, size: 8,  shape: 'tri' },
+    { kind: 'shard',  dx:  40, dy:  2, rot:  0.9, size: 7,  shape: 'chip' },
+    { kind: 'shard',  dx: -16, dy:  0, rot:  1.4, size: 6,  shape: 'chip' },
+  ];
+
+  // A single broken piece of vase — larger and clearly ceramic (matching the
+  // vase's blue palette) with a white edge highlight for legibility on the
+  // dark wooden floor.
+  function drawVaseShard(cx, cy, rot, size, shape) {
+    ctx.save();
+    // A small shadow puddle beneath so the shard looks planted
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(cx + 1, cy + size * 0.5 + 1, size * 0.9, 2.2, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 1;
+
+    // Ceramic body + inner-side gleam
+    ctx.beginPath();
+    if (shape === 'curve') {
+      // Concave shard — an arc chunk of the vase's belly
+      ctx.moveTo(-size, size * 0.2);
+      ctx.quadraticCurveTo(-size * 0.6, -size * 0.9, size * 0.4, -size * 0.5);
+      ctx.quadraticCurveTo(size * 0.9, size * 0.1, size * 0.7, size * 0.6);
+      ctx.quadraticCurveTo(0, size * 0.3, -size, size * 0.2);
+    } else if (shape === 'chip') {
+      // Small angular chip
+      ctx.moveTo(-size * 0.7,  size * 0.4);
+      ctx.lineTo(-size * 0.2, -size * 0.6);
+      ctx.lineTo( size * 0.6, -size * 0.1);
+      ctx.lineTo( size * 0.4,  size * 0.5);
+      ctx.closePath();
+    } else {
+      // Sharp triangular shard
+      ctx.moveTo(-size * 0.9,  size * 0.2);
+      ctx.lineTo( size * 0.5, -size * 0.7);
+      ctx.lineTo( size * 0.9,  size * 0.4);
+      ctx.closePath();
+    }
+    // Fill with vase-blue
     ctx.fillStyle = '#4a5a8a';
-    roundedRect(ctx, cx - 10, cy - 30, 20, 26, 4);
     ctx.fill();
-    // side highlight (glaze reflection)
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillRect(cx - 8, cy - 27, 2, 20);
-    // darker seam on the right (curvature shadow)
-    ctx.fillStyle = 'rgba(0,0,0,0.30)';
-    ctx.fillRect(cx + 7, cy - 27, 2, 20);
-    // rim
-    ctx.fillStyle = '#2f3f70';
-    ctx.fillRect(cx - 10, cy - 30, 20, 2);
-    // rim highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillRect(cx - 8, cy - 30, 12, 1);
-
-    // Three stems curving out of the vase
-    ctx.strokeStyle = '#2f5a2a';
-    ctx.lineWidth = 1.6;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(cx - 2, cy - 30); ctx.quadraticCurveTo(cx - 8, cy - 46, cx - 12, cy - 60);
-    ctx.moveTo(cx + 1, cy - 30); ctx.quadraticCurveTo(cx + 2, cy - 52, cx + 1, cy - 70);
-    ctx.moveTo(cx + 3, cy - 30); ctx.quadraticCurveTo(cx + 10, cy - 44, cx + 14, cy - 56);
+    // Bright edge highlight — this is what makes the shard readable on dark floor
+    ctx.strokeStyle = '#c8d0e8';
     ctx.stroke();
-
-    // Two leaves
-    ctx.fillStyle = '#3a6a2a';
+    // Inner concave shading (darker) on one side
+    ctx.fillStyle = 'rgba(20,25,45,0.35)';
     ctx.beginPath();
-    ctx.ellipse(cx - 5, cy - 42, 4, 2, -0.6, 0, TAU);
+    ctx.ellipse(0, size * 0.2, size * 0.6, size * 0.25, 0, 0, TAU);
     ctx.fill();
+    // Rim highlight (a short white streak on the edge)
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.ellipse(cx + 6, cy - 40, 4, 2, 0.6, 0, TAU);
-    ctx.fill();
-
-    // Three bigger flowers with real petals
-    drawFlower(cx + 1,  cy - 72, 8, '#ff5a9a', '#ffcc44');
-    drawFlower(cx - 12, cy - 62, 7, '#c070ff', '#ffcc44');
-    drawFlower(cx + 14, cy - 58, 7, '#ffa060', '#ffcc44');
+    ctx.moveTo(-size * 0.4, -size * 0.3);
+    ctx.lineTo( size * 0.2, -size * 0.55);
+    ctx.stroke();
 
     ctx.restore();
   }
@@ -3232,18 +3380,1105 @@
   // PHASE 4 — swiss cheese wall (with mouse holes)
   // =========================================================================
 
+  // ---- Phase 4 layout — hole positions in absolute canvas pixels ----
+  // Computed from the same fractional coords that drawCheeseBlock uses, so
+  // clicks can map to holes without duplicating layout knowledge.
+  const PHASE4_CHEESE = { x: 30, y: 100, w: 570, h: 470 };
+  // Four rows/levels of holes on the cheese, top→bottom:
+  //   level 0: fy < 0.28    (top row, hardest to reach)
+  //   level 1: 0.28 – 0.50
+  //   level 2: 0.50 – 0.72
+  //   level 3: fy ≥ 0.72    (bottom row, safest — cat starts here)
+  const PHASE4_HOLES = (() => {
+    const H_ = [
+      { fx: 0.20, fy: 0.15, r: 22 },
+      { fx: 0.42, fy: 0.10, r: 28 },
+      { fx: 0.62, fy: 0.20, r: 24 },
+      { fx: 0.15, fy: 0.35, r: 32 },
+      { fx: 0.35, fy: 0.40, r: 20 },
+      { fx: 0.55, fy: 0.45, r: 26 },
+      { fx: 0.78, fy: 0.35, r: 22 },
+      { fx: 0.25, fy: 0.62, r: 28 },
+      { fx: 0.48, fy: 0.60, r: 24 },
+      { fx: 0.68, fy: 0.62, r: 22 },
+      { fx: 0.85, fy: 0.55, r: 20 },
+      { fx: 0.20, fy: 0.82, r: 26 },
+      { fx: 0.42, fy: 0.82, r: 22 },
+      { fx: 0.65, fy: 0.85, r: 24 },
+    ];
+    return H_.map(h => ({
+      x: PHASE4_CHEESE.x + h.fx * PHASE4_CHEESE.w,
+      y: PHASE4_CHEESE.y + h.fy * PHASE4_CHEESE.h,
+      r: h.r,
+      level: h.fy < 0.28 ? 0 : h.fy < 0.50 ? 1 : h.fy < 0.72 ? 2 : 3,
+    }));
+  })();
+
+  // Maximum horizontal distance in pixels the cat can leap in a single hop.
+  const PHASE4_MAX_HORIZ = 220;
+  // Y coordinate the cat sits at when standing on the floor (in front of the
+  // cheese wall). Cat sprite is drawn upward from this line.
+  const PHASE4_FLOOR_Y = 585;
+  // Horizontal bounds the cat can walk to on the floor.
+  const PHASE4_FLOOR_XMIN = 40;
+  const PHASE4_FLOOR_XMAX = W - 30;                // right edge of the room
+  const PHASE4_WALK_SPEED = 140;  // px per second on the floor
+
+  // Perches the cat can leap onto besides the cheese-wall holes:
+  //   'table'      — top of the side table (breaks the vase!)
+  //   'chair-seat' — cushion of the wing chair
+  //   'chair-back' — top of the chair's tall back (highest point in the room)
+  //
+  // Each perch has TWO zones:
+  //   {x, y, w, h}                       click zone — small rectangle on the
+  //                                       perch's visible surface
+  //   {underX0, underX1}                 "walk-under" zone — the horizontal
+  //                                       range on the floor where pressing
+  //                                       ↑ leaps up onto the perch
+  //                                       (as wide as the whole piece of
+  //                                       furniture — user requested it that
+  //                                       way).
+  //
+  // Positions match the actual drawing coords:
+  //   drawSideTable(830, 515)    → top surface ~y=505
+  //   drawWingChair(670, 530, 0.80, +0.3)
+  //     - feet at y=530, cushion top ~y=488, back top ~y=395
+  //     - footprint width ~74 px, centered x=670
+  const PHASE4_PERCHES = [
+    { id: 'table',
+      x: 830, y: 505, w: 82, h: 16,
+      underX0: 788, underX1: 872 },
+    { id: 'chair-seat',
+      x: 700, y: 488, w: 62, h: 16,
+      underX0: 630, underX1: 710 },
+    { id: 'chair-back',
+      x: 670, y: 395, w: 44, h: 14,
+      underX0: 652, underX1: 692 },
+  ];
+  // Max Euclidean distance for a perch-launched leap
+  const PHASE4_PERCH_REACH = 260;
+
+  function phase4PerchAt(cx, cy) {
+    for (let i = 0; i < PHASE4_PERCHES.length; i++) {
+      const p = PHASE4_PERCHES[i];
+      if (cx >= p.x - p.w / 2 && cx <= p.x + p.w / 2 &&
+          cy >= p.y - p.h / 2 && cy <= p.y + p.h / 2) return i;
+    }
+    return -1;
+  }
+
+  // Given a from-hole and a candidate to-hole, does the leap succeed?
+  //   'ok'   → the cat lands cleanly
+  //   'fall' → the leap is beyond the cat's ability; cat falls to the floor
+  function phase4CheckJump(fromIdx, toIdx) {
+    if (fromIdx === toIdx) return 'ok';
+    const from = PHASE4_HOLES[fromIdx];
+    const to   = PHASE4_HOLES[toIdx];
+    const dx = to.x - from.x;
+    const dLevel = to.level - from.level;
+    if (dLevel < -1) return 'fall';                    // 2+ levels up
+    if (Math.abs(dx) > PHASE4_MAX_HORIZ) return 'fall'; // too far sideways
+    return 'ok';
+  }
+
+  // Keyboard direction resolution — pick the best hole in a compass direction.
+  function findKbdTarget(fromIdx, dir) {
+    const from = PHASE4_HOLES[fromIdx];
+    let best = -1, bestScore = Infinity;
+    for (let i = 0; i < PHASE4_HOLES.length; i++) {
+      if (i === fromIdx) continue;
+      const h = PHASE4_HOLES[i];
+      const dx = h.x - from.x, dy = h.y - from.y;
+      const dLevel = h.level - from.level;
+      let ok = false, score = Infinity;
+      if (dir === 'up') {
+        ok = (dLevel === -1 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
+        if (ok) score = Math.abs(dx);
+      } else if (dir === 'down') {
+        // Nearest hole below (any level) with a modest horizontal drift.
+        ok = (dLevel >= 1 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
+        if (ok) score = dLevel * 100 + Math.abs(dx);
+      } else if (dir === 'left') {
+        ok = (dLevel === 0 && dx < -6 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
+        if (ok) score = -dx;
+      } else if (dir === 'right') {
+        ok = (dLevel === 0 && dx > 6 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
+        if (ok) score = dx;
+      }
+      if (ok && score < bestScore) { bestScore = score; best = i; }
+    }
+    return best;
+  }
+
+  // What hole (if any) sits under a canvas pixel?
+  function phase4HoleAt(cx, cy) {
+    for (let i = 0; i < PHASE4_HOLES.length; i++) {
+      const h = PHASE4_HOLES[i];
+      const dx = cx - h.x, dy = cy - h.y;
+      if (dx * dx + dy * dy <= (h.r + 4) * (h.r + 4)) return i;
+    }
+    return -1;
+  }
+
+  // Best target for a jump from the floor. Returns
+  //   { type: 'perch'|'hole', idx }  or null.
+  //
+  // Priority:
+  //   1. Any perch the cat is directly UNDER (widest reach — as wide as the
+  //      whole piece of furniture). If more than one applies, pick the
+  //      lowest (closest — chair-seat before chair-back).
+  //   2. Otherwise, the nearest bottom-row cheese hole IN THE CAT'S FACING
+  //      DIRECTION. The cat never leaps backward; if there's no hole in
+  //      front, the leap fails in the facing direction (caller handles).
+  function findFloorJumpTarget(floorX, facing) {
+    // 1. Perches the cat is standing under
+    const underPerches = [];
+    for (let i = 0; i < PHASE4_PERCHES.length; i++) {
+      const p = PHASE4_PERCHES[i];
+      if (floorX >= p.underX0 && floorX <= p.underX1) {
+        underPerches.push({ idx: i, y: p.y });
+      }
+    }
+    if (underPerches.length > 0) {
+      // Prefer the lowest perch — the shortest, safest leap
+      underPerches.sort((a, b) => b.y - a.y);
+      return { type: 'perch', idx: underPerches[0].idx };
+    }
+    // 2. Nearest bottom-row cheese hole IN facing direction
+    const facingSign = facing > 0 ? 1 : -1;
+    let best = -1, bestDist = Infinity;
+    for (let i = 0; i < PHASE4_HOLES.length; i++) {
+      const h = PHASE4_HOLES[i];
+      if (h.level !== 3) continue;
+      const dx = h.x - floorX;
+      // Reject holes behind the cat (allow small tolerance for direct-above)
+      if (facingSign > 0 && dx < -10) continue;
+      if (facingSign < 0 && dx >  10) continue;
+      if (Math.abs(dx) > PHASE4_MAX_HORIZ) continue;
+      if (Math.abs(dx) < bestDist) { bestDist = Math.abs(dx); best = i; }
+    }
+    if (best !== -1) return { type: 'hole', idx: best };
+    return null;
+  }
+
+  // Persistent game state for the mouse-catching mini-game.
+  //
+  // The player controls the CAT with the arrow keys — it clings to the cheese
+  // wall and hops between the holes. A mouse popping out of the hole where
+  // the cat is standing is caught automatically. Mice at OTHER holes retreat
+  // untouched and count as misses.
+  // Cat state — one of several modes.
+  //
+  //   'floor'    : standing/walking on the floor at floorX
+  //   'wall'     : clinging on a hole (catHole)
+  //   'hopping'  : in-air between two holes (or floor→hole, or hole→floor)
+  //   'falling'  : failed leap — rises then falls to floor
+  //   'stunned'  : dizzy sit on floor briefly after a fall
+  const PHASE4 = {
+    initialized: false,
+    score: 0, best: 0, missed: 0, combo: 0,
+    mice: [], popups: [], nextSpawnT: 1.4,
+    // Cat position + mode
+    mode: 'floor',
+    floorX: 320,                     // x-coord when on floor
+    catHole: -1,                     // hole index when on wall (-1 otherwise)
+    catPerch: -1,                    // perch index when on perch (-1 otherwise)
+    catFacing: 1,
+    // Animation endpoints (in canvas pixels)
+    animStartT: 0, animDur: 0,
+    fromX: 0, fromY: 0,
+    toX: 0, toY: 0,
+    arcHeight: 0,                    // parabolic arc peak height
+    // For 'falling' — cat rises, peaks below target, then falls to floor
+    fallPeakY: 0,                    // how high the cat manages to reach
+    // For 'stunned' — where the cat is sitting waiting to recover
+    stunnedX: 320,
+    stunnedUntilT: 0,
+    // Input queues
+    keyLeft: false, keyRight: false, // continuous walk keys
+    pendingDir: null,                // arrow up/down (one-shot)
+    pendingClickIdx: -1,             // hole index clicked
+    pendingPerchClick: -1,           // perch index clicked
+    pendingClickX: -1, pendingClickY: -1,
+
+    // Vase state (side-table perch breaks it when the cat lands there)
+    vaseBroken: false,
+    vaseBreakT: -1,
+  };
+
   function drawPhase4(t) {
+    updatePhase4(t);
+
     drawRoomWall();
     drawFloor();
     drawBaseboard();
-    // Massive cheese block filling the left half + more
-    drawCheeseBlock(30, 100, 570, 470, t);
-    // Small fireplace on the right
+    drawCheeseBlock(PHASE4_CHEESE.x, PHASE4_CHEESE.y,
+                     PHASE4_CHEESE.w, PHASE4_CHEESE.h, t);
     drawSmallFireplace(660, 220, 200, 150, t);
-    // A single wing chair and side table on the right
     drawWingChair(670, 530, 0.80, +0.3);
-    drawSideTable(830, 515);
+    drawPhase4SideTable(t);
+
+    // Mice pop out on TOP of the cheese layer.
+    drawPhase4Mice(t);
+
+    // The cat clings to the wall at its current hole.
+    drawPhase4Cat(t);
+
+    // Floating "+N" popups (combo feedback)
+    drawPhase4Popups(t);
+
+    // HUD in the top-right corner
+    drawPhase4Hud();
+
     drawSceneVignette();
+  }
+
+  function updatePhase4(t) {
+    if (!PHASE4.initialized) {
+      PHASE4.initialized = true;
+      PHASE4.best = parseInt(localStorage.getItem('ac_phase4_best') || '0', 10) || 0;
+      PHASE4.mode = 'floor';
+      PHASE4.floorX = 320;
+      PHASE4.lastFrameT = t;
+      // Optional URL param for testing the debris rendering headless
+      if (new URLSearchParams(location.search).get('vase') === 'broken') {
+        PHASE4.vaseBroken = true;
+        PHASE4.vaseBreakT = -10;   // long past the splash animation
+      }
+    }
+    const dt = Math.min(0.05, t - (PHASE4.lastFrameT ?? t));
+    PHASE4.lastFrameT = t;
+
+    // ============ mode transitions ============
+
+    switch (PHASE4.mode) {
+      case 'floor':      updateFloorMode(t, dt); break;
+      case 'wall':       updateWallMode(t);      break;
+      case 'perch':      updatePerchMode(t);     break;
+      case 'hopping':    updateHoppingMode(t);   break;
+      case 'falling':    updateFallingMode(t);   break;
+      case 'stunned':    updateStunnedMode(t);   break;
+    }
+
+    // ---- Mouse aging + auto-catch ----
+    // Auto-catch only triggers when the cat is CLINGING to a hole ('wall'
+    // mode). Not while walking on the floor, not mid-hop, not falling.
+    const surviving = [];
+    for (const m of PHASE4.mice) {
+      const age = t - m.spawnT;
+      if (m.caught) {
+        if (t - m.caughtT < 0.35) surviving.push(m);
+      } else if (age > m.duration) {
+        PHASE4.missed++;
+        PHASE4.combo = 0;
+      } else {
+        if (PHASE4.mode === 'wall' && m.hole === PHASE4.catHole
+            && phase4PopupProgress(m, t) > 0.35) {
+          m.caught = true;
+          m.caughtT = t;
+          PHASE4.combo++;
+          const gained = 1 + Math.floor((PHASE4.combo - 1) / 3);
+          PHASE4.score += gained;
+          if (PHASE4.score > PHASE4.best) {
+            PHASE4.best = PHASE4.score;
+            try { localStorage.setItem('ac_phase4_best', String(PHASE4.best)); }
+            catch (_) { /* private mode etc — ignore */ }
+          }
+          const hole = PHASE4_HOLES[m.hole];
+          PHASE4.popups.push({
+            text: `+${gained}${PHASE4.combo >= 3 ? ' ×' + PHASE4.combo : ''}`,
+            x: hole.x, y: hole.y - hole.r - 6, startT: t,
+          });
+        }
+        surviving.push(m);
+      }
+    }
+    PHASE4.mice = surviving;
+    PHASE4.popups = PHASE4.popups.filter(p => t - p.startT < 0.9);
+
+    // ---- Spawn a new mouse in a free hole if it's time ----
+    if (t >= PHASE4.nextSpawnT) {
+      const occupied = new Set(PHASE4.mice.map(m => m.hole));
+      if (PHASE4.mode === 'wall') occupied.add(PHASE4.catHole);
+      const free = [];
+      for (let i = 0; i < PHASE4_HOLES.length; i++) {
+        if (!occupied.has(i)) free.push(i);
+      }
+      if (free.length > 0) {
+        const idx = free[Math.floor(Math.random() * free.length)];
+        PHASE4.mice.push({
+          hole: idx,
+          spawnT: t,
+          duration: 1.2 + Math.random() * 1.1,
+          caught: false, caughtT: 0,
+        });
+      }
+      const base = Math.max(0.5, 1.05 - PHASE4.score * 0.01);
+      PHASE4.nextSpawnT = t + base + Math.random() * 0.6;
+    }
+  }
+
+  // ============ Mode update helpers ============
+
+  function updateFloorMode(t, dt) {
+    // Continuous walking while a key is held
+    let vx = 0;
+    if (PHASE4.keyLeft)  vx -= PHASE4_WALK_SPEED;
+    if (PHASE4.keyRight) vx += PHASE4_WALK_SPEED;
+    if (vx !== 0) {
+      PHASE4.floorX = clamp(PHASE4.floorX + vx * dt,
+                             PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
+      PHASE4.catFacing = vx > 0 ? 1 : -1;
+    }
+
+    // Click on a perch → attempt leap (checked before holes because perches
+    // sit ON TOP of other clickables visually)
+    if (PHASE4.pendingPerchClick >= 0) {
+      const idx = PHASE4.pendingPerchClick;
+      PHASE4.pendingPerchClick = -1;
+      const p = PHASE4_PERCHES[idx];
+      const dist = Math.hypot(p.x - PHASE4.floorX, p.y - PHASE4_FLOOR_Y);
+      if (dist <= PHASE4_PERCH_REACH) {
+        beginHopFloorToPerch(t, idx);
+      } else {
+        beginFailedJump(t, PHASE4.floorX, PHASE4_FLOOR_Y, p.x, p.y);
+      }
+    }
+
+    // Click on a hole
+    if (PHASE4.pendingClickIdx >= 0) {
+      const idx = PHASE4.pendingClickIdx;
+      PHASE4.pendingClickIdx = -1;
+      const to = PHASE4_HOLES[idx];
+      if (to.level === 3 && Math.abs(to.x - PHASE4.floorX) <= PHASE4_MAX_HORIZ) {
+        beginHopFloorToHole(t, idx);
+      } else {
+        beginFailedJump(t, PHASE4.floorX, PHASE4_FLOOR_Y, to.x, to.y);
+      }
+    }
+
+    // Arrow up on floor
+    if (PHASE4.pendingDir === 'up') {
+      PHASE4.pendingDir = null;
+      const target = findFloorJumpTarget(PHASE4.floorX, PHASE4.catFacing);
+      if (target && target.type === 'perch') {
+        beginHopFloorToPerch(t, target.idx);
+      } else if (target && target.type === 'hole') {
+        beginHopFloorToHole(t, target.idx);
+      } else {
+        // Nothing reachable in front — small failed jump in facing direction
+        const tx = PHASE4.floorX + PHASE4.catFacing * 100;
+        const ty = PHASE4_FLOOR_Y - 100;
+        beginFailedJump(t, PHASE4.floorX, PHASE4_FLOOR_Y, tx, ty);
+      }
+    } else if (PHASE4.pendingDir) {
+      PHASE4.pendingDir = null;
+    }
+    PHASE4.pendingClickX = PHASE4.pendingClickY = -1;
+  }
+
+  function updateWallMode(t) {
+    const cur = PHASE4_HOLES[PHASE4.catHole];
+    const fx = cur.x, fy = holePawsY(PHASE4.catHole);
+    if (PHASE4.pendingPerchClick >= 0) {
+      const idx = PHASE4.pendingPerchClick;
+      PHASE4.pendingPerchClick = -1;
+      const p = PHASE4_PERCHES[idx];
+      const dist = Math.hypot(p.x - fx, p.y - fy);
+      if (dist <= PHASE4_PERCH_REACH) beginHopHoleToPerch(t, idx);
+      else                            beginFailedJump(t, fx, fy, p.x, p.y);
+      return;
+    }
+    if (PHASE4.pendingClickIdx >= 0) {
+      const target = PHASE4.pendingClickIdx;
+      PHASE4.pendingClickIdx = -1;
+      if (target === PHASE4.catHole) return;
+      const verdict = phase4CheckJump(PHASE4.catHole, target);
+      if (verdict === 'ok') {
+        beginHopHoleToHole(t, target);
+      } else {
+        const to = PHASE4_HOLES[target];
+        beginFailedJump(t, fx, fy, to.x, to.y);
+      }
+    } else if (PHASE4.pendingDir) {
+      const dir = PHASE4.pendingDir;
+      PHASE4.pendingDir = null;
+      const cur = PHASE4_HOLES[PHASE4.catHole];
+      if (dir === 'down' && cur.level === 3) {
+        beginHopHoleToFloor(t, cur.x);
+        return;
+      }
+      const target = findKbdTarget(PHASE4.catHole, dir);
+      if (target !== -1)          beginHopHoleToHole(t, target);
+      else if (dir === 'down')    beginHopHoleToFloor(t, cur.x);
+    }
+  }
+
+  function updatePerchMode(t) {
+    const cur = PHASE4_PERCHES[PHASE4.catPerch];
+    // Click on hole → try leap
+    if (PHASE4.pendingClickIdx >= 0) {
+      const idx = PHASE4.pendingClickIdx;
+      PHASE4.pendingClickIdx = -1;
+      const h = PHASE4_HOLES[idx];
+      const dist = Math.hypot(h.x - cur.x, (h.y + h.r) - cur.y);
+      if (dist <= PHASE4_PERCH_REACH) beginHopPerchToHole(t, idx);
+      else                            beginFailedJump(t, cur.x, cur.y, h.x, h.y);
+      return;
+    }
+    // Click on another perch → try leap
+    if (PHASE4.pendingPerchClick >= 0) {
+      const idx = PHASE4.pendingPerchClick;
+      PHASE4.pendingPerchClick = -1;
+      if (idx === PHASE4.catPerch) return;
+      const p = PHASE4_PERCHES[idx];
+      const dist = Math.hypot(p.x - cur.x, p.y - cur.y);
+      if (dist <= PHASE4_PERCH_REACH) beginHopPerchToPerch(t, idx);
+      else                            beginFailedJump(t, cur.x, cur.y, p.x, p.y);
+      return;
+    }
+    // Keyboard
+    if (PHASE4.pendingDir) {
+      const dir = PHASE4.pendingDir;
+      PHASE4.pendingDir = null;
+      if (dir === 'down') {
+        beginHopPerchToFloor(t, cur.x);
+      } else if (dir === 'up') {
+        // From chair-seat, up → chair-back; else nearest hole above within reach
+        if (cur.id === 'chair-seat') {
+          const backIdx = PHASE4_PERCHES.findIndex(p => p.id === 'chair-back');
+          if (backIdx >= 0) beginHopPerchToPerch(t, backIdx);
+        } else {
+          // Find closest hole above this perch within reach
+          let best = -1, bestDist = Infinity;
+          for (let i = 0; i < PHASE4_HOLES.length; i++) {
+            const h = PHASE4_HOLES[i];
+            if (h.y + h.r >= cur.y) continue;
+            const d = Math.hypot(h.x - cur.x, (h.y + h.r) - cur.y);
+            if (d <= PHASE4_PERCH_REACH && d < bestDist) { bestDist = d; best = i; }
+          }
+          if (best !== -1) beginHopPerchToHole(t, best);
+        }
+      } else {
+        // Left/right on perch — leap to the nearest other perch OR cheese
+        // hole in that direction, within reach. Enables chair↔table and
+        // chair↔nearest-cheese-hole navigation with just the arrow keys.
+        const facingSign = dir === 'right' ? 1 : -1;
+        let best = null, bestDist = Infinity;
+        for (let i = 0; i < PHASE4_PERCHES.length; i++) {
+          if (i === PHASE4.catPerch) continue;
+          const p = PHASE4_PERCHES[i];
+          const dx = p.x - cur.x;
+          if (dx * facingSign <= 4) continue;
+          const d = Math.hypot(dx, p.y - cur.y);
+          if (d <= PHASE4_PERCH_REACH && d < bestDist) {
+            bestDist = d; best = { type: 'perch', idx: i };
+          }
+        }
+        for (let i = 0; i < PHASE4_HOLES.length; i++) {
+          const h = PHASE4_HOLES[i];
+          const dx = h.x - cur.x;
+          if (dx * facingSign <= 4) continue;
+          const d = Math.hypot(dx, (h.y + h.r) - cur.y);
+          if (d <= PHASE4_PERCH_REACH && d < bestDist) {
+            bestDist = d; best = { type: 'hole', idx: i };
+          }
+        }
+        if (best) {
+          PHASE4.catFacing = facingSign;
+          if (best.type === 'perch') beginHopPerchToPerch(t, best.idx);
+          else                       beginHopPerchToHole(t, best.idx);
+        }
+      }
+    }
+  }
+
+  function updateHoppingMode(t) {
+    if (t - PHASE4.animStartT < PHASE4.animDur) return;
+    // Landing — mode set by whichever hop started this animation
+    if (PHASE4.catHole >= 0) {
+      PHASE4.mode = 'wall';
+    } else if (PHASE4.catPerch >= 0) {
+      PHASE4.mode = 'perch';
+      // Landing on the side-table perch smashes the vase
+      const p = PHASE4_PERCHES[PHASE4.catPerch];
+      if (p.id === 'table' && !PHASE4.vaseBroken) {
+        PHASE4.vaseBroken = true;
+        PHASE4.vaseBreakT = t;
+      }
+    } else {
+      PHASE4.mode = 'floor';
+      PHASE4.floorX = PHASE4.toX;
+    }
+  }
+
+  function updateFallingMode(t) {
+    if (t - PHASE4.animStartT < PHASE4.animDur) return;
+    // If the failed jump started from the floor (fromY ≈ floor Y), the cat
+    // just lands and resumes walking — no dizzy pose. The stunned pose only
+    // makes sense when the cat has FALLEN from height (hole or perch).
+    if (Math.abs(PHASE4.fromY - PHASE4_FLOOR_Y) < 10) {
+      PHASE4.mode = 'floor';
+      PHASE4.floorX = clamp(PHASE4.toX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
+      PHASE4.catHole = -1; PHASE4.catPerch = -1;
+      PHASE4.pendingDir = null;
+      PHASE4.pendingClickIdx = -1;
+      PHASE4.pendingPerchClick = -1;
+      return;
+    }
+    PHASE4.mode = 'stunned';
+    PHASE4.stunnedX = PHASE4.toX;
+    PHASE4.stunnedUntilT = t + 0.7;
+  }
+
+  function updateStunnedMode(t) {
+    if (t < PHASE4.stunnedUntilT) return;
+    PHASE4.mode = 'floor';
+    PHASE4.floorX = clamp(PHASE4.stunnedX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
+    PHASE4.catHole = -1;
+    PHASE4.pendingDir = null;
+    PHASE4.pendingClickIdx = -1;
+  }
+
+  // ============ Motion primitives ============
+
+  // For hole endpoints the CAT'S PAWS anchor at (hole.x, hole.y + hole.r) —
+  // the bottom rim of the hole. `holeY(idx)` gives that y consistently.
+  function holePawsY(idx) {
+    const h = PHASE4_HOLES[idx];
+    return h.y + h.r;
+  }
+
+  function beginHopFloorToHole(t, targetIdx) {
+    const to = PHASE4_HOLES[targetIdx];
+    PHASE4.fromX = PHASE4.floorX; PHASE4.fromY = PHASE4_FLOOR_Y;
+    PHASE4.toX = to.x;            PHASE4.toY = holePawsY(targetIdx);
+    PHASE4.catHole = targetIdx; PHASE4.catPerch = -1;
+    PHASE4.catFacing = to.x >= PHASE4.floorX ? 1 : -1;
+    PHASE4.arcHeight = 40;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.35;
+    PHASE4.mode = 'hopping';
+  }
+
+  function beginHopHoleToHole(t, targetIdx) {
+    const from = PHASE4_HOLES[PHASE4.catHole];
+    const to   = PHASE4_HOLES[targetIdx];
+    PHASE4.fromX = from.x; PHASE4.fromY = holePawsY(PHASE4.catHole);
+    PHASE4.toX   = to.x;   PHASE4.toY   = holePawsY(targetIdx);
+    const dist = Math.hypot(to.x - from.x, to.y - from.y);
+    PHASE4.arcHeight = Math.min(50, 8 + dist * 0.10);
+    PHASE4.catHole = targetIdx; PHASE4.catPerch = -1;
+    PHASE4.catFacing = to.x >= from.x ? 1 : -1;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.28;
+    PHASE4.mode = 'hopping';
+  }
+
+  function beginHopHoleToFloor(t, landX) {
+    const from = PHASE4_HOLES[PHASE4.catHole];
+    PHASE4.fromX = from.x; PHASE4.fromY = holePawsY(PHASE4.catHole);
+    PHASE4.toX = clamp(landX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
+    PHASE4.toY = PHASE4_FLOOR_Y;
+    PHASE4.arcHeight = 30;
+    PHASE4.catHole = -1; PHASE4.catPerch = -1;
+    PHASE4.catFacing = PHASE4.toX >= from.x ? 1 : -1;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.35;
+    PHASE4.mode = 'hopping';
+  }
+
+  // ---- Perch hop helpers ----
+  function beginHopFloorToPerch(t, perchIdx) {
+    const p = PHASE4_PERCHES[perchIdx];
+    PHASE4.fromX = PHASE4.floorX; PHASE4.fromY = PHASE4_FLOOR_Y;
+    PHASE4.toX = p.x;             PHASE4.toY = p.y;
+    PHASE4.catHole = -1; PHASE4.catPerch = perchIdx;
+    PHASE4.catFacing = p.x >= PHASE4.floorX ? 1 : -1;
+    PHASE4.arcHeight = 60;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.40;
+    PHASE4.mode = 'hopping';
+  }
+  function beginHopHoleToPerch(t, perchIdx) {
+    const from = PHASE4_HOLES[PHASE4.catHole];
+    const p = PHASE4_PERCHES[perchIdx];
+    PHASE4.fromX = from.x; PHASE4.fromY = holePawsY(PHASE4.catHole);
+    PHASE4.toX = p.x;      PHASE4.toY = p.y;
+    PHASE4.catHole = -1; PHASE4.catPerch = perchIdx;
+    PHASE4.catFacing = p.x >= from.x ? 1 : -1;
+    PHASE4.arcHeight = 55;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.38;
+    PHASE4.mode = 'hopping';
+  }
+  function beginHopPerchToPerch(t, targetPerchIdx) {
+    const from = PHASE4_PERCHES[PHASE4.catPerch];
+    const p    = PHASE4_PERCHES[targetPerchIdx];
+    PHASE4.fromX = from.x; PHASE4.fromY = from.y;
+    PHASE4.toX = p.x;      PHASE4.toY = p.y;
+    PHASE4.catHole = -1; PHASE4.catPerch = targetPerchIdx;
+    PHASE4.catFacing = p.x >= from.x ? 1 : -1;
+    PHASE4.arcHeight = 45;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.32;
+    PHASE4.mode = 'hopping';
+  }
+  function beginHopPerchToHole(t, targetHoleIdx) {
+    const from = PHASE4_PERCHES[PHASE4.catPerch];
+    const to = PHASE4_HOLES[targetHoleIdx];
+    PHASE4.fromX = from.x; PHASE4.fromY = from.y;
+    PHASE4.toX = to.x;     PHASE4.toY = holePawsY(targetHoleIdx);
+    PHASE4.catHole = targetHoleIdx; PHASE4.catPerch = -1;
+    PHASE4.catFacing = to.x >= from.x ? 1 : -1;
+    const dist = Math.hypot(to.x - from.x, to.y - from.y);
+    PHASE4.arcHeight = Math.min(55, 15 + dist * 0.08);
+    PHASE4.animStartT = t; PHASE4.animDur = 0.38;
+    PHASE4.mode = 'hopping';
+  }
+  function beginHopPerchToFloor(t, landX) {
+    const from = PHASE4_PERCHES[PHASE4.catPerch];
+    PHASE4.fromX = from.x; PHASE4.fromY = from.y;
+    PHASE4.toX = clamp(landX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
+    PHASE4.toY = PHASE4_FLOOR_Y;
+    PHASE4.arcHeight = 30;
+    PHASE4.catHole = -1; PHASE4.catPerch = -1;
+    PHASE4.catFacing = PHASE4.toX >= from.x ? 1 : -1;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.35;
+    PHASE4.mode = 'hopping';
+  }
+
+  // ---- Failed jumps: cat clearly rises toward the target, doesn't make
+  //      it, then falls to the floor. Uses a two-phase trajectory (rise +
+  //      fall) that reads as "attempted the jump."
+
+  // Generic failed leap. Cat springs from (fx, fy) toward (tx, ty), only
+  // reaches ~55 % of the way up, then falls to the floor. Works whether the
+  // cat starts on the floor, a hole, or a perch — updateFallingMode uses
+  // fromY to decide whether to enter a stunned state afterwards.
+  function beginFailedJump(t, fx, fy, tx, ty) {
+    PHASE4.fromX = fx; PHASE4.fromY = fy;
+    PHASE4.toX = clamp(lerp(fx, tx, 0.75),
+                        PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
+    PHASE4.toY = PHASE4_FLOOR_Y;
+    PHASE4.fallPeakY = lerp(fy, ty, 0.55);
+    PHASE4.catFacing = tx >= fx ? 1 : -1;
+    PHASE4.catHole = -1; PHASE4.catPerch = -1;
+    PHASE4.animStartT = t; PHASE4.animDur = 0.9;
+    PHASE4.mode = 'falling';
+    PHASE4.combo = 0;
+  }
+
+  // ============ Rendering ============
+
+  function drawPhase4Cat(t) {
+    let x, y, pose;
+    switch (PHASE4.mode) {
+      case 'floor': {
+        const walking = PHASE4.keyLeft || PHASE4.keyRight;
+        x = PHASE4.floorX; y = PHASE4_FLOOR_Y;
+        pose = walking ? 'floor-walk' : 'floor-idle';
+        break;
+      }
+      case 'wall': {
+        // Paw grip = bottom rim of the hole. Sprite hangs downward from there.
+        const h = PHASE4_HOLES[PHASE4.catHole];
+        x = h.x; y = h.y + h.r;
+        pose = 'cling';
+        break;
+      }
+      case 'perch': {
+        const p = PHASE4_PERCHES[PHASE4.catPerch];
+        x = p.x; y = p.y;
+        pose = 'floor-idle';   // standing on the perch
+        break;
+      }
+      case 'hopping': {
+        const p = clamp((t - PHASE4.animStartT) / PHASE4.animDur, 0, 1);
+        x = lerp(PHASE4.fromX, PHASE4.toX, p);
+        y = lerp(PHASE4.fromY, PHASE4.toY, p) - Math.sin(p * Math.PI) * PHASE4.arcHeight;
+        pose = 'jumping';
+        break;
+      }
+      case 'falling': {
+        // Two-phase: rise 0..0.4 (cat visibly leaps up), then fall 0.4..1
+        const p = clamp((t - PHASE4.animStartT) / PHASE4.animDur, 0, 1);
+        const rP = 0.4;
+        if (p < rP) {
+          const q = p / rP;
+          // Ease-out rise (fast at start, slows as it peaks)
+          const rise = 1 - (1 - q) * (1 - q);
+          x = lerp(PHASE4.fromX, lerp(PHASE4.fromX, PHASE4.toX, 0.55), q);
+          y = lerp(PHASE4.fromY, PHASE4.fallPeakY, rise);
+          pose = 'jumping';
+        } else {
+          const q = (p - rP) / (1 - rP);
+          // Gravity fall (ease-in)
+          x = lerp(lerp(PHASE4.fromX, PHASE4.toX, 0.55), PHASE4.toX, q);
+          y = lerp(PHASE4.fallPeakY, PHASE4.toY, q * q);
+          pose = 'falling';
+        }
+        break;
+      }
+      case 'stunned':
+        x = PHASE4.stunnedX; y = PHASE4_FLOOR_Y;
+        pose = 'stunned';
+        break;
+    }
+    drawCheeseCat(x, y, PHASE4.catFacing, t, pose);
+  }
+
+  // The cat drawn in one of several poses:
+  //   'cling'   — resting on a hole, front paws gripping the top edge
+  //   'jumping' — mid-air between holes (elongated leaping silhouette)
+  //   'falling' — plummeting off the wall (splayed limbs, panicked ears)
+  //   'floor'   — sitting on the alley floor after landing from a fall
+  function drawCheeseCat(cx, cy, dir, t, pose) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(dir, 1);
+
+    const fur = '#1a0e18', shade = '#08040a', eye = '#ffe08a';
+
+    // Contact shadow (skipped mid-air)
+    if (pose !== 'jumping' && pose !== 'falling') {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath(); ctx.ellipse(0, 22, 20, 4, 0, 0, TAU); ctx.fill();
+    }
+
+    if (pose === 'jumping') {
+      // Leaping silhouette — body elongated, legs streamlined back
+      ctx.fillStyle = fur;
+      ctx.beginPath(); ctx.ellipse(0, -4, 20, 6, 0, 0, TAU); ctx.fill();
+      // Head slightly forward
+      ctx.beginPath(); ctx.arc(15, -8, 8, 0, TAU); ctx.fill();
+      // Ears swept back
+      ctx.beginPath();
+      ctx.moveTo(10, -12); ctx.lineTo(9, -18);  ctx.lineTo(14, -13); ctx.closePath();
+      ctx.moveTo(15, -13); ctx.lineTo(15, -18); ctx.lineTo(19, -13); ctx.closePath();
+      ctx.fill();
+      // Front paws stretched forward
+      ctx.strokeStyle = fur; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(10, -2); ctx.lineTo(22, 1);
+      ctx.moveTo(12, -2); ctx.lineTo(22, 4);
+      ctx.stroke();
+      // Back legs streaming behind
+      ctx.beginPath();
+      ctx.moveTo(-8, -2); ctx.lineTo(-18, 2);
+      ctx.moveTo(-10, -3); ctx.lineTo(-18, -2);
+      ctx.stroke();
+      // Tail straight back
+      ctx.beginPath();
+      ctx.moveTo(-18, -4);
+      ctx.lineTo(-28, -6);
+      ctx.stroke();
+      // Amber eye
+      const g = ctx.createRadialGradient(17, -8, 0, 17, -8, 4);
+      g.addColorStop(0, 'rgba(255,220,120,0.9)');
+      g.addColorStop(1, 'rgba(255,140,40,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(17, -8, 4, 0, TAU); ctx.fill();
+      ctx.fillStyle = eye;
+      ctx.beginPath(); ctx.arc(17, -8, 1.4, 0, TAU); ctx.fill();
+    } else if (pose === 'falling') {
+      // Panicked spread-eagle — all four limbs splayed, tail up
+      ctx.fillStyle = fur;
+      ctx.beginPath(); ctx.ellipse(0, -2, 14, 8, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(9, -12, 8, 0, TAU); ctx.fill();
+      // Ears alert / back
+      ctx.beginPath();
+      ctx.moveTo(4, -16);  ctx.lineTo(6, -24);  ctx.lineTo(10, -16); ctx.closePath();
+      ctx.moveTo(11, -16); ctx.lineTo(13, -24); ctx.lineTo(17, -16); ctx.closePath();
+      ctx.fill();
+      // Splayed legs
+      ctx.strokeStyle = fur; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-8, 0);  ctx.lineTo(-14, 8);
+      ctx.moveTo(-4, 4);  ctx.lineTo(-8, 12);
+      ctx.moveTo( 6, 4);  ctx.lineTo(10, 12);
+      ctx.moveTo( 10, 0); ctx.lineTo(16, 6);
+      ctx.stroke();
+      // Tail sticking straight up
+      ctx.beginPath();
+      ctx.moveTo(-10, -4);
+      ctx.quadraticCurveTo(-16, -18, -8, -24);
+      ctx.stroke();
+      // Wide surprised eye
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(11, -12, 3, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(11, -12, 1.2, 0, TAU); ctx.fill();
+    } else if (pose === 'stunned') {
+      // Sitting stunned on the floor, tail low, head bowed, dizzy stars
+      ctx.fillStyle = fur;
+      ctx.beginPath(); ctx.ellipse(-2, -6, 15, 10, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(7, -14, 8, 0, TAU); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(2, -18);  ctx.lineTo(3, -22);  ctx.lineTo(7, -19); ctx.closePath();
+      ctx.moveTo(8, -19);  ctx.lineTo(11, -22); ctx.lineTo(13, -18); ctx.closePath();
+      ctx.fill();
+      ctx.fillRect(-10, 2, 4, 4);
+      ctx.fillRect( -4, 2, 4, 4);
+      ctx.fillRect(  6, 2, 4, 4);
+      ctx.strokeStyle = fur; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-12, -4);
+      ctx.quadraticCurveTo(-22, 0, -18, 6);
+      ctx.stroke();
+      // Dizzy stars
+      const sway = Math.sin(t * 3) * 4;
+      ctx.fillStyle = '#ffe08a';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✦', 4 + sway, -28);
+      ctx.fillText('✧', -6 + sway * 0.7, -32);
+      // Closed eye (dazed)
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(6, -14); ctx.lineTo(11, -14); ctx.stroke();
+    } else if (pose === 'floor-idle' || pose === 'floor-walk') {
+      // Cat standing on the floor, side view. Walking pose animates legs.
+      const walkT = pose === 'floor-walk' ? t * 7 : 0;
+      const step = pose === 'floor-walk' ? Math.sin(walkT) : 0;
+      ctx.fillStyle = fur;
+      // Body — horizontal
+      ctx.beginPath(); ctx.ellipse(0, -10, 15, 7, 0, 0, TAU); ctx.fill();
+      // Head — up front
+      ctx.beginPath(); ctx.arc(12, -18, 8, 0, TAU); ctx.fill();
+      // Ears
+      ctx.beginPath();
+      ctx.moveTo(7, -22);  ctx.lineTo(9, -30);  ctx.lineTo(13, -22); ctx.closePath();
+      ctx.moveTo(14, -22); ctx.lineTo(16, -30); ctx.lineTo(20, -22); ctx.closePath();
+      ctx.fill();
+      // Legs — with walk cycle when moving
+      ctx.fillRect(-10, -4, 3, 6 + step);
+      ctx.fillRect(-4,  -4, 3, 6 - step);
+      ctx.fillRect( 4,  -4, 3, 6 - step);
+      ctx.fillRect(10,  -4, 3, 6 + step);
+      // Tail arched up
+      ctx.strokeStyle = fur; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-12, -8);
+      ctx.quadraticCurveTo(-22, -18, -16, -26);
+      ctx.stroke();
+      // Amber eye
+      const g = ctx.createRadialGradient(15, -18, 0, 15, -18, 4);
+      g.addColorStop(0, 'rgba(255,220,120,0.9)');
+      g.addColorStop(1, 'rgba(255,140,40,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(15, -18, 4, 0, TAU); ctx.fill();
+      ctx.fillStyle = eye;
+      ctx.beginPath(); ctx.arc(15, -18, 1.3, 0, TAU); ctx.fill();
+      // Whiskers
+      ctx.strokeStyle = 'rgba(230,220,220,0.55)'; ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(19, -17); ctx.lineTo(28, -18);
+      ctx.moveTo(19, -15); ctx.lineTo(28, -14);
+      ctx.stroke();
+    } else {
+      // 'cling' — HANGING from the BOTTOM rim of a hole. The sprite anchor
+      // is the paw grip point (cat is drawn at cy = hole.y + hole.r); the
+      // body hangs downward from there onto the cheese wall below the hole.
+      const clawGleam = '#a89890';
+      // Front paws — knuckles on the bottom rim of the hole (right at cy=0)
+      ctx.fillStyle = fur;
+      ctx.fillRect(-10, -3, 6, 5);      // left paw
+      ctx.fillRect(  4, -3, 6, 5);      // right paw
+      // Claw gleams on the rim
+      ctx.fillStyle = clawGleam;
+      for (const px of [-9, -7, -5, 5, 7, 9]) ctx.fillRect(px, -3, 1, 2);
+      // Arms — from paws down to shoulders
+      ctx.fillStyle = fur;
+      ctx.fillRect(-8, 2, 4, 8);
+      ctx.fillRect( 4, 2, 4, 8);
+      // Head — below shoulders, looking up
+      ctx.beginPath(); ctx.arc(0, 15, 7, 0, TAU); ctx.fill();
+      // Ears (small, upright toward the hole above)
+      ctx.beginPath();
+      ctx.moveTo(-5, 11); ctx.lineTo(-4, 5); ctx.lineTo(-1, 11); ctx.closePath();
+      ctx.moveTo(1, 11);  ctx.lineTo(4, 5);  ctx.lineTo(5, 11); ctx.closePath();
+      ctx.fill();
+      // Body — vertical oval, extending down from head
+      ctx.beginPath(); ctx.ellipse(0, 30, 8, 12, 0, 0, TAU); ctx.fill();
+      // Belly shading
+      ctx.fillStyle = shade;
+      ctx.beginPath(); ctx.ellipse(0, 34, 6, 8, 0, 0, TAU); ctx.fill();
+      // Back legs — hanging straight down from the hips
+      ctx.fillStyle = fur;
+      ctx.fillRect(-5, 40, 4, 12);
+      ctx.fillRect( 1, 40, 4, 12);
+      // Rear paw pads
+      ctx.beginPath(); ctx.ellipse(-3, 52, 3, 2, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse( 3, 52, 3, 2, 0, 0, TAU); ctx.fill();
+      // Tail hanging behind, gently curled
+      ctx.strokeStyle = fur; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-6, 32);
+      ctx.quadraticCurveTo(-14, 44, -10, 54);
+      ctx.stroke();
+      // Two amber eyes (facing us — cat's chest is against the wall)
+      ctx.fillStyle = eye;
+      ctx.beginPath(); ctx.arc(-2, 14, 1.1, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc( 2, 14, 1.1, 0, TAU); ctx.fill();
+      // Tiny pink nose
+      ctx.fillStyle = '#c88098';
+      ctx.beginPath(); ctx.arc(0, 18, 0.9, 0, TAU); ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function phase4PopupProgress(m, t) {
+    // 0..1 rise/hold/retract envelope
+    const age = t - m.spawnT;
+    if (m.caught) {
+      // Caught: quick shrink outwards
+      const p = (t - m.caughtT) / 0.35;
+      return Math.max(0, 1 - p);
+    }
+    const rise = 0.18, retract = 0.22;
+    if (age < rise)                     return age / rise;
+    if (age < m.duration - retract)     return 1;
+    return Math.max(0, (m.duration - age) / retract);
+  }
+
+  function drawPhase4Mice(t) {
+    for (const m of PHASE4.mice) {
+      const hole = PHASE4_HOLES[m.hole];
+      const popup = phase4PopupProgress(m, t);
+      drawMouseInHole(hole.x, hole.y, hole.r, popup, m.caught, t);
+    }
+  }
+
+  // A round cheese-hole occupant: full mouse rising from below with head,
+  // ears, eyes, snout, nose and whiskers. Clipped to the hole so it
+  // reads as "peeking out from inside."
+  function drawMouseInHole(cx, cy, holeR, popup, caught, t) {
+    if (popup <= 0) return;
+    // Head Y — starts hidden below the hole, rises to just above hole centre.
+    // popup=0 → head far below (invisible via clip)
+    // popup=1 → head at cy - 2 (fully out, with body still partly in hole)
+    const headY = cy + holeR * 0.6 - popup * (holeR * 1.05);
+    // Small idle bob when fully popped up
+    const idle = (popup > 0.9 && !caught) ? Math.sin(t * 8) * 0.6 : 0;
+    const my = headY + idle;
+
+    ctx.save();
+    // Clip so nothing paints outside the hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, holeR - 1, 0, TAU);
+    ctx.clip();
+
+    const fur   = '#b0a094';
+    const shade = '#7c6e60';
+    const light = '#dccfc0';
+    const nose  = '#e88098';
+    const dark  = '#100810';
+
+    // Body — big oval behind and below the head, mostly hidden by hole
+    ctx.fillStyle = shade;
+    ctx.beginPath();
+    ctx.ellipse(cx, my + 15, 14, 12, 0, 0, TAU);
+    ctx.fill();
+
+    // Shoulder highlight
+    ctx.fillStyle = fur;
+    ctx.beginPath();
+    ctx.ellipse(cx, my + 10, 11, 8, 0, 0, TAU);
+    ctx.fill();
+
+    // Ears (behind the head)
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.arc(cx - 8, my - 8, 5.5, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 8, my - 8, 5.5, 0, TAU); ctx.fill();
+    // Inner ear (pink)
+    ctx.fillStyle = '#f090b0';
+    ctx.beginPath(); ctx.arc(cx - 8, my - 7, 2.8, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 8, my - 7, 2.8, 0, TAU); ctx.fill();
+
+    // Head
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.arc(cx, my, 10, 0, TAU); ctx.fill();
+
+    // Head shading (bottom half slightly darker)
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.beginPath(); ctx.arc(cx, my + 2, 10, 0, Math.PI); ctx.fill();
+
+    // Snout — protrudes forward-down
+    ctx.fillStyle = light;
+    ctx.beginPath();
+    ctx.ellipse(cx, my + 4, 6, 4.5, 0, 0, TAU);
+    ctx.fill();
+
+    // Eyes
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.arc(cx - 4, my - 1.5, 1.9, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 4, my - 1.5, 1.9, 0, TAU); ctx.fill();
+    // Highlights
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx - 3.4, my - 2.1, 0.6, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 4.6, my - 2.1, 0.6, 0, TAU); ctx.fill();
+
+    // Nose (pink dot at end of snout)
+    ctx.fillStyle = nose;
+    ctx.beginPath(); ctx.arc(cx, my + 4, 1.4, 0, TAU); ctx.fill();
+
+    // Whiskers
+    ctx.strokeStyle = 'rgba(60,40,40,0.75)';
+    ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, my + 4); ctx.lineTo(cx - 15, my + 3);
+    ctx.moveTo(cx - 5, my + 5); ctx.lineTo(cx - 15, my + 6);
+    ctx.moveTo(cx + 5, my + 4); ctx.lineTo(cx + 15, my + 3);
+    ctx.moveTo(cx + 5, my + 5); ctx.lineTo(cx + 15, my + 6);
+    ctx.stroke();
+
+    // If caught, add a small "surprise" burst effect on top
+    if (caught) {
+      ctx.strokeStyle = '#ffe08a';
+      ctx.lineWidth = 1.5;
+      const r0 = 6, r1 = 14 * (1 - popup);
+      for (let i = 0; i < 6; i++) {
+        const a = i * (TAU / 6);
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r0, my + Math.sin(a) * r0);
+        ctx.lineTo(cx + Math.cos(a) * r1, my + Math.sin(a) * r1);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function drawPhase4Popups(t) {
+    ctx.save();
+    ctx.textAlign = 'center';
+    for (const p of PHASE4.popups) {
+      const age = t - p.startT;
+      const alpha = 1 - age / 0.9;
+      const y = p.y - age * 40;
+      ctx.font = 'bold 20px "Georgia", serif';
+      ctx.fillStyle = `rgba(60,20,10,${alpha})`;
+      ctx.fillText(p.text, p.x + 2, y + 2);
+      ctx.fillStyle = `rgba(255,220,80,${alpha})`;
+      ctx.fillText(p.text, p.x, y);
+    }
+    ctx.restore();
+  }
+
+  function drawPhase4Hud() {
+    ctx.save();
+    // Panel
+    ctx.fillStyle = 'rgba(20,10,20,0.75)';
+    ctx.fillRect(W - 210, 12, 195, 78);
+    ctx.strokeStyle = 'rgba(255,220,180,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(W - 210, 12, 195, 78);
+    // Text
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#f8e8c0';
+    ctx.font = 'bold 20px "Georgia", serif';
+    ctx.fillText(`Score  ${PHASE4.score}`, W - 22, 40);
+    ctx.font = '14px "Georgia", serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText(`Best  ${PHASE4.best}`, W - 22, 62);
+    ctx.fillStyle = PHASE4.combo >= 3 ? '#ffcc44' : '#c9b98a';
+    ctx.fillText(`Combo  x${Math.max(1, PHASE4.combo)}`, W - 22, 80);
+    ctx.restore();
   }
 
   // A huge wedge of swiss cheese with round mouse holes. Some holes glow
@@ -3345,20 +4580,8 @@
       ctx.arc(hx, hy, hr - 1, Math.PI * 1.05, Math.PI * 1.85);
       ctx.stroke();
 
-      // Some holes have mice peeking (deterministic per index + slow t cycle)
-      const peekCycle = Math.floor(t / 3);
-      const showEyes = ((i + peekCycle * 3) % 5) === 0;
-      if (showEyes) {
-        const blink = ((t * 3) % 6) < 5.7;
-        if (blink) {
-          ctx.fillStyle = '#ffe08a';
-          ctx.beginPath(); ctx.arc(hx - 3, hy + 2, 1.5, 0, TAU); ctx.fill();
-          ctx.beginPath(); ctx.arc(hx + 3, hy + 2, 1.5, 0, TAU); ctx.fill();
-          ctx.fillStyle = '#000';
-          ctx.fillRect(hx - 3.4, hy + 1.3, 0.8, 1.4);
-          ctx.fillRect(hx + 2.6, hy + 1.3, 0.8, 1.4);
-        }
-      }
+      // (Mice living inside the holes are drawn by drawPhase4Mice on top of
+      // the cheese layer, not from here.)
     }
     ctx.restore();
 
@@ -4431,12 +5654,19 @@
   }
   requestAnimationFrame(loop);
 
+  function updateHowToPlay() {
+    document.querySelectorAll('.hp-scene').forEach(el => {
+      el.style.display = (el.dataset.scene === scene) ? 'block' : 'none';
+    });
+  }
+
   // Reflect the initial-scene param in the tab UI
   document.querySelectorAll('.tab').forEach(b => {
     const active = b.dataset.scene === scene;
     b.classList.toggle('active', active);
     b.setAttribute('aria-selected', active ? 'true' : 'false');
   });
+  updateHowToPlay();
 
   document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -4446,8 +5676,71 @@
         b.classList.toggle('active', active);
         b.setAttribute('aria-selected', active ? 'true' : 'false');
       });
+      updateHowToPlay();
     });
   });
+
+  // ----- Phase 4 input: arrow keys move the cat between holes -----
+  // Continuous keys (held): left/right for walking on floor and same-level
+  // hops on the wall (still one-shot for hop).
+  // One-shot keys (per press): up/down.
+  const KEY_LR = {
+    ArrowLeft: -1, a: -1, A: -1,
+    ArrowRight: 1, d: 1, D: 1,
+  };
+  const KEY_UP = { ArrowUp: 1, w: 1, W: 1 };
+  const KEY_DOWN = { ArrowDown: 1, s: 1, S: 1 };
+
+  addEventListener('keydown', (e) => {
+    if (scene !== 'phase4') return;
+    if (KEY_LR[e.key] != null) {
+      e.preventDefault();
+      const dir = KEY_LR[e.key];
+      if (PHASE4.mode === 'floor') {
+        // Held key drives continuous walking
+        if (dir < 0) PHASE4.keyLeft = true;
+        else         PHASE4.keyRight = true;
+      } else if ((PHASE4.mode === 'wall' || PHASE4.mode === 'perch') && !e.repeat) {
+        // Fire once per press for a hop on the wall or a leap between perches
+        PHASE4.pendingDir = dir < 0 ? 'left' : 'right';
+      }
+    } else if (KEY_UP[e.key] && !e.repeat) {
+      e.preventDefault();
+      PHASE4.pendingDir = 'up';
+    } else if (KEY_DOWN[e.key] && !e.repeat) {
+      e.preventDefault();
+      PHASE4.pendingDir = 'down';
+    }
+  });
+  addEventListener('keyup', (e) => {
+    if (KEY_LR[e.key] != null) {
+      const dir = KEY_LR[e.key];
+      if (dir < 0) PHASE4.keyLeft = false;
+      else         PHASE4.keyRight = false;
+    }
+  });
+
+  // Click routes to a hole OR a perch (chair seat, chair back, side table
+  // top). Perches are checked FIRST because they visually sit on top of
+  // other objects and would otherwise be shadowed by hole hits.
+  canvas.addEventListener('click', (e) => {
+    if (scene !== 'phase4') return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (W / rect.width);
+    const cy = (e.clientY - rect.top)  * (H / rect.height);
+    const perchIdx = phase4PerchAt(cx, cy);
+    if (perchIdx >= 0) { PHASE4.pendingPerchClick = perchIdx; return; }
+    const holeIdx = phase4HoleAt(cx, cy);
+    if (holeIdx >= 0) { PHASE4.pendingClickIdx = holeIdx; return; }
+  });
+
+  function refreshCanvasCursor() {
+    canvas.style.cursor = (scene === 'phase4') ? 'pointer' : 'default';
+  }
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', refreshCanvasCursor);
+  });
+  refreshCanvasCursor();
 
   // A tiny self-test hook so the file has an inspection surface from the
   // console — same convention the other ports use.

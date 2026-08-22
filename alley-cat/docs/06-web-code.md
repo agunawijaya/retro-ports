@@ -298,24 +298,202 @@ shelves. Each shelf loop places books along the plank:
 Three flower pots sit on top; each uses `drawShelfPot` which draws
 terracotta + tapered leaves + a small `drawFlower` on top.
 
-## Scene 5: Phase 4 — the cheese wall
+## Scene 5: Phase 4 — the cheese wall (PLAYABLE)
 
-`drawCheeseBlock(x, y, w, h, t)` draws a wedge shape (top-left corner
-lower than top-right, sloped rind) filled with a yellow gradient. Then 14
-mouse holes are punched with `ctx.createRadialGradient` from dark inside
-to slightly lighter outer ring, plus an inner rim highlight arc simulating
-light from top-left.
+Phase 4 is the first phase where you actually control the cat. The player
+walks the cat on the floor, climbs it up the cheese wall through the mouse
+holes, and catches mice as they poke out. It also has an incidental joke:
+if the cat lands on the side table, the vase falls off and shatters.
 
-The "eyes peeking" trick uses `Math.floor(t / 3)` as a slow cycle counter
-and shows amber eyes in a rotating subset of holes:
+`drawCheeseBlock(x, y, w, h, t)` draws the wall itself — a wedge shape
+(top-left corner lower than top-right, sloped rind) filled with a yellow
+gradient. Fourteen holes are punched with `ctx.createRadialGradient` from
+dark inside to slightly lighter outer ring, plus an inner rim highlight
+arc simulating light from top-left. Everything else about the phase is
+built on top of that static scene.
+
+### The five modes the cat can be in
+
+`PHASE4.mode` is one of:
+
+| mode        | meaning |
+|---|---|
+| `floor`     | standing/walking on the wooden floor at `PHASE4.floorX` |
+| `wall`      | clinging to a cheese hole (index in `PHASE4.catHole`) |
+| `perch`     | standing on furniture (chair seat, chair back, or side-table top — index in `PHASE4.catPerch`) |
+| `hopping`   | mid-air between two positions (an intended, reachable leap) |
+| `falling`   | mid-air on a failed leap that will land the cat on the floor |
+| `stunned`   | dizzy sit on the floor briefly, after a fall from a hole or perch |
+
+Every frame `updatePhase4(t)` dispatches to the corresponding
+`updateXxxMode(t)` helper. All input (keys + clicks) is queued into
+`PHASE4.pendingDir` / `PHASE4.pendingClickIdx` / `PHASE4.pendingPerchClick`
+during the input handler and consumed by whichever mode is active.
+
+### Grid, holes, perches, reach
+
+Holes have a `level` (0 top row .. 3 bottom row, derived from `fy`):
 
 ```js
-const peekCycle = Math.floor(t / 3);
-const showEyes = ((i + peekCycle * 3) % 5) === 0;
-if (showEyes) {
-  // draw two little amber eyes at the centre of the hole
+level: h.fy < 0.28 ? 0 : h.fy < 0.50 ? 1 : h.fy < 0.72 ? 2 : 3
+```
+
+Rules for a leap between two holes (`phase4CheckJump`):
+
+- **Down (`dLevel ≥ 0`)** — free; the cat can drop from the top row all
+  the way to the bottom in one hop.
+- **Up (`dLevel = -1`)** — one level up is allowed.
+- **Up (`dLevel < -1`)** — forbidden; the cat *tries* but falls.
+- **Horizontal reach** — a hard cap of `PHASE4_MAX_HORIZ = 220 px` for
+  any hole-to-hole leap. Beyond that the cat also falls.
+
+Perches (`PHASE4_PERCHES`) live outside the level system. Each has:
+
+- `x, y, w, h` — the click zone, small and matched to the visible surface
+  the cat lands on (table top, chair cushion, chair back top).
+- `underX0, underX1` — the "walk-under" zone on the floor. If the cat is
+  anywhere in this horizontal range and presses `↑`, it leaps up to that
+  perch (chosen from any perches the cat is under; if multiple, the lowest
+  one wins). Ranges are as wide as the whole piece of furniture, so a chair
+  is a 80-px-wide launch pad even though the seat cushion itself is only
+  60 px.
+
+Perch-launched leaps use a separate reach: `PHASE4_PERCH_REACH = 260 px`
+(Euclidean, not just horizontal), and the "one-level-up" restriction does
+NOT apply. The chair back is high enough that leaping from there reaches
+holes two levels up in a single hop — that's the "shortcut" the player is
+supposed to discover.
+
+### Facing direction matters
+
+Up-from-floor leaps use the cat's `catFacing` (set by whichever direction
+the walk keys were last held): the target hole search filters out holes
+behind the cat, so pressing `↑` while walking right never sends the cat
+backward. Without this it felt broken — the cat would leap back over your
+shoulder toward the nearest hole regardless of the walk direction.
+
+### Movement primitives
+
+Six `beginHopXxx` functions handle every possible successful transition:
+
+    beginHopFloorToHole(t, holeIdx)
+    beginHopHoleToHole(t, holeIdx)
+    beginHopHoleToFloor(t, landX)
+    beginHopFloorToPerch(t, perchIdx)
+    beginHopHoleToPerch(t, perchIdx)
+    beginHopPerchToPerch(t, perchIdx)
+    beginHopPerchToHole(t, holeIdx)
+    beginHopPerchToFloor(t, landX)
+
+Each sets `fromX/Y, toX/Y, arcHeight, animStartT, animDur`, updates
+`catHole/catPerch`, and switches `mode` to `'hopping'`. The renderer then
+interpolates position along a parabolic arc for the duration of the hop.
+
+Cat feet on a hole are always anchored at the **bottom rim** of the hole
+opening (`holePawsY(idx) = h.y + h.r`) — this is why the cat visually
+looks like it's hanging BELOW the hole with its paws gripping the lower
+edge, rather than sitting inside the opening. A dedicated hanging pose
+draws paws at the top of the sprite, then arms, head, body, back legs
+downward. That reads clearly as "clinging" instead of "sitting in a
+window."
+
+### Failed leaps: one function, two behaviours
+
+`beginFailedJump(t, fromX, fromY, toX, toY)` is the SINGLE entry point for
+every "the cat tried but couldn't make it" case. It sets up a two-phase
+trajectory:
+
+- Phase 1 (0 – 40 % of `animDur`): cat visibly rises toward the target
+  with ease-out, but only reaches 55 % of the vertical distance
+  (`fallPeakY = lerp(fromY, targetY, 0.55)`). Pose is `'jumping'` — the
+  leaping silhouette.
+- Phase 2 (40 – 100 %): cat falls to `PHASE4_FLOOR_Y` with `p * p`
+  gravity ease-in. Pose is `'falling'` — the panicked spread-eagle.
+
+`updateFallingMode(t)` then decides what to do at the end based on
+`fromY`:
+
+- If the leap started at `PHASE4_FLOOR_Y` (the cat was on the floor), skip
+  the stunned pose entirely — the cat just lands and resumes walking.
+  This was a UX fix: a stunned pose after a small floor-hop-that-didn't-
+  reach felt disproportionate.
+- Otherwise, the fall came from a hole or perch — enter `'stunned'` mode
+  for 0.7 s (dizzy sit with animated stars overhead), then reset to
+  `'floor'` at the landing x.
+
+### Mouse spawn + auto-catch
+
+Mice spawn every 0.5 – 1.6 s in a random FREE hole. Free = no other mouse
+there AND the cat isn't currently on it either (spawning a mouse under the
+cat would auto-catch instantly, which felt unfair). Every mouse has a
+`spawnT` and `duration` (1.2 – 2.3 s); the popup follows a rise → hold →
+retract envelope (`phase4PopupProgress`). Mice that time out without being
+caught increment `missed` and break the combo.
+
+Auto-catch only fires in `'wall'` mode when the cat's `catHole` matches a
+mouse's hole AND the mouse's popup progress is past 35 % (fully up). The
+cat catches automatically — the player never clicks the mouse itself,
+only decides which hole to be at.
+
+Scoring: `+1` per catch, with a combo multiplier that steps up every 3
+consecutive catches (`+2` after 3-in-a-row, `+3` after 6, etc). Missed
+mice, missed clicks that hit nothing, and falls all reset the combo. The
+best score persists across sessions via `localStorage`.
+
+### The vase joke
+
+`PHASE4.vaseBroken` is `false` at the start. `updateHoppingMode` checks
+if the hop ended on the `table` perch specifically:
+
+```js
+if (p.id === 'table' && !PHASE4.vaseBroken) {
+  PHASE4.vaseBroken = true;
+  PHASE4.vaseBreakT = t;
 }
 ```
+
+`drawPhase4SideTable(t)` reads that flag: intact → normal
+`drawSideTable(cx, cy, withVase=true)`; broken → `drawSideTable(cx, cy,
+false)` (no vase drawn), plus scattered debris on the floor via
+`PHASE4_VASE_DEBRIS` (three flowers + seven shards in fixed deterministic
+positions), plus a brief 0.6-s "poof" of expanding lines centred on the
+table.
+
+Shards use `drawVaseShard(cx, cy, rot, size, shape)` — larger polygons
+than an early version, with a bright white edge stroke so they read
+clearly against the dark wood floor. Three shape variants (`tri`,
+`curve`, `chip`) plus varied rotations and sizes make the pile look
+scattered rather than repeating.
+
+The break has no gameplay penalty — it's purely a visual "you did a
+thing" reward for exploring the room.
+
+### Input handling
+
+Continuous keys (`keyLeft`, `keyRight`) drive walking speed on the floor
+in `updateFloorMode(t, dt)`. `↑` / `↓` / `WASD` are one-shot presses queued
+via `pendingDir` (with `!e.repeat` guard so held keys don't fire every
+frame). Click on the canvas checks perches FIRST (they overlap other
+targets visually) then holes, and queues `pendingPerchClick` /
+`pendingClickIdx`.
+
+Two testing URL params:
+
+- `?t=SECONDS` — jump the clock forward on load, for headless capture.
+- `?vase=broken` — start with the vase already smashed, for inspecting
+  the debris rendering without playing to unlock it first.
+
+### The mouse sprite
+
+`drawMouseInHole(cx, cy, holeR, popup, caught, t)` draws a small grey
+mouse rising from below the hole rim, clipped to a circle so nothing
+paints outside the hole opening. Full anatomy — head, ears with pink
+inner-ear, black beady eyes with white highlights, snout, pink nose,
+whiskers — because an early version was just amber blinking eyes and
+the user (correctly) said the mouse should look like a mouse.
+
+When caught, the sprite shrinks and emits a 6-line yellow "surprise"
+burst outward. A floating `+N` popup rises from the hole for 0.9 s.
 
 ## Scene 6: Phase 5 — the birdcage room
 

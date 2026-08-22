@@ -198,26 +198,35 @@ captures used to verify each iteration, kept in the repo for quick review
 without having to run the port. They are regenerated whenever a scene
 changes materially.
 
-## What is NOT ported yet
+## Playable so far, and what is still art-only
 
-The rooms exist but they are BACKGROUNDS — the gameplay is not wired up.
-Missing:
+**Phase 4 (cheese wall) is playable.** Full walk-and-climb mechanics: cat
+starts on the floor, walks left/right, leaps up to holes in the wall or
+onto the furniture (chair, side table), climbs from chair-seat to
+chair-back to a cheese hole, catches mice as they poke out of whatever
+hole it's currently clinging to. Score + best in the HUD, best persists
+via `localStorage`. See [06-web-code.md § Scene 5](06-web-code.md) for the
+five-mode state machine and every rule.
 
-- The actual game loop (score, lives, level progression) from the CGA
-  original — the phase machine at CS:0x479 is documented in
-  [03-the-code.md](03-the-code.md) but no scene switches to another via
-  the original's PRNG-based `end_of_room_pick_next` logic.
-- Input handling. Keyboard events aren't captured; the tab bar is the
-  only navigation.
-- Sound. The port is silent. The five sound primitives documented in
-  [02-architecture.md](02-architecture.md) (`sfx_start_tone`,
-  `beep_blocking`, etc.) haven't been ported to Web Audio.
-- Sprite bank decoding. The original's three CGA sprite banks
+The other seven scenes are **art-only**. Missing from those:
+
+- **Game loop** (score, lives, level progression) — the phase machine at
+  CS:0x479 documented in [03-the-code.md](03-the-code.md) is not wired
+  to switch scenes.
+- **Input handling for the rest** — only Phase 4 captures keyboard/click.
+  Other tabs are view-only.
+- **Sound.** The port is silent throughout. The five sound primitives
+  documented in [02-architecture.md](02-architecture.md)
+  (`sfx_start_tone`, `beep_blocking`, etc.) haven't been ported.
+- **Sprite-bank decoding.** The original's three CGA sprite banks
   (`sprite_data_bank_a/b/c`, ~12.5 KB total) hold the cat's walking
   frames, the mice, the birds, and so on. None of that binary data is
-  parsed — the port draws its own sprites procedurally.
+  parsed — every sprite (including the Phase 4 gameplay ones) is drawn
+  procedurally.
 
-The port therefore reads as an **art demo of every room**, not an
-interactive game. The porting document ([04-porting.md](04-porting.md))
-argues the sprite-format decode is the real blocker before gameplay work
-can start; this port skips it by drawing everything from JavaScript.
+Phase 4 was written to a house rule where the gameplay logic was
+reconstructed from the visible CGA reference frames and the user's design
+choices, not lifted from a decode of the original phase-4 handler bytes.
+The porting brief in [04-porting.md](04-porting.md) still applies for
+turning the other six phases into real games — the sprite-bank decode it
+names as the blocker is unchanged.

@@ -109,8 +109,52 @@ canvas {
   font-weight: 600;
 }
 
+#how-to-play {
+  max-width: 1040px;
+  margin: 20px auto 0;
+  padding: 18px 22px 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+}
+
+#how-to-play h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+#how-to-play p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--ink-dim);
+  line-height: 1.55;
+}
+
+#how-to-play p strong { color: var(--ink); font-weight: 600; }
+#how-to-play p em     { color: var(--ink-dim); font-style: italic; }
+#how-to-play ul       { margin: 6px 0 6px 20px; padding: 0; color: var(--ink-dim); font-size: 14px; }
+#how-to-play li       { margin: 4px 0; }
+#how-to-play kbd {
+  display: inline-block;
+  margin: 0 2px;
+  padding: 1px 6px;
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--edge);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+.hp-scene { display: none; }
+
 .notes {
-  margin-top: 40px;
+  margin-top: 24px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;

@@ -17,13 +17,27 @@ The port is documented in [`docs/05-web-architecture.md`](docs/05-web-architectu
 (the four decisions that shape it) and [`docs/06-web-code.md`](docs/06-web-code.md)
 (the code walkthrough, function by function).
 
-Gameplay is NOT wired up — no score, no lives, no input handling, no
-sound. The rooms exist as art demos. What is animated: fire, ripples,
-walking cats, popping cats throwing bones, an AI cat that walks / jumps
-between platforms / falls through broken hearts in phase 7. The porting
-brief in [`docs/04-porting.md`](docs/04-porting.md) argues the sprite-bank
-decode is the real blocker for gameplay; this port skips it by drawing
-sprites procedurally.
+**Phase 4 (cheese wall) is PLAYABLE.** Player walks the cat left/right on
+the floor with arrow keys, presses ↑ to leap up to a bottom-row cheese
+hole or onto the chair seat / side table (a "walk under, press up" launch
+pad that's as wide as the whole piece of furniture). From a chair back the
+cat can shortcut several cheese levels up in one hop. Click any hole,
+chair seat, chair back or side-table top and the cat leaps toward it —
+successfully if reachable, otherwise it visibly *tries* and falls to the
+floor. Auto-catches a mouse whenever it's clinging to that mouse's hole.
+Landing on the side table breaks the vase (flowers + shards scatter on
+the floor — no scoring impact, just chaos). Score + best in the HUD, best
+persists across sessions via localStorage. `docs/06-web-code.md` has the
+full walkthrough of the 5-mode state machine, movement rules, and the
+sensible-defaults choices made when the CGA original's specific rules
+weren't recoverable.
+
+All OTHER phases are art demos — no input, no score, no interactions
+beyond the ambient animation (fire, water, walking cats, popping cats
+throwing bones, an AI cat that hops the phase-7 heart platform). The
+porting brief in [`docs/04-porting.md`](docs/04-porting.md) still applies
+to porting the remaining phases; the sprite-bank decode work it names as
+the blocker hasn't been done — this port draws all sprites procedurally.
 
 ## Where this stands (reverse-engineering)
 
