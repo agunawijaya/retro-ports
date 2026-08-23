@@ -11,11 +11,13 @@
 <header>
   <h1>Alley Cat</h1>
   <p class="sub">
-    A reimagining of Bill Williams' 1984 game. Two screens rendered here — the
-    <strong>title</strong> and the <strong>courtyard (phase&nbsp;0)</strong> —
-    keeping the shape of the CGA original but drawing everything procedurally
-    at 3&times; the resolution, with lighting, animation, and colour the 1984
-    hardware could not give it.
+    A reimagining of Bill Williams' 1984 game. Eight scenes rendered here
+    — the <strong>title</strong> and all seven phases — keeping the shape
+    of the CGA original but drawing everything procedurally at 3&times;
+    the resolution, with lighting, animation, and colour the 1984
+    hardware could not give it. <strong>Phase&nbsp;4</strong> (the
+    cheese wall) and <strong>Phase&nbsp;5</strong> (the birdcage) are
+    playable; the other five are art demos.
   </p>
 </header>
 
@@ -56,51 +58,99 @@
       small fire crackles on the left wall. Not playable yet.</p>
   </div>
   <div class="hp-scene" data-scene="phase4">
-    <p><strong>🐭 Objective:</strong> The cat starts on the floor. Climb up
-      the cheese wall by leaping from hole to hole — or use the furniture on
-      the right as extra footholds. When a mouse pops out of the hole the
-      cat is CLINGING to, it's caught automatically.</p>
-    <p><strong>⌨️ Keyboard:</strong></p>
+    <p><strong>🐭 Objective:</strong> Climb the cheese wall by jumping
+      from hole to hole and using the chair and side table as extra
+      footholds. When a mouse pops out of the hole the cat is CLINGING
+      to, it's caught automatically.</p>
+    <p><strong>⌨️ Controls (platformer + grab):</strong></p>
     <ul>
-      <li>On the floor: hold <kbd>←</kbd><kbd>→</kbd> (or <kbd>A</kbd><kbd>D</kbd>)
-        to walk anywhere in the room. Press <kbd>↑</kbd> to leap up to the
-        nearest bottom-row cheese hole.</li>
-      <li>On the wall: <kbd>←</kbd><kbd>→</kbd> hops sideways one hole;
-        <kbd>↑</kbd> climbs one level up; <kbd>↓</kbd> drops to the nearest
-        hole below (or, from the bottom row, drops back to the floor).</li>
-      <li>On a perch (chair or table): <kbd>↑</kbd> leaps higher (chair seat
-        → chair back → cheese hole); <kbd>↓</kbd> drops to the floor.</li>
+      <li>Hold <kbd>←</kbd><kbd>→</kbd> (or <kbd>A</kbd><kbd>D</kbd>) to
+        <strong>walk</strong> on the floor, along the chair seat, along
+        the chair back, or along the side table top.</li>
+      <li>Press <kbd>↑</kbd> to <strong>jump straight up</strong>. Hold
+        <kbd>←</kbd> or <kbd>→</kbd> <em>before</em> pressing <kbd>↑</kbd>
+        for a <strong>diagonal jump</strong> (about 34° from vertical,
+        much more horizontal reach). If you press <kbd>←</kbd>/<kbd>→</kbd>
+        <em>after</em> jumping, air control lets you steer mid-flight —
+        weaker than a proper diagonal but useful for correction.</li>
+      <li>Press <kbd>↓</kbd> to <strong>drop through</strong> the
+        furniture platform you're standing on (falls to whatever's
+        below, or the floor). Hold <kbd>←</kbd>/<kbd>→</kbd> for a
+        <strong>diagonal drop</strong> — same horizontal boost as the
+        diagonal jump, but going down.</li>
+      <li>Walking off an edge <strong>falls</strong> — gravity takes
+        over the moment your paws leave the platform.</li>
     </ul>
-    <p><strong>🖱️ Mouse:</strong> Click any hole, chair seat, chair back or
-      the side table top and the cat leaps toward it.</p>
-    <p><strong>Movement rules:</strong></p>
+    <p><strong>On a cheese hole (hanging):</strong></p>
     <ul>
-      <li>Downward leaps are free — the cat can drop from the top row all
-        the way to the bottom in one hop.</li>
-      <li>Upward leaps between cheese holes are limited to <strong>one
-        level at a time</strong>.</li>
-      <li>Every leap has a maximum reach. Trying to leap too far — sideways,
-        too many levels up, or to a target outside range — the cat clearly
-        <em>tries</em> to make the jump, comes up short, and
-        <strong>falls to the floor</strong> stunned.</li>
-      <li>The chair back reaches higher than any single hole climb — from
-        there you can leap to holes several levels up. Use it to reach the
-        top row quickly.</li>
-      <li>🏺 <strong>The vase on the side table breaks</strong> the first time
-        the cat lands on the table — shards and flowers scatter on the floor.
-        This is just a bit of chaos; it does not affect your score.</li>
-      <li>The hole the cat is CLINGING to will never spawn a mouse.</li>
+      <li>The cat automatically grabs the nearest hole its jump arc
+        passes close to (while descending or at apex). To reach an
+        upper hole, aim your jump underneath it.</li>
+      <li><kbd>↑</kbd> jumps up off the hole (with an optional diagonal
+        boost from <kbd>←</kbd>/<kbd>→</kbd>).</li>
+      <li><kbd>←</kbd> or <kbd>→</kbd> alone: <strong>lateral hop</strong>
+        — a small sideways-and-up hop that may grab an adjacent hole.</li>
+      <li><kbd>↓</kbd> releases the hole and drops (straight or
+        diagonally if <kbd>←</kbd>/<kbd>→</kbd> is held).</li>
     </ul>
+    <p><strong>Fall damage:</strong> falling more than ~100&nbsp;px
+      onto the floor <strong>stuns</strong> the cat for 0.7 s (dizzy
+      pose, no input). Combo breaks.</p>
+    <p><strong>🖱️ Mouse:</strong> click anywhere and the cat walks
+      toward that x on its current surface. Vertical navigation uses
+      the keyboard.</p>
+    <p><strong>Vase:</strong> 🏺 the first time the cat lands on the
+      side table, the vase <em>tumbles off the edge</em>, hits the floor
+      with a puff of dust, and shatters — flowers, stems and shards
+      scatter around the table. Just chaos; doesn't affect your score.</p>
     <p><strong>Scoring:</strong> +1 per catch. Every three consecutive
-      catches raises your combo multiplier (+2 each after 3-in-a-row, +3
-      after 6, and so on). A missed mouse or a fall breaks the combo. Your
-      best score is saved between visits.</p>
-    <p><em>The mouse spawn rate speeds up as your score climbs.</em></p>
+      catches raises your combo multiplier (+2 each after 3-in-a-row,
+      +3 after 6, and so on). A missed mouse or a stunned fall breaks
+      the combo. Your best is saved between visits.</p>
+    <p><em>Mouse spawn rate speeds up as your score climbs.</em></p>
   </div>
   <div class="hp-scene" data-scene="phase5">
-    <p><strong>The birdcage room (art demo).</strong> A gallery of Felicia
-      portraits on the wall; a canary hops in a cage on the centre table.
-      Not playable yet.</p>
+    <p><strong>🐦 Objective:</strong> Jump onto the <em>centre table</em>
+      — that knocks the cage off, the door swings open, and the bird
+      escapes. Chase it around the room; catch it mid-flight or by
+      landing on whichever piece of furniture it just settled on. Fewer
+      hops is better.</p>
+    <p><strong>⌨️ Controls (platformer):</strong></p>
+    <ul>
+      <li>Hold <kbd>←</kbd><kbd>→</kbd> (or <kbd>A</kbd><kbd>D</kbd>) to
+        <strong>walk</strong> — on the floor, along the top of the
+        table, along a chair seat, along a chair back. Every furniture
+        surface is a platform.</li>
+      <li>Press <kbd>↑</kbd> to <strong>jump straight up</strong>. If
+        there's a platform above where you land, you catch it (one-way
+        collision — you can rise through platforms from below and land
+        on them from above).</li>
+      <li>Hold <kbd>←</kbd> or <kbd>→</kbd> <em>before</em> pressing
+        <kbd>↑</kbd> for a <strong>diagonal jump</strong> (~34° from
+        vertical). If you press <kbd>←</kbd>/<kbd>→</kbd> <em>after</em>
+        jumping, air control lets you steer mid-flight.</li>
+      <li>Press <kbd>↓</kbd> to <strong>drop through</strong> the
+        platform you're standing on (falls to whatever's below, or the
+        floor). Hold <kbd>←</kbd>/<kbd>→</kbd> for a
+        <strong>diagonal drop</strong>.</li>
+      <li><strong>Walking off an edge falls</strong> (Mario style) —
+        gravity takes over the moment your paws leave the platform.</li>
+    </ul>
+    <p><strong>Jump reach.</strong> One jump clears ~112&nbsp;px of
+      vertical: floor → chair seat, chair seat → chair back. Floor →
+      chair back is too far in one hop — step through the chair seat
+      first, or take a diagonal from the table.</p>
+    <p><strong>🖱️ Mouse:</strong> click anywhere and the cat walks
+      toward that x on its current surface. Falling off the edge
+      to reach it is normal. Use the keyboard for vertical jumps.</p>
+    <p><strong>The bird:</strong> after escaping, it flies between
+      landing spots — some the cat can reach (chairs, table), some it
+      can't (fireplace mantle, portrait tops, floor-lamp shade). When
+      the bird chooses an unreachable spot, the only way to catch it is
+      to intercept mid-flight — jump up and cross its path.</p>
+    <p><strong>Scoring:</strong> <em>Hops</em> counts each
+      <kbd>↑</kbd> and <kbd>↓</kbd> press. Walking is free. Lower is
+      better; your best is saved between visits.</p>
   </div>
   <div class="hp-scene" data-scene="phase6">
     <p><strong>The kittens (art demo).</strong> Kittens and milk bowls on

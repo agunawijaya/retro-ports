@@ -5,11 +5,12 @@ explain it again.
 
 ## Where this stands, and what to do next
 
-*Last measured 2026-08-21 (alley-cat first reading pass + a fourth comrec
-walker fix; dam-busters 2026-08-20; other games 2026-08-02). If you change
-anything, re-measure and edit this — the counts below drift the moment a
-tool improves, and eleven of them had gone stale within a single session
-before `tools/docaudit.py` existed.*
+*Last measured 2026-08-23 (alley-cat naming ladder complete + web port
+platformer refactor for Phase 4 and Phase 5; dam-busters 2026-08-20;
+other games 2026-08-02). If you change anything, re-measure and edit
+this — the counts below drift the moment a tool improves, and eleven
+of them had gone stale within a single session before `tools/docaudit.py`
+existed.*
 
 Six games are reconstructed. All six rebuild **byte-identically**, which
 `build.ps1` checks and refuses to report success without.
@@ -58,7 +59,7 @@ Each brief names the one thing to do first.
 | [rampage](rampage/) | `8925744E…` | 34.7% | entry twenty bytes from the end of the image |
 | [jungle-hunt](jungle-hunt/) | `ECF3BD75…` | 8.8% | `hunt.com` is a PTL Club **crack loader**; the game is `hunt.ptl` |
 | [moon-patrol](moon-patrol/) | `FF12627C…` | **0.5%** | control leaves the entry almost at once and the walk cannot follow |
-| [alley-cat](alley-cat/) | `4979C886…` | **46.3%** | 9 relocations — one over a threshold set for Karateka; first reading pass 2026-08-21, 47 routines / 46 globals named, phase machine surfaced |
+| [alley-cat](alley-cat/) | `4979C886…` | **46.3%** | 9 relocations — one over a threshold set for Karateka; naming ladder complete 2026-08-21 (280 routines, 100 % call targets, 3/3 tail-calls); web port at [alley-cat/web/](alley-cat/web/) with 8 scenes, **Phase 4 + Phase 5 both playable as platformer** (2026-08-23) |
 | [ancient-art-of-war](ancient-art-of-war/) | `B26326CE…` | 73.2% | 67 relocations; a 12 KB load image with 87 KB behind it |
 
 All six rebuild. The last two only after a correction worth keeping.

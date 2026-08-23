@@ -312,152 +312,187 @@ dark inside to slightly lighter outer ring, plus an inner rim highlight
 arc simulating light from top-left. Everything else about the phase is
 built on top of that static scene.
 
-### The five modes the cat can be in
+### The platformer physics model
 
-`PHASE4.mode` is one of:
+Phase 4 uses the same continuous-physics model as Phase 5 (see the
+[Phase 5 section](#scene-6-phase-5--the-birdcage-room-playable) for
+the full physics detail — the constants and integration steps are
+identical), with one addition: **cheese holes are grab points**.
 
-| mode        | meaning |
+`PHASE4` state combines both:
+
+| field | meaning |
 |---|---|
-| `floor`     | standing/walking on the wooden floor at `PHASE4.floorX` |
-| `wall`      | clinging to a cheese hole (index in `PHASE4.catHole`) |
-| `perch`     | standing on furniture (chair seat, chair back, or side-table top — index in `PHASE4.catPerch`) |
-| `hopping`   | mid-air between two positions (an intended, reachable leap) |
-| `falling`   | mid-air on a failed leap that will land the cat on the floor |
-| `stunned`   | dizzy sit on the floor briefly, after a fall from a hole or perch |
+| `catX, catY, catVX, catVY` | position + velocity (paws touch the surface directly; y-positive = downward) |
+| `catFacing` | +1 right, −1 left |
+| `onGround` | true when standing on the floor or a furniture platform |
+| `onHole` | true when hanging on a cheese hole (mutex with `onGround`) |
+| `currentPlatform` | index into `PHASE4_PLATFORMS`, or −1 for the floor |
+| `currentHole` | index into `PHASE4_HOLES`, or −1 for none |
+| `dropThroughIdx / UntilT` | platform temporarily ignored after ↓ |
+| `justReleasedHole / UntilT` | hole temporarily ignored right after release |
+| `jumpStartY` | y when the cat last left the ground/hole (for stun threshold) |
+| `isStunned, stunnedUntilT` | dizzy pose after a fall from height |
 
-Every frame `updatePhase4(t)` dispatches to the corresponding
-`updateXxxMode(t)` helper. All input (keys + clicks) is queued into
-`PHASE4.pendingDir` / `PHASE4.pendingClickIdx` / `PHASE4.pendingPerchClick`
-during the input handler and consumed by whichever mode is active.
+### Furniture platforms and cheese holes
 
-### Grid, holes, perches, reach
+Three furniture platforms (top surface `y`, walkable horizontal range
+`[x, x + w]`):
 
-Holes have a `level` (0 top row .. 3 bottom row, derived from `fy`):
+| id | x range | y | notes |
+|---|---|---|---|
+| `chair-back` | 648–692 | 395 | top of the wing chair, centred on x=670 (matches `drawWingChair` cx) |
+| `chair-seat` | 644–696 | 488 | cushion, centred on x=670 (matches `drawWingChair` cx) |
+| `side-table` | 794–866 | 509 | circular top, centred on x=830 (matches `drawSideTable` cx). First landing triggers the vase-fall animation (`PHASE4_TABLE_IDX = 2`) |
 
-```js
-level: h.fy < 0.28 ? 0 : h.fy < 0.50 ? 1 : h.fy < 0.72 ? 2 : 3
-```
+**Platform-vs-visual alignment.** An earlier version had `chair-seat`
+at x=669..731 — centred on x=700 instead of x=670. That put the
+platform 30 px to the right of the visible chair: the cat would jump
+in front of the chair and fall (no platform there), or jump beyond it
+and land on invisible air (platform extends past the chair). Fixed by
+re-centring on the actual `drawWingChair` `cx`.
 
-Rules for a leap between two holes (`phase4CheckJump`):
+Fourteen `PHASE4_HOLES`, positioned as fractional (fx, fy) of
+`PHASE4_CHEESE` (x=30, y=100, w=570, h=470) with per-hole radius
+`r ∈ [20, 32]`. Each hole's **grab point** is `(h.x, h.y + h.r)` — the
+bottom rim, which is where the cat's paws grip when hanging.
 
-- **Down (`dLevel ≥ 0`)** — free; the cat can drop from the top row all
-  the way to the bottom in one hop.
-- **Up (`dLevel = -1`)** — one level up is allowed.
-- **Up (`dLevel < -1`)** — forbidden; the cat *tries* but falls.
-- **Horizontal reach** — a hard cap of `PHASE4_MAX_HORIZ = 220 px` for
-  any hole-to-hole leap. Beyond that the cat also falls.
+### Physics constants
 
-Perches (`PHASE4_PERCHES`) live outside the level system. Each has:
+    PHASE4_JUMP_V        = -560   // initial vy on ↑ press
+    PHASE4_DIAG_JUMP_VX  =  380   // horizontal boost when ←/→ held during ↑ (~34° from vertical)
+    PHASE4_LATERAL_HOP_V = -320   // upward vel for ← / → alone from a hole
+    PHASE4_GRAVITY       = 1400
+    PHASE4_WALK_SPEED    =  140
+    PHASE4_HOLE_GRAB_R   =   30   // grab radius for auto-attach
+    PHASE4_STUN_FALL     =  100   // fall ≥ this many px triggers stun on floor landing
+    PHASE4_STUN_DUR      =  0.7
 
-- `x, y, w, h` — the click zone, small and matched to the visible surface
-  the cat lands on (table top, chair cushion, chair back top).
-- `underX0, underX1` — the "walk-under" zone on the floor. If the cat is
-  anywhere in this horizontal range and presses `↑`, it leaps up to that
-  perch (chosen from any perches the cat is under; if multiple, the lowest
-  one wins). Ranges are as wide as the whole piece of furniture, so a chair
-  is a 80-px-wide launch pad even though the seat cushion itself is only
-  60 px.
+An earlier tuning used `DIAG_JUMP_VX = 220` — angle only 21° from
+vertical, so diagonal jumps felt indistinguishable from straight-up.
+Raised to 380 (angle ~34°) so held ←/→ during ↑ produces a visibly
+diagonal arc.
 
-Perch-launched leaps use a separate reach: `PHASE4_PERCH_REACH = 260 px`
-(Euclidean, not just horizontal), and the "one-level-up" restriction does
-NOT apply. The chair back is high enough that leaping from there reaches
-holes two levels up in a single hop — that's the "shortcut" the player is
-supposed to discover.
+**Air control** (`AIR_ACCEL = 800 px/s²`, capped at ±`DIAG_JUMP_VX`):
+if ←/→ is held while the cat is in the air, catVX accelerates in that
+direction each frame. This lets the player *steer* a jump that started
+straight up — a common platformer affordance. The cap prevents air
+control from exceeding a proper diagonal jump's reach.
 
-### Facing direction matters
+Peak jump height = `JUMP_V² / (2·GRAVITY) = 112 px`. Chair seat is
+97 px above floor and chair back is 93 px above chair seat, so one jump
+reaches either (same as Phase 5). Bottom-row cheese holes' grab points
+are at `y ≈ 482–532`; a straight-up jump from floor peaks at `y ≈ 473`,
+just above the highest of them — the player has to be roughly under a
+hole to grab it.
 
-Up-from-floor leaps use the cat's `catFacing` (set by whichever direction
-the walk keys were last held): the target hole search filters out holes
-behind the cat, so pressing `↑` while walking right never sends the cat
-backward. Without this it felt broken — the cat would leap back over your
-shoulder toward the nearest hole regardless of the walk direction.
+### The physics step
 
-### Movement primitives
+`updatePhase4Physics(t, dt)` runs each frame, structured as:
 
-Six `beginHopXxx` functions handle every possible successful transition:
+1. **Stunned lockout.** If `isStunned` and `t < stunnedUntilT`, discard
+   pending input and skip the frame. Otherwise clear the flag and
+   continue.
+2. **On-hole input.** If `onHole`:
+   - Snap `catX/Y` to the hole's grab point each frame (no drift).
+   - `↑` → jump straight up (or diagonal with ←/→ held).
+   - `↓` → release + small downward push; gravity does the rest.
+   - `←` / `→` alone → lateral hop: `catVX = ±DIAG_JUMP_VX`,
+     `catVY = LATERAL_HOP_V` (a small upward-and-sideways arc that
+     may grab an adjacent hole).
+   - Any release sets `justReleasedHole` for a 0.3 s cooldown so the
+     cat can't immediately re-grab the same hole.
+3. **Jump / drop-through from ground.** `↑` on ground jumps (physics),
+   `↓` on a non-floor platform starts a 0.25 s drop-through window.
+4. **Ground movement.** Held ←/→ or the click-to-walk target sets
+   `catVX = ±WALK_SPEED`. Air preserves horizontal velocity — no
+   mid-air steering.
+5. **Integrate x** and clamp to `[FLOOR_XMIN, FLOOR_XMAX]`. If on a
+   non-floor platform and `catX` is now outside its range, leave the
+   ground (Mario-style walk-off).
+6. **Gravity, auto-grab, landing.** In air, add gravity to `catVY` and
+   integrate `catY`. Then:
+   - **Auto-grab a cheese hole.** Only fires when `catVY > -100`
+     (near apex or descending — a rising cat can pass over a hole to
+     jump higher). Skip the just-released hole. For each remaining
+     hole, if the cat is within `HOLE_GRAB_R` of its grab point,
+     grab the nearest one and enter `onHole` mode.
+   - **Land on a platform** (only descending): pick the topmost
+     platform whose x range contains `catX` and whose surface y was
+     crossed this frame. Skip the drop-through platform. First
+     landing on the table sets `vaseBroken = true`.
+   - **Land on the floor** (`catY ≥ FLOOR_Y`): snap to floor. If the
+     fall was more than `STUN_FALL` px, enter `stunned` for
+     `STUN_DUR` seconds and break the combo.
 
-    beginHopFloorToHole(t, holeIdx)
-    beginHopHoleToHole(t, holeIdx)
-    beginHopHoleToFloor(t, landX)
-    beginHopFloorToPerch(t, perchIdx)
-    beginHopHoleToPerch(t, perchIdx)
-    beginHopPerchToPerch(t, perchIdx)
-    beginHopPerchToHole(t, holeIdx)
-    beginHopPerchToFloor(t, landX)
+### Cheese-hole grabbing
 
-Each sets `fromX/Y, toX/Y, arcHeight, animStartT, animDur`, updates
-`catHole/catPerch`, and switches `mode` to `'hopping'`. The renderer then
-interpolates position along a parabolic arc for the duration of the hop.
+A cheese hole is grabbable if:
 
-Cat feet on a hole are always anchored at the **bottom rim** of the hole
-opening (`holePawsY(idx) = h.y + h.r`) — this is why the cat visually
-looks like it's hanging BELOW the hole with its paws gripping the lower
-edge, rather than sitting inside the opening. A dedicated hanging pose
-draws paws at the top of the sprite, then arms, head, body, back legs
-downward. That reads clearly as "clinging" instead of "sitting in a
-window."
+- The cat's live position is within `HOLE_GRAB_R` (30 px) of its grab
+  point `(h.x, h.y + h.r)`.
+- The hole isn't the one the cat just released (0.3 s cooldown to
+  avoid re-grabbing the same hole as soon as the cat starts rising).
 
-### Failed leaps: one function, two behaviours
+The check fires **any time the cat is in the air**, including on the
+way up. An earlier version restricted grab to `catVY > -100` (apex
+and descent only) with the rationale that a rising cat with speed to
+spare should pass through, but user feedback said the opposite —
+if a jump passes through a hole's grab zone, the cat should latch on
+right away. The just-released cooldown handles the "would re-grab
+instantly" case that motivated the original restriction.
 
-`beginFailedJump(t, fromX, fromY, toX, toY)` is the SINGLE entry point for
-every "the cat tried but couldn't make it" case. It sets up a two-phase
-trajectory:
-
-- Phase 1 (0 – 40 % of `animDur`): cat visibly rises toward the target
-  with ease-out, but only reaches 55 % of the vertical distance
-  (`fallPeakY = lerp(fromY, targetY, 0.55)`). Pose is `'jumping'` — the
-  leaping silhouette.
-- Phase 2 (40 – 100 %): cat falls to `PHASE4_FLOOR_Y` with `p * p`
-  gravity ease-in. Pose is `'falling'` — the panicked spread-eagle.
-
-`updateFallingMode(t)` then decides what to do at the end based on
-`fromY`:
-
-- If the leap started at `PHASE4_FLOOR_Y` (the cat was on the floor), skip
-  the stunned pose entirely — the cat just lands and resumes walking.
-  This was a UX fix: a stunned pose after a small floor-hop-that-didn't-
-  reach felt disproportionate.
-- Otherwise, the fall came from a hole or perch — enter `'stunned'` mode
-  for 0.7 s (dizzy sit with animated stars overhead), then reset to
-  `'floor'` at the landing x.
+When multiple holes are in range, the closest one wins. On grab, the
+cat's paws snap to the grab point, velocity clears, and `onHole`
+becomes true. `catX = h.x, catY = h.y + h.r` — the paws sit on the
+bottom rim of the hole, sprite body hangs down (that's what the
+`cling` pose renders).
 
 ### Mouse spawn + auto-catch
 
-Mice spawn every 0.5 – 1.6 s in a random FREE hole. Free = no other mouse
-there AND the cat isn't currently on it either (spawning a mouse under the
-cat would auto-catch instantly, which felt unfair). Every mouse has a
-`spawnT` and `duration` (1.2 – 2.3 s); the popup follows a rise → hold →
-retract envelope (`phase4PopupProgress`). Mice that time out without being
-caught increment `missed` and break the combo.
+Unchanged from the pre-refactor version. Mice spawn every 0.5 – 1.6 s
+in a random free hole (free = no other mouse there, and the cat isn't
+currently clinging to it). Every mouse has a `spawnT` and `duration`
+(1.2 – 2.3 s); the popup follows a rise → hold → retract envelope
+(`phase4PopupProgress`). Mice that time out without being caught
+increment `missed` and break the combo.
 
-Auto-catch only fires in `'wall'` mode when the cat's `catHole` matches a
-mouse's hole AND the mouse's popup progress is past 35 % (fully up). The
-cat catches automatically — the player never clicks the mouse itself,
-only decides which hole to be at.
-
-Scoring: `+1` per catch, with a combo multiplier that steps up every 3
-consecutive catches (`+2` after 3-in-a-row, `+3` after 6, etc). Missed
-mice, missed clicks that hit nothing, and falls all reset the combo. The
-best score persists across sessions via `localStorage`.
+Auto-catch fires only when `onHole && currentHole === mouse.hole`
+AND the mouse's popup progress is past 35 %. The cat catches
+automatically — the player only decides which hole to be at. Scoring:
+`+1` per catch, with a combo multiplier that steps up every three
+consecutive catches (`+2` after 3-in-a-row, `+3` after 6, etc). A
+missed mouse or a stunned fall breaks the combo. Best score persists
+in `localStorage` as `ac_phase4_best`.
 
 ### The vase joke
 
-`PHASE4.vaseBroken` is `false` at the start. `updateHoppingMode` checks
-if the hop ended on the `table` perch specifically:
+`PHASE4.vaseBroken` starts false. The physics-step landing code
+checks if the landed platform is the side table:
 
-```js
-if (p.id === 'table' && !PHASE4.vaseBroken) {
-  PHASE4.vaseBroken = true;
-  PHASE4.vaseBreakT = t;
-}
-```
+    if (bestIdx === PHASE4_TABLE_IDX && !PHASE4.vaseBroken) {
+      PHASE4.vaseBroken = true;
+      PHASE4.vaseBreakT = t;
+    }
 
-`drawPhase4SideTable(t)` reads that flag: intact → normal
-`drawSideTable(cx, cy, withVase=true)`; broken → `drawSideTable(cx, cy,
-false)` (no vase drawn), plus scattered debris on the floor via
-`PHASE4_VASE_DEBRIS` (three flowers + seven shards in fixed deterministic
-positions), plus a brief 0.6-s "poof" of expanding lines centred on the
-table.
+`drawPhase4SideTable(t)` reads the flag and plays a three-phase
+animation:
+
+- **Falling** (age 0..0.4 s): table renders without the vase.
+  `drawFallingVase(vx, vy, rot)` draws the vase mid-air, tumbling
+  ~150° counter-clockwise as it falls from the table top to a resting
+  spot on the floor just to the left of the table. Flowers, stems, and
+  leaves tumble with it (all drawn under the same rotation).
+- **Impact** (age = 0.4 s): a "poof" ring of 8 expanding lines fades
+  in from the impact point on the floor over 0.6 s.
+- **Broken** (age ≥ 0.4 s): scattered debris on the floor via
+  `PHASE4_VASE_DEBRIS` (three flowers + seven shards in fixed
+  deterministic positions), plus small vase remnants on the table top.
+  No gameplay penalty.
+
+An earlier version snapped straight to broken state on impact — no
+falling animation. User wanted to see the vase tumble first, so the
+three-phase version replaced it.
 
 Shards use `drawVaseShard(cx, cy, rot, size, shape)` — larger polygons
 than an early version, with a bright white edge stroke so they read
@@ -465,17 +500,36 @@ clearly against the dark wood floor. Three shape variants (`tri`,
 `curve`, `chip`) plus varied rotations and sizes make the pile look
 scattered rather than repeating.
 
-The break has no gameplay penalty — it's purely a visual "you did a
-thing" reward for exploring the room.
+### Cat pose
+
+`drawPhase4Cat` selects the pose from physics state:
+
+    if (isStunned)                pose = 'stunned';
+    else if (onHole)              pose = 'cling';
+    else if (!onGround)           pose = catVY > 220 ? 'falling' : 'jumping';
+    else if (|catVX| > 1)         pose = 'floor-walk';
+    else                          pose = 'floor-idle';
+
+The `cling` pose has paws at the top of the sprite, then arms, head,
+body, back legs extending downward — cat hanging from the bottom rim
+of a hole. `falling` is the panicked spread-eagle used when the cat
+is descending fast (a wall drop feels different from a graceful
+jump). Two-state distinction is subtle in a small sprite but adds
+motion character.
 
 ### Input handling
 
-Continuous keys (`keyLeft`, `keyRight`) drive walking speed on the floor
-in `updateFloorMode(t, dt)`. `↑` / `↓` / `WASD` are one-shot presses queued
-via `pendingDir` (with `!e.repeat` guard so held keys don't fire every
-frame). Click on the canvas checks perches FIRST (they overlap other
-targets visually) then holes, and queues `pendingPerchClick` /
-`pendingClickIdx`.
+Both Phase 4 and Phase 5 use the same event handler:
+
+- `←` / `→` always track physical key state (into `keyLeft` /
+  `keyRight`) — needed for the diagonal-jump boost as well as for
+  walking on ground.
+- `↑` and `↓` are one-shot into `pendingDir` (`!e.repeat` guard).
+- Phase 4 extra: while `onHole`, a fresh `←` / `→` press also sets
+  `pendingDir` to `'left'` / `'right'` for the lateral-hop dispatch.
+- Click sets `walkTargetX` to the clicked x; the cat walks toward it
+  on whatever surface it's currently on. Vertical navigation is
+  keyboard-only.
 
 Two testing URL params:
 
@@ -495,7 +549,7 @@ the user (correctly) said the mouse should look like a mouse.
 When caught, the sprite shrinks and emits a 6-line yellow "surprise"
 burst outward. A floating `+N` popup rises from the hole for 0.9 s.
 
-## Scene 6: Phase 5 — the birdcage room
+## Scene 6: Phase 5 — the birdcage room (PLAYABLE)
 
 Three shared components debut here:
 
@@ -505,12 +559,156 @@ Three shared components debut here:
 - **`drawFeliciaPose(cx, cy, s, pose)`** — a nested switch that renders
   Felicia (white fur, pink bow, green eyes) in each pose. Shared inner
   helper `catHead(hx, hy, tilt)` for the face.
-- **`drawBirdcage(cx, cy, t)`** — dome cage with 9 vertical bars, base
-  plate, ring hook, perch, and a small animated yellow bird with a hop
-  cycle and rising music notes.
+- **`drawBirdcageIntact(cx, cy, t)`** — dome cage with 9 vertical bars,
+  base plate, ring hook, perch, and a small animated yellow bird with a
+  hop cycle and rising music notes. Used while the cage is still on the
+  table; after the cat topples it, **`drawBirdcageFallen(cx, floorY,
+  ageT)`** takes over — a version tilted about the base with the door
+  swung open. `ageT` animates a short tilt-and-settle over the first
+  ~0.6 s so the impact reads visually.
 
-The gallery is three photos side by side on the wall: `sit` (gold), `stretch`
-(wood), `lay` (silver).
+The gallery is three photos side by side on the wall: `sit` (gold),
+`stretch` (wood), `lay` (silver).
+
+### The platformer physics model
+
+Phase 5 is deliberately different from Phase 4. Phase 4 anchors the cat
+to discrete cheese holes and animates hops between them. Phase 5 is a
+Mario-style platformer: the cat has continuous `(catX, catY)`, velocity
+`(catVX, catVY)`, gravity pulls it down, and every furniture surface is
+a one-way platform.
+
+`PHASE5.mode` is just `'normal' | 'won'` — the mode field is only for
+freezing physics on catch. The rest of state describes physics:
+
+| field | meaning |
+|---|---|
+| `catX, catY` | position (paws touch the platform / floor surface directly) |
+| `catVX, catVY` | velocity (px/s). y-positive = downward |
+| `onGround` | true when standing on a platform or the floor |
+| `currentPlatform` | index into `PHASE5_PLATFORMS`, or `-1` for the floor |
+| `dropThroughIdx`, `dropThroughUntilT` | after ↓ this platform is ignored briefly so the cat can pass through it |
+| `catFacing` | +1 right, −1 left |
+
+Sprite draws at `(catX, catY)` using the same `drawCheeseCat` from
+Phase 4. Pose is derived: in air → `jumping`, on ground moving →
+`floor-walk`, on ground still → `floor-idle`.
+
+### Platforms and bird spots
+
+Seven platforms, each with a top surface `y` and a walkable horizontal
+range `[x, x+w]`:
+
+| id | x range | y | notes |
+|---|---|---|---|
+| `chair1-seat` | 170–232 | 488 | left wingchair cushion |
+| `chair1-back` | 182–222 | 395 | left wingchair top |
+| `table` | 390–570 | 505 | centre-table top (`PHASE5_TABLE_IDX = 2`) |
+| `chair2-seat` | 610–672 | 488 | |
+| `chair2-back` | 622–662 | 395 | |
+| `chair3-seat` | 760–822 | 488 | |
+| `chair3-back` | 772–812 | 395 | |
+
+The floor is at `PHASE5_FLOOR_Y = 585`, walkable across the whole width
+`[40, W−30]`. It's not in the `PHASE5_PLATFORMS` array — it's the
+default, handled as a special case in the landing check.
+
+Bird landing spots (`PHASE5_BIRD_SPOTS`) reference platforms by
+`platformIdx`. `platformIdx >= 0` means the spot sits on that
+platform's top surface (so simply landing there catches the bird).
+`platformIdx === -1` means the spot is unreachable (fireplace mantle,
+floor-lamp shade, portrait 1 and 3 tops) — the only way to catch a bird
+there is to intercept it mid-flight.
+
+### Physics constants
+
+    PHASE5_JUMP_V       = -560   // initial vy on ↑ press
+    PHASE5_DIAG_JUMP_VX =  380   // horizontal boost when ←/→ held during ↑ (~34° from vertical)
+    PHASE5_GRAVITY      = 1400
+    PHASE5_WALK_SPEED   =  140
+
+Peak jump height = `JUMP_V² / (2·GRAVITY) = 112 px`. Chair seat is
+97 px above the floor and chair back is 93 px above the chair seat, so
+a single jump comfortably reaches either. Floor → chair back in one hop
+(190 px) is intentionally too far — the player must step through chair
+seat, or take a diagonal from the table (505 → 395 is only 110 px).
+
+### The physics step
+
+`updatePhase5Physics(t, dt)` runs each frame:
+
+1. **Jump input** (`pendingDir === 'up'` and `onGround`): set `catVY =
+   JUMP_V`; if a horizontal key is held, add the diagonal boost;
+   leave the ground. `hops++`.
+2. **Drop-through input** (`pendingDir === 'down'` on a non-floor
+   platform): remember which platform to ignore for the next 0.25 s,
+   set `catVY = 40` for an initial downward push, leave the ground.
+   If ← or → is held, also set `catVX = ±DIAG_JUMP_VX` — a
+   **diagonal drop** (mirror of the ↑ + L/R diagonal jump). `hops++`.
+3. **Ground movement.** If on ground, read held ←/→ (or the
+   click-to-walk target) and set `catVX = ±WALK_SPEED`.
+4. **Air preserves horizontal velocity.** No mid-air steering — the jump
+   arc is fully predictable, which matters for intercepting the bird.
+5. **Integrate `catX`.** Clamped to `[FLOOR_XMIN, FLOOR_XMAX]`.
+6. **Edge check.** If still marked `onGround` on a non-floor platform
+   and `catX` is now outside the platform's x range, leave the ground
+   (Mario-style walk-off).
+7. **Gravity and landing.** If in air, add `GRAVITY · dt` to `catVY`
+   and integrate `catY`. If descending (`catVY > 0`), check every
+   platform (skipping any temporarily on the drop-through list): if
+   `prevY <= p.y` and `catY >= p.y` and `catX` is in range, the cat
+   has crossed the surface from above — land on the highest such
+   platform, snap `catY = p.y`, clear velocity. Special-case: landing
+   on the table for the first time topples the cage and releases the
+   bird. If no platform caught the cat but `catY >= FLOOR_Y`, land on
+   the floor.
+
+### Catch detection
+
+Every frame after the bird has escaped, the update checks: is the cat's
+sprite centre within `PHASE5_CATCH_R2` (26 px squared) of the bird AND
+is the cat in the air? If both, catch. Standing still next to a
+low-perched bird doesn't catch it — the bird's own `perched` update
+spooks whenever the cat is on the floor within 40 px of a low landing
+spot, so walking close turns into "bird flees" rather than a stealth
+catch.
+
+### The bird AI
+
+Four states, unchanged from the pre-refactor version:
+
+- `caged` — inside the intact cage; positions itself for the intact-cage
+  renderer to draw around it.
+- `flying` — parabolic arc from `fromX, fromY` to `toX, toY` over `dur`,
+  with a 55 px vertical bulge at the midpoint (birds don't quite fly
+  straight lines — they curve).
+- `perched` — resting at `spot.x`, `spot.y` with a small idle bob; will
+  take off when `pauseUntilT` elapses or when spooked.
+- `caught` — sticks to the cat's mouth area.
+
+`pickBirdNextTarget(t)` chooses the next destination. Preference weight
+= horizontal distance from the cat + random jitter (0..200) + a small
+bonus (30) for unreachable spots to make sure the "mid-air intercept"
+gameplay actually happens. The last spot is excluded so the bird never
+lands twice in a row in the same place.
+
+**Bird sprite facing.** `drawFreeBird` calls `ctx.scale(-dir, 1)` — the
+sprite geometry is drawn left-facing (head at `x=-8`, tail at
+`x=+8..14`), so `dir = +1` (flying right) flips the sprite to face
+right and `dir = -1` (flying left) leaves it as drawn. `b.dir` is
+updated from `b.toX >= b.fromX` each frame.
+
+### HUD and win
+
+`drawPhase5Hud` shows *Hops*, *Best* (persisted as `ac_phase5_best` in
+localStorage), and a state-dependent hint — "Leap to the table" until
+the cage topples, then "Catch the bird!".
+
+On catch, `mode` becomes `won` and a full-screen overlay fades in:
+"Caught! in N hops". After a 1.2 s lockout, any key or click resets
+`PHASE5.initialized = false`, which triggers a fresh session on the
+next frame. Best-hop tracking uses `<` so the FIRST completed run
+becomes the initial best.
 
 ## Scene 7: Phase 6 — the kittens
 

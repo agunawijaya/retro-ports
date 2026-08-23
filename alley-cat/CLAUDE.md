@@ -17,27 +17,120 @@ The port is documented in [`docs/05-web-architecture.md`](docs/05-web-architectu
 (the four decisions that shape it) and [`docs/06-web-code.md`](docs/06-web-code.md)
 (the code walkthrough, function by function).
 
-**Phase 4 (cheese wall) is PLAYABLE.** Player walks the cat left/right on
-the floor with arrow keys, presses ↑ to leap up to a bottom-row cheese
-hole or onto the chair seat / side table (a "walk under, press up" launch
-pad that's as wide as the whole piece of furniture). From a chair back the
-cat can shortcut several cheese levels up in one hop. Click any hole,
-chair seat, chair back or side-table top and the cat leaps toward it —
-successfully if reachable, otherwise it visibly *tries* and falls to the
-floor. Auto-catches a mouse whenever it's clinging to that mouse's hole.
-Landing on the side table breaks the vase (flowers + shards scatter on
-the floor — no scoring impact, just chaos). Score + best in the HUD, best
-persists across sessions via localStorage. `docs/06-web-code.md` has the
-full walkthrough of the 5-mode state machine, movement rules, and the
-sensible-defaults choices made when the CGA original's specific rules
-weren't recoverable.
+**Phase 4 (cheese wall) is PLAYABLE — hybrid platformer + hole-grab.**
+Same physics as Phase 5: continuous `(catX, catY)` + velocity + gravity
++ one-way platform collision. Furniture (chair back/seat, side-table)
+= walkable platforms. Cheese holes = **grab points**: whenever the cat
+is in air within 30 px of a hole grab-point (bottom rim), it
+auto-attaches — during ascent, apex, or descent. Just-released hole
+has a 0.3 s cooldown so cat doesn't re-grab instantly. On a hole,
+cat hangs in the `cling` pose. From a hole: `↑` = physics jump up (with
+optional diagonal from ←/→), `↓` = release + fall (diagonal with L/R),
+`←/→` alone = lateral hop (upward-and-sideways arc that may grab an
+adjacent hole). Ground: `↑`/`↓` diagonal jump / drop-through with L/R;
+**air control** (800 px/s² capped at ±380 = DIAG_JUMP_VX) lets player
+steer mid-air. Auto-catch mouse when hanging on the hole that mouse
+pops from. First landing on the side table triggers a three-phase vase
+animation (tumble off → impact + poof → shards + flowers on floor).
+Fall from height (>100 px) onto the floor triggers a 0.7 s stunned pose
+and breaks the combo. Combo multiplier: +2 after 3-in-a-row, +3 after
+6, etc. Best score in localStorage as `ac_phase4_best`.
 
-All OTHER phases are art demos — no input, no score, no interactions
-beyond the ambient animation (fire, water, walking cats, popping cats
-throwing bones, an AI cat that hops the phase-7 heart platform). The
-porting brief in [`docs/04-porting.md`](docs/04-porting.md) still applies
-to porting the remaining phases; the sprite-bank decode work it names as
-the blocker hasn't been done — this port draws all sprites procedurally.
+**Phase 5 (birdcage) is PLAYABLE — Mario-style platformer.** Unlike
+Phase 4 (perch-hop anchor model), Phase 5 uses full physics: the cat
+has continuous `(catX, catY)`, velocity, gravity, and every furniture
+surface (chair seats, chair backs, table top, floor) is a one-way
+platform. Held ←/→ walks along whatever surface the cat is on. ↑ jumps
+straight up (or diagonally when ←/→ is held); one jump clears ~112 px
+of vertical, enough for floor→chair-seat and chair-seat→chair-back but
+not floor→chair-back in one hop. ↓ drops through the current platform.
+Walking off an edge falls (Mario style). Cage topples off the table the
+first time cat lands on it, releasing the bird. Bird flies between
+eleven spots: seven reachable (chair seats/backs, table top) and four
+unreachable (fireplace mantle, lamp shade, portrait tops). Catch = cat
+sprite bbox overlaps bird bbox while cat is in air. HUD counts *hops*
+(each ↑ or ↓ press; walking is free), best saved as `ac_phase5_best`.
+The design pivoted here mid-session — an earlier version treated
+perches as anchor points and used sideways-hops on chair seats/backs,
+which the user correctly identified as wrong: "furniture itu
+diperlakukan seperti platform." The platformer refactor followed.
+Design source: the decompile identifies one bird actor with 4 sprite
+frames that moves "toward or away from cat" — matches the
+evade-then-perch pattern. Rules the original didn't cover
+(unreachable landing spots, per-hop scoring, diagonal jump, drop-through
+with ↓) are sensible-default choices the user picked in-session.
+
+The 5 remaining phases (0, 2, 3, 6, 7) are art demos — no input, no
+score, no interactions beyond the ambient animation (fire, water,
+walking cats, popping cats throwing bones, an AI cat that hops the
+phase-7 heart platform). The porting brief in
+[`docs/04-porting.md`](docs/04-porting.md) still applies to porting the
+remaining phases; the sprite-bank decode work it names as the blocker
+hasn't been done — this port draws all sprites procedurally.
+
+## Session 2026-08-23 — port made playable end-to-end
+
+Full day of work on the port. The decompile section below is
+unchanged since 2026-08-21; this session was all `web/` work.
+
+**Phase 5 (birdcage) built playable** through five rounds of user
+feedback:
+
+1. **First playable draft** (perch-anchor model, clone of Phase 4
+   shape). User asked for a bird-catching mini-game distinct from
+   Phase 4's whack-a-mole — bird evades, cat catches mid-flight or
+   on landed perch.
+2. **Walkable table**. Table is 180 px wide — user pointed out cat
+   should walk on it, not just stand at the centre. Added
+   `PHASE5.perchWalkOffset`.
+3. **Bird facing bug fix**. `drawFreeBird` sprite was drawn left-
+   facing but `ctx.scale(dir, 1)` didn't flip for right-facing
+   flight. Changed to `ctx.scale(-dir, 1)`.
+4. **Full platformer rewrite**. User: "furniture itu diperlakukan
+   seperti platform." Threw out the perch-anchor model and rewrote
+   Phase 5 as Mario-style platformer — continuous (x, y, vx, vy) +
+   gravity + one-way platform collision. Every chair seat, chair
+   back, table top, and the floor is walkable. `↑` jumps (physics,
+   arc), `↓` drops through. Bird still perches on the same 11 spots
+   (7 reachable + 4 unreachable).
+
+**Phase 4 (cheese wall) refactored to the same model** the next
+round. User: "yang phase Cheese juga harusnya begitu. Untuk yang
+furniture ... platform. Untuk yang cheese, kucing posisi
+bergantungan." Same platformer physics, plus **cheese holes = grab
+points**: cat auto-attaches to any hole within 30 px while in air.
+Kept the stunned-on-fall pose (user's explicit request, unlike Phase
+5 which doesn't stun). Threw out the whole `floor`/`wall`/`perch`/
+`hopping`/`falling`/`stunned` mode machine and the six `begin*Hop*`
+helpers.
+
+**Feel iterations** the same session:
+
+- **Chair-seat platform bounds** were off by 30 px right of the
+  visible chair (centred on x=700 where the old PERCH click-zone
+  was, but `drawWingChair` is centred on cx=670). Cat would jump in
+  front of the chair and fall, or beyond it and land on invisible
+  air. Fixed by re-centring on the actual chair `cx`.
+- **Diagonal jump** felt vertical (`DIAG_JUMP_VX=220`, angle only
+  21° from vertical). Raised to 380 (~34°).
+- **Air control** added — 800 px/s² capped at ±DIAG_JUMP_VX — so
+  ←/→ pressed after ↑ can still steer the jump.
+- **Diagonal drop** added — ↓ + L/R gives horizontal velocity, mirror
+  of the diagonal jump.
+- **Vase animation** replaced instant-break with a three-phase
+  tumble→impact→shards animation (`drawFallingVase` for the falling
+  frame + `drawPhase4SideTable` orchestrates the phases).
+- **Walk cycle** amplitude was ±1 px (barely visible) — increased to
+  ±3 px legs, added a body bob and tail flick.
+- **Grab-on-ascent** — earlier the auto-grab check gated on
+  `catVY > -100` (apex + descent only). User: "kalau kucing sedang
+  meloncat, kemudian ada lubang yang terlewati, dia hinggap di lubang
+  itu." Removed the gate; the just-released-hole cooldown alone
+  handles the "would re-grab immediately" case.
+
+End of session: 6,108 lines of `game.js`; both playable phases share
+one physics model, one input handler; docs `05` and `06` describe
+the platformer + hole-grab shape.
 
 ## Where this stands (reverse-engineering)
 

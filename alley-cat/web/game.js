@@ -2250,20 +2250,47 @@
     ctx.restore();
   }
 
-  // The Phase 4 side table + vase, with a break state. When the vase has
-  // been broken by the cat, draw shards on the table top, scatter flowers
-  // and vase pieces on the floor, and animate a briefly-visible splash
-  // right after the moment of impact.
+  // The Phase 4 side table + vase, with a three-phase break animation:
+  //
+  //   phase          age window           what's drawn
+  //   ─────────────  ───────────────────  ──────────────────────────────────
+  //   intact         (vaseBroken false)   table + upright vase + flowers
+  //   falling        0 .. FALL_DUR        table alone + tumbling vase mid-air
+  //   broken         FALL_DUR onward      table + tiny remnants + floor debris
+  //   poof           FALL_DUR .. +0.6s    expanding dust ring at impact point
+  //
+  // The falling vase carries its own flowers with it (they tumble together);
+  // at impact they scatter into fixed positions from PHASE4_VASE_DEBRIS.
   function drawPhase4SideTable(t) {
     const cx = 830, cy = 515;
     if (!PHASE4.vaseBroken) {
       drawSideTable(cx, cy, true);
       return;
     }
-    // Broken — table itself has no vase now
+
+    const age = t - PHASE4.vaseBreakT;
+    const FALL_DUR = 0.4;
+
+    // Table always renders without the vase — the cat knocked it off.
     drawSideTable(cx, cy, false);
 
-    // Vase shards left on the table top
+    if (age < FALL_DUR) {
+      // Vase tumbles from the table top down to a resting position on the
+      // floor just to the left of the table. Vertical motion is quadratic
+      // (gravity ease); horizontal drift is linear. Rotation is a slow
+      // counter-clockwise tumble (~150° over the fall).
+      const p = clamp(age / FALL_DUR, 0, 1);
+      const startX = cx,        startY = cy - 15;
+      const endX   = cx - 18,   endY   = PHASE4_FLOOR_Y - 12;
+      const vx = lerp(startX, endX, p);
+      const vy = lerp(startY, endY, p * p);
+      const rot = -p * Math.PI * 0.85;
+      drawFallingVase(vx, vy, rot);
+      return;
+    }
+
+    // ---- Broken (after impact) ----
+    // Small vase remnants on the table top (rim + edge chip)
     ctx.save();
     ctx.fillStyle = '#3f4e78';
     ctx.beginPath();
@@ -2279,9 +2306,7 @@
     ctx.fillRect(cx - 8, cy - 4, 3, 1);
     ctx.restore();
 
-    // Scattered flower + vase shard pieces on the floor around the table.
-    // Shards drawn LARGER and with a bright edge highlight so they read
-    // clearly against the dark wooden floor.
+    // Scattered flower + shard pieces on the floor around the table
     const bits = PHASE4_VASE_DEBRIS;
     for (const b of bits) {
       const bx = cx + b.dx;
@@ -2290,7 +2315,6 @@
         drawVaseShard(bx, by, b.rot, b.size, b.shape);
       } else {
         drawFlower(bx, by, b.size, b.color, '#ffcc44');
-        // Broken stem next to each fallen flower
         ctx.strokeStyle = '#2f5a2a'; ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.moveTo(bx - 3, by + 4);
@@ -2299,24 +2323,67 @@
       }
     }
 
-    // A brief "poof" animation for the first 0.6 s after breaking
-    const age = t - PHASE4.vaseBreakT;
-    if (age >= 0 && age < 0.6) {
-      const p = age / 0.6;
+    // Poof ring — fires at impact (age = FALL_DUR), lasts 0.6 s
+    const poofAge = age - FALL_DUR;
+    if (poofAge >= 0 && poofAge < 0.6) {
+      const p = poofAge / 0.6;
       ctx.save();
       ctx.globalAlpha = 1 - p;
       ctx.strokeStyle = '#c8ccd8';
       ctx.lineWidth = 1.5;
+      const px = cx - 18, py = PHASE4_FLOOR_Y - 12;    // impact point
       for (let i = 0; i < 8; i++) {
         const a = i * (TAU / 8);
-        const r0 = 10, r1 = 24 + p * 30;
+        const r0 = 8, r1 = 20 + p * 26;
         ctx.beginPath();
-        ctx.moveTo(cx + Math.cos(a) * r0, cy - 12 + Math.sin(a) * r0);
-        ctx.lineTo(cx + Math.cos(a) * r1, cy - 12 + Math.sin(a) * r1);
+        ctx.moveTo(px + Math.cos(a) * r0, py + Math.sin(a) * r0);
+        ctx.lineTo(px + Math.cos(a) * r1, py + Math.sin(a) * r1);
         ctx.stroke();
       }
       ctx.restore();
     }
+  }
+
+  // The vase in mid-fall — mirrors drawSideTable's vase body but drawn at
+  // (cx, cy) with an applied rotation, carrying its stems / leaves /
+  // flowers along for the ride so they tumble with it.
+  function drawFallingVase(cx, cy, rot) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+    // Body
+    ctx.fillStyle = '#4a5a8a';
+    roundedRect(ctx, -10, -13, 20, 26, 4);
+    ctx.fill();
+    // Glaze reflection
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(-8, -10, 2, 20);
+    // Curvature shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.fillRect(7, -10, 2, 20);
+    // Rim
+    ctx.fillStyle = '#2f3f70';
+    ctx.fillRect(-10, -13, 20, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(-8, -13, 12, 1);
+    // Stems (relative to vase-top at y=-13)
+    ctx.strokeStyle = '#2f5a2a';
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-2, -13); ctx.quadraticCurveTo(-8, -29, -12, -43);
+    ctx.moveTo(1,  -13); ctx.quadraticCurveTo(2,  -35,  1, -53);
+    ctx.moveTo(3,  -13); ctx.quadraticCurveTo(10, -27, 14, -39);
+    ctx.stroke();
+    // Leaves
+    ctx.fillStyle = '#3a6a2a';
+    ctx.beginPath(); ctx.ellipse(-5, -25, 4, 2, -0.6, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse( 6, -23, 4, 2,  0.6, 0, TAU); ctx.fill();
+    // Flowers still in the vase during the tumble
+    drawFlower( 1, -55, 8, '#ff5a9a', '#ffcc44');
+    drawFlower(-12, -45, 7, '#c070ff', '#ffcc44');
+    drawFlower( 14, -41, 7, '#ffa060', '#ffcc44');
+    ctx.restore();
   }
 
   // Deterministic scatter pattern for vase debris on the floor around the
@@ -3414,103 +3481,95 @@
     }));
   })();
 
-  // Maximum horizontal distance in pixels the cat can leap in a single hop.
-  const PHASE4_MAX_HORIZ = 220;
-  // Y coordinate the cat sits at when standing on the floor (in front of the
-  // cheese wall). Cat sprite is drawn upward from this line.
-  const PHASE4_FLOOR_Y = 585;
-  // Horizontal bounds the cat can walk to on the floor.
-  const PHASE4_FLOOR_XMIN = 40;
-  const PHASE4_FLOOR_XMAX = W - 30;                // right edge of the room
-  const PHASE4_WALK_SPEED = 140;  // px per second on the floor
-
-  // Perches the cat can leap onto besides the cheese-wall holes:
-  //   'table'      — top of the side table (breaks the vase!)
-  //   'chair-seat' — cushion of the wing chair
-  //   'chair-back' — top of the chair's tall back (highest point in the room)
+  // Furniture on the right side of the room — treated as one-way platforms
+  // the cat can walk on, jump between, and drop through with ↓. Positions
+  // are derived from the drawing coords in drawWingChair / drawSideTable
+  // so the platform x-range matches what's visible on screen:
   //
-  // Each perch has TWO zones:
-  //   {x, y, w, h}                       click zone — small rectangle on the
-  //                                       perch's visible surface
-  //   {underX0, underX1}                 "walk-under" zone — the horizontal
-  //                                       range on the floor where pressing
-  //                                       ↑ leaps up onto the perch
-  //                                       (as wide as the whole piece of
-  //                                       furniture — user requested it that
-  //                                       way).
-  //
-  // Positions match the actual drawing coords:
-  //   drawSideTable(830, 515)    → top surface ~y=505
   //   drawWingChair(670, 530, 0.80, +0.3)
-  //     - feet at y=530, cushion top ~y=488, back top ~y=395
-  //     - footprint width ~74 px, centered x=670
-  const PHASE4_PERCHES = [
-    { id: 'table',
-      x: 830, y: 505, w: 82, h: 16,
-      underX0: 788, underX1: 872 },
-    { id: 'chair-seat',
-      x: 700, y: 488, w: 62, h: 16,
-      underX0: 630, underX1: 710 },
-    { id: 'chair-back',
-      x: 670, y: 395, w: 44, h: 14,
-      underX0: 652, underX1: 692 },
+  //     w = 92 * 0.80 = 73.6
+  //     cushion top plane x-range = ±(w · 0.36) ≈ ±26.5 relative to cx
+  //       → chair-seat visible from x=644 to x=696, top surface y≈488
+  //     chair back = ±(w · 0.40) ≈ ±29 relative to cx
+  //       → chair-back visible from x=641 to x=699, top surface y≈395
+  //   drawSideTable(830, 515)
+  //     top ellipse radius 42 → table visible from x=788 to x=872, top y≈509
+  //
+  // Widths below are slightly narrower than the visible surface so the cat
+  // has to be actually on the object to land — earlier versions overshot
+  // to the right of the chair (platform centred on x=700 instead of x=670),
+  // which meant the cat could land "in mid-air" beside the chair.
+  const PHASE4_PLATFORMS = [
+    { id: 'chair-back', x: 648, w: 44, y: 395 },   // narrow curved top, centred on 670
+    { id: 'chair-seat', x: 644, w: 52, y: 488 },   // cushion, centred on 670
+    { id: 'side-table', x: 794, w: 72, y: 509 },   // circular top, centred on 830
   ];
-  // Max Euclidean distance for a perch-launched leap
-  const PHASE4_PERCH_REACH = 260;
+  const PHASE4_TABLE_IDX = 2;
 
-  function phase4PerchAt(cx, cy) {
-    for (let i = 0; i < PHASE4_PERCHES.length; i++) {
-      const p = PHASE4_PERCHES[i];
-      if (cx >= p.x - p.w / 2 && cx <= p.x + p.w / 2 &&
-          cy >= p.y - p.h / 2 && cy <= p.y + p.h / 2) return i;
-    }
-    return -1;
+  // Physics constants — same tuning as Phase 5 (JUMP_V=-560, GRAVITY=1400
+  // → peak height 112 px). One jump reaches floor → chair-seat (97 px) and
+  // chair-seat → chair-back (93 px); floor → chair-back (190 px) requires
+  // two hops or a diagonal from a bottom-row cheese hole. Similarly, one
+  // jump from floor just barely reaches the lowest bottom-row cheese hole
+  // grab points (y≈482–507).
+  const PHASE4_FLOOR_Y       = 585;
+  const PHASE4_FLOOR_XMIN    = 40;
+  const PHASE4_FLOOR_XMAX    = W - 30;
+  const PHASE4_WALK_SPEED    = 140;
+  const PHASE4_JUMP_V        = -560;
+  const PHASE4_DIAG_JUMP_VX  = 380;    // held ← / → during ↑ — angle ≈34° from vertical
+  const PHASE4_LATERAL_HOP_V = -320;   // small upward vel for ← / → alone from a hole
+  const PHASE4_GRAVITY       = 1400;
+  const PHASE4_HOLE_GRAB_R   = 30;     // grab a cheese hole if cat comes within this distance
+  const PHASE4_STUN_FALL     = 100;    // fall of more than this many px triggers dizzy landing
+  const PHASE4_STUN_DUR      = 0.7;
+
+  // Persistent state for the mouse-catching mini-game — now driven by
+  // continuous physics (like Phase 5) rather than mode-based anchor hops.
+  // Cheese holes are grab points (cat clings from the bottom rim); every
+  // furniture surface is a walkable platform; the floor is a walkable
+  // baseline. `onGround` and `onHole` are mutually exclusive — cat is
+  // hanging on a hole XOR standing on floor/platform XOR in the air.
+  const PHASE4 = {
+    initialized: false,
+    score: 0, best: 0, missed: 0, combo: 0,
+    mice: [], popups: [], nextSpawnT: 1.4,
+
+    // Cat physics
+    catX: 320, catY: PHASE4_FLOOR_Y,
+    catVX: 0, catVY: 0,
+    catFacing: 1,
+    onGround: true,
+    onHole: false,
+    isStunned: false,
+    currentPlatform: -1,              // -1 = floor
+    currentHole: -1,                  // -1 = none
+    dropThroughIdx: -1,               // platform temporarily ignored after ↓
+    dropThroughUntilT: 0,
+    justReleasedHole: -1,             // hole temporarily ignored after release
+    justReleasedUntilT: 0,
+    jumpStartY: PHASE4_FLOOR_Y,       // y when cat last left the ground/hole (for stun threshold)
+    stunnedUntilT: 0,
+
+    // Input
+    keyLeft: false, keyRight: false,
+    pendingDir: null,
+    walkTargetX: -1,
+
+    // Vase state (side-table platform breaks it on the cat's first landing)
+    vaseBroken: false,
+    vaseBreakT: -1,
+    lastFrameT: 0,
+  };
+
+  // Y coordinate where the cat's paws grip when hanging on hole `idx`.
+  // Used by the mouse-catch popup positioning and by the auto-grab check.
+  function holePawsY(idx) {
+    const h = PHASE4_HOLES[idx];
+    return h.y + h.r;
   }
 
-  // Given a from-hole and a candidate to-hole, does the leap succeed?
-  //   'ok'   → the cat lands cleanly
-  //   'fall' → the leap is beyond the cat's ability; cat falls to the floor
-  function phase4CheckJump(fromIdx, toIdx) {
-    if (fromIdx === toIdx) return 'ok';
-    const from = PHASE4_HOLES[fromIdx];
-    const to   = PHASE4_HOLES[toIdx];
-    const dx = to.x - from.x;
-    const dLevel = to.level - from.level;
-    if (dLevel < -1) return 'fall';                    // 2+ levels up
-    if (Math.abs(dx) > PHASE4_MAX_HORIZ) return 'fall'; // too far sideways
-    return 'ok';
-  }
-
-  // Keyboard direction resolution — pick the best hole in a compass direction.
-  function findKbdTarget(fromIdx, dir) {
-    const from = PHASE4_HOLES[fromIdx];
-    let best = -1, bestScore = Infinity;
-    for (let i = 0; i < PHASE4_HOLES.length; i++) {
-      if (i === fromIdx) continue;
-      const h = PHASE4_HOLES[i];
-      const dx = h.x - from.x, dy = h.y - from.y;
-      const dLevel = h.level - from.level;
-      let ok = false, score = Infinity;
-      if (dir === 'up') {
-        ok = (dLevel === -1 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
-        if (ok) score = Math.abs(dx);
-      } else if (dir === 'down') {
-        // Nearest hole below (any level) with a modest horizontal drift.
-        ok = (dLevel >= 1 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
-        if (ok) score = dLevel * 100 + Math.abs(dx);
-      } else if (dir === 'left') {
-        ok = (dLevel === 0 && dx < -6 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
-        if (ok) score = -dx;
-      } else if (dir === 'right') {
-        ok = (dLevel === 0 && dx > 6 && Math.abs(dx) <= PHASE4_MAX_HORIZ);
-        if (ok) score = dx;
-      }
-      if (ok && score < bestScore) { bestScore = score; best = i; }
-    }
-    return best;
-  }
-
-  // What hole (if any) sits under a canvas pixel?
+  // Click hit-test for a cheese hole. Slight padding so clicks are forgiving.
   function phase4HoleAt(cx, cy) {
     for (let i = 0; i < PHASE4_HOLES.length; i++) {
       const h = PHASE4_HOLES[i];
@@ -3520,91 +3579,14 @@
     return -1;
   }
 
-  // Best target for a jump from the floor. Returns
-  //   { type: 'perch'|'hole', idx }  or null.
-  //
-  // Priority:
-  //   1. Any perch the cat is directly UNDER (widest reach — as wide as the
-  //      whole piece of furniture). If more than one applies, pick the
-  //      lowest (closest — chair-seat before chair-back).
-  //   2. Otherwise, the nearest bottom-row cheese hole IN THE CAT'S FACING
-  //      DIRECTION. The cat never leaps backward; if there's no hole in
-  //      front, the leap fails in the facing direction (caller handles).
-  function findFloorJumpTarget(floorX, facing) {
-    // 1. Perches the cat is standing under
-    const underPerches = [];
-    for (let i = 0; i < PHASE4_PERCHES.length; i++) {
-      const p = PHASE4_PERCHES[i];
-      if (floorX >= p.underX0 && floorX <= p.underX1) {
-        underPerches.push({ idx: i, y: p.y });
-      }
+  // Click hit-test for a furniture platform surface.
+  function phase4PlatformAt(cx, cy) {
+    for (let i = 0; i < PHASE4_PLATFORMS.length; i++) {
+      const p = PHASE4_PLATFORMS[i];
+      if (cx >= p.x && cx <= p.x + p.w && Math.abs(cy - p.y) < 14) return i;
     }
-    if (underPerches.length > 0) {
-      // Prefer the lowest perch — the shortest, safest leap
-      underPerches.sort((a, b) => b.y - a.y);
-      return { type: 'perch', idx: underPerches[0].idx };
-    }
-    // 2. Nearest bottom-row cheese hole IN facing direction
-    const facingSign = facing > 0 ? 1 : -1;
-    let best = -1, bestDist = Infinity;
-    for (let i = 0; i < PHASE4_HOLES.length; i++) {
-      const h = PHASE4_HOLES[i];
-      if (h.level !== 3) continue;
-      const dx = h.x - floorX;
-      // Reject holes behind the cat (allow small tolerance for direct-above)
-      if (facingSign > 0 && dx < -10) continue;
-      if (facingSign < 0 && dx >  10) continue;
-      if (Math.abs(dx) > PHASE4_MAX_HORIZ) continue;
-      if (Math.abs(dx) < bestDist) { bestDist = Math.abs(dx); best = i; }
-    }
-    if (best !== -1) return { type: 'hole', idx: best };
-    return null;
+    return -1;
   }
-
-  // Persistent game state for the mouse-catching mini-game.
-  //
-  // The player controls the CAT with the arrow keys — it clings to the cheese
-  // wall and hops between the holes. A mouse popping out of the hole where
-  // the cat is standing is caught automatically. Mice at OTHER holes retreat
-  // untouched and count as misses.
-  // Cat state — one of several modes.
-  //
-  //   'floor'    : standing/walking on the floor at floorX
-  //   'wall'     : clinging on a hole (catHole)
-  //   'hopping'  : in-air between two holes (or floor→hole, or hole→floor)
-  //   'falling'  : failed leap — rises then falls to floor
-  //   'stunned'  : dizzy sit on floor briefly after a fall
-  const PHASE4 = {
-    initialized: false,
-    score: 0, best: 0, missed: 0, combo: 0,
-    mice: [], popups: [], nextSpawnT: 1.4,
-    // Cat position + mode
-    mode: 'floor',
-    floorX: 320,                     // x-coord when on floor
-    catHole: -1,                     // hole index when on wall (-1 otherwise)
-    catPerch: -1,                    // perch index when on perch (-1 otherwise)
-    catFacing: 1,
-    // Animation endpoints (in canvas pixels)
-    animStartT: 0, animDur: 0,
-    fromX: 0, fromY: 0,
-    toX: 0, toY: 0,
-    arcHeight: 0,                    // parabolic arc peak height
-    // For 'falling' — cat rises, peaks below target, then falls to floor
-    fallPeakY: 0,                    // how high the cat manages to reach
-    // For 'stunned' — where the cat is sitting waiting to recover
-    stunnedX: 320,
-    stunnedUntilT: 0,
-    // Input queues
-    keyLeft: false, keyRight: false, // continuous walk keys
-    pendingDir: null,                // arrow up/down (one-shot)
-    pendingClickIdx: -1,             // hole index clicked
-    pendingPerchClick: -1,           // perch index clicked
-    pendingClickX: -1, pendingClickY: -1,
-
-    // Vase state (side-table perch breaks it when the cat lands there)
-    vaseBroken: false,
-    vaseBreakT: -1,
-  };
 
   function drawPhase4(t) {
     updatePhase4(t);
@@ -3618,10 +3600,10 @@
     drawWingChair(670, 530, 0.80, +0.3);
     drawPhase4SideTable(t);
 
-    // Mice pop out on TOP of the cheese layer.
+    // Mice pop out on top of the cheese layer.
     drawPhase4Mice(t);
 
-    // The cat clings to the wall at its current hole.
+    // The cat hangs from its current hole, or stands / walks / jumps.
     drawPhase4Cat(t);
 
     // Floating "+N" popups (combo feedback)
@@ -3637,32 +3619,236 @@
     if (!PHASE4.initialized) {
       PHASE4.initialized = true;
       PHASE4.best = parseInt(localStorage.getItem('ac_phase4_best') || '0', 10) || 0;
-      PHASE4.mode = 'floor';
-      PHASE4.floorX = 320;
+      PHASE4.catX = 320; PHASE4.catY = PHASE4_FLOOR_Y;
+      PHASE4.catVX = 0;  PHASE4.catVY = 0;
+      PHASE4.catFacing = 1;
+      PHASE4.onGround = true; PHASE4.onHole = false;
+      PHASE4.isStunned = false;
+      PHASE4.currentPlatform = -1; PHASE4.currentHole = -1;
+      PHASE4.dropThroughIdx = -1; PHASE4.dropThroughUntilT = 0;
+      PHASE4.justReleasedHole = -1; PHASE4.justReleasedUntilT = 0;
+      PHASE4.jumpStartY = PHASE4_FLOOR_Y;
+      PHASE4.pendingDir = null;
+      PHASE4.walkTargetX = -1;
       PHASE4.lastFrameT = t;
-      // Optional URL param for testing the debris rendering headless
+      // ?vase=broken URL param — start with the vase already smashed for
+      // headless inspection of the debris rendering.
       if (new URLSearchParams(location.search).get('vase') === 'broken') {
         PHASE4.vaseBroken = true;
-        PHASE4.vaseBreakT = -10;   // long past the splash animation
+        PHASE4.vaseBreakT = -10;
       }
     }
     const dt = Math.min(0.05, t - (PHASE4.lastFrameT ?? t));
     PHASE4.lastFrameT = t;
 
-    // ============ mode transitions ============
+    updatePhase4Physics(t, dt);
+    updatePhase4Mice(t);
+  }
 
-    switch (PHASE4.mode) {
-      case 'floor':      updateFloorMode(t, dt); break;
-      case 'wall':       updateWallMode(t);      break;
-      case 'perch':      updatePerchMode(t);     break;
-      case 'hopping':    updateHoppingMode(t);   break;
-      case 'falling':    updateFallingMode(t);   break;
-      case 'stunned':    updateStunnedMode(t);   break;
+  // ---- Physics + input ---------------------------------------------------
+  function updatePhase4Physics(t, dt) {
+    // Stunned: timer-only, no input.
+    if (PHASE4.isStunned) {
+      if (t >= PHASE4.stunnedUntilT) {
+        PHASE4.isStunned = false;
+      } else {
+        PHASE4.pendingDir = null;
+        return;
+      }
     }
 
-    // ---- Mouse aging + auto-catch ----
-    // Auto-catch only triggers when the cat is CLINGING to a hole ('wall'
-    // mode). Not while walking on the floor, not mid-hop, not falling.
+    // ---- On-hole controls ----
+    if (PHASE4.onHole) {
+      const h = PHASE4_HOLES[PHASE4.currentHole];
+      // Snap position each frame so tiny drift can't accumulate.
+      PHASE4.catX = h.x;
+      PHASE4.catY = h.y + h.r;
+      PHASE4.catVX = 0; PHASE4.catVY = 0;
+
+      const dir = PHASE4.pendingDir;
+      PHASE4.pendingDir = null;
+      if (dir === 'up') {
+        // Physics jump straight up (or diagonal with ← / → held)
+        PHASE4.catVY = PHASE4_JUMP_V;
+        PHASE4.catVX = PHASE4.keyLeft ? -PHASE4_DIAG_JUMP_VX
+                     : PHASE4.keyRight ? +PHASE4_DIAG_JUMP_VX : 0;
+        if (PHASE4.catVX !== 0) PHASE4.catFacing = PHASE4.catVX > 0 ? 1 : -1;
+        releaseFromHole(t);
+      } else if (dir === 'down') {
+        // Release + small downward push. Held ← / → gives a diagonal
+        // drop off the hole (mirror of the diagonal-up ↑ + L/R).
+        PHASE4.catVY = 40;
+        PHASE4.catVX = PHASE4.keyLeft ? -PHASE4_DIAG_JUMP_VX
+                     : PHASE4.keyRight ? +PHASE4_DIAG_JUMP_VX : 0;
+        if (PHASE4.catVX !== 0) PHASE4.catFacing = PHASE4.catVX > 0 ? 1 : -1;
+        releaseFromHole(t);
+      } else if (dir === 'left' || dir === 'right') {
+        // Lateral hop — modest up + sideways so cat arcs off toward the
+        // next hole in that direction (may or may not grab it)
+        const sign = dir === 'right' ? 1 : -1;
+        PHASE4.catVX = sign * PHASE4_DIAG_JUMP_VX;
+        PHASE4.catVY = PHASE4_LATERAL_HOP_V;
+        PHASE4.catFacing = sign;
+        releaseFromHole(t);
+      }
+      if (PHASE4.onHole) return;         // still hanging → nothing further
+    }
+
+    // ---- Jump / drop-through from ground ----
+    if (PHASE4.pendingDir === 'up' && PHASE4.onGround) {
+      PHASE4.catVY = PHASE4_JUMP_V;
+      PHASE4.catVX = PHASE4.keyLeft ? -PHASE4_DIAG_JUMP_VX
+                   : PHASE4.keyRight ? +PHASE4_DIAG_JUMP_VX : 0;
+      if (PHASE4.catVX !== 0) PHASE4.catFacing = PHASE4.catVX > 0 ? 1 : -1;
+      PHASE4.jumpStartY = PHASE4.catY;
+      PHASE4.onGround = false;
+      PHASE4.currentPlatform = -1;
+      PHASE4.walkTargetX = -1;
+    }
+    if (PHASE4.pendingDir === 'down' && PHASE4.onGround && PHASE4.currentPlatform >= 0) {
+      PHASE4.dropThroughIdx = PHASE4.currentPlatform;
+      PHASE4.dropThroughUntilT = t + 0.25;
+      PHASE4.jumpStartY = PHASE4.catY;
+      PHASE4.onGround = false;
+      PHASE4.currentPlatform = -1;
+      PHASE4.catVY = 40;
+      // Held ← / → makes it a diagonal drop-through (mirror of ↑ + L/R)
+      PHASE4.catVX = PHASE4.keyLeft ? -PHASE4_DIAG_JUMP_VX
+                   : PHASE4.keyRight ? +PHASE4_DIAG_JUMP_VX : 0;
+      if (PHASE4.catVX !== 0) PHASE4.catFacing = PHASE4.catVX > 0 ? 1 : -1;
+      PHASE4.walkTargetX = -1;
+    }
+    PHASE4.pendingDir = null;
+
+    // ---- Ground movement ----
+    if (PHASE4.onGround) {
+      let vx = 0;
+      if (PHASE4.keyLeft)  vx -= PHASE4_WALK_SPEED;
+      if (PHASE4.keyRight) vx += PHASE4_WALK_SPEED;
+      if (vx === 0 && PHASE4.walkTargetX >= 0) {
+        const dxToTarget = PHASE4.walkTargetX - PHASE4.catX;
+        if (Math.abs(dxToTarget) < 5) PHASE4.walkTargetX = -1;
+        else vx = (dxToTarget > 0 ? 1 : -1) * PHASE4_WALK_SPEED;
+      }
+      PHASE4.catVX = vx;
+      if (vx !== 0) PHASE4.catFacing = vx > 0 ? 1 : -1;
+    }
+
+    // ---- Integrate x ----
+    PHASE4.catX += PHASE4.catVX * dt;
+    PHASE4.catX = clamp(PHASE4.catX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
+
+    // Walked off a non-floor platform → fall
+    if (PHASE4.onGround && PHASE4.currentPlatform >= 0) {
+      const p = PHASE4_PLATFORMS[PHASE4.currentPlatform];
+      if (PHASE4.catX < p.x || PHASE4.catX > p.x + p.w) {
+        PHASE4.onGround = false;
+        PHASE4.currentPlatform = -1;
+        PHASE4.catVY = 0;
+        PHASE4.jumpStartY = PHASE4.catY;
+      }
+    }
+
+    // ---- In-air integration + landing / grab checks ----
+    if (!PHASE4.onGround && !PHASE4.onHole) {
+      // Air control — light horizontal acceleration when ← / → is held
+      // in the air. Lets the player steer a jump that started straight up,
+      // or amplify the diagonal boost. Capped at DIAG_JUMP_VX so it
+      // never exceeds a proper diagonal.
+      const AIR_ACCEL = 800;                       // px/s²
+      const AIR_MAX = PHASE4_DIAG_JUMP_VX;
+      let ax = 0;
+      if (PHASE4.keyLeft  && PHASE4.catVX > -AIR_MAX) ax -= AIR_ACCEL;
+      if (PHASE4.keyRight && PHASE4.catVX <  AIR_MAX) ax += AIR_ACCEL;
+      PHASE4.catVX += ax * dt;
+      if (ax > 0) PHASE4.catFacing = 1;
+      else if (ax < 0) PHASE4.catFacing = -1;
+
+      PHASE4.catVY += PHASE4_GRAVITY * dt;
+      const prevY = PHASE4.catY;
+      PHASE4.catY += PHASE4.catVY * dt;
+
+      // Auto-grab a cheese hole when close. Fires any time the cat is in
+      // the air — including on the way up — so a jump that passes through
+      // a hole's grab zone latches on. Skip the just-released hole for a
+      // short cooldown, otherwise the cat would re-grab the hole it just
+      // left the instant it starts rising.
+      {
+        let bestHole = -1, bestDist = PHASE4_HOLE_GRAB_R;
+        for (let i = 0; i < PHASE4_HOLES.length; i++) {
+          if (t < PHASE4.justReleasedUntilT && i === PHASE4.justReleasedHole) continue;
+          const h = PHASE4_HOLES[i];
+          const gx = h.x, gy = h.y + h.r;
+          const d = Math.hypot(PHASE4.catX - gx, PHASE4.catY - gy);
+          if (d < bestDist) { bestDist = d; bestHole = i; }
+        }
+        if (bestHole >= 0) {
+          const h = PHASE4_HOLES[bestHole];
+          PHASE4.catX = h.x; PHASE4.catY = h.y + h.r;
+          PHASE4.catVX = 0; PHASE4.catVY = 0;
+          PHASE4.currentHole = bestHole;
+          PHASE4.onHole = true;
+          PHASE4.onGround = false;
+          return;
+        }
+      }
+
+      // Platform landing (only while descending), picking the topmost
+      // platform surface the cat crossed this frame.
+      if (PHASE4.catVY > 0) {
+        let bestIdx = -1, bestY = Infinity;
+        for (let i = 0; i < PHASE4_PLATFORMS.length; i++) {
+          if (t < PHASE4.dropThroughUntilT && i === PHASE4.dropThroughIdx) continue;
+          const p = PHASE4_PLATFORMS[i];
+          if (PHASE4.catX < p.x || PHASE4.catX > p.x + p.w) continue;
+          if (prevY <= p.y + 0.01 && PHASE4.catY >= p.y && p.y < bestY) {
+            bestY = p.y; bestIdx = i;
+          }
+        }
+        if (bestIdx >= 0) {
+          PHASE4.catY = PHASE4_PLATFORMS[bestIdx].y;
+          PHASE4.catVX = 0; PHASE4.catVY = 0;
+          PHASE4.onGround = true;
+          PHASE4.currentPlatform = bestIdx;
+          // Vase break: first landing on the side table
+          if (bestIdx === PHASE4_TABLE_IDX && !PHASE4.vaseBroken) {
+            PHASE4.vaseBroken = true;
+            PHASE4.vaseBreakT = t;
+          }
+        }
+      }
+
+      // Landed on floor
+      if (!PHASE4.onGround && !PHASE4.onHole && PHASE4.catY >= PHASE4_FLOOR_Y) {
+        const fallDist = PHASE4_FLOOR_Y - PHASE4.jumpStartY;
+        PHASE4.catY = PHASE4_FLOOR_Y;
+        PHASE4.catVX = 0; PHASE4.catVY = 0;
+        PHASE4.onGround = true;
+        PHASE4.currentPlatform = -1;
+        // Fell from height → dizzy on landing, combo broken.
+        if (fallDist > PHASE4_STUN_FALL) {
+          PHASE4.isStunned = true;
+          PHASE4.stunnedUntilT = t + PHASE4_STUN_DUR;
+          PHASE4.combo = 0;
+        }
+      }
+    }
+  }
+
+  function releaseFromHole(t) {
+    PHASE4.justReleasedHole = PHASE4.currentHole;
+    PHASE4.justReleasedUntilT = t + 0.3;
+    PHASE4.jumpStartY = PHASE4.catY;
+    PHASE4.onHole = false;
+    PHASE4.currentHole = -1;
+  }
+
+  // ---- Mouse spawning + auto-catch --------------------------------------
+  //
+  // Auto-catch only fires while cat is hanging on a hole (`onHole` true)
+  // AND the popup is more than ~35 % out (so a mouse can't be caught the
+  // instant it starts to appear).
+  function updatePhase4Mice(t) {
     const surviving = [];
     for (const m of PHASE4.mice) {
       const age = t - m.spawnT;
@@ -3672,7 +3858,7 @@
         PHASE4.missed++;
         PHASE4.combo = 0;
       } else {
-        if (PHASE4.mode === 'wall' && m.hole === PHASE4.catHole
+        if (PHASE4.onHole && m.hole === PHASE4.currentHole
             && phase4PopupProgress(m, t) > 0.35) {
           m.caught = true;
           m.caughtT = t;
@@ -3682,7 +3868,7 @@
           if (PHASE4.score > PHASE4.best) {
             PHASE4.best = PHASE4.score;
             try { localStorage.setItem('ac_phase4_best', String(PHASE4.best)); }
-            catch (_) { /* private mode etc — ignore */ }
+            catch (_) { /* ignore */ }
           }
           const hole = PHASE4_HOLES[m.hole];
           PHASE4.popups.push({
@@ -3696,10 +3882,10 @@
     PHASE4.mice = surviving;
     PHASE4.popups = PHASE4.popups.filter(p => t - p.startT < 0.9);
 
-    // ---- Spawn a new mouse in a free hole if it's time ----
+    // Spawn a new mouse in a free hole if it's time
     if (t >= PHASE4.nextSpawnT) {
       const occupied = new Set(PHASE4.mice.map(m => m.hole));
-      if (PHASE4.mode === 'wall') occupied.add(PHASE4.catHole);
+      if (PHASE4.onHole) occupied.add(PHASE4.currentHole);
       const free = [];
       for (let i = 0; i < PHASE4_HOLES.length; i++) {
         if (!occupied.has(i)) free.push(i);
@@ -3718,408 +3904,15 @@
     }
   }
 
-  // ============ Mode update helpers ============
-
-  function updateFloorMode(t, dt) {
-    // Continuous walking while a key is held
-    let vx = 0;
-    if (PHASE4.keyLeft)  vx -= PHASE4_WALK_SPEED;
-    if (PHASE4.keyRight) vx += PHASE4_WALK_SPEED;
-    if (vx !== 0) {
-      PHASE4.floorX = clamp(PHASE4.floorX + vx * dt,
-                             PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
-      PHASE4.catFacing = vx > 0 ? 1 : -1;
-    }
-
-    // Click on a perch → attempt leap (checked before holes because perches
-    // sit ON TOP of other clickables visually)
-    if (PHASE4.pendingPerchClick >= 0) {
-      const idx = PHASE4.pendingPerchClick;
-      PHASE4.pendingPerchClick = -1;
-      const p = PHASE4_PERCHES[idx];
-      const dist = Math.hypot(p.x - PHASE4.floorX, p.y - PHASE4_FLOOR_Y);
-      if (dist <= PHASE4_PERCH_REACH) {
-        beginHopFloorToPerch(t, idx);
-      } else {
-        beginFailedJump(t, PHASE4.floorX, PHASE4_FLOOR_Y, p.x, p.y);
-      }
-    }
-
-    // Click on a hole
-    if (PHASE4.pendingClickIdx >= 0) {
-      const idx = PHASE4.pendingClickIdx;
-      PHASE4.pendingClickIdx = -1;
-      const to = PHASE4_HOLES[idx];
-      if (to.level === 3 && Math.abs(to.x - PHASE4.floorX) <= PHASE4_MAX_HORIZ) {
-        beginHopFloorToHole(t, idx);
-      } else {
-        beginFailedJump(t, PHASE4.floorX, PHASE4_FLOOR_Y, to.x, to.y);
-      }
-    }
-
-    // Arrow up on floor
-    if (PHASE4.pendingDir === 'up') {
-      PHASE4.pendingDir = null;
-      const target = findFloorJumpTarget(PHASE4.floorX, PHASE4.catFacing);
-      if (target && target.type === 'perch') {
-        beginHopFloorToPerch(t, target.idx);
-      } else if (target && target.type === 'hole') {
-        beginHopFloorToHole(t, target.idx);
-      } else {
-        // Nothing reachable in front — small failed jump in facing direction
-        const tx = PHASE4.floorX + PHASE4.catFacing * 100;
-        const ty = PHASE4_FLOOR_Y - 100;
-        beginFailedJump(t, PHASE4.floorX, PHASE4_FLOOR_Y, tx, ty);
-      }
-    } else if (PHASE4.pendingDir) {
-      PHASE4.pendingDir = null;
-    }
-    PHASE4.pendingClickX = PHASE4.pendingClickY = -1;
-  }
-
-  function updateWallMode(t) {
-    const cur = PHASE4_HOLES[PHASE4.catHole];
-    const fx = cur.x, fy = holePawsY(PHASE4.catHole);
-    if (PHASE4.pendingPerchClick >= 0) {
-      const idx = PHASE4.pendingPerchClick;
-      PHASE4.pendingPerchClick = -1;
-      const p = PHASE4_PERCHES[idx];
-      const dist = Math.hypot(p.x - fx, p.y - fy);
-      if (dist <= PHASE4_PERCH_REACH) beginHopHoleToPerch(t, idx);
-      else                            beginFailedJump(t, fx, fy, p.x, p.y);
-      return;
-    }
-    if (PHASE4.pendingClickIdx >= 0) {
-      const target = PHASE4.pendingClickIdx;
-      PHASE4.pendingClickIdx = -1;
-      if (target === PHASE4.catHole) return;
-      const verdict = phase4CheckJump(PHASE4.catHole, target);
-      if (verdict === 'ok') {
-        beginHopHoleToHole(t, target);
-      } else {
-        const to = PHASE4_HOLES[target];
-        beginFailedJump(t, fx, fy, to.x, to.y);
-      }
-    } else if (PHASE4.pendingDir) {
-      const dir = PHASE4.pendingDir;
-      PHASE4.pendingDir = null;
-      const cur = PHASE4_HOLES[PHASE4.catHole];
-      if (dir === 'down' && cur.level === 3) {
-        beginHopHoleToFloor(t, cur.x);
-        return;
-      }
-      const target = findKbdTarget(PHASE4.catHole, dir);
-      if (target !== -1)          beginHopHoleToHole(t, target);
-      else if (dir === 'down')    beginHopHoleToFloor(t, cur.x);
-    }
-  }
-
-  function updatePerchMode(t) {
-    const cur = PHASE4_PERCHES[PHASE4.catPerch];
-    // Click on hole → try leap
-    if (PHASE4.pendingClickIdx >= 0) {
-      const idx = PHASE4.pendingClickIdx;
-      PHASE4.pendingClickIdx = -1;
-      const h = PHASE4_HOLES[idx];
-      const dist = Math.hypot(h.x - cur.x, (h.y + h.r) - cur.y);
-      if (dist <= PHASE4_PERCH_REACH) beginHopPerchToHole(t, idx);
-      else                            beginFailedJump(t, cur.x, cur.y, h.x, h.y);
-      return;
-    }
-    // Click on another perch → try leap
-    if (PHASE4.pendingPerchClick >= 0) {
-      const idx = PHASE4.pendingPerchClick;
-      PHASE4.pendingPerchClick = -1;
-      if (idx === PHASE4.catPerch) return;
-      const p = PHASE4_PERCHES[idx];
-      const dist = Math.hypot(p.x - cur.x, p.y - cur.y);
-      if (dist <= PHASE4_PERCH_REACH) beginHopPerchToPerch(t, idx);
-      else                            beginFailedJump(t, cur.x, cur.y, p.x, p.y);
-      return;
-    }
-    // Keyboard
-    if (PHASE4.pendingDir) {
-      const dir = PHASE4.pendingDir;
-      PHASE4.pendingDir = null;
-      if (dir === 'down') {
-        beginHopPerchToFloor(t, cur.x);
-      } else if (dir === 'up') {
-        // From chair-seat, up → chair-back; else nearest hole above within reach
-        if (cur.id === 'chair-seat') {
-          const backIdx = PHASE4_PERCHES.findIndex(p => p.id === 'chair-back');
-          if (backIdx >= 0) beginHopPerchToPerch(t, backIdx);
-        } else {
-          // Find closest hole above this perch within reach
-          let best = -1, bestDist = Infinity;
-          for (let i = 0; i < PHASE4_HOLES.length; i++) {
-            const h = PHASE4_HOLES[i];
-            if (h.y + h.r >= cur.y) continue;
-            const d = Math.hypot(h.x - cur.x, (h.y + h.r) - cur.y);
-            if (d <= PHASE4_PERCH_REACH && d < bestDist) { bestDist = d; best = i; }
-          }
-          if (best !== -1) beginHopPerchToHole(t, best);
-        }
-      } else {
-        // Left/right on perch — leap to the nearest other perch OR cheese
-        // hole in that direction, within reach. Enables chair↔table and
-        // chair↔nearest-cheese-hole navigation with just the arrow keys.
-        const facingSign = dir === 'right' ? 1 : -1;
-        let best = null, bestDist = Infinity;
-        for (let i = 0; i < PHASE4_PERCHES.length; i++) {
-          if (i === PHASE4.catPerch) continue;
-          const p = PHASE4_PERCHES[i];
-          const dx = p.x - cur.x;
-          if (dx * facingSign <= 4) continue;
-          const d = Math.hypot(dx, p.y - cur.y);
-          if (d <= PHASE4_PERCH_REACH && d < bestDist) {
-            bestDist = d; best = { type: 'perch', idx: i };
-          }
-        }
-        for (let i = 0; i < PHASE4_HOLES.length; i++) {
-          const h = PHASE4_HOLES[i];
-          const dx = h.x - cur.x;
-          if (dx * facingSign <= 4) continue;
-          const d = Math.hypot(dx, (h.y + h.r) - cur.y);
-          if (d <= PHASE4_PERCH_REACH && d < bestDist) {
-            bestDist = d; best = { type: 'hole', idx: i };
-          }
-        }
-        if (best) {
-          PHASE4.catFacing = facingSign;
-          if (best.type === 'perch') beginHopPerchToPerch(t, best.idx);
-          else                       beginHopPerchToHole(t, best.idx);
-        }
-      }
-    }
-  }
-
-  function updateHoppingMode(t) {
-    if (t - PHASE4.animStartT < PHASE4.animDur) return;
-    // Landing — mode set by whichever hop started this animation
-    if (PHASE4.catHole >= 0) {
-      PHASE4.mode = 'wall';
-    } else if (PHASE4.catPerch >= 0) {
-      PHASE4.mode = 'perch';
-      // Landing on the side-table perch smashes the vase
-      const p = PHASE4_PERCHES[PHASE4.catPerch];
-      if (p.id === 'table' && !PHASE4.vaseBroken) {
-        PHASE4.vaseBroken = true;
-        PHASE4.vaseBreakT = t;
-      }
-    } else {
-      PHASE4.mode = 'floor';
-      PHASE4.floorX = PHASE4.toX;
-    }
-  }
-
-  function updateFallingMode(t) {
-    if (t - PHASE4.animStartT < PHASE4.animDur) return;
-    // If the failed jump started from the floor (fromY ≈ floor Y), the cat
-    // just lands and resumes walking — no dizzy pose. The stunned pose only
-    // makes sense when the cat has FALLEN from height (hole or perch).
-    if (Math.abs(PHASE4.fromY - PHASE4_FLOOR_Y) < 10) {
-      PHASE4.mode = 'floor';
-      PHASE4.floorX = clamp(PHASE4.toX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
-      PHASE4.catHole = -1; PHASE4.catPerch = -1;
-      PHASE4.pendingDir = null;
-      PHASE4.pendingClickIdx = -1;
-      PHASE4.pendingPerchClick = -1;
-      return;
-    }
-    PHASE4.mode = 'stunned';
-    PHASE4.stunnedX = PHASE4.toX;
-    PHASE4.stunnedUntilT = t + 0.7;
-  }
-
-  function updateStunnedMode(t) {
-    if (t < PHASE4.stunnedUntilT) return;
-    PHASE4.mode = 'floor';
-    PHASE4.floorX = clamp(PHASE4.stunnedX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
-    PHASE4.catHole = -1;
-    PHASE4.pendingDir = null;
-    PHASE4.pendingClickIdx = -1;
-  }
-
-  // ============ Motion primitives ============
-
-  // For hole endpoints the CAT'S PAWS anchor at (hole.x, hole.y + hole.r) —
-  // the bottom rim of the hole. `holeY(idx)` gives that y consistently.
-  function holePawsY(idx) {
-    const h = PHASE4_HOLES[idx];
-    return h.y + h.r;
-  }
-
-  function beginHopFloorToHole(t, targetIdx) {
-    const to = PHASE4_HOLES[targetIdx];
-    PHASE4.fromX = PHASE4.floorX; PHASE4.fromY = PHASE4_FLOOR_Y;
-    PHASE4.toX = to.x;            PHASE4.toY = holePawsY(targetIdx);
-    PHASE4.catHole = targetIdx; PHASE4.catPerch = -1;
-    PHASE4.catFacing = to.x >= PHASE4.floorX ? 1 : -1;
-    PHASE4.arcHeight = 40;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.35;
-    PHASE4.mode = 'hopping';
-  }
-
-  function beginHopHoleToHole(t, targetIdx) {
-    const from = PHASE4_HOLES[PHASE4.catHole];
-    const to   = PHASE4_HOLES[targetIdx];
-    PHASE4.fromX = from.x; PHASE4.fromY = holePawsY(PHASE4.catHole);
-    PHASE4.toX   = to.x;   PHASE4.toY   = holePawsY(targetIdx);
-    const dist = Math.hypot(to.x - from.x, to.y - from.y);
-    PHASE4.arcHeight = Math.min(50, 8 + dist * 0.10);
-    PHASE4.catHole = targetIdx; PHASE4.catPerch = -1;
-    PHASE4.catFacing = to.x >= from.x ? 1 : -1;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.28;
-    PHASE4.mode = 'hopping';
-  }
-
-  function beginHopHoleToFloor(t, landX) {
-    const from = PHASE4_HOLES[PHASE4.catHole];
-    PHASE4.fromX = from.x; PHASE4.fromY = holePawsY(PHASE4.catHole);
-    PHASE4.toX = clamp(landX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
-    PHASE4.toY = PHASE4_FLOOR_Y;
-    PHASE4.arcHeight = 30;
-    PHASE4.catHole = -1; PHASE4.catPerch = -1;
-    PHASE4.catFacing = PHASE4.toX >= from.x ? 1 : -1;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.35;
-    PHASE4.mode = 'hopping';
-  }
-
-  // ---- Perch hop helpers ----
-  function beginHopFloorToPerch(t, perchIdx) {
-    const p = PHASE4_PERCHES[perchIdx];
-    PHASE4.fromX = PHASE4.floorX; PHASE4.fromY = PHASE4_FLOOR_Y;
-    PHASE4.toX = p.x;             PHASE4.toY = p.y;
-    PHASE4.catHole = -1; PHASE4.catPerch = perchIdx;
-    PHASE4.catFacing = p.x >= PHASE4.floorX ? 1 : -1;
-    PHASE4.arcHeight = 60;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.40;
-    PHASE4.mode = 'hopping';
-  }
-  function beginHopHoleToPerch(t, perchIdx) {
-    const from = PHASE4_HOLES[PHASE4.catHole];
-    const p = PHASE4_PERCHES[perchIdx];
-    PHASE4.fromX = from.x; PHASE4.fromY = holePawsY(PHASE4.catHole);
-    PHASE4.toX = p.x;      PHASE4.toY = p.y;
-    PHASE4.catHole = -1; PHASE4.catPerch = perchIdx;
-    PHASE4.catFacing = p.x >= from.x ? 1 : -1;
-    PHASE4.arcHeight = 55;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.38;
-    PHASE4.mode = 'hopping';
-  }
-  function beginHopPerchToPerch(t, targetPerchIdx) {
-    const from = PHASE4_PERCHES[PHASE4.catPerch];
-    const p    = PHASE4_PERCHES[targetPerchIdx];
-    PHASE4.fromX = from.x; PHASE4.fromY = from.y;
-    PHASE4.toX = p.x;      PHASE4.toY = p.y;
-    PHASE4.catHole = -1; PHASE4.catPerch = targetPerchIdx;
-    PHASE4.catFacing = p.x >= from.x ? 1 : -1;
-    PHASE4.arcHeight = 45;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.32;
-    PHASE4.mode = 'hopping';
-  }
-  function beginHopPerchToHole(t, targetHoleIdx) {
-    const from = PHASE4_PERCHES[PHASE4.catPerch];
-    const to = PHASE4_HOLES[targetHoleIdx];
-    PHASE4.fromX = from.x; PHASE4.fromY = from.y;
-    PHASE4.toX = to.x;     PHASE4.toY = holePawsY(targetHoleIdx);
-    PHASE4.catHole = targetHoleIdx; PHASE4.catPerch = -1;
-    PHASE4.catFacing = to.x >= from.x ? 1 : -1;
-    const dist = Math.hypot(to.x - from.x, to.y - from.y);
-    PHASE4.arcHeight = Math.min(55, 15 + dist * 0.08);
-    PHASE4.animStartT = t; PHASE4.animDur = 0.38;
-    PHASE4.mode = 'hopping';
-  }
-  function beginHopPerchToFloor(t, landX) {
-    const from = PHASE4_PERCHES[PHASE4.catPerch];
-    PHASE4.fromX = from.x; PHASE4.fromY = from.y;
-    PHASE4.toX = clamp(landX, PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
-    PHASE4.toY = PHASE4_FLOOR_Y;
-    PHASE4.arcHeight = 30;
-    PHASE4.catHole = -1; PHASE4.catPerch = -1;
-    PHASE4.catFacing = PHASE4.toX >= from.x ? 1 : -1;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.35;
-    PHASE4.mode = 'hopping';
-  }
-
-  // ---- Failed jumps: cat clearly rises toward the target, doesn't make
-  //      it, then falls to the floor. Uses a two-phase trajectory (rise +
-  //      fall) that reads as "attempted the jump."
-
-  // Generic failed leap. Cat springs from (fx, fy) toward (tx, ty), only
-  // reaches ~55 % of the way up, then falls to the floor. Works whether the
-  // cat starts on the floor, a hole, or a perch — updateFallingMode uses
-  // fromY to decide whether to enter a stunned state afterwards.
-  function beginFailedJump(t, fx, fy, tx, ty) {
-    PHASE4.fromX = fx; PHASE4.fromY = fy;
-    PHASE4.toX = clamp(lerp(fx, tx, 0.75),
-                        PHASE4_FLOOR_XMIN, PHASE4_FLOOR_XMAX);
-    PHASE4.toY = PHASE4_FLOOR_Y;
-    PHASE4.fallPeakY = lerp(fy, ty, 0.55);
-    PHASE4.catFacing = tx >= fx ? 1 : -1;
-    PHASE4.catHole = -1; PHASE4.catPerch = -1;
-    PHASE4.animStartT = t; PHASE4.animDur = 0.9;
-    PHASE4.mode = 'falling';
-    PHASE4.combo = 0;
-  }
-
-  // ============ Rendering ============
-
+  // ---- Cat rendering ----------------------------------------------------
   function drawPhase4Cat(t) {
-    let x, y, pose;
-    switch (PHASE4.mode) {
-      case 'floor': {
-        const walking = PHASE4.keyLeft || PHASE4.keyRight;
-        x = PHASE4.floorX; y = PHASE4_FLOOR_Y;
-        pose = walking ? 'floor-walk' : 'floor-idle';
-        break;
-      }
-      case 'wall': {
-        // Paw grip = bottom rim of the hole. Sprite hangs downward from there.
-        const h = PHASE4_HOLES[PHASE4.catHole];
-        x = h.x; y = h.y + h.r;
-        pose = 'cling';
-        break;
-      }
-      case 'perch': {
-        const p = PHASE4_PERCHES[PHASE4.catPerch];
-        x = p.x; y = p.y;
-        pose = 'floor-idle';   // standing on the perch
-        break;
-      }
-      case 'hopping': {
-        const p = clamp((t - PHASE4.animStartT) / PHASE4.animDur, 0, 1);
-        x = lerp(PHASE4.fromX, PHASE4.toX, p);
-        y = lerp(PHASE4.fromY, PHASE4.toY, p) - Math.sin(p * Math.PI) * PHASE4.arcHeight;
-        pose = 'jumping';
-        break;
-      }
-      case 'falling': {
-        // Two-phase: rise 0..0.4 (cat visibly leaps up), then fall 0.4..1
-        const p = clamp((t - PHASE4.animStartT) / PHASE4.animDur, 0, 1);
-        const rP = 0.4;
-        if (p < rP) {
-          const q = p / rP;
-          // Ease-out rise (fast at start, slows as it peaks)
-          const rise = 1 - (1 - q) * (1 - q);
-          x = lerp(PHASE4.fromX, lerp(PHASE4.fromX, PHASE4.toX, 0.55), q);
-          y = lerp(PHASE4.fromY, PHASE4.fallPeakY, rise);
-          pose = 'jumping';
-        } else {
-          const q = (p - rP) / (1 - rP);
-          // Gravity fall (ease-in)
-          x = lerp(lerp(PHASE4.fromX, PHASE4.toX, 0.55), PHASE4.toX, q);
-          y = lerp(PHASE4.fallPeakY, PHASE4.toY, q * q);
-          pose = 'falling';
-        }
-        break;
-      }
-      case 'stunned':
-        x = PHASE4.stunnedX; y = PHASE4_FLOOR_Y;
-        pose = 'stunned';
-        break;
-    }
-    drawCheeseCat(x, y, PHASE4.catFacing, t, pose);
+    let pose;
+    if (PHASE4.isStunned)               pose = 'stunned';
+    else if (PHASE4.onHole)             pose = 'cling';
+    else if (!PHASE4.onGround)          pose = PHASE4.catVY > 220 ? 'falling' : 'jumping';
+    else if (Math.abs(PHASE4.catVX) > 1) pose = 'floor-walk';
+    else                                pose = 'floor-idle';
+    drawCheeseCat(PHASE4.catX, PHASE4.catY, PHASE4.catFacing, t, pose);
   }
 
   // The cat drawn in one of several poses:
@@ -4231,43 +4024,52 @@
       ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(6, -14); ctx.lineTo(11, -14); ctx.stroke();
     } else if (pose === 'floor-idle' || pose === 'floor-walk') {
-      // Cat standing on the floor, side view. Walking pose animates legs.
-      const walkT = pose === 'floor-walk' ? t * 7 : 0;
-      const step = pose === 'floor-walk' ? Math.sin(walkT) : 0;
+      // Cat standing on the floor, side view. Walking pose animates all
+      // four legs in an alternating trot, plus a small body bob so the
+      // cycle reads clearly at zoom-out.
+      const isWalk = pose === 'floor-walk';
+      const walkT = isWalk ? t * 11 : 0;
+      const step  = isWalk ? Math.sin(walkT) * 3 : 0;          // legs ±3 px (was ±1)
+      const bob   = isWalk ? Math.abs(Math.sin(walkT)) * 1.5 : 0;   // body bobs down each step
       ctx.fillStyle = fur;
-      // Body — horizontal
-      ctx.beginPath(); ctx.ellipse(0, -10, 15, 7, 0, 0, TAU); ctx.fill();
-      // Head — up front
-      ctx.beginPath(); ctx.arc(12, -18, 8, 0, TAU); ctx.fill();
+      // Body — horizontal, small vertical bob during walk
+      ctx.beginPath(); ctx.ellipse(0, -10 + bob, 15, 7, 0, 0, TAU); ctx.fill();
+      // Head — up front, follows the bob
+      ctx.beginPath(); ctx.arc(12, -18 + bob, 8, 0, TAU); ctx.fill();
       // Ears
       ctx.beginPath();
-      ctx.moveTo(7, -22);  ctx.lineTo(9, -30);  ctx.lineTo(13, -22); ctx.closePath();
-      ctx.moveTo(14, -22); ctx.lineTo(16, -30); ctx.lineTo(20, -22); ctx.closePath();
+      ctx.moveTo(7, -22 + bob);  ctx.lineTo(9, -30 + bob);  ctx.lineTo(13, -22 + bob); ctx.closePath();
+      ctx.moveTo(14, -22 + bob); ctx.lineTo(16, -30 + bob); ctx.lineTo(20, -22 + bob); ctx.closePath();
       ctx.fill();
-      // Legs — with walk cycle when moving
-      ctx.fillRect(-10, -4, 3, 6 + step);
-      ctx.fillRect(-4,  -4, 3, 6 - step);
-      ctx.fillRect( 4,  -4, 3, 6 - step);
-      ctx.fillRect(10,  -4, 3, 6 + step);
-      // Tail arched up
+      // Legs — alternating trot: front-left + back-right extend together,
+      // then front-right + back-left. Legs anchor at fixed top y=-4 so the
+      // extension is downward toward the ground.
+      const legTopY = -4 + bob * 0.6;
+      const legMinH = 3;
+      ctx.fillRect(-10, legTopY, 3, Math.max(legMinH, 6 + step));
+      ctx.fillRect(-4,  legTopY, 3, Math.max(legMinH, 6 - step));
+      ctx.fillRect( 4,  legTopY, 3, Math.max(legMinH, 6 - step));
+      ctx.fillRect(10,  legTopY, 3, Math.max(legMinH, 6 + step));
+      // Tail arched up, tip flicks in walk rhythm
+      const tailFlick = isWalk ? Math.sin(walkT + Math.PI) * 2 : 0;
       ctx.strokeStyle = fur; ctx.lineWidth = 4; ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(-12, -8);
-      ctx.quadraticCurveTo(-22, -18, -16, -26);
+      ctx.moveTo(-12, -8 + bob);
+      ctx.quadraticCurveTo(-22 + tailFlick, -18 + bob, -16 + tailFlick, -26 + bob);
       ctx.stroke();
       // Amber eye
-      const g = ctx.createRadialGradient(15, -18, 0, 15, -18, 4);
+      const g = ctx.createRadialGradient(15, -18 + bob, 0, 15, -18 + bob, 4);
       g.addColorStop(0, 'rgba(255,220,120,0.9)');
       g.addColorStop(1, 'rgba(255,140,40,0)');
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(15, -18, 4, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(15, -18 + bob, 4, 0, TAU); ctx.fill();
       ctx.fillStyle = eye;
-      ctx.beginPath(); ctx.arc(15, -18, 1.3, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(15, -18 + bob, 1.3, 0, TAU); ctx.fill();
       // Whiskers
       ctx.strokeStyle = 'rgba(230,220,220,0.55)'; ctx.lineWidth = 0.6;
       ctx.beginPath();
-      ctx.moveTo(19, -17); ctx.lineTo(28, -18);
-      ctx.moveTo(19, -15); ctx.lineTo(28, -14);
+      ctx.moveTo(19, -17 + bob); ctx.lineTo(28, -18 + bob);
+      ctx.moveTo(19, -15 + bob); ctx.lineTo(28, -14 + bob);
       ctx.stroke();
     } else {
       // 'cling' — HANGING from the BOTTOM rim of a hole. The sprite anchor
@@ -4601,32 +4403,557 @@
     ctx.restore();
   }
   // =========================================================================
-  // PHASE 5 — birdcage room (Felicia's portrait, bird on center table)
+  // PHASE 5 — birdcage room (playable — platformer physics)
   // =========================================================================
+  //
+  // Unlike Phase 4 (which anchors the cat to discrete cheese holes and hops
+  // between them), Phase 5 is a small platformer. The cat has a continuous
+  // (x, y) position with a velocity (vx, vy); gravity pulls it down; and
+  // every furniture surface (chair seat, chair back, table top, and the
+  // floor) is a one-way platform the cat can walk along, leap off, or drop
+  // through with ↓.
+  //
+  // The cage sits on the table until the cat lands on the table for the
+  // first time; then the cage topples off (falling to the floor with its
+  // door swung open) and the bird escapes. From that point the bird flies
+  // around the room between eleven landing spots — seven the cat can reach
+  // (three chair seats, three chair backs, the table top) and four it
+  // cannot (fireplace mantle, floor-lamp shade, portrait tops). Catching a
+  // bird on an unreachable spot requires intercepting it mid-flight.
+
+  // --- Platforms ---------------------------------------------------------
+  //
+  // Each platform's top surface is at `y`; its walkable horizontal range is
+  // `[x, x + w]`. Cat "paws y" coordinates equal the platform y directly.
+  // The floor is handled separately (constant PHASE5_FLOOR_Y) rather than
+  // as a platform entry, because it's global and has no edges to fall off.
+  const PHASE5_PLATFORMS = [
+    { id: 'chair1-seat', x: 170, w: 62, y: 488 },
+    { id: 'chair1-back', x: 182, w: 40, y: 395 },
+    { id: 'table',       x: 390, w: 180, y: 505 },
+    { id: 'chair2-seat', x: 610, w: 62, y: 488 },
+    { id: 'chair2-back', x: 622, w: 40, y: 395 },
+    { id: 'chair3-seat', x: 760, w: 62, y: 488 },
+    { id: 'chair3-back', x: 772, w: 40, y: 395 },
+  ];
+  const PHASE5_TABLE_IDX = 2;
+
+  // Places the bird can land. `platformIdx >= 0` means the bird sits on
+  // that platform's top surface (so simply landing there catches it).
+  // `platformIdx === -1` means an unreachable spot on the wall / lamp — the
+  // only way to catch a bird there is to intercept it mid-flight.
+  const PHASE5_BIRD_SPOTS = [
+    { x: 200, y: 476, platformIdx: 0 },   // chair1 seat
+    { x: 200, y: 383, platformIdx: 1 },   // chair1 back
+    { x: 460, y: 493, platformIdx: 2 },   // table
+    { x: 640, y: 476, platformIdx: 3 },
+    { x: 640, y: 383, platformIdx: 4 },
+    { x: 790, y: 476, platformIdx: 5 },
+    { x: 790, y: 383, platformIdx: 6 },
+    { x: 790, y: 202, platformIdx: -1 },  // fireplace mantle top
+    { x: 100, y: 300, platformIdx: -1 },  // floor-lamp shade area
+    { x: 160, y: 195, platformIdx: -1 },  // portrait 1 frame top
+    { x: 360, y: 195, platformIdx: -1 },  // portrait 3 frame top
+  ];
+
+  // --- Physics constants -------------------------------------------------
+  //
+  // Tuned so a straight-up jump reaches ~112 px of vertical clearance:
+  //   peak_height = JUMP_V² / (2·GRAVITY)  =  560² / 2800  =  112 px.
+  // Chair seat is 97 px above floor (585 → 488) and chair back is 93 px
+  // above chair seat (488 → 395), so a single jump comfortably reaches
+  // floor → chair seat and chair seat → chair back. Floor → chair back
+  // in one hop (190 px) is NOT possible — the player has to step through
+  // chair seat, or use a diagonal leap from the table (505 → 395 is only
+  // 110 px vertical and reachable in one jump).
+  const PHASE5_FLOOR_Y      = 585;
+  const PHASE5_FLOOR_XMIN   = 40;
+  const PHASE5_FLOOR_XMAX   = W - 30;
+  const PHASE5_WALK_SPEED   = 140;   // px/sec
+  const PHASE5_JUMP_V       = -560;  // initial vy on ↑ (negative = up)
+  const PHASE5_DIAG_JUMP_VX = 380;   // added horizontal velocity with ←/→ held during ↑ (~34° from vertical)
+  const PHASE5_GRAVITY      = 1400;  // px/sec²
+  const PHASE5_CATCH_R2     = 26 * 26;
+
+  // --- State -------------------------------------------------------------
+  const PHASE5 = {
+    initialized: false,
+    mode: 'normal',                  // 'normal' | 'won'
+
+    // Cat physics — catY is the y of the cat's paws (matches platform surface
+    // y directly). Sprite draws upward from there.
+    catX: 100, catY: PHASE5_FLOOR_Y,
+    catVX: 0, catVY: 0,
+    catFacing: 1,
+    onGround: true,
+    currentPlatform: -1,             // index into PHASE5_PLATFORMS, or -1 for floor
+    // When ↓ is pressed on a platform, that platform is ignored for a short
+    // window so the cat can pass through it downward without immediately
+    // re-landing on it.
+    dropThroughIdx: -1,
+    dropThroughUntilT: 0,
+
+    // Input
+    keyLeft: false, keyRight: false,
+    pendingDir: null,                // 'up' | 'down' | null
+    walkTargetX: -1,                 // click-to-walk target (-1 = none)
+
+    // Cage + bird
+    cage: { toppled: false, toppleT: 0 },
+    bird: {
+      state: 'caged',                // 'caged' | 'flying' | 'perched' | 'caught'
+      x: 476, y: 470,
+      dir: -1,
+      fromX: 0, fromY: 0, toX: 0, toY: 0,
+      startT: 0, dur: 0.9,
+      spotIdx: -1, lastSpotIdx: -1,
+      pauseUntilT: 0,
+    },
+
+    // Score — one "hop" is one press of ↑ or ↓ (walking is free)
+    hops: 0,
+    caughtHops: 0, caughtT: 0,
+    bestHops: 0,
+    lastFrameT: 0,
+  };
+
+  // Return the topmost platform whose x range contains px, or null.
+  // "Topmost" = smallest y (highest on screen) — matters when chair-seat and
+  // chair-back's x ranges overlap (both centred on the same chair).
+  function phase5PlatformAt(px) {
+    let best = -1, bestY = Infinity;
+    for (let i = 0; i < PHASE5_PLATFORMS.length; i++) {
+      const p = PHASE5_PLATFORMS[i];
+      if (px >= p.x && px <= p.x + p.w && p.y < bestY) {
+        bestY = p.y; best = i;
+      }
+    }
+    return best;
+  }
 
   function drawPhase5(t) {
+    updatePhase5(t);
+
     drawRoomWall();
     drawFloor();
     drawBaseboard();
-    // Gallery of Felicia photos on the left side of the wall — three
-    // different full-body poses, mixed frame styles.
     drawCatPhoto(160, 240,  80, 96, 'sit',     'gold');
     drawCatPhoto(260, 240,  80, 96, 'stretch', 'wood');
     drawCatPhoto(360, 240,  80, 96, 'lay',     'silver');
-    // Small fireplace on the right wall
     drawSmallFireplace(690, 210, 200, 150, t);
-    // Floor lamp far left
     drawFloorLamp(60, 580, t);
-    // Left chair
     drawWingChair(200, 530, 0.82, +0.3);
-    // Center table with birdcage on top
     drawCenterTable(480, 505);
-    drawBirdcage(480, 500, t);
-    // Two chairs on the right
     drawWingChair(640, 530, 0.80, -0.15);
     drawWingChair(790, 530, 0.80, -0.30);
+
+    if (!PHASE5.cage.toppled) {
+      drawBirdcageIntact(480, 500, t);
+    } else {
+      const age = t - PHASE5.cage.toppleT;
+      drawBirdcageFallen(500, PHASE5_FLOOR_Y - 4, age);
+    }
+
+    drawPhase5Bird(t);
+    drawPhase5Cat(t);
+    drawPhase5Hud();
+    if (PHASE5.mode === 'won') drawPhase5WinOverlay(t);
     drawSceneVignette();
   }
+
+  function updatePhase5(t) {
+    if (!PHASE5.initialized) {
+      PHASE5.initialized = true;
+      PHASE5.bestHops = parseInt(localStorage.getItem('ac_phase5_best') || '0', 10) || 0;
+      PHASE5.mode = 'normal';
+      PHASE5.catX = 100; PHASE5.catY = PHASE5_FLOOR_Y;
+      PHASE5.catVX = 0;  PHASE5.catVY = 0;
+      PHASE5.catFacing = 1;
+      PHASE5.onGround = true;
+      PHASE5.currentPlatform = -1;
+      PHASE5.dropThroughIdx = -1;
+      PHASE5.dropThroughUntilT = 0;
+      PHASE5.cage.toppled = false;
+      PHASE5.cage.toppleT = 0;
+      PHASE5.bird.state = 'caged';
+      PHASE5.bird.spotIdx = -1;
+      PHASE5.bird.lastSpotIdx = -1;
+      PHASE5.bird.x = 476; PHASE5.bird.y = 470;
+      PHASE5.hops = 0;
+      PHASE5.caughtHops = 0;
+      PHASE5.caughtT = 0;
+      PHASE5.pendingDir = null;
+      PHASE5.walkTargetX = -1;
+      PHASE5.lastFrameT = t;
+    }
+    const dt = Math.min(0.05, t - (PHASE5.lastFrameT ?? t));
+    PHASE5.lastFrameT = t;
+
+    if (PHASE5.mode !== 'won') {
+      updatePhase5Physics(t, dt);
+    } else {
+      update5WonMode(t);
+    }
+    update5Bird(t);
+
+    // Catch: cat in air, sprite bounding-circle overlaps bird.
+    if (PHASE5.bird.state !== 'caged' && PHASE5.bird.state !== 'caught') {
+      const catCX = PHASE5.catX, catCY = PHASE5.catY - 14;   // sprite centre
+      const dx = catCX - PHASE5.bird.x, dy = catCY - PHASE5.bird.y;
+      if (!PHASE5.onGround && dx * dx + dy * dy < PHASE5_CATCH_R2) {
+        PHASE5.bird.state = 'caught';
+        PHASE5.caughtHops = PHASE5.hops;
+        PHASE5.caughtT = t;
+      }
+    }
+    // Enter 'won' after the caught cat has landed back on the ground
+    if (PHASE5.bird.state === 'caught' && PHASE5.mode !== 'won' && PHASE5.onGround) {
+      PHASE5.mode = 'won';
+      if (PHASE5.bestHops === 0 || PHASE5.caughtHops < PHASE5.bestHops) {
+        PHASE5.bestHops = PHASE5.caughtHops;
+        try { localStorage.setItem('ac_phase5_best', String(PHASE5.bestHops)); }
+        catch (_) { /* ignore */ }
+      }
+    }
+  }
+
+  // --- Physics step ------------------------------------------------------
+  function updatePhase5Physics(t, dt) {
+    // Jump input
+    if (PHASE5.pendingDir === 'up' && PHASE5.onGround) {
+      PHASE5.catVY = PHASE5_JUMP_V;
+      PHASE5.catVX = 0;
+      if (PHASE5.keyLeft)  { PHASE5.catVX = -PHASE5_DIAG_JUMP_VX; PHASE5.catFacing = -1; }
+      else if (PHASE5.keyRight) { PHASE5.catVX = +PHASE5_DIAG_JUMP_VX; PHASE5.catFacing = +1; }
+      PHASE5.onGround = false;
+      PHASE5.currentPlatform = -1;
+      PHASE5.walkTargetX = -1;
+      PHASE5.hops++;
+    }
+    // Drop-through — ↓ on a non-floor platform makes the cat fall through it
+    if (PHASE5.pendingDir === 'down' && PHASE5.onGround && PHASE5.currentPlatform >= 0) {
+      PHASE5.dropThroughIdx = PHASE5.currentPlatform;
+      PHASE5.dropThroughUntilT = t + 0.25;
+      PHASE5.onGround = false;
+      PHASE5.currentPlatform = -1;
+      PHASE5.catVY = 40;               // slight downward push so descent starts immediately
+      // Held ← / → makes it a diagonal drop-through (mirror of ↑ + L/R)
+      PHASE5.catVX = PHASE5.keyLeft ? -PHASE5_DIAG_JUMP_VX
+                   : PHASE5.keyRight ? +PHASE5_DIAG_JUMP_VX : 0;
+      if (PHASE5.catVX !== 0) PHASE5.catFacing = PHASE5.catVX > 0 ? 1 : -1;
+      PHASE5.walkTargetX = -1;
+      PHASE5.hops++;
+    }
+    PHASE5.pendingDir = null;
+
+    // Ground control: keyboard or click-to-walk
+    if (PHASE5.onGround) {
+      let vx = 0;
+      if (PHASE5.keyLeft)  vx -= PHASE5_WALK_SPEED;
+      if (PHASE5.keyRight) vx += PHASE5_WALK_SPEED;
+      if (vx === 0 && PHASE5.walkTargetX >= 0) {
+        const dxToTarget = PHASE5.walkTargetX - PHASE5.catX;
+        if (Math.abs(dxToTarget) < 5) {
+          PHASE5.walkTargetX = -1;
+        } else {
+          vx = (dxToTarget > 0 ? 1 : -1) * PHASE5_WALK_SPEED;
+        }
+      }
+      PHASE5.catVX = vx;
+      if (vx !== 0) PHASE5.catFacing = vx > 0 ? 1 : -1;
+    }
+    // Air control: velocity from the jump is preserved; no additional
+    // acceleration from held keys during flight (a cleaner, more predictable
+    // arc for intercepting the bird).
+
+    // Integrate x
+    PHASE5.catX += PHASE5.catVX * dt;
+    PHASE5.catX = clamp(PHASE5.catX, PHASE5_FLOOR_XMIN, PHASE5_FLOOR_XMAX);
+
+    // If walking on a non-floor platform, check for walking off the edge
+    if (PHASE5.onGround && PHASE5.currentPlatform >= 0) {
+      const p = PHASE5_PLATFORMS[PHASE5.currentPlatform];
+      if (PHASE5.catX < p.x || PHASE5.catX > p.x + p.w) {
+        PHASE5.onGround = false;
+        PHASE5.currentPlatform = -1;
+        PHASE5.catVY = 0;              // start falling from rest
+      }
+    }
+
+    // Integrate y (gravity + landing) while in air
+    if (!PHASE5.onGround) {
+      // Air control — light horizontal acceleration when ← / → is held
+      // in the air. Lets the player steer a jump that started straight up.
+      const AIR_ACCEL = 800;
+      const AIR_MAX = PHASE5_DIAG_JUMP_VX;
+      let ax = 0;
+      if (PHASE5.keyLeft  && PHASE5.catVX > -AIR_MAX) ax -= AIR_ACCEL;
+      if (PHASE5.keyRight && PHASE5.catVX <  AIR_MAX) ax += AIR_ACCEL;
+      PHASE5.catVX += ax * dt;
+      if (ax > 0) PHASE5.catFacing = 1;
+      else if (ax < 0) PHASE5.catFacing = -1;
+
+      PHASE5.catVY += PHASE5_GRAVITY * dt;
+      const prevY = PHASE5.catY;
+      PHASE5.catY += PHASE5.catVY * dt;
+
+      // Platform landing (only while descending). Pick the TOPMOST platform
+      // the cat crossed this frame so multi-layer stacks (chair seat above,
+      // chair back on the way down) land on the higher one first.
+      if (PHASE5.catVY > 0) {
+        let bestIdx = -1, bestY = Infinity;
+        for (let i = 0; i < PHASE5_PLATFORMS.length; i++) {
+          if (t < PHASE5.dropThroughUntilT && i === PHASE5.dropThroughIdx) continue;
+          const p = PHASE5_PLATFORMS[i];
+          if (PHASE5.catX < p.x || PHASE5.catX > p.x + p.w) continue;
+          if (prevY <= p.y + 0.01 && PHASE5.catY >= p.y && p.y < bestY) {
+            bestY = p.y; bestIdx = i;
+          }
+        }
+        if (bestIdx >= 0) {
+          PHASE5.catY = PHASE5_PLATFORMS[bestIdx].y;
+          PHASE5.catVY = 0;
+          PHASE5.onGround = true;
+          PHASE5.currentPlatform = bestIdx;
+          // Landing on the table for the first time topples the cage and
+          // releases the bird.
+          if (bestIdx === PHASE5_TABLE_IDX && !PHASE5.cage.toppled) {
+            PHASE5.cage.toppled = true;
+            PHASE5.cage.toppleT = t;
+            PHASE5.bird.state = 'flying';
+            PHASE5.bird.fromX = 480; PHASE5.bird.fromY = 470;
+            PHASE5.bird.x = 480; PHASE5.bird.y = 470;
+            pickBirdNextTarget(t);
+          }
+        }
+      }
+      // Fell to floor
+      if (!PHASE5.onGround && PHASE5.catY >= PHASE5_FLOOR_Y) {
+        PHASE5.catY = PHASE5_FLOOR_Y;
+        PHASE5.catVY = 0;
+        PHASE5.onGround = true;
+        PHASE5.currentPlatform = -1;
+      }
+    }
+  }
+
+  function update5WonMode(t) {
+    // 1.2 s celebration lockout, then any input restarts the phase.
+    if (t - PHASE5.caughtT < 1.2) {
+      PHASE5.pendingDir = null;
+      PHASE5.walkTargetX = -1;
+      return;
+    }
+    if (PHASE5.pendingDir || PHASE5.walkTargetX >= 0) {
+      PHASE5.initialized = false;
+    }
+  }
+
+  // --- Bird AI -----------------------------------------------------------
+  function update5Bird(t) {
+    const b = PHASE5.bird;
+    switch (b.state) {
+      case 'caged': {
+        b.x = 476 + Math.sin(t * 3) * 0.5;
+        b.y = 470 - Math.abs(Math.sin(t * 3)) * 2;
+        break;
+      }
+      case 'flying': {
+        const p = clamp((t - b.startT) / b.dur, 0, 1);
+        b.x = lerp(b.fromX, b.toX, p);
+        b.y = lerp(b.fromY, b.toY, p) - Math.sin(p * Math.PI) * 55;
+        b.dir = b.toX >= b.fromX ? 1 : -1;
+        if (p >= 1) {
+          b.state = 'perched';
+          b.x = b.toX; b.y = b.toY;
+          b.lastSpotIdx = b.spotIdx;
+          b.pauseUntilT = t + 1.2 + Math.random() * 1.4;
+        }
+        break;
+      }
+      case 'perched': {
+        const spot = PHASE5_BIRD_SPOTS[b.spotIdx];
+        b.x = spot.x;
+        b.y = spot.y + Math.abs(Math.sin(t * 4)) * 1.5;
+        // Spook: cat approaching on foot near a low-perched bird → take off.
+        // Only fires when cat is on the ground floor (not on a platform above).
+        if (spot.platformIdx >= 0 && spot.y > 460 && PHASE5.onGround
+            && PHASE5.currentPlatform === -1
+            && Math.abs(PHASE5.catX - spot.x) < 40) {
+          pickBirdNextTarget(t);
+          break;
+        }
+        if (t >= b.pauseUntilT) pickBirdNextTarget(t);
+        break;
+      }
+      case 'caught': {
+        b.x = PHASE5.catX;
+        b.y = PHASE5.catY - 18;
+        break;
+      }
+    }
+  }
+
+  function pickBirdNextTarget(t) {
+    const b = PHASE5.bird;
+    const catX = PHASE5.catX;
+    let best = -1, bestScore = -Infinity;
+    for (let i = 0; i < PHASE5_BIRD_SPOTS.length; i++) {
+      if (i === b.lastSpotIdx) continue;
+      const s = PHASE5_BIRD_SPOTS[i];
+      let score = Math.abs(s.x - catX) + Math.random() * 200;
+      if (s.platformIdx === -1) score += 30;
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+    if (best === -1) best = Math.floor(Math.random() * PHASE5_BIRD_SPOTS.length);
+    const s = PHASE5_BIRD_SPOTS[best];
+    b.state = 'flying';
+    b.spotIdx = best;
+    b.fromX = b.x; b.fromY = b.y;
+    b.toX = s.x;   b.toY = s.y;
+    b.dur = 0.55 + Math.hypot(s.x - b.x, s.y - b.y) / 900;
+    b.startT = t;
+    b.dir = s.x >= b.x ? 1 : -1;
+  }
+
+  // --- Rendering ---------------------------------------------------------
+  function drawPhase5Cat(t) {
+    let pose;
+    if (PHASE5.mode === 'won')                  pose = 'floor-idle';
+    else if (!PHASE5.onGround)                  pose = 'jumping';
+    else if (Math.abs(PHASE5.catVX) > 1)        pose = 'floor-walk';
+    else                                        pose = 'floor-idle';
+    drawCheeseCat(PHASE5.catX, PHASE5.catY, PHASE5.catFacing, t, pose);
+  }
+
+  function drawPhase5Bird(t) {
+    const b = PHASE5.bird;
+    if (b.state === 'caged') return;
+    drawFreeBird(b.x, b.y, b.dir, b.state === 'flying', t);
+  }
+
+  // Small yellow songbird — perched pose (wings folded) or in flight (wings
+  // beating). Sprite geometry is drawn LEFT-facing (head at x=-8, tail at
+  // x=+8..14). Caller passes `dir` in game convention (+1 = right, −1 =
+  // left), so scale negates: dir=+1 flips the sprite (head lands on the
+  // right), dir=−1 leaves it alone.
+  function drawFreeBird(cx, cy, dir, flying, t) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(-dir, 1);
+    ctx.fillStyle = '#f8d854';
+    ctx.beginPath(); ctx.ellipse(0, 0, 10, 8, 0, 0, TAU); ctx.fill();
+    if (flying) {
+      const beat = Math.sin(t * 22);
+      const wingY = -2 - beat * 5;
+      ctx.fillStyle = '#c8a020';
+      ctx.beginPath();
+      ctx.moveTo(-3, 0);
+      ctx.quadraticCurveTo(-12, wingY, -16, wingY + 3);
+      ctx.quadraticCurveTo(-8, wingY + 6, -3, 3);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#c8a020';
+      ctx.beginPath(); ctx.ellipse(2, 2, 6, 4, 0.3, 0, TAU); ctx.fill();
+    }
+    ctx.fillStyle = '#c8a020';
+    ctx.beginPath();
+    ctx.moveTo(8, 0); ctx.lineTo(14, -2); ctx.lineTo(14, 3); ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f8d854';
+    ctx.beginPath(); ctx.arc(-8, -4, 6, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#e0a820';
+    ctx.beginPath();
+    ctx.moveTo(-13, -4); ctx.lineTo(-17, -3); ctx.lineTo(-13, -2); ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(-10, -5, 0.9, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  // Cage after being knocked off the table.
+  function drawBirdcageFallen(cx, floorY, ageT) {
+    ctx.save();
+    const tipT = clamp(ageT / 0.6, 0, 1);
+    const angle = -0.85 - Math.sin(tipT * Math.PI * 0.5) * 0.1;
+    ctx.translate(cx, floorY);
+    ctx.rotate(angle);
+    ctx.translate(0, -8);
+    ctx.fillStyle = '#3a2a1a';
+    ctx.beginPath(); ctx.ellipse(0, 4, 32, 5, 0, 0, TAU); ctx.fill();
+    const bottom = 0, top = -60, domeTop = -78;
+    ctx.strokeStyle = '#2a1a10';
+    ctx.lineWidth = 1.4;
+    const barCount = 9;
+    for (let i = 0; i < barCount; i++) {
+      const a = -Math.PI / 2 + (i - (barCount - 1) / 2) * (Math.PI / (barCount - 1));
+      const bx = Math.cos(a) * 30;
+      ctx.beginPath(); ctx.moveTo(bx, bottom); ctx.lineTo(bx, top); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.ellipse(0, top, 30, 5, 0, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, bottom, 30, 6, 0, 0, TAU); ctx.stroke();
+    for (let i = 0; i < barCount; i++) {
+      const a = -Math.PI / 2 + (i - (barCount - 1) / 2) * (Math.PI / (barCount - 1));
+      const bx = Math.cos(a) * 30;
+      ctx.beginPath();
+      ctx.moveTo(bx, top);
+      ctx.quadraticCurveTo(0, top - 10, 0, domeTop);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#4a3020';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(28, -18); ctx.lineTo(46, -6); ctx.stroke();
+    ctx.fillStyle = '#5a3a20';
+    ctx.beginPath(); ctx.arc(28, -30, 1.6, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(28, -18, 1.6, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPhase5Hud() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,10,20,0.75)';
+    ctx.fillRect(W - 210, 12, 195, 78);
+    ctx.strokeStyle = 'rgba(255,220,180,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(W - 210, 12, 195, 78);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#f8e8c0';
+    ctx.font = 'bold 20px "Georgia", serif';
+    ctx.fillText(`Hops  ${PHASE5.hops}`, W - 22, 40);
+    ctx.font = '14px "Georgia", serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText(PHASE5.bestHops > 0 ? `Best  ${PHASE5.bestHops} hops` : `Best  —`, W - 22, 62);
+    ctx.fillStyle = PHASE5.cage.toppled ? '#c9b98a' : '#ffcc44';
+    ctx.fillText(PHASE5.cage.toppled ? 'Catch the bird!' : 'Leap to the table', W - 22, 80);
+    ctx.restore();
+  }
+
+  function drawPhase5WinOverlay(t) {
+    ctx.save();
+    const age = t - PHASE5.caughtT;
+    const alpha = Math.min(0.85, age * 1.6);
+    ctx.fillStyle = `rgba(30,15,45,${alpha})`;
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 46px "Georgia", serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillText('Caught!', W / 2 + 3, H / 2 - 10 + 3);
+    ctx.fillStyle = '#ffe08a';
+    ctx.fillText('Caught!', W / 2, H / 2 - 10);
+    ctx.font = '18px "Georgia", serif';
+    ctx.fillStyle = '#f0d8a0';
+    ctx.fillText(`in ${PHASE5.caughtHops} hop${PHASE5.caughtHops === 1 ? '' : 's'}`,
+                 W / 2, H / 2 + 24);
+    if (age > 1.2) {
+      ctx.fillStyle = '#c9b98a';
+      ctx.font = '14px "Georgia", serif';
+      ctx.fillText('press any key or click to release the bird and try again',
+                   W / 2, H / 2 + 58);
+    }
+    ctx.restore();
+  }
+
 
   // A dining-style table for the birdcage to sit on.
   function drawCenterTable(cx, cy) {
@@ -4662,8 +4989,9 @@
   }
 
   // The birdcage — a domed cage with vertical bars, a small bird on a perch,
-  // sitting on the table.
-  function drawBirdcage(cx, cy, t) {
+  // sitting on the table. Used only while `PHASE5.cage.toppled` is false;
+  // after the cat leaps to the table, drawBirdcageFallen takes over.
+  function drawBirdcageIntact(cx, cy, t) {
     ctx.save();
 
     // Base plate (a small dark disc)
@@ -5680,62 +6008,70 @@
     });
   });
 
-  // ----- Phase 4 input: arrow keys move the cat between holes -----
-  // Continuous keys (held): left/right for walking on floor and same-level
-  // hops on the wall (still one-shot for hop).
-  // One-shot keys (per press): up/down.
-  const KEY_LR = {
-    ArrowLeft: -1, a: -1, A: -1,
-    ArrowRight: 1, d: 1, D: 1,
-  };
-  const KEY_UP = { ArrowUp: 1, w: 1, W: 1 };
+  // ----- Playable-scene input: arrow keys / WASD, mouse click -----
+  // Phase 4 (cheese wall) and Phase 5 (birdcage) share the same key map
+  // and event handler shape. Their state objects (PHASE4, PHASE5) also
+  // share the same input-facing field names (mode, keyLeft, keyRight,
+  // pendingDir, pendingPerchClick), so the handler can dispatch by scene.
+  const KEY_LR   = { ArrowLeft: -1, a: -1, A: -1, ArrowRight: 1, d: 1, D: 1 };
+  const KEY_UP   = { ArrowUp: 1, w: 1, W: 1 };
   const KEY_DOWN = { ArrowDown: 1, s: 1, S: 1 };
+  const PLAYABLE_SCENES = { phase4: true, phase5: true };
+
+  // Returns the active state object for keyboard/click, or null if the
+  // current scene is not playable.
+  function activePlayableState() {
+    if (scene === 'phase4') return PHASE4;
+    if (scene === 'phase5') return PHASE5;
+    return null;
+  }
 
   addEventListener('keydown', (e) => {
-    if (scene !== 'phase4') return;
+    const st = activePlayableState();
+    if (!st) return;
     if (KEY_LR[e.key] != null) {
       e.preventDefault();
       const dir = KEY_LR[e.key];
-      if (PHASE4.mode === 'floor') {
-        // Held key drives continuous walking
-        if (dir < 0) PHASE4.keyLeft = true;
-        else         PHASE4.keyRight = true;
-      } else if ((PHASE4.mode === 'wall' || PHASE4.mode === 'perch') && !e.repeat) {
-        // Fire once per press for a hop on the wall or a leap between perches
-        PHASE4.pendingDir = dir < 0 ? 'left' : 'right';
+      // Both Phase 4 and Phase 5 track physical key state — walking on
+      // ground uses the flags, and a diagonal ↑ press uses them as the
+      // horizontal boost.
+      if (dir < 0) st.keyLeft = true;
+      else         st.keyRight = true;
+      // Phase 4 extra: while cat is hanging on a cheese hole, a fresh
+      // ←/→ press dispatches a lateral hop off the hole in that direction.
+      if (scene === 'phase4' && st.onHole && !e.repeat) {
+        st.pendingDir = dir < 0 ? 'left' : 'right';
       }
     } else if (KEY_UP[e.key] && !e.repeat) {
       e.preventDefault();
-      PHASE4.pendingDir = 'up';
+      st.pendingDir = 'up';
     } else if (KEY_DOWN[e.key] && !e.repeat) {
       e.preventDefault();
-      PHASE4.pendingDir = 'down';
+      st.pendingDir = 'down';
     }
   });
   addEventListener('keyup', (e) => {
+    const st = activePlayableState();
+    if (!st) return;
     if (KEY_LR[e.key] != null) {
       const dir = KEY_LR[e.key];
-      if (dir < 0) PHASE4.keyLeft = false;
-      else         PHASE4.keyRight = false;
+      if (dir < 0) st.keyLeft = false;
+      else         st.keyRight = false;
     }
   });
 
-  // Click routes to a hole OR a perch (chair seat, chair back, side table
-  // top). Perches are checked FIRST because they visually sit on top of
-  // other objects and would otherwise be shadowed by hole hits.
+  // Click: platformer walk-to-x. Cat walks toward the clicked x on
+  // whichever surface it's currently standing on. Vertical navigation
+  // (jump to platform / grab a hole) uses ↑/↓/←/→ on the keyboard.
   canvas.addEventListener('click', (e) => {
-    if (scene !== 'phase4') return;
+    if (!PLAYABLE_SCENES[scene]) return;
     const rect = canvas.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * (W / rect.width);
-    const cy = (e.clientY - rect.top)  * (H / rect.height);
-    const perchIdx = phase4PerchAt(cx, cy);
-    if (perchIdx >= 0) { PHASE4.pendingPerchClick = perchIdx; return; }
-    const holeIdx = phase4HoleAt(cx, cy);
-    if (holeIdx >= 0) { PHASE4.pendingClickIdx = holeIdx; return; }
+    (scene === 'phase4' ? PHASE4 : PHASE5).walkTargetX = cx;
   });
 
   function refreshCanvasCursor() {
-    canvas.style.cursor = (scene === 'phase4') ? 'pointer' : 'default';
+    canvas.style.cursor = PLAYABLE_SCENES[scene] ? 'pointer' : 'default';
   }
   document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', refreshCanvasCursor);
@@ -5753,6 +6089,18 @@
     })()]);
     checks.push(['phase0 draws without error', (() => {
       try { drawPhase0(0); return true; } catch (e) { console.error(e); return false; }
+    })()]);
+    checks.push(['phase5 draws without error (fresh state)', (() => {
+      try {
+        PHASE5.initialized = false;
+        drawPhase5(0);
+        return true;
+      } catch (e) { console.error(e); return false; }
+    })()]);
+    checks.push(['phase5 bird spots reachable except by design', (() => {
+      let unreachable = 0;
+      for (const s of PHASE5_BIRD_SPOTS) if (s.platformIdx === -1) unreachable++;
+      return unreachable >= 3 && unreachable <= PHASE5_BIRD_SPOTS.length - 4;
     })()]);
     for (const [name, ok] of checks) console.log((ok ? '✓' : '✗') + ' ' + name);
     return checks.every(([, ok]) => ok);
