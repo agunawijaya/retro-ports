@@ -1,0 +1,12 @@
+# Prompt 06 — Room 5: The Dining Room (2026-10-29)
+
+- **Layout & Platforms (`rooms/dining-room/room.js`, `room.css`):** Formal dining room laid for six: damask wallpaper, plate rail (`y = 575`) with wobbling decorative plates on landing, carved sideboard (`y = 745`), long banquet table (`y = 760`), and china cabinet ledge (`y = 600`). All platforms strictly satisfy jump reach (rise ≤ 190 px, horizontal gap ≤ 160 px).
+- **The Egg Nest & Warning Note:** 4 egg sacs cradled in a silk hammock web between the table legs with staggered hatch timers (14, 22, 30, 38 s; 3 hatchlings each); crouch-shot from the floor for "+120 Nest!" bonus. Diegetic pinned note from "A." on the sideboard ("Under the table. Don't let them hatch.") tears off after 6 s or upon first egg burst.
+- **Lighting & Atmosphere:** 5 light sources including tall moonlight shaft with motes across sideboard, flickering dirty / warm clean chandelier with faceted glass glints, china cabinet interior light, dedicated under-table bounce light for nest readability, and 5 centreline candlesticks.
+- **Unique Makeover Beat:** At t = 3.30 s – 4.30 s, candles ignite left-to-right at 0.25 s intervals with rising chimes and sparkle flares; chandelier and cabinet light flood warm at t = 4.30 s; place cards flip upright from t = 4.40 s to 5.00 s.
+- **Story Object & Trace:** Place cards for six, naming Arthur, Eleanor, Thomas, A., Beatrice, Julian; seat A's chair is tucked all the way in ("her chair was never pulled out"). Previous cleaner's snapped feather duster on the sideboard laid neatly side-by-side on makeover.
+- **Checks & Console:** Zero console errors across all QA states (`dirty`, `action`, `nest`, `makeover`, `clean`, `results`).
+- **Performance:** Mean frame time **3.04 ms** (p95 4.1 ms) in `action`; mean **2.89 ms** (p95 3.3 ms) in `makeover` (well below the 8.0 ms budget).
+- **Audit & Gallery:** Rebuilt gallery with contact sheet and summary card; `review.mjs audit` passed with 0 stray images.
+
+**Claude Code review:** fix needed — complete and playable, but the painting is below the reference: a dirty frame too dark to read the furniture, a flat saturated green wall in the clean state (the damask barely shows), and table, chairs and plates as flat shapes. The place cards (story object) cannot be read in the clean frame. Built with Gemini 3.8 Flash High, because the Argon quota was used up. See prompts/06-dining-room-fix-1.md.

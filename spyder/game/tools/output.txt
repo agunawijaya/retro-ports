@@ -1,0 +1,119 @@
+── keyboard ──
+pass  title: focus starts on the first button  (Opening the house…
+          New game)
+pass  title: Tab reaches Settings  (Settings)
+pass  Enter on Settings opens the settings card
+pass  settings: arrow keys move between tabs  (sound)
+pass  settings: Tab reaches the first brass dial  (master)
+pass  settings: arrow keys turn the dial  (75)
+pass  moving one dial keeps the other two  ({"master":0.75,"music":0.55,"sfx":0.9})
+pass  Esc leaves settings for the title
+pass  title: Tab reaches How to play  (How to play)
+pass  How to play opens
+pass  Esc leaves How to play
+pass  Enter with nothing focused = the first button (New game → map)
+pass  map: the first built room has the focus; ArrowUp reaches the room that touches it  (front-porch → living-room)
+pass  map: ArrowRight stays on the same floor  (downstairs-bathroom (ground))
+pass  map: Enter on living-room explains instead of entering  (The Living Room — clean the rooms before it first.)
+pass  map: Enter on the open room (front-porch) goes in
+── fleeing ──
+pass  no nerve left: "You fled the room"
+pass  fled: the first button has the focus  (Try again R)
+pass  R tries again with full nerve
+pass  fled: Room map goes to the map
+── unlocking ──
+pass  built rooms are listed in house order  (front-porch, living-room, family-room, kitchen, dining-room, downstairs-bathroom, upstairs-hallway, master-bedroom, kids-bedroom, study, upstairs-bathroom, attic)
+pass  a new game opens only the first built room; unbuilt rooms are "coming soon"  (open, locked, locked, locked, locked, locked, locked, locked, locked, locked, locked, locked)
+pass  clearing a room opens the next built one
+pass  clearing two opens the third, skipping unbuilt rooms
+pass  a room cleared before an earlier one existed stays cleared
+pass  with every built room clean, nothing is "next"  (null)
+── polish (Fix 5 & Fix 6) ──
+pass  room CSS attached via <link data-room-css>
+pass  map: cleared room with score 0 shows "cleared", not "best 0"  (cleared · untouched / best 18,740)
+pass  map: no CLEAN stamp overlaps a room name or score line  (none overlap)
+pass  map: every room text bounding box lies inside its room box  (all inside)
+pass  world.spawn() assigns a unique seed on every call
+pass  world.spawnEgg() and world.hatch() accept { hatchAt, count, speed }
+pass  qa staging api: placeHero(x, platformName) and setScore({...})
+pass  mk.t continues advancing in restored state for uniqueBeat
+pass  far-layer parallax shift passed as 7th argument to room.glow()
+── two-file rooms & blockout (Prompt 07 L1) ──
+pass  stand-in two-file room registered without art plays on blockout
+pass  ?art=off shows the blockout for the Living Room
+── weapons ──
+pass  the registry holds "vacuum", always unlocked
+pass  an unregistered/not-yet-unlocked weapon reads as locked
+pass  with only the Vacuum unlocked, 1/2/3, Q/E and the wheel all leave it selected
+pass  a registered but locked weapon is skipped
+pass  a registered, unlocked weapon switches in on its key
+pass  cycling weapons works via wheel and Q/E
+pass  tank drains while firing and refills while idle
+pass  Web-Cutter tears silk and snips threads
+pass  Foam pops eggs and hatchlings in the cone and not outside it
+pass  Flamethrower cannot be swapped away while active and returns to previous weapon
+pass  Sonic Pulse clears the room once
+pass  box takes 3 hits and drops its item
+pass  unlocks granted and migrated on room clears
+pass  mini-objective (3 snips in 8 s) awards one Sonic Pulse charge
+pass  damage model: health 2 survives one dart, dies on the second
+pass  HUD tag fan: the Vacuum peeks behind the active Web-Cutter, both unlocked
+pass  HUD tag fan: during the Flamethrower, all three default weapons peek if unlocked
+pass  HUD tag: the pressure dots row hides for a timer weapon (Flamethrower)
+pass  HUD tag: the pressure dots row hides for a tank weapon (Foam Spray)
+pass  HUD tag: the main tag's icon is hidden with only the Vacuum unlocked (regression)
+pass  HUD tag: the pressure dots row shows again once back on a pressure weapon
+pass  HUD tag: the main tag's icon shows and names the active weapon once more than one is unlocked
+pass  no console errors (weapons page)
+── dynamic webs (Prompt 13 L3) ──
+pass  world.addWeb(web) is a function
+pass  dynamic web added during play has addedDuringPlay flag and enters world.webs
+pass  while intact above 30%, new web pushes the clean meter back
+pass  once torn to 30% or below, new web is excluded so room is never impossible
+pass  no console errors (dynamic-webs page)
+── "Found:" banner ──
+pass  Living Room, first clear: results card reached  (makeover → restored)
+pass  Living Room, first clear: "Found: Web-Cutter" shows  ({"hidden":false,"label":"Found: Web-Cutter"})
+pass  Living Room, second clear: "Found:" does not show again  ({"hidden":true,"label":"Found: Web-Cutter"})
+pass  no console errors (found-banner page)
+── boss framework ──
+pass  boss framework: boss spawns with correct health and initial phase  ({"alive":true,"health":10,"name":"Test Boss","phase":"calm","cardVisible":true,"goalPresent":true})
+pass  boss framework: work-order card shows boss section and goal
+pass  boss framework: hit by Vacuum (health 10 → 9, 40ms hit stop)  ({"hit":true,"health":9,"hitStop":0.04})
+pass  boss framework: hit by Web-Cutter (health 9 → 7)  ({"hit":true,"health":7})
+pass  boss framework: hit by Foam-Spray (health 7 → 6.75)  ({"hit":true,"health":6.75})
+pass  boss framework: hit by Flamethrower (health 6.75 → 5.75)  ({"hit":true,"health":5.75})
+pass  boss framework: phase change triggered at 50% health  ({"phase":"angry","health":4.75,"note":"She's angry now.","noteVisible":true})
+pass  boss framework: HUD displays handwritten note ("She's angry now.")  ({"phase":"angry","health":4.75,"note":"She's angry now.","noteVisible":true})
+pass  boss framework: no regular spawn in the 1.5s pause after a phase change  ({"before":1,"after":1})
+pass  boss framework: Sonic Pulse removes 25% of boss max health (2.5 dmg)  ({"prevHealth":4.75,"newHealth":2.25,"diff":2.5})
+pass  boss framework: defeat stops further hits at once, but the goal is not done yet  ({"alive":false,"health":0,"done":false,"goalDone":false})
+pass  boss framework: sim runs at 0.4x speed right after defeat  ({"delta":0.006666666666666821})
+pass  boss framework: boss goal completes once the death animation finishes (done=true)  ({"done":true,"goalDone":true})
+pass  boss framework: clearRoom after the death animation triggers makeover  (makeover)
+pass  boss framework: __spyder.bossTo and __spyder.bossPhase QA hooks work  ({"h1":8,"p1":"angry"})
+pass  no console errors (boss page)
+── Room 12: Attic & Spider Queen ──
+pass  attic: room 12 registered with number 12 and act 3
+pass  attic: every platform step passes the reach rule (rise <= 190, gap <= 160)
+pass  attic: has >= 8 webs (found 10)
+pass  attic: breakables contain flamethrower on lower trunk and sonic on collar beam
+pass  attic: storyObject mentions A. Ashworth and old torch
+pass  attic: spider-queen boss is registered in registry
+pass  queen: initial health is 60 in nest phase
+pass  queen: hits on legs do nothing (0 damage)
+pass  queen: phase 1 takes damage only during lunge
+pass  queen: Web-Cutter blade tearing funnel deals 1 damage
+pass  queen: cutting silk line drops queen stunned to floor
+pass  queen: stunned queen takes double damage
+pass  queen: phase 3 foam slows her 30% (speedMult 0.7)
+pass  queen: defeat sequence curls/falls, then finishes with done=true
+pass  attic QA state queen-nest stages without errors
+pass  attic QA state queen-swing stages without errors
+pass  attic QA state queen-rage stages without errors
+pass  attic: clearing with no secret room found shows no next-room line  ({"next":null,"soon":null})
+pass  attic: with the Basement found, results say "next on the plan: the Basement — not built yet"  (next on the plan: the Basement — not built yet)
+pass  no console errors (attic page)
+pass  no console errors
+
+all checks passed

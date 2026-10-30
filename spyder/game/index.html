@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spyder</title>
+  <link rel="stylesheet" href="css/hud.css">
+</head>
+<body class="is-screen">
+  <main id="frame" aria-label="Spyder">
+    <canvas id="stage" tabindex="0" aria-label="Game view"></canvas>
+
+    <div id="hud" aria-live="off">
+      <!-- Pause: a brass push-button -->
+      <button class="brass-button" data-action="pause" aria-label="Pause (Esc)">
+        <span class="brass-button__icon" aria-hidden="true"></span>
+        <span class="brass-button__hint">Esc</span>
+      </button>
+
+      <!-- Score: engraved brass plate, combo hangs below it on a string -->
+      <div class="plate" role="status" aria-label="Score">
+        <span class="plate__label">Score</span>
+        <span class="plate__value" data-score>000000</span>
+        <span class="plate__screw plate__screw--l" aria-hidden="true"></span>
+        <span class="plate__screw plate__screw--r" aria-hidden="true"></span>
+        <div class="combo-tag" data-combo aria-label="Combo multiplier">
+          <span class="combo-tag__string" aria-hidden="true"></span>
+          <span class="combo-tag__card" data-combo-text>×1</span>
+        </div>
+      </div>
+
+      <!-- Progress: a pinned work-order card, filled in by each room -->
+      <section class="work-order" aria-label="Room progress">
+        <span class="work-order__pin" aria-hidden="true"></span>
+        <header class="work-order__head">
+          <span data-order-number>Work order No.&nbsp;00</span>
+          <span class="work-order__room" data-room-name>—</span>
+        </header>
+        <!-- Added by hand in red ink when the room has a boss -->
+        <div class="work-order__boss" data-boss-card hidden>
+          <p class="work-order__boss-name">
+            <span data-boss-name>—</span>
+            <svg class="work-order__boss-tick" viewBox="0 0 28 24" aria-hidden="true">
+              <path d="M3 13 C 5 15, 8 18, 10 21 C 13 13, 19 6, 26 2" pathLength="1"/>
+            </svg>
+          </p>
+          <svg class="work-order__boss-bar" viewBox="0 0 288 26" aria-hidden="true">
+            <path class="work-order__boss-ghost" d="M4 13 C 10 9.5, 18 9.5, 24 12.5 S 38 16.5, 44 13 S 58 9, 64 12 S 78 16, 84 13 S 98 9.5, 104 12.5 S 118 16.5, 124 13 S 138 9.2, 144 12.2 S 158 15.8, 164 12.8 S 178 9, 184 12 S 198 15.6, 204 12.6 S 218 9.4, 224 12.4 S 238 16, 244 13 S 258 9.8, 264 12.6 S 278 15.4, 284 12.8"/>
+            <path class="work-order__boss-ink" data-boss-ink d="M4 13 C 10 9.5, 18 9.5, 24 12.5 S 38 16.5, 44 13 S 58 9, 64 12 S 78 16, 84 13 S 98 9.5, 104 12.5 S 118 16.5, 124 13 S 138 9.2, 144 12.2 S 158 15.8, 164 12.8 S 178 9, 184 12 S 198 15.6, 204 12.6 S 218 9.4, 224 12.4 S 238 16, 244 13 S 258 9.8, 264 12.6 S 278 15.4, 284 12.8" pathLength="1"/>
+            <path class="work-order__boss-ink work-order__boss-ink--nib" data-boss-ink d="M4 13 C 10 9.5, 18 9.5, 24 12.5 S 38 16.5, 44 13 S 58 9, 64 12 S 78 16, 84 13 S 98 9.5, 104 12.5 S 118 16.5, 124 13 S 138 9.2, 144 12.2 S 158 15.8, 164 12.8 S 178 9, 184 12 S 198 15.6, 204 12.6 S 218 9.4, 224 12.4 S 238 16, 244 13 S 258 9.8, 264 12.6 S 278 15.4, 284 12.8" pathLength="1"/>
+            <g class="work-order__boss-ticks" data-boss-ticks></g>
+            <g class="work-order__boss-strike">
+              <path d="M-4 23 C 90 19.5, 200 9, 293 0" pathLength="1"/>
+              <path class="work-order__boss-strike--second" d="M9 21 C 110 16, 205 11, 285 6" pathLength="1"/>
+            </g>
+          </svg>
+        </div>
+        <div class="work-order__meter">
+          <svg viewBox="0 0 260 24" aria-hidden="true">
+            <path class="work-order__track" d="M4 14 C 60 10, 120 17, 180 12 S 240 13, 256 12" pathLength="1"/>
+            <path class="work-order__ink" data-clean-ink d="M4 14 C 60 10, 120 17, 180 12 S 240 13, 256 12" pathLength="1"/>
+          </svg>
+          <span class="work-order__pct" data-clean-text>0%</span>
+        </div>
+        <ul class="work-order__list">
+          <li><span>Spiders</span><span data-spiders>0 / 16</span></li>
+          <li><span>Webs torn down</span><span data-webs>0%</span></li>
+        </ul>
+        <span class="work-order__stamp" data-stamp aria-hidden="true">Clean</span>
+      </section>
+
+      <!-- Nerve: a pressure gauge -->
+      <div class="gauge" role="img" aria-label="Nerve">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <defs>
+            <radialGradient id="gaugeFace" cx="45%" cy="40%" r="65%">
+              <stop offset="0" stop-color="#F3EAD6"/>
+              <stop offset="1" stop-color="#BFAF8E"/>
+            </radialGradient>
+            <linearGradient id="gaugeRim" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#E7C784"/>
+              <stop offset="0.5" stop-color="#9C7638"/>
+              <stop offset="1" stop-color="#5E4320"/>
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="100" r="94" fill="url(#gaugeRim)"/>
+          <circle cx="100" cy="100" r="80" fill="url(#gaugeFace)"/>
+          <!-- Red zone on the low end -->
+          <path d="M 44.6 132 A 64 64 0 0 1 36.4 92" stroke="#A8402E" stroke-width="10" fill="none"/>
+          <g class="gauge__ticks" stroke="#3B2A1F" stroke-linecap="round">
+            <line x1="100" y1="28" x2="100" y2="40" transform="rotate(-120 100 100)"/>
+            <line x1="100" y1="28" x2="100" y2="36" transform="rotate(-80 100 100)"/>
+            <line x1="100" y1="28" x2="100" y2="40" transform="rotate(-40 100 100)"/>
+            <line x1="100" y1="28" x2="100" y2="36" transform="rotate(0 100 100)"/>
+            <line x1="100" y1="28" x2="100" y2="40" transform="rotate(40 100 100)"/>
+            <line x1="100" y1="28" x2="100" y2="36" transform="rotate(80 100 100)"/>
+            <line x1="100" y1="28" x2="100" y2="40" transform="rotate(120 100 100)"/>
+          </g>
+          <text x="100" y="140" text-anchor="middle" class="gauge__label">NERVE</text>
+          <g class="gauge__needle" data-needle>
+            <path d="M100 100 L 96 104 L 100 34 L 104 104 Z" fill="#3B1E14"/>
+          </g>
+          <circle cx="100" cy="100" r="9" fill="#5E4320"/>
+          <circle cx="98" cy="98" r="3" fill="#E7C784"/>
+          <!-- Glass glare -->
+          <path d="M 40 70 A 70 70 0 0 1 120 30 A 90 90 0 0 0 52 92 Z" fill="rgba(255,255,255,0.22)"/>
+        </svg>
+      </div>
+
+      <!-- Weapon: a luggage tag tied to the frame (fan of tags when multiple unlocked) -->
+      <div class="tag tag--peek tag--peek-foam" data-peek="foam-spray" hidden aria-hidden="true">
+        <span class="tag__hole"></span>
+        <span class="tag__title">Foam Spray</span>
+        <span class="tag__icon tag__icon--foam"></span>
+      </div>
+      <div class="tag tag--peek tag--peek-cutter" data-peek="web-cutter" hidden aria-hidden="true">
+        <span class="tag__hole"></span>
+        <span class="tag__title">Web-Cutter</span>
+        <span class="tag__icon tag__icon--cutter"></span>
+      </div>
+      <div class="tag tag--peek tag--peek-vacuum" data-peek="vacuum" hidden aria-hidden="true">
+        <span class="tag__hole"></span>
+        <span class="tag__title">Vacuum Blaster</span>
+        <span class="tag__icon tag__icon--vacuum"></span>
+      </div>
+      <div class="tag" aria-label="Weapon: Vacuum Blaster">
+        <span class="tag__hole" aria-hidden="true"></span>
+        <span class="tag__title" data-tag-title>Vacuum Blaster</span>
+        <span class="tag__sub" data-tag-sub>Pressure</span>
+        <span class="tag__dots" data-charge><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <div class="tag__tank" data-tag-tank hidden><div class="tag__liquid" data-tag-liquid></div></div>
+        <div class="tag__timer" data-tag-timer hidden><div class="tag__fuse" data-tag-fuse></div></div>
+        <span class="tag__icon tag__icon--main" data-tag-icon hidden></span>
+      </div>
+      <div class="tag__bell" data-tag-bell hidden aria-label="Sonic Pulse (F)">
+        <span class="tag__bell-clip"></span>
+        <span class="tag__bell-body"></span>
+        <span class="tag__bell-f">F</span>
+      </div>
+      <div class="hud-note" data-hud-note hidden aria-live="polite"></div>
+    </div>
+
+    <!-- ── Screens: title, how to play, settings, the house map ────────── -->
+
+    <!-- Title: the letter that came with the keys, over the dirty Living Room -->
+    <section class="card card--title" data-card="title" aria-label="Spyder">
+      <!-- The deckled edge is a clip-path, which would also clip a shadow,
+           so the shadow sits on this wrapper and the paper inside it. -->
+      <div class="letter">
+      <p class="card__kicker">Left with the keys</p>
+      <h1 class="card__title">Spyder</h1>
+      <p class="card__room">Empty for fifteen years.</p>
+      <blockquote class="card__note">
+        <p>Clean it first.<br>Then you will understand.</p>
+        <footer>— A.</footer>
+      </blockquote>
+      <div class="title-menu" data-menu>
+        <button class="card__button" data-action="continue" hidden>Continue</button>
+        <button class="card__button" data-action="new-game" disabled>
+          <span class="card__button-loading">Opening the house…</span>
+          <span class="card__button-ready">New game</span>
+        </button>
+        <p class="title-menu__links">
+          <button class="card__link" data-action="settings">Settings</button>
+          <span aria-hidden="true">·</span>
+          <button class="card__link" data-action="howto">How to play</button>
+        </p>
+      </div>
+      <div class="title-confirm" data-confirm hidden>
+        <p class="card__note-small">Start over? The rooms you cleaned will be dirty again on the plan.</p>
+        <div class="card__row">
+          <button class="card__button" data-action="confirm-new">Start over</button>
+          <button class="card__link" data-action="cancel-new">Keep my rooms</button>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- How to play: the controls, and three snapshots pinned to the page -->
+    <section class="card card--paper card--howto" data-card="howto" aria-label="How to play">
+      <p class="card__kicker">Notes for whoever cleans next</p>
+      <h2 class="card__title card__title--small">How to play</h2>
+      <dl class="card__keys">
+        <div><dt>Move</dt><dd>A · D</dd></div>
+        <div><dt>Jump · Drop</dt><dd>W · S</dd></div>
+        <div><dt>Shoot</dt><dd>Click or Space</dd></div>
+        <div><dt>Pause</dt><dd>Esc</dd></div>
+        <div><dt>Weapons</dt><dd>1 2 3 / Q E</dd></div>
+      </dl>
+      <p class="howto__goal">Clear every spider and tear down the webs. When the work order says <b>Clean</b>, the room comes back to life.</p>
+      <div class="howto__tips">
+        <figure class="snapshot" style="--tilt:-3deg">
+          <canvas data-tip="snip" width="300" height="220" aria-hidden="true"></canvas>
+          <figcaption>Snip the silk above a dangling spider. It drops — and pays more.</figcaption>
+        </figure>
+        <figure class="snapshot" style="--tilt:2deg">
+          <canvas data-tip="stomp" width="300" height="220" aria-hidden="true"></canvas>
+          <figcaption>Jump on the little ones.</figcaption>
+        </figure>
+        <figure class="snapshot" style="--tilt:-1.5deg">
+          <canvas data-tip="egg" width="300" height="220" aria-hidden="true"></canvas>
+          <figcaption>Eggs fall on your head. Don't stand still under a spider.</figcaption>
+        </figure>
+      </div>
+      <button class="card__button" data-action="back">Back <kbd>Esc</kbd></button>
+    </section>
+
+    <!-- Settings: a paper card with index tabs -->
+    <section class="card card--paper card--settings" data-card="settings" aria-label="Settings">
+      <div class="tabs" role="tablist" aria-label="Settings">
+        <button class="tabs__tab" role="tab" id="tab-character" aria-controls="panel-character" aria-selected="true" data-tab="character">Character</button>
+        <button class="tabs__tab" role="tab" id="tab-difficulty" aria-controls="panel-difficulty" aria-selected="false" tabindex="-1" data-tab="difficulty">Difficulty</button>
+        <button class="tabs__tab" role="tab" id="tab-sound" aria-controls="panel-sound" aria-selected="false" tabindex="-1" data-tab="sound">Sound</button>
+        <button class="tabs__tab" role="tab" id="tab-visual" aria-controls="panel-visual" aria-selected="false" tabindex="-1" data-tab="visual">Visual</button>
+        <button class="tabs__tab" role="tab" id="tab-controls" aria-controls="panel-controls" aria-selected="false" tabindex="-1" data-tab="controls">Controls</button>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-character" aria-labelledby="tab-character">
+        <p class="panel__lede">Who goes in. The others are still on their way to the house.</p>
+        <div class="cast" role="radiogroup" aria-label="Character">
+          <label class="cast__card is-chosen">
+            <input type="radio" name="character" value="exterminator" checked>
+            <canvas data-portrait="exterminator" width="220" height="260" aria-hidden="true"></canvas>
+            <span class="cast__name">The Exterminator</span>
+            <span class="cast__perk">Vacuum Blaster · head lamp</span>
+            <span class="cast__stamp" aria-hidden="true">Hired</span>
+          </label>
+          <div class="cast__card is-sketch" aria-disabled="true">
+            <canvas data-portrait="kid" width="220" height="260" aria-hidden="true"></canvas>
+            <span class="cast__name">The Curious Kid</span>
+            <span class="cast__soon">coming soon</span>
+          </div>
+          <div class="cast__card is-sketch" aria-disabled="true">
+            <canvas data-portrait="heir" width="220" height="260" aria-hidden="true"></canvas>
+            <span class="cast__name">The Heir</span>
+            <span class="cast__soon">coming soon</span>
+          </div>
+          <div class="cast__card is-sketch" aria-disabled="true">
+            <canvas data-portrait="hunter" width="220" height="260" aria-hidden="true"></canvas>
+            <span class="cast__name">The Ghost Hunter</span>
+            <span class="cast__soon">coming soon</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-difficulty" aria-labelledby="tab-difficulty" hidden>
+        <p class="panel__lede">How many spiders each room sends, and how quickly.</p>
+        <fieldset class="checklist">
+          <legend class="visually-hidden">Difficulty</legend>
+          <label class="checklist__item"><input type="radio" name="difficulty" value="easy"><span class="checklist__box" aria-hidden="true"></span><span class="checklist__label">Easy</span><span class="checklist__note">a quarter fewer spiders, and they take their time</span></label>
+          <label class="checklist__item"><input type="radio" name="difficulty" value="normal"><span class="checklist__box" aria-hidden="true"></span><span class="checklist__label">Normal</span><span class="checklist__note">the house as it is</span></label>
+          <label class="checklist__item"><input type="radio" name="difficulty" value="hard"><span class="checklist__box" aria-hidden="true"></span><span class="checklist__label">Hard</span><span class="checklist__note">a quarter more, and they come faster</span></label>
+        </fieldset>
+        <p class="panel__note">Takes effect the next time you enter a room.</p>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-sound" aria-labelledby="tab-sound" hidden>
+        <p class="panel__lede">Three brass dials on an old wireless set.</p>
+        <div class="dials">
+          <label class="dial"><span class="dial__name">Master</span><input type="range" min="0" max="100" step="5" data-volume="master"><span class="dial__value" data-volume-text="master">80</span></label>
+          <label class="dial"><span class="dial__name">Music</span><input type="range" min="0" max="100" step="5" data-volume="music"><span class="dial__value" data-volume-text="music">55</span></label>
+          <label class="dial"><span class="dial__name">Effects</span><input type="range" min="0" max="100" step="5" data-volume="sfx"><span class="dial__value" data-volume-text="sfx">90</span></label>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-visual" aria-labelledby="tab-visual" hidden>
+        <p class="panel__lede">For comfort, and for older machines.</p>
+        <div class="switches">
+          <fieldset class="switch"><legend>Screen shake</legend>
+            <label><input type="radio" name="shake" value="on"><span>On</span></label>
+            <label><input type="radio" name="shake" value="off"><span>Off</span></label>
+          </fieldset>
+          <fieldset class="switch"><legend>Particles</legend>
+            <label><input type="radio" name="particles" value="normal"><span>Normal</span></label>
+            <label><input type="radio" name="particles" value="reduced"><span>Reduced</span></label>
+          </fieldset>
+          <fieldset class="switch"><legend>Film grain</legend>
+            <label><input type="radio" name="grain" value="on"><span>On</span></label>
+            <label><input type="radio" name="grain" value="off"><span>Off</span></label>
+          </fieldset>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-controls" aria-labelledby="tab-controls" hidden>
+        <p class="panel__lede">Keys and controls for your gear.</p>
+        <dl class="card__keys">
+          <div><dt>Move</dt><dd>A · D</dd></div>
+          <div><dt>Jump · Drop</dt><dd>W · S</dd></div>
+          <div><dt>Shoot</dt><dd>Click · Space</dd></div>
+          <div><dt>Weapons</dt><dd>1 2 3 · Q E</dd></div>
+          <div><dt>Sonic Pulse</dt><dd>F</dd></div>
+        </dl>
+        <p class="panel__note">1: Vacuum Blaster · 2: Web-Cutter · 3: Foam Spray · F: Sonic Pulse charge · Mouse wheel cycles</p>
+      </div>
+
+      <p class="panel__storage" data-storage-note hidden>This browser is not keeping anything, so settings and progress last until the page is closed.</p>
+      <button class="card__button" data-action="back">Done <kbd>Esc</kbd></button>
+    </section>
+
+    <!-- The house map: a floor plan on aged paper, built by lib/house-map.js -->
+    <section class="map" data-card="map" aria-label="The house">
+      <div class="map__sheet" data-map-sheet></div>
+      <p class="map__hint" data-map-hint aria-live="polite"></p>
+      <nav class="map__nav" aria-label="Map">
+        <button class="map__tag" data-action="title"><span aria-hidden="true">←</span> The letter <kbd>Esc</kbd></button>
+      </nav>
+    </section>
+
+    <!-- ── In-room cards ───────────────────────────────────────────────── -->
+
+    <section class="card card--paper" data-card="pause" aria-label="Paused">
+      <h2 class="card__title card__title--small">Paused</h2>
+      <div class="card__stack">
+        <button class="card__button" data-action="resume">Resume <kbd>Esc</kbd></button>
+        <button class="card__link" data-action="restart">Restart the room</button>
+        <button class="card__link" data-action="map">Room map</button>
+        <button class="card__link" data-action="mute" data-mute-label>Sound: on</button>
+      </div>
+    </section>
+
+    <section class="card card--paper card--results" data-card="results" aria-label="Room restored">
+      <span class="card__stamp">Restored</span>
+      <p class="card__kicker" data-result="kicker">Work order No. 02 · complete</p>
+      <h2 class="card__title card__title--small" data-result="title">The Living Room</h2>
+      <table class="card__tally">
+        <tr><th>Score</th><td data-result="score">0</td></tr>
+        <tr><th>Time</th><td data-result="time">0:00</td></tr>
+        <tr><th>Spiders</th><td data-result="spiders">0</td></tr>
+        <tr><th>Eggs popped</th><td data-result="eggs">0</td></tr>
+        <tr><th>Best combo</th><td data-result="bestCombo">×1</td></tr>
+        <tr><th>Untouched</th><td data-result="untouched">No</td></tr>
+      </table>
+      <p class="card__found" data-result="found">Found on the dresser: a family photo, standing up again.</p>
+      <div class="card__unlock" data-result="unlock" hidden>
+        <span class="card__unlock-label" data-result="unlock-label">Found: Web-Cutter</span>
+        <canvas class="card__unlock-canvas" data-result="unlock-canvas" width="60" height="32" aria-hidden="true"></canvas>
+      </div>
+      <p class="card__coins" data-result="coins" hidden>Coins +50</p>
+      <div class="card__row">
+        <button class="card__button" data-action="next-room" hidden>Next room</button>
+        <button class="card__button" data-action="restart">Play again <kbd>R</kbd></button>
+      </div>
+      <p class="card__after">
+        <button class="card__link" data-action="map">Room map</button>
+        <span class="card__pencil" data-result="next-soon" hidden></span>
+      </p>
+    </section>
+
+    <section class="card card--paper" data-card="fled" aria-label="You fled">
+      <h2 class="card__title card__title--small">You fled the room</h2>
+      <p class="card__note-small">Nerves happen. The spiders are still there.</p>
+      <div class="card__stack">
+        <button class="card__button" data-action="restart">Try again <kbd>R</kbd></button>
+        <button class="card__link" data-action="map">Room map</button>
+      </div>
+    </section>
+
+    <!-- Between the rooms and the map: a short fade through soot -->
+    <div class="veil" data-veil aria-hidden="true"><span class="veil__note" data-veil-note></span></div>
+  </main>
+
+  <!-- The shared library (copied from reference/lib, then extended) -->
+  <script src="lib/core.js"></script>
+  <script src="lib/palette.js"></script>
+  <script src="lib/paint.js"></script>
+  <script src="lib/lighting.js"></script>
+  <script src="lib/particles.js"></script>
+  <script src="lib/webs.js"></script>
+  <script src="lib/spider-rig.js"></script>
+  <script src="lib/spiders.js"></script>
+  <script src="lib/hero.js"></script>
+  <script src="lib/audio.js"></script>
+  <script src="lib/hud.js"></script>
+
+  <!-- Weapons: one file per weapon, each registers itself -->
+  <script src="lib/weapons/registry.js"></script>
+  <script src="lib/weapons/vacuum.js"></script>
+  <script src="lib/weapons/web-cutter.js"></script>
+  <script src="lib/weapons/foam-spray.js"></script>
+  <script src="lib/weapons/flamethrower.js"></script>
+  <script src="lib/weapons/sonic-pulse.js"></script>
+
+  <!-- Spider brains: one file per type, each registers itself -->
+  <script src="lib/spider-types/registry.js"></script>
+  <script src="lib/spider-types/string.js"></script>
+  <script src="lib/spider-types/crawler.js"></script>
+  <script src="lib/spider-types/hatchling.js"></script>
+  <script src="lib/spider-types/jumper.js"></script>
+  <script src="lib/spider-types/egg-carrier.js"></script>
+  <script src="lib/spider-types/web-weaver.js"></script>
+
+  <!-- Boss system -->
+  <script src="lib/boss.js"></script>
+  <script src="lib/bosses/spider-queen.js"></script>
+
+  <!-- The game around the rooms -->
+  <script src="lib/room-registry.js"></script>
+  <script src="lib/progress.js"></script>
+  <script src="lib/room-runtime.js"></script>
+  <script src="lib/house-map.js"></script>
+  <script src="lib/screens.js"></script>
+
+  <!-- Rooms, one line each. Each file registers itself with S.rooms. -->
+  <script src="rooms/front-porch/room.js"></script>
+  <script src="rooms/living-room/room.js"></script>
+  <script src="rooms/family-room/room.js"></script>
+  <script src="rooms/kitchen/room.js"></script>
+  <script src="rooms/dining-room/room.js"></script>
+  <script src="rooms/downstairs-bathroom/room.js"></script>
+  <script src="rooms/upstairs-hallway/room.js"></script>
+  <script src="rooms/master-bedroom/room.js"></script>
+  <script src="rooms/kids-bedroom/room.js"></script>
+  <script src="rooms/study/room.js"></script>
+  <script src="rooms/upstairs-bathroom/room.js"></script>
+  <script src="rooms/attic/room.js"></script>
+
+  <script src="main.js"></script>
+</body>
+</html>

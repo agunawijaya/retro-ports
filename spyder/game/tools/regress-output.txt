@@ -1,0 +1,12 @@
+dirty     canvas       4 px differ, max   1, in x 512–1352 y 653–1015  OK
+          screen       4 px differ, max   1, in x 512–1352 y 653–1015
+action    canvas       5 px differ, max   1, in x 512–1352 y 653–1015  OK
+          screen       5 px differ, max   1, in x 512–1352 y 653–1015
+makeover  canvas       4 px differ, max   1, in x 512–1448 y 907–1060  OK
+          screen       4 px differ, max   1, in x 512–1448 y 907–1060
+clean     canvas       6 px differ, max   1, in x 403–696 y 749–996  OK
+          screen       6 px differ, max   1, in x 403–696 y 749–996
+results   canvas       6 px differ, max   1, in x 403–696 y 749–996  OK
+          screen  518448 px differ, max 201, in x 403–1361 y 171–996
+no page errors
+REGRESSION: canvas identical to the reference in every state

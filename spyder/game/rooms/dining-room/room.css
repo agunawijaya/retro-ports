@@ -1,0 +1,112 @@
+/*
+ * Spyder — Room 5 (Dining Room): pinned note from "A." on the sideboard
+ */
+.dining-notes {
+  position: absolute;
+  left: 178px;
+  top: 615px;
+  width: 176px;
+  height: 170px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.dining-note {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 176px;
+  padding: 24px 14px 12px 14px;
+  color: #2b2420;
+  transform-origin: 50% 12px;
+  transform: rotate(-2.2deg);
+  filter: drop-shadow(-5px 8px 6px rgba(10, 8, 7, 0.65));
+}
+
+.dining-note__paper {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 75% 80%, rgba(120, 90, 50, 0.16) 0 7px, transparent 9px),
+    radial-gradient(circle at 20% 30%, rgba(120, 90, 50, 0.12) 0 4px, transparent 6px),
+    linear-gradient(90deg, rgba(127, 163, 199, 0.15), rgba(0, 0, 0, 0) 40%, rgba(242, 165, 74, 0.12)),
+    linear-gradient(172deg, #cdbea2 0%, #bcab8f 58%, #a6947a 100%);
+  clip-path: polygon(
+    0 3%, 10% 0, 24% 2%, 39% 0, 54% 2%, 70% 0, 85% 2%, 100% 0,
+    99% 25%, 100% 50%, 98% 75%, 100% 100%,
+    85% 98%, 68% 100%, 50% 98%, 32% 100%, 15% 98%, 0 100%,
+    2% 75%, 0 50%, 1% 25%
+  );
+}
+
+.dining-note__pin,
+.dining-scrap__pin {
+  position: absolute;
+  top: 6px;
+  left: calc(50% - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #f0d9a0, #c49a55 45%, #5e4320);
+  box-shadow: -2px 3px 3px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.dining-note__text {
+  position: relative;
+  margin: 0;
+  font: 700 24px/1.08 var(--font-hand, 'Caveat', cursive);
+  color: #2b2420;
+}
+
+.dining-note__sign {
+  position: relative;
+  margin: 3px 2px 0 0;
+  text-align: right;
+  font: 600 21px var(--font-hand, 'Caveat', cursive);
+  color: #3e3128;
+}
+
+.dining-scrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 176px;
+  height: 25px;
+  animation: dining-fade 1.8s ease-in 0.6s forwards;
+}
+
+.dining-scrap__paper {
+  position: absolute;
+  left: 72px;
+  top: 3px;
+  width: 32px;
+  height: 18px;
+  background: #bcab8f;
+  clip-path: polygon(0 0, 100% 0, 85% 60%, 65% 100%, 40% 70%, 18% 100%);
+  transform: rotate(-3deg);
+}
+
+.dining-note.is-pinned {
+  animation: dining-pin 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+.dining-note.is-torn {
+  animation: dining-tear 0.65s cubic-bezier(0.4, 0, 0.8, 1) forwards;
+}
+
+@keyframes dining-pin {
+  0% { transform: scale(0.6) rotate(6deg); opacity: 0; }
+  100% { transform: scale(1) rotate(-2.2deg); opacity: 1; }
+}
+
+@keyframes dining-tear {
+  0% { transform: rotate(-2.2deg) translateY(0); opacity: 1; }
+  25% { transform: rotate(12deg) translateY(12px); opacity: 0.95; }
+  100% { transform: rotate(28deg) translateY(120px); opacity: 0; }
+}
+
+@keyframes dining-fade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "spyder-game-tools",
+  "private": true,
+  "type": "module",
+  "description": "QA screenshots, regression and flow tests for the Spyder game",
+  "scripts": {
+    "shoot": "node shoot.mjs",
+    "hero": "node shoot.mjs --hero",
+    "regress": "node regress.mjs",
+    "flow": "node flowtest.mjs",
+    "perf": "node perf.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.56.0"
+  }
+}

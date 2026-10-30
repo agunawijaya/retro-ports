@@ -1,0 +1,113 @@
+
+── normal storage ──
+pass  title shows on load
+pass  storage  (available)
+pass  no Continue without a save
+pass  New game opens the house map
+pass  the first built room has the focus  (front-porch; built: front-porch, living-room, family-room, kitchen, dining-room, downstairs-bathroom, upstairs-hallway, master-bedroom, kids-bedroom, study, upstairs-bathroom, attic)
+pass  front-porch: entered from the map  (playing)
+pass  front-porch: runs in real time and spiders come  (t 3.8 s, 1 critters)
+pass  Esc pauses
+pass  Esc resumes
+pass  front-porch: clearing starts the makeover  (makeover)
+pass  front-porch: results card after the makeover
+pass  front-porch: results name its story object  (The name above the door: Ashworth.)
+pass  front-porch: "Next room" leads to living-room  (living-room)
+pass  living-room: entered from the map  (playing)
+pass  living-room: runs in real time and spiders come  (t 4.5 s, 2 critters)
+pass  living-room: clearing starts the makeover  (makeover)
+pass  living-room: results card after the makeover
+pass  living-room: results name its story object  (Found on the dresser: a family photo, standing up again.)
+pass  living-room: "Next room" leads to family-room  (family-room)
+pass  family-room: entered with Next room  (playing)
+pass  family-room: runs in real time and spiders come  (t 3.5 s, 1 critters)
+pass  family-room: clearing starts the makeover  (makeover)
+pass  family-room: results card after the makeover
+pass  family-room: results name its story object  (On the television: a home movie. A child waves at whoever is filming.)
+pass  family-room: "Next room" leads to kitchen  (kitchen)
+pass  kitchen: entered from the map  (playing)
+pass  kitchen: runs in real time and spiders come  (t 3.6 s, 1 critters)
+pass  kitchen: clearing starts the makeover  (makeover)
+pass  kitchen: results card after the makeover
+pass  kitchen: results name its story object  (On the fridge: a recipe card, in a hand you almost know.)
+pass  kitchen: "Next room" leads to dining-room  (dining-room)
+pass  dining-room: entered with Next room  (playing)
+pass  dining-room: runs in real time and spiders come  (t 2.6 s, 1 critters)
+pass  dining-room: clearing starts the makeover  (makeover)
+pass  dining-room: results card after the makeover
+pass  dining-room: results name its story object  (Place cards for six. One says 'A.' — her chair was never pulled out.)
+pass  dining-room: "Next room" leads to downstairs-bathroom  (downstairs-bathroom)
+pass  downstairs-bathroom: entered from the map  (playing)
+pass  downstairs-bathroom: runs in real time and spiders come  (t 4.0 s, 1 critters)
+pass  downstairs-bathroom: clearing starts the makeover  (makeover)
+pass  downstairs-bathroom: results card after the makeover
+pass  downstairs-bathroom: results name its story object  (In the mirror, written in old steam: 'Thomas was here.')
+pass  downstairs-bathroom: "Next room" leads to upstairs-hallway  (upstairs-hallway)
+pass  upstairs-hallway: entered with Next room  (playing)
+pass  upstairs-hallway: runs in real time and spiders come  (t 4.0 s, 1 critters)
+pass  upstairs-hallway: clearing starts the makeover  (makeover)
+pass  upstairs-hallway: results card after the makeover
+pass  upstairs-hallway: results name its story object  (On a door frame: Thomas, measured every birthday. The marks stop at eight.)
+pass  upstairs-hallway: "Next room" leads to master-bedroom  (master-bedroom)
+pass  master-bedroom: entered from the map  (playing)
+pass  master-bedroom: runs in real time and spiders come  (t 3.5 s, 1 critters)
+pass  master-bedroom: clearing starts the makeover  (makeover)
+pass  master-bedroom: results card after the makeover
+pass  master-bedroom: results name its story object  (On the dressing table: Arthur and Eleanor's wedding photograph, 1968.)
+pass  master-bedroom: "Next room" leads to kids-bedroom  (kids-bedroom)
+pass  kids-bedroom: entered with Next room  (playing)
+pass  kids-bedroom: runs in real time and spiders come  (t 4.0 s, 1 critters)
+pass  kids-bedroom: clearing starts the makeover  (makeover)
+pass  kids-bedroom: results card after the makeover
+pass  kids-bedroom: results name its story object  (Above the desk: Thomas's drawing of his family — and of someone in an orange suit.)
+pass  kids-bedroom: "Next room" leads to study  (study)
+pass  study: entered from the map  (playing)
+pass  study: runs in real time and spiders come  (t 4.2 s, 2 critters)
+pass  study: clearing starts the makeover  (makeover)
+pass  study: results card after the makeover
+pass  study: results name its story object  (Eleanor's diary: 'Thomas says the Helper will come back one day and make the house safe.')
+pass  study: "Next room" leads to upstairs-bathroom  (upstairs-bathroom)
+pass  upstairs-bathroom: entered with Next room  (playing)
+pass  upstairs-bathroom: runs in real time and spiders come  (t 4.2 s, 2 critters)
+pass  upstairs-bathroom: clearing starts the makeover  (makeover)
+pass  upstairs-bathroom: results card after the makeover
+pass  upstairs-bathroom: results name its story object  (Four toothbrushes in a cup. One has a strip of tape on it: 'A.')
+pass  upstairs-bathroom: "Next room" leads to attic  (attic)
+pass  attic: entered from the map  (playing)
+FAIL  attic: runs in real time and spiders come  (t 1.5 s, 1 critters)
+FAIL  attic: clearing starts the makeover  (playing)
+pass  attic: results card after the makeover
+pass  attic: results name its story object  (In the nest, an old torch. Engraved on it: 'A. Ashworth'. She was the one who tried before you.)
+pass  attic: last built room, no secret found — no next-room line
+pass  Room map from the results
+pass  the map stamps every cleared room CLEAN  (12 of 12)
+pass  no cleared room shows "best 0"  (cleared · untouched, cleared, untouched, cleared, untouched, cleared · untouched, cleared, cleared · untouched, cleared, untouched, cleared, untouched, cleared, untouched, cleared, cleared · untouched, cleared · untouched)
+pass  every CLEAN stamp is clear of the room name and score line  (none overlap)
+pass  after reload: Continue is offered
+pass  after reload: the stamps are still on the map  (12)
+pass  Esc on the map returns to the title
+pass  a changed setting survives a reload
+pass  no console errors
+
+── storage blocked ──
+pass  title shows on load
+pass  storage  (blocked as intended)
+pass  no Continue without a save
+pass  New game opens the house map
+pass  the first built room has the focus  (front-porch; built: front-porch, living-room, family-room, kitchen, dining-room, downstairs-bathroom, upstairs-hallway, master-bedroom, kids-bedroom, study, upstairs-bathroom, attic)
+pass  front-porch: entered from the map  (playing)
+pass  front-porch: runs in real time and spiders come  (t 3.8 s, 1 critters)
+pass  Esc pauses
+pass  Esc resumes
+pass  front-porch: clearing starts the makeover  (makeover)
+pass  front-porch: results card after the makeover
+pass  front-porch: results name its story object  (The name above the door: Ashworth.)
+pass  front-porch: "Next room" leads to living-room  (living-room)
+pass  Room map from the results
+pass  the map stamps every cleared room CLEAN  (1 of 1)
+pass  no cleared room shows "best 0"  (cleared · untouched)
+pass  every CLEAN stamp is clear of the room name and score line  (none overlap)
+pass  after reload without storage: a fresh start, no error
+pass  no console errors
+
+2 check(s) failed

@@ -22,6 +22,40 @@
 */recovered/
 */reference/
 
+# Exception: spyder/reference/ is not derived from the game. It is our own
+# playable art-direction reference scene (procedural code, bundled OFL fonts,
+# our own screenshots), so it is committed like the rest of the port.
+!spyder/reference/
+spyder/reference/tools/node_modules/
+spyder/.scratch/
+
+# ancient-art-of-war: decompiled with the DOS-Decompiler toolkit's
+# DECOMPILE.md/SPECIFY.md prompts, which name their outputs src/ and spec/
+# instead of recovered/ and reference/ above. Both hold material derived
+# from the game (Ghidra's C, decoded campaign and opponent tables, terrain
+# masks) and fall under the same rule; see ancient-art-of-war/CLAUDE.md.
+ancient-art-of-war/src/
+ancient-art-of-war/spec/
+
+# karateka: same case. src/ is the DECOMPILE.md run (Ghidra's C, decoded
+# sprites/backdrops, CHECKLIST.md/REPORT.md); review/ is a read-only audit of
+# it; spec/ is the SPECIFY.md output (game-spec, rule modules, decoded
+# tables). All three hold material derived from the game; see
+# karateka/CLAUDE.md.
+karateka/src/
+karateka/review/
+karateka/spec/
+
+# spyder: before this folder became the original house-cleaning
+# reimagining (DESIGN.md, STORY.md, game/, reference/), it was a
+# DOS-Decompiler target for the real 1988 shareware game SPYDER.EXE.
+# src/ and spec/ are that run's output — decompiled.c, symbols.json,
+# and PNGs decoded straight from the game's BMAPS.PIC — so they hold
+# the same derived material as ancient-art-of-war/karateka above, and
+# original/ (the game's own files) is already caught by */original/.
+spyder/src/
+spyder/spec/
+
 # Belt and braces: never commit a game binary, an archive of one, or a disk
 # image, from anywhere in the tree.
 *.com
@@ -52,3 +86,12 @@ __pycache__/
 # Scratch space for unpacked images, Ghidra projects, emulator dumps.
 # Nothing here is worth committing, and some of it is the game.
 */work/
+
+# Hening: anything that contains the original rooms stays local
+sokoban/game/src/data/*.generated.json
+sokoban/game/src/data/solutions.manual.json
+sokoban/game/dist/
+sokoban/game/node_modules/
+sokoban/review/
+sokoban/.scratch/
+

@@ -1,0 +1,12 @@
+{
+  "name": "spyder-reference-tools",
+  "private": true,
+  "type": "module",
+  "description": "QA screenshots for the Spyder reference scene",
+  "scripts": {
+    "shoot": "node shoot.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.56.0"
+  }
+}

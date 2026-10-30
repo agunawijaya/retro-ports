@@ -1,0 +1,198 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d0a08;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #f0e6d8;
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#room-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+#game-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+}
+
+#ui-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#top-bar {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 24px;
+  padding: 12px 28px;
+  background: rgba(20, 16, 12, 0.65);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 204, 128, 0.15);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+#score-box, #clean-box {
+  color: #d9c8b4;
+}
+
+#score, #clean {
+  color: #ffcc80;
+  font-weight: 700;
+}
+
+#combo-box {
+  min-width: 48px;
+  text-align: center;
+  color: #ffb347;
+  font-weight: 800;
+  font-size: 18px;
+  text-shadow: 0 0 12px rgba(255, 179, 71, 0.4);
+  transition: transform 0.1s ease;
+}
+
+#combo-box.pop {
+  transform: scale(1.4);
+}
+
+#health-bar {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  width: 220px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#health-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b6b, #ffcc80);
+  transition: width 0.2s ease;
+}
+
+#weapon-box {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 20px;
+  background: rgba(20, 16, 12, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 204, 128, 0.12);
+  border-radius: 12px;
+  font-size: 14px;
+  color: #c4b5a3;
+}
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(10, 8, 6, 0.85), rgba(5, 4, 3, 0.97));
+  transition: opacity 0.4s ease;
+}
+
+#overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#title {
+  font-size: clamp(56px, 10vw, 120px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #f0e6d8;
+  text-shadow:
+    0 0 40px rgba(255, 204, 128, 0.25),
+    0 4px 20px rgba(0, 0, 0, 0.8);
+  margin-bottom: 8px;
+}
+
+#subtitle {
+  font-size: clamp(16px, 2vw, 22px);
+  color: #a89b8a;
+  margin-bottom: 40px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+#start-btn {
+  padding: 18px 48px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a120d;
+  background: linear-gradient(135deg, #ffcc80, #ffb347);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(255, 179, 71, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: auto;
+}
+
+#start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(255, 179, 71, 0.5);
+}
+
+#start-btn:active {
+  transform: translateY(0);
+}
+
+#controls {
+  margin-top: 32px;
+  font-size: 14px;
+  color: #7a6f62;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 640px) {
+  #top-bar {
+    gap: 14px;
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+
+  #health-bar {
+    width: 140px;
+  }
+
+  #weapon-box {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+}
