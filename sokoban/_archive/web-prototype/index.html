@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sokoban: Monument Valley Concept</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background: #dfd3c3;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    /* UI Overlay */
+    #ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px 32px 28px 32px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .title-box h1 {
+      font-size: 24px;
+      font-weight: 300;
+      letter-spacing: 5px;
+      color: #3b3a4a;
+      text-transform: uppercase;
+    }
+    .title-box p {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #7d798a;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #555;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+    }
+    /* Bottom Dock Container */
+    .bottom-dock {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    /* Interactive Controls Panel */
+    .controls-panel {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      padding: 10px 18px;
+      border-radius: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      background: #ffffff;
+      border: 1px solid #e2ddd8;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      color: #4a4753;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    button:hover {
+      background: #3b3a4a;
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(59, 58, 74, 0.15);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    button.btn-accent {
+      background: #d87063;
+      color: #fff;
+      border-color: #d87063;
+    }
+    button.btn-accent:hover {
+      background: #bf5b4f;
+    }
+    .hint-bar {
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: #7a7684;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.5);
+      padding: 4px 14px;
+      border-radius: 12px;
+    }
+    /* Speech Bubble / Protest Balloon */
+    #speech-bubble {
+      position: absolute;
+      background: #ffffff;
+      padding: 8px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #d87063;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      opacity: 0;
+      transform: translate(-50%, -100%) scale(0.6);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+    }
+    #speech-bubble.active {
+      opacity: 1;
+      transform: translate(-50%, -130%) scale(1);
+    }
+  </style>
+  <!-- Three.js from official cdnjs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+  <div id="speech-bubble">Hmm, tidak bisa lewat! 🤷</div>
+
+  <div id="ui-layer">
+    <header>
+      <div class="title-box">
+        <h1>Monolith Valley</h1>
+        <p>A Zen Sokoban Concept</p>
+      </div>
+      <div class="badge">Chapter I · The Whispering Sanctuary</div>
+    </header>
+
+    <div class="bottom-dock">
+      <div class="controls-panel">
+        <button onclick="triggerAnim('idle')">🍃 Santai</button>
+        <button onclick="triggerAnim('curious')">👀 Celingak-celinguk</button>
+        <button onclick="triggerAnim('push')">📦 Dorong Altar</button>
+        <button class="btn-accent" onclick="triggerAnim('protest')">✋ Protes ke Pemain!</button>
+        <button onclick="rotateWorld()">🔄 Putar 90°</button>
+      </div>
+      <div class="hint-bar">
+        Drag mouse / layar untuk rotasi bebas · Klik tombol untuk melihat respon karakter
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Palette Monument Valley (Warm Pastel & Sacred Geometry) ---
+    const PALETTE = {
+      sky: 0xe8dfd5,
+      water: 0x9bc2ba,
+      templeFloor: 0xe3d9c8,
+      templeFloorDark: 0xd7cbba,
+      wallPrimary: 0xd98371,     // Warm Terracotta
+      wallHighlight: 0xdf9889,
+      pillar: 0x6e8e88,          // Soft Sage Green
+      crystalGold: 0xebaf46,     // Sacred Golden Prism
+      crystalGlow: 0xffd97d,
+      altarPlate: 0x587b77,      // Deep Teal Altar
+      altarActive: 0x58d68d,
+      charCoat: 0xf4f1ea,        // Pure White / Off-white Robe
+      charPants: 0x3b3a4a,       // Slate
+      charHat: 0xd98371,         // Terracotta Cone Hat
+      charShadow: 0xb5a898
+    };
+
+    // --- Three.js Setup ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(PALETTE.sky);
+    scene.fog = new THREE.FogExp2(PALETTE.sky, 0.015);
+
+    // Orthographic Camera (True Isometric)
+    const aspect = window.innerWidth / window.innerHeight;
+    const d = 14;
+    const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 100);
+    
+    // Isometric angle: 35.264° elevation, 45° azimuth
+    const cameraPivot = new THREE.Group();
+    scene.add(cameraPivot);
+
+    camera.position.set(20, 20, 20);
+    camera.lookAt(0, 0, 0);
+    cameraPivot.add(camera);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // --- Lighting (Clean, Warm, Soft Shadows) ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfff7ea, 0.85);
+    sunLight.position.set(15, 30, 20);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 5;
+    sunLight.shadow.camera.far = 70;
+    const shadowD = 15;
+    sunLight.shadow.camera.left = -shadowD;
+    sunLight.shadow.camera.right = shadowD;
+    sunLight.shadow.camera.top = shadowD;
+    sunLight.shadow.camera.bottom = -shadowD;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
+
+    // Subtle Rim Light for Depth
+    const rimLight = new THREE.DirectionalLight(0xa5c5c0, 0.35);
+    rimLight.position.set(-20, 15, -20);
+    scene.add(rimLight);
+
+    // --- World Construction (Water & Floating Sanctuary) ---
+    const worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+
+    // 1. Water Surface
+    const waterGeo = new THREE.PlaneGeometry(80, 80);
+    const waterMat = new THREE.MeshLambertMaterial({
+      color: PALETTE.water,
+      transparent: true,
+      opacity: 0.85
+    });
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = -1.2;
+    water.receiveShadow = true;
+    scene.add(water);
+
+    // 2. Temple Foundation (Clean Floating Island)
+    const islandGeo = new THREE.BoxGeometry(16, 2, 16);
+    const islandMat = new THREE.MeshLambertMaterial({ color: PALETTE.templeFloorDark });
+    const island = new THREE.Mesh(islandGeo, islandMat);
+    island.position.y = -1;
+    island.receiveShadow = true;
+    worldGroup.add(island);
+
+    // 3. Grid Floor Tiles (Checkerboard Subtle Pattern)
+    const gridSize = 10;
+    const tileGroup = new THREE.Group();
+    worldGroup.add(tileGroup);
+
+    for (let x = -4; x <= 4; x++) {
+      for (let z = -4; z <= 4; z++) {
+        const isAlt = (Math.abs(x + z) % 2) === 0;
+        const tileGeo = new THREE.BoxGeometry(0.96, 0.1, 0.96);
+        const tileMat = new THREE.MeshLambertMaterial({
+          color: isAlt ? PALETTE.templeFloor : PALETTE.templeFloorDark
+        });
+        const tile = new THREE.Mesh(tileGeo, tileMat);
+        tile.position.set(x, 0, z);
+        tile.receiveShadow = true;
+        tileGroup.add(tile);
+      }
+    }
+
+    // 4. Sanctuary Architecture (Low Walls, Pillars & Arches)
+    const wallMat = new THREE.MeshLambertMaterial({ color: PALETTE.wallPrimary });
+    const pillarMat = new THREE.MeshLambertMaterial({ color: PALETTE.pillar });
+
+    function createPillar(x, z, height = 3) {
+      const pGeo = new THREE.CylinderGeometry(0.3, 0.3, height, 16);
+      const pillar = new THREE.Mesh(pGeo, pillarMat);
+      pillar.position.set(x, height / 2, z);
+      pillar.castShadow = true;
+      pillar.receiveShadow = true;
+      worldGroup.add(pillar);
+
+      // Capital/Base
+      const capGeo = new THREE.BoxGeometry(0.8, 0.2, 0.8);
+      const cap = new THREE.Mesh(capGeo, wallMat);
+      cap.position.set(x, height + 0.1, z);
+      cap.castShadow = true;
+      worldGroup.add(cap);
+    }
+
+    createPillar(-4, -4, 4);
+    createPillar(4, -4, 4);
+    createPillar(-4, 4, 3);
+    createPillar(4, 4, 3);
+
+    // Archway spanning rear pillars
+    const archGeo = new THREE.BoxGeometry(8, 0.5, 0.8);
+    const arch = new THREE.Mesh(archGeo, wallMat);
+    arch.position.set(0, 4.1, -4);
+    arch.castShadow = true;
+    worldGroup.add(arch);
+
+    // Perimeter Zen Walls (Low-profile so they never block player vision)
+    function createWallBlock(x, z, h = 0.8) {
+      const bGeo = new THREE.BoxGeometry(0.96, h, 0.96);
+      const block = new THREE.Mesh(bGeo, wallMat);
+      block.position.set(x, h / 2, z);
+      block.castShadow = true;
+      block.receiveShadow = true;
+      worldGroup.add(block);
+    }
+
+    // Build some decorative perimeter blocks
+    [-3, -2, -1, 1, 2, 3].forEach(x => createWallBlock(x, -4, 1.2));
+    [-3, -2, -1, 0, 1].forEach(z => createWallBlock(-4, z, 0.8));
+    [-3, -2, 1, 2].forEach(z => createWallBlock(4, z, 0.8));
+
+    // Internal Obstacle (for character to push against)
+    createWallBlock(0, -1, 1.0);
+    createWallBlock(-1, -1, 1.0);
+
+    // 5. Target Altar (Pressure Plate with Sacred Runes)
+    const altarGroup = new THREE.Group();
+    const altarGeo = new THREE.CylinderGeometry(0.42, 0.45, 0.08, 32);
+    const altarMat = new THREE.MeshLambertMaterial({ color: PALETTE.altarPlate });
+    const altarMesh = new THREE.Mesh(altarGeo, altarMat);
+    altarMesh.position.set(2, 0.05, 0);
+    altarMesh.receiveShadow = true;
+    altarGroup.add(altarMesh);
+
+    // Altar Sacred Inner Ring
+    const ringGeo = new THREE.RingGeometry(0.2, 0.3, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: PALETTE.altarActive, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(2, 0.1, 0);
+    altarGroup.add(ring);
+    worldGroup.add(altarGroup);
+
+    // 6. Sacred Monolith Prism (The "Box" to Push)
+    const prismGroup = new THREE.Group();
+    prismGroup.position.set(0, 0, 0);
+
+    const prismCoreGeo = new THREE.BoxGeometry(0.82, 0.82, 0.82);
+    const prismMat = new THREE.MeshLambertMaterial({
+      color: PALETTE.crystalGold,
+      roughness: 0.3
+    });
+    const prism = new THREE.Mesh(prismCoreGeo, prismMat);
+    prism.position.y = 0.45;
+    prism.castShadow = true;
+    prism.receiveShadow = true;
+    prismGroup.add(prism);
+
+    // Carved Rune Motif around the box
+    const runeTrimGeo = new THREE.BoxGeometry(0.85, 0.2, 0.85);
+    const runeMat = new THREE.MeshLambertMaterial({ color: 0x8a542b });
+    const runeTrim = new THREE.Mesh(runeTrimGeo, runeMat);
+    runeTrim.position.y = 0.45;
+    runeTrim.castShadow = true;
+    prismGroup.add(runeTrim);
+
+    worldGroup.add(prismGroup);
+
+    // --- 7. The Character (Monument Valley Traveler) ---
+    const character = new THREE.Group();
+    character.position.set(0, 0, 1.5); // Standing behind the prism
+
+    // Character Body (Robed Polygonal Figure)
+    const robeGeo = new THREE.ConeGeometry(0.32, 0.85, 12);
+    const robeMat = new THREE.MeshLambertMaterial({ color: PALETTE.charCoat });
+    const robe = new THREE.Mesh(robeGeo, robeMat);
+    robe.position.y = 0.55;
+    robe.castShadow = true;
+    character.add(robe);
+
+    // Head
+    const headGeo = new THREE.SphereGeometry(0.18, 16, 16);
+    const headMat = new THREE.MeshLambertMaterial({ color: 0xecd5bc });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 1.05;
+    head.castShadow = true;
+    character.add(head);
+
+    // Pointed Cone Hat (Iconic Monument Valley / Ida Silhoutte)
+    const hatGeo = new THREE.ConeGeometry(0.32, 0.55, 16);
+    const hatMat = new THREE.MeshLambertMaterial({ color: PALETTE.charHat });
+    const hat = new THREE.Mesh(hatGeo, hatMat);
+    hat.position.y = 1.35;
+    hat.castShadow = true;
+    character.add(hat);
+
+    // Little Hands (For Pushing / Protesting)
+    const handGeo = new THREE.SphereGeometry(0.06, 8, 8);
+    const handMat = new THREE.MeshLambertMaterial({ color: 0xecd5bc });
+    
+    const leftArm = new THREE.Group();
+    const leftHand = new THREE.Mesh(handGeo, handMat);
+    leftHand.position.set(-0.25, 0, 0);
+    leftArm.add(leftHand);
+    leftArm.position.set(0, 0.65, 0);
+    character.add(leftArm);
+
+    const rightArm = new THREE.Group();
+    const rightHand = new THREE.Mesh(handGeo, handMat);
+    rightHand.position.set(0.25, 0, 0);
+    rightArm.add(rightHand);
+    rightArm.position.set(0, 0.65, 0);
+    character.add(rightArm);
+
+    // Soft Blob Shadow
+    const shadowGeo = new THREE.CircleGeometry(0.3, 16);
+    const shadowMat = new THREE.MeshBasicMaterial({ color: PALETTE.charShadow, transparent: true, opacity: 0.6 });
+    const charShadow = new THREE.Mesh(shadowGeo, shadowMat);
+    charShadow.rotation.x = -Math.PI / 2;
+    charShadow.position.y = 0.06;
+    character.add(charShadow);
+
+    worldGroup.add(character);
+
+    // --- Animation State Machine ---
+    let currentAnim = 'idle';
+    let animTime = 0;
+    const speechEl = document.getElementById('speech-bubble');
+
+    function triggerAnim(type) {
+      currentAnim = type;
+      animTime = 0;
+      speechEl.classList.remove('active');
+
+      if (type === 'protest') {
+        setTimeout(() => {
+          updateSpeechPos();
+          speechEl.classList.add('active');
+        }, 600);
+      }
+    }
+
+    // World Rotation (Smooth 90 degree step)
+    let targetRotation = 0;
+    function rotateWorld() {
+      targetRotation += Math.PI / 2;
+    }
+
+    // Update speech bubble 2D screen coordinate
+    function updateSpeechPos() {
+      const p = new THREE.Vector3();
+      head.getWorldPosition(p);
+      p.y += 0.8;
+      p.project(camera);
+      const x = (p.x * .5 + .5) * window.innerWidth;
+      const y = (-(p.y * .5) + .5) * window.innerHeight;
+      speechEl.style.left = `${x}px`;
+      speechEl.style.top = `${y}px`;
+    }
+
+    // --- Main Render & Animation Loop ---
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
+      animTime += delta;
+
+      // Smooth Camera / World Rotation
+      cameraPivot.rotation.y += (targetRotation - cameraPivot.rotation.y) * 0.08;
+
+      // Gentle floating island breathing
+      worldGroup.position.y = Math.sin(elapsed * 1.2) * 0.06;
+
+      // Reset transforms
+      robe.scale.set(1, 1, 1);
+      leftArm.position.set(0, 0.65, 0);
+      rightArm.position.set(0, 0.65, 0);
+      leftArm.rotation.set(0, 0, 0);
+      rightArm.rotation.set(0, 0, 0);
+      head.rotation.set(0, 0, 0);
+
+      // --- Animation Behaviors ---
+      if (currentAnim === 'idle') {
+        // Subtle zen breathing
+        character.rotation.y = 0;
+        const breath = Math.sin(animTime * 2.5) * 0.03;
+        robe.scale.set(1 + breath, 1 - breath * 0.5, 1 + breath);
+        head.position.y = 1.05 - breath * 0.2;
+        hat.position.y = 1.35 - breath * 0.2;
+      }
+      else if (currentAnim === 'curious') {
+        // Celingak-celinguk (Looking left, right, looking up at the sky)
+        character.rotation.y = 0;
+        const cycle = animTime % 6;
+        if (cycle < 1.8) {
+          // Look left
+          head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, 0.7, 0.1);
+        } else if (cycle < 3.6) {
+          // Look right
+          head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, -0.7, 0.1);
+        } else {
+          // Look up at the temple sky
+          head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, -0.4, 0.1);
+        }
+      }
+      else if (currentAnim === 'push') {
+        // Lean forward into the box, hands on box
+        character.rotation.y = 0;
+        character.position.z = 1.0 + Math.sin(animTime * 4) * 0.04;
+        robe.rotation.x = -0.3;
+        head.position.z = -0.15;
+        hat.position.z = -0.2;
+        leftArm.position.set(-0.1, 0.65, -0.4);
+        rightArm.position.set(0.1, 0.65, -0.4);
+
+        // Box moves slightly forward with sacred glow
+        prismGroup.position.z = -Math.sin(animTime * 4) * 0.05;
+        prismMat.color.setHex(animTime % 0.5 > 0.25 ? PALETTE.crystalGlow : PALETTE.crystalGold);
+      }
+      else if (currentAnim === 'protest') {
+        // 1. Try to push for 0.6s
+        if (animTime < 0.6) {
+          character.rotation.y = 0;
+          robe.rotation.x = -0.3;
+          leftArm.position.set(-0.1, 0.65, -0.4);
+          rightArm.position.set(0.1, 0.65, -0.4);
+          // Shaking slightly (trying hard)
+          character.position.x = (Math.random() - 0.5) * 0.03;
+        } 
+        // 2. Realize it's blocked, turn around to face the camera, raise both hands in disbelief!
+        else {
+          // Turn to camera (approx 45° to face screen)
+          character.rotation.y = THREE.MathUtils.lerp(character.rotation.y, Math.PI - 0.7, 0.15);
+          character.position.x = 0;
+          robe.rotation.x = 0;
+
+          // Head shake left and right (No, cannot do it!)
+          head.rotation.y = Math.sin(animTime * 9) * 0.35;
+
+          // Raise both arms up in protest 🤷
+          const raise = Math.min((animTime - 0.6) * 4, 1.0);
+          leftArm.position.set(-0.25, 0.65 + raise * 0.35, 0);
+          rightArm.position.set(0.25, 0.65 + raise * 0.35, 0);
+          leftArm.rotation.z = raise * 0.8;
+          rightArm.rotation.z = -raise * 0.8;
+
+          updateSpeechPos();
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Mouse Drag Rotation
+    let isDragging = false;
+    let prevMouseX = 0;
+
+    window.addEventListener('mousedown', (e) => {
+      if (e.target.tagName !== 'BUTTON') {
+        isDragging = true;
+        prevMouseX = e.clientX;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - prevMouseX;
+        cameraPivot.rotation.y += deltaX * 0.008;
+        targetRotation = cameraPivot.rotation.y;
+        prevMouseX = e.clientX;
+      }
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
+
+    // Responsive Resize
+    window.addEventListener('resize', () => {
+      const asp = window.innerWidth / window.innerHeight;
+      camera.left = -d * asp;
+      camera.right = d * asp;
+      camera.top = d;
+      camera.bottom = -d;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

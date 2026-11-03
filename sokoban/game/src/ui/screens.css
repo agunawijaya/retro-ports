@@ -1,0 +1,420 @@
+/*
+  Captions and veiled cards for the screens around the rooms (ART-DIRECTION
+  §12, §13). Same type, same ink, same veil as the room's overlays: text
+  always sits on the mood veil, transitions are opacity only.
+*/
+
+/* ---------- captions floating over the world ---------- */
+.caption {
+  position: fixed; left: 0; top: 0; pointer-events: none; z-index: 20;
+  transform: translate(-50%, -100%);
+  padding: 12px 30px 10px;
+  background: radial-gradient(ellipse 58% 62% at 50% 55%, var(--veil) 0%, var(--veil) 35%, transparent 100%);
+  text-align: center; white-space: nowrap;
+  opacity: 0; transition: opacity .3s ease;
+}
+.caption.on { opacity: 1; }
+.caption .name {
+  font-family: var(--serif); font-style: italic; font-weight: 400;
+  font-size: 22px; line-height: 1.1; color: var(--ink);
+}
+.caption .detail {
+  margin-top: 4px; font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--ink-soft);
+}
+.caption.below { transform: translate(-50%, 0); }
+/* 05: a veiled card over the courtyard hides the place caption beneath it. */
+body:has(.card-veil.on) .caption { opacity: 0; }
+
+/* ---------- full-screen veiled cards ---------- */
+.card-veil {
+  position: fixed; inset: 0; z-index: 30;
+  display: grid; place-items: center; text-align: center;
+  background: radial-gradient(ellipse 46% 34% at 50% 50%, var(--veil) 0%, transparent 100%);
+  opacity: 0; transition: opacity .6s ease;
+  pointer-events: none;
+}
+.card-veil.on { opacity: 1; pointer-events: auto; }
+.card-veil .headline {
+  font-family: var(--serif); font-weight: 300; font-style: italic;
+  font-size: clamp(40px, 6vw, 72px); line-height: 1.05;
+}
+.card-veil .headline.small { font-size: clamp(30px, 4.2vw, 48px); }
+.card-veil .stats {
+  margin-top: 14px; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--ink-soft);
+}
+
+/* rekor baru: a small engraved flourish, lines either side */
+.record {
+  margin-top: 16px; display: inline-flex; align-items: center; gap: 14px;
+  font-size: 11px; letter-spacing: .42em; text-transform: uppercase; color: var(--ink);
+}
+.record::before, .record::after {
+  content: ""; width: 34px; height: 1px; background: var(--ink-soft); opacity: .7;
+}
+.record::after { margin-left: -.42em; }
+
+/* choices: Jost uppercase, the selected one breathes */
+.choices { margin-top: 34px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px 0; }
+.choices.vertical { flex-direction: column; gap: 16px; margin-top: 30px; }
+.choice {
+  font: inherit; background: none; border: 0; padding: 6px 4px; cursor: pointer;
+  font-size: 12px; letter-spacing: .32em; text-transform: uppercase; color: var(--ink-soft);
+  transition: color .6s ease;
+}
+.choices:not(.vertical) .choice + .choice::before {
+  content: "·"; display: inline-block; margin: 0 .9em 0 .6em; color: var(--ink-soft); letter-spacing: 0;
+}
+.choice.sel { color: var(--ink); animation: breathe 2.4s ease-in-out infinite; }
+.choice:disabled { cursor: default; opacity: .4; }
+
+/* ---------- the stele card (Batu Catatan) ---------- */
+.stele {
+  width: min(440px, 88vw);
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  padding: 46px 34px 30px;
+  border-radius: 220px 220px 10px 10px;
+  background: var(--veil);
+  backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28);
+}
+.stele .headline { font-size: clamp(34px, 4.6vw, 48px); }
+.tabs { margin-top: 18px; display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
+.tab {
+  font: inherit; background: none; border: 0; cursor: pointer; padding: 6px 9px 8px;
+  font-size: 11px; letter-spacing: .28em; text-transform: uppercase; color: var(--ink-soft);
+  border-bottom: 1px solid transparent; transition: color .6s ease, border-color .6s ease;
+}
+.tab.sel { color: var(--ink); border-bottom-color: var(--ink-soft); }
+.tab:disabled { opacity: .35; cursor: default; }
+.tab.gap { margin-left: 14px; }
+.rows { margin-top: 18px; text-align: left; }
+.row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 18px;
+  padding: 7px 2px; border-bottom: 1px solid rgba(127, 120, 140, .14);
+  font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-soft);
+}
+.row:last-child { border-bottom: 0; }
+.row .room { color: var(--ink); }
+.row b { font-family: var(--serif); font-weight: 400; font-size: 17px; letter-spacing: 0; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; margin-right: 6px; }
+.card-hint { margin-top: 20px; font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* ---------- the pond card (Kolam) ---------- */
+.pond-card {
+  width: min(480px, 90vw);
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  padding: 40px 36px 28px;
+  border-radius: 48% 48% 44% 44% / 30% 30% 26% 26%;
+  background: var(--veil);
+  backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28);
+}
+.pond-card .headline { font-size: clamp(34px, 4.6vw, 48px); }
+.prefs { margin-top: 22px; text-align: left; }
+.pref {
+  display: flex; justify-content: space-between; align-items: center; gap: 18px;
+  padding: 9px 4px; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-soft);
+  cursor: pointer;
+}
+.pref .label { transition: color .6s ease; }
+.pref.sel .label { color: var(--ink); animation: breathe 2.4s ease-in-out infinite; }
+.pref.sub .label { padding-left: 1.6em; }
+.opts { display: flex; gap: 2px; }
+.opt { font: inherit; background: none; border: 0; padding: 2px 6px; cursor: pointer; color: var(--ink-soft); letter-spacing: .22em; text-transform: uppercase; font-size: 11px; white-space: nowrap; }
+.opt.on { color: var(--ink); }
+.opt + .opt::before { content: "·"; margin-right: 8px; color: var(--ink-soft); }
+
+/* A slider is a thin stone bar with a round pebble for a handle. */
+.stone-bar { position: relative; width: 148px; height: 18px; cursor: pointer; touch-action: none; }
+.stone-bar::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 2px; border-radius: 2px;
+  background: var(--ink-soft); opacity: .35;
+}
+.stone-bar .fill { position: absolute; left: 0; top: 8px; height: 2px; border-radius: 2px; background: var(--ink); opacity: .55; }
+.stone-bar .pebble {
+  position: absolute; top: 2px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #fffaf3 0%, #efe3d6 60%, #d9c8bb 100%);
+  box-shadow: 0 1px 3px rgba(80, 70, 100, .25);
+}
+
+/* ---------- pause: the canvas loses colour, the world holds its breath ---------- */
+canvas#stage { transition: filter .6s ease; }
+canvas#stage.paused { filter: saturate(0.6) brightness(1.04); }
+
+/* ---------- the title's words, over the sky ---------- */
+#start.title-screen { place-items: center start; padding-left: 9vw; text-align: left; background: none; }
+#start.title-screen .sub { margin-left: .2em; }
+
+/* ---------- the ending's dawn ---------- */
+.dawn {
+  position: fixed; inset: 0; z-index: 40; display: grid; place-items: center;
+  background: linear-gradient(to bottom, #b9c7e6 0%, #f7d9c4 78%);
+  opacity: 0; transition: opacity 3s ease; pointer-events: none;
+}
+.dawn.on { opacity: 1; }
+.dawn .big {
+  font-family: var(--serif); font-weight: 300; font-style: italic; color: #4a4258;
+  font-size: clamp(72px, 13vw, 156px); letter-spacing: .01em; line-height: .9;
+  opacity: 0; transition: opacity 2.4s ease 1.2s;
+}
+.dawn.on .big { opacity: 1; }
+
+/* ---------- Gate choice card ---------- */
+.gate-choice-card {
+  width: min(440px, 90vw);
+  padding: 42px 34px 30px;
+  border-radius: 26px;
+  background: var(--veil);
+  backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28);
+}
+.gate-choices-row {
+  margin-top: 30px; display: flex; justify-content: center; gap: 22px;
+}
+.gate-choice-item {
+  width: 142px; padding: 22px 14px 18px; border-radius: 18px;
+  background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex; flex-direction: column; align-items: center; cursor: pointer;
+  transition: background .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+.gate-choice-item.selected {
+  background: rgba(255, 255, 255, 0.92); border-color: #ffffff;
+  box-shadow: 0 4px 18px rgba(74, 66, 88, 0.14);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+.gate-choice-icon {
+  height: 64px; display: grid; place-items: center;
+  margin-bottom: 14px; color: var(--ink);
+  transition: color 1.6s ease;
+}
+.gate-choice-item .choice-label {
+  font-size: 13px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink); font-weight: 500;
+}
+.gate-choice-item .choice-subline {
+  margin-top: 6px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
+}
+
+/* ---------- Dream screen ---------- */
+.dream-ui-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 10;
+  opacity: 0; transition: opacity 1.2s ease;
+}
+.dream-ui-overlay.on { opacity: 1; }
+.dream-vignette {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 74% 66% at 50% 48%, transparent 34%, var(--veil) 88%),
+    radial-gradient(ellipse 120% 90% at 50% 50%, rgba(216, 212, 255, 0.12) 0%, rgba(216, 212, 255, 0.26) 100%);
+}
+.dream-caption {
+  position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+  font-family: var(--sans); font-size: 12px; letter-spacing: 0.46em; text-transform: uppercase;
+  color: var(--ink-soft); text-indent: 0.46em;
+}
+
+/* ---------- Hidden Helper Strip ---------- */
+.helper-strip {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  z-index: 50; pointer-events: auto;
+}
+.helper-strip-inner {
+  display: flex; align-items: center; gap: 12px; padding: 9px 20px;
+  border-radius: 30px; background: var(--veil);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(74, 66, 88, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+.strip-btn {
+  font: inherit; background: none; border: 0; cursor: pointer; padding: 4px 6px;
+  color: var(--ink); transition: transform .15s ease, color 1.6s ease;
+  display: grid; place-items: center;
+}
+.strip-btn:hover { transform: translateY(-1px); }
+.strip-btn.icon-btn svg {
+  width: 15px; height: 15px; display: block;
+  stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.strip-btn.close-btn {
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft); margin-left: 4px; padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, .5); border-radius: 8px;
+}
+.strip-label {
+  font-family: var(--serif); font-size: 16px; color: var(--ink); white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.strip-label.breathing { animation: breathe 2.4s ease-in-out infinite; }
+.strip-progress {
+  width: 72px; height: 2px; border-radius: 2px;
+  background: var(--ink-soft); opacity: .8; overflow: hidden;
+}
+.strip-progress-fill {
+  width: 0%; height: 100%; border-radius: 2px; background: var(--ink);
+  transition: width .18s ease;
+}
+
+/* ---------- Garden slot list ---------- */
+.garden-list-card {
+  width: min(840px, 94vw); max-height: 88vh;
+  padding: 38px 34px 28px;
+  border-radius: 28px;
+  background: var(--veil);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .32);
+  display: flex; flex-direction: column;
+}
+.garden-scroll-area {
+  margin-top: 22px; overflow-y: auto; max-height: 58vh; padding: 8px 4px;
+}
+.garden-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+}
+/* a small stone plaque: light from above, a softly carved inner edge */
+.garden-plaque {
+  position: relative; padding: 14px 10px 12px; border-radius: 12px;
+  background: linear-gradient(174deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.18) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -1px 2px rgba(74, 66, 88, 0.05), 0 1px 4px rgba(74, 66, 88, 0.07);
+  text-align: center; cursor: pointer;
+  transition: background .25s ease, box-shadow .25s ease, transform .25s ease;
+}
+.garden-plaque:hover { transform: translateY(-2px); }
+.garden-plaque.selected {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: #ffffff;
+  box-shadow: 0 3px 12px rgba(74, 66, 88, 0.13), inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+.plaque-num {
+  font-family: var(--serif); font-style: italic; font-size: 16px; font-weight: 400; color: var(--ink);
+}
+.plaque-status {
+  margin-top: 5px; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.plaque-status.status-siap { color: #5a7d65; }
+/* teruji carries a small vermilion seal, like a stamp on the stone */
+.plaque-status.status-teruji { color: #436952; font-weight: 500; }
+.plaque-status.status-teruji::after {
+  content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  background: #e88f78; margin-left: 7px; vertical-align: 1px;
+}
+.plaque-record {
+  margin-top: 6px; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.plaque-menu {
+  position: absolute; inset: 0; border-radius: 12px;
+  background: var(--veil); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: 2px; z-index: 5;
+}
+.plaque-menu .menu-title { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 2px; }
+.plaque-menu .choices.vertical { margin-top: 2px; gap: 3px; }
+.plaque-menu .choice { padding: 2px 4px; font-size: 9px; letter-spacing: 0.18em; }
+.menu-btn {
+  font: inherit; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 6px; padding: 2px 8px; font-size: 10px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--ink); cursor: pointer;
+}
+.menu-btn:hover { background: #ffffff; }
+.menu-confirm-text { font-size: 10px; color: var(--ink); margin-bottom: 4px; }
+.menu-confirm-choices { font-size: 10px; }
+
+/* ---------- Garden editor UI ---------- */
+.garden-editor-ui {
+  position: fixed; inset: 0; pointer-events: none; z-index: 20;
+}
+.editor-top-bar {
+  position: absolute; top: 26px; left: 32px; right: 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  pointer-events: auto;
+}
+.editor-slot-title {
+  font-family: var(--serif); font-size: 26px; font-style: italic; color: var(--ink);
+}
+.editor-actions { display: flex; gap: 12px; }
+.glass-btn {
+  font: inherit; background: var(--glass); border: 1px solid var(--glass-edge);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px; padding: 6px 16px; font-size: 11px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink); cursor: pointer;
+}
+.glass-btn:hover { background: rgba(255, 255, 255, 0.5); }
+.editor-palette {
+  position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 10px; pointer-events: auto;
+}
+.editor-tool-btn {
+  position: relative;
+}
+.editor-tool-btn svg { width: 18px; height: 18px; }
+.editor-tool-btn.selected {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(74, 66, 88, 0.15), inset 0 0 0 1px #ffffff;
+}
+.editor-tool-btn .tool-name {
+  position: absolute; left: 52px; white-space: nowrap; font-family: var(--sans);
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.editor-tool-btn:hover .tool-name { opacity: 0.8; }
+.editor-rules-line {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  font-family: var(--sans); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--ink-soft); background: var(--veil); padding: 7px 20px; border-radius: 16px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 720px) {
+  .garden-grid { grid-template-columns: 1fr; }
+  .editor-palette {
+    left: 50%; top: auto; bottom: calc(64px + env(safe-area-inset-bottom));
+    transform: translateX(-50%); flex-direction: row;
+  }
+  .editor-rules-line { bottom: calc(18px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 720px) {
+  .caption .name { font-size: 19px; }
+  .caption .detail { font-size: 13px; }
+  .choice { font-size: 13px; }
+  .card-veil .stats { font-size: 13px; }
+  .tab { font-size: 13px; }
+  .row { font-size: 13px; }
+  .card-hint { font-size: 13px; }
+  .pref { font-size: 13px; }
+  .opt { font-size: 13px; }
+  #start.title-screen { place-items: start center; padding: 13vh 0 0; text-align: center; }
+  .stele { padding: 38px 20px 24px; }
+  .pond-card { padding: 34px 18px 24px; }
+  .stone-bar { width: 112px; }
+  /* 05 (phone check): smallest Jost line 13 px; cards clear the title block; options wrap instead of running off. */
+  .card-hint, .gate-choice-item .choice-subline, .dream-caption, .glass-btn, .editor-rules-line, body #start .sub { font-size: 13px; }
+  .card-veil { padding: calc(64px + env(safe-area-inset-top)) 0 calc(16px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+  .stele, .pond-card { max-height: calc(100dvh - 96px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  .opts { flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; }
+  /* A record that does not fit one line breaks between the room and its numbers, never inside either. */
+  .row { flex-wrap: wrap; row-gap: 2px; letter-spacing: .16em; }
+  .row .room { white-space: nowrap; }
+  .row > span:last-child { margin-left: auto; text-align: right; }
+}
+
+@media (max-height: 480px) {
+  .caption .name { font-size: 18px; }
+  .caption .detail { font-size: 13px; }
+  .choice { font-size: 13px; }
+  .card-veil .headline { font-size: 32px; }
+  .card-veil .stats { font-size: 13px; margin-top: 6px; }
+  .choices { margin-top: 14px; }
+  .stele { padding: 20px 20px 16px; border-radius: 40px 40px 10px 10px; }
+  .pond-card { padding: 20px 18px 16px; border-radius: 24px; }
+  .rows { margin-top: 10px; }
+  .row { padding: 4px 2px; font-size: 13px; }
+  .pref { padding: 5px 4px; font-size: 13px; }
+  .opt { font-size: 13px; }
+  .tab { font-size: 13px; padding: 4px 6px; }
+  .card-hint, .gate-choice-item .choice-subline, .dream-caption, .glass-btn, .editor-rules-line, body #start .sub { font-size: 13px; }
+  .opts { flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; }
+}

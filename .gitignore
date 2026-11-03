@@ -94,4 +94,13 @@ sokoban/game/dist/
 sokoban/game/node_modules/
 sokoban/review/
 sokoban/.scratch/
+# Hening: also local — the decompile runs of the 1984 game (src/, src-game/:
+# its level files and screenshots), a copy of reference/index.html (which
+# embeds three original rooms), crew run logs, and tool caches.
+sokoban/src/
+sokoban/src-game/
+sokoban/index.html
+sokoban/node_modules/
+sokoban/game/.scratch/
+sokoban/prompts/logs/
 

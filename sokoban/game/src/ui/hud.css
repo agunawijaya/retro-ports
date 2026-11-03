@@ -1,0 +1,233 @@
+/*
+  Hening HUD and overlays (reference CSS; ART-DIRECTION §12).
+  Every colour, size and timing here mirrors reference/index.html.
+  The mood writes --sky-*, --sun, --ink, --ink-soft and --veil.
+*/
+:root {
+  --sky-top: #b9c7e6;
+  --sky-bottom: #f7d9c4;
+  --sun: #fff1dc;
+  --ink: #4a4258;
+  --ink-soft: rgba(74, 66, 88, 0.62);
+  --glass: rgba(255, 255, 255, 0.34);
+  --veil: rgba(253, 242, 233, 0.78);
+  --glass-edge: rgba(255, 255, 255, 0.55);
+  --serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --sans: "Jost", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+body {
+  background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-bottom) 78%);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The sun (or moon) sits behind the canvas as a soft CSS disc. */
+#sun {
+  position: fixed;
+  width: 34vmin; height: 34vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sun) 0%, transparent 68%);
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+}
+
+/* Not inset: 0 — it breaks on high-DPI phones (ART-DIRECTION §2). */
+canvas#stage { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; outline: none; touch-action: none; overscroll-behavior: none; }
+
+/* ---------- HUD ---------- */
+.hud { position: fixed; pointer-events: none; transition: color 1.6s ease, opacity .8s ease; }
+/* setVisible()'s off state. #tools sets pointer-events: auto for its buttons
+   (id beats .hud.off's two classes), so this repeats the four ids directly
+   rather than relying on .hud.off alone — the values are exactly what
+   .hud.off would set, just written where they can actually win. */
+#title-block.off, #tools.off, #counters.off, #hint.off, #dupa-stick.off { opacity: 0; pointer-events: none; }
+
+#title-block { top: 28px; left: 32px; }
+#title-block .word {
+  font-family: var(--serif); font-style: italic; font-weight: 300;
+  font-size: 34px; letter-spacing: .02em; line-height: 1;
+}
+#title-block .place {
+  margin-top: 8px; font-size: 11px; letter-spacing: .32em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+#counters {
+  bottom: 30px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 28px; font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--ink-soft); white-space: nowrap;
+}
+#counters b {
+  font-family: var(--serif); font-weight: 400; font-size: 22px; letter-spacing: 0;
+  color: var(--ink); margin-right: 8px; vertical-align: -2px;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+#tools { top: 26px; right: 28px; display: flex; gap: 10px; pointer-events: auto; }
+.round {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 1px solid var(--glass-edge); background: var(--glass);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: var(--ink); display: grid; place-items: center; cursor: pointer; padding: 0;
+  transition: transform .25s ease, background .25s ease, color 1.6s ease, opacity .2s ease;
+}
+.round:hover { transform: translateY(-2px); background: rgba(255,255,255,.5); }
+.round svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+#hint {
+  bottom: 74px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; letter-spacing: .18em; color: var(--ink-soft); white-space: nowrap;
+}
+
+/* ---------- Overlays ---------- */
+.veil {
+  position: fixed; inset: 0; display: grid; place-items: center; text-align: center;
+  transition: opacity 1.4s ease; pointer-events: none;
+}
+.veil.hidden { opacity: 0; }
+#start { pointer-events: auto; cursor: pointer; background: linear-gradient(to bottom, rgba(255,255,255,.0), rgba(255,255,255,.18)); }
+#start.hidden { pointer-events: none; }
+#start .big {
+  font-family: var(--serif); font-weight: 300; font-style: italic;
+  font-size: clamp(72px, 13vw, 156px); letter-spacing: .01em; line-height: .9;
+}
+#start .sub, #win .sub {
+  margin-top: 22px; font-size: 12px; letter-spacing: .42em; text-transform: uppercase; color: var(--ink-soft);
+  animation: breathe 3.6s ease-in-out infinite;
+}
+/* Overlay text always sits on the mood veil, never straight on the board. */
+#win { background: radial-gradient(ellipse 46% 30% at 50% 50%, var(--veil) 0%, transparent 100%); }
+#win .line { font-family: var(--serif); font-weight: 300; font-style: italic; font-size: clamp(40px, 6vw, 72px); }
+#win .stats { margin-top: 14px; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--ink-soft); }
+@keyframes breathe { 0%,100% { opacity: .45 } 50% { opacity: 1 } }
+
+/* ---------- Dupa Stick (ART-DIRECTION §13.7) & Reduced Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::after {
+  animation: none !important;
+  transition: none !important;
+}
+:root {
+  --glow: #ffb470;
+  --glow-soft: rgba(255, 180, 112, 0.55);
+}
+#dupa-stick {
+  top: 80px; right: 38px; width: 42px; display: flex; flex-direction: column; align-items: center;
+  pointer-events: none; transition: opacity .8s ease;
+}
+.dupa-track { position: relative; width: 28px; height: 120px; }
+.dupa-line {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 2px; height: 120px; border-radius: 1px;
+  background: var(--ink); opacity: 0.6;
+}
+/* the burning tip: a 6 px glow dot with a soft halo, riding the line's end */
+.dupa-ember {
+  position: absolute; left: 50%; bottom: 120px; width: 6px; height: 6px; border-radius: 50%;
+  transform: translate(-50%, 50%);
+  background: var(--glow);
+  box-shadow: 0 0 5px 1px var(--glow-soft), 0 0 13px 3px var(--glow-soft);
+  transition: background .8s ease, box-shadow .8s ease;
+}
+/* the last minute breathes at 1 Hz — a calmer glow, never red, never ticking */
+.dupa-ember.pulse { animation: ember-breathe 1s ease-in-out infinite; }
+@keyframes ember-breathe {
+  0%, 100% { opacity: .72; box-shadow: 0 0 4px 1px var(--glow-soft), 0 0 9px 2px var(--glow-soft); }
+  50% { opacity: 1; box-shadow: 0 0 7px 2px var(--glow-soft), 0 0 17px 4px var(--glow-soft); }
+}
+/* the smoke curl: a thin ink-soft path rising from the tip, drifting over 8 s */
+.dupa-smoke {
+  position: absolute; left: 50%; bottom: 116px; transform: translateX(-50%);
+  fill: none; stroke: var(--ink-soft); stroke-width: 1; stroke-linecap: round;
+  opacity: .55; animation: smoke-sway 8s ease-in-out infinite;
+}
+.dupa-smoke path { stroke-dasharray: 16 44; animation: smoke-rise 8s linear infinite; }
+@keyframes smoke-sway {
+  0%, 100% { transform: translateX(-50%) rotate(-2deg); }
+  50% { transform: translateX(-44%) rotate(2.4deg); }
+}
+@keyframes smoke-rise {
+  from { stroke-dashoffset: 60; }
+  to { stroke-dashoffset: -60; }
+}
+/* time out: the ember goes dark, the smoke rises and thins over 2 s */
+#dupa-stick.out .dupa-ember {
+  background: var(--ink-soft);
+  box-shadow: 0 0 3px 0 var(--glow-soft);
+}
+#dupa-stick.out .dupa-smoke {
+  animation: smoke-out 2s ease-out forwards;
+}
+@keyframes smoke-out {
+  0% { opacity: .55; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-42%) translateY(-18px); }
+}
+/* a 6 px ash flake clings to the stick's side and drops off as the burn passes */
+.dupa-flake {
+  position: absolute; left: calc(50% + 2px); width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-soft); opacity: .5;
+}
+.dupa-flake.k90 { bottom: 88px; }
+.dupa-flake.k60 { bottom: 58px; }
+.dupa-flake.k30 { bottom: 28px; }
+.dupa-flake.fallen { animation: ash-drop 1.4s ease-in forwards; }
+@keyframes ash-drop {
+  0% { opacity: .5; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(3px, 24px) scale(.45); }
+}
+.dupa-time {
+  margin-top: 10px; font-family: var(--serif); font-weight: 400; font-size: 18px;
+  color: var(--ink); font-variant-numeric: lining-nums tabular-nums;
+  transition: color 1.6s ease;
+}
+
+/* Helper dimmed HUD */
+.hud.hud-dimmed { opacity: 0.25 !important; }
+
+@media (max-width: 720px) {
+  #title-block { top: calc(18px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); }
+  #title-block .word { font-size: 26px; }
+  #title-block .place { font-size: 13px; }
+  /* On phones the tools move down to where thumbs are. */
+  #tools { top: auto; right: auto; bottom: calc(64px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); gap: 10px; }
+  .round { width: 44px; height: 44px; }
+  #counters { gap: 16px; font-size: 13px; bottom: calc(22px + env(safe-area-inset-bottom)); }
+  #counters b { font-size: 18px; }
+  #hint { display: none; }
+  /* On phones the stick stands beside the counters, clear of the tool row. */
+  #dupa-stick {
+    top: auto; right: calc(14px + env(safe-area-inset-right)); bottom: calc(58px + env(safe-area-inset-bottom));
+  }
+  .dupa-time { margin-top: 8px; font-size: 16px; }
+}
+
+@media (max-height: 480px) {
+  #title-block { top: calc(10px + env(safe-area-inset-top)); left: calc(14px + env(safe-area-inset-left)); }
+  #title-block .word { font-size: 22px; }
+  #title-block .place { font-size: 13px; }
+  #tools { top: calc(10px + env(safe-area-inset-top)); right: calc(14px + env(safe-area-inset-right)); bottom: auto; left: auto; transform: none; }
+  .round { width: 36px; height: 36px; }
+  #counters { bottom: calc(10px + env(safe-area-inset-bottom)); font-size: 13px; }
+  #hint { display: none; }
+  #dupa-stick { top: auto; right: calc(14px + env(safe-area-inset-right)); bottom: calc(10px + env(safe-area-inset-bottom)); }
+}
