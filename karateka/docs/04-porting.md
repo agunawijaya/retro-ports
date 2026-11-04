@@ -249,6 +249,17 @@ python <toolkit>/tools/comrun.py original/KARATEKA.EXE --files original --png fr
 It reaches the attract sequence — Mount Fuji, the torii gate, the hero — which
 is enough to check a renderer against before any of the fighting is understood.
 
+**The strongest rung has a ready-made input now.** The game was played to the
+end under the same emulator by a small bot
+([05-the-fighting.md](05-the-fighting.md#played-to-the-end)), and the run is
+deterministic: every key it pressed, at every decision, is in its log, and the
+original answers that sequence the same way every time — the same scenes at
+the same instruction counts, to the closing card. Feed the same keys to a port
+at the same decisions and compare what happens: which scene, whose health,
+which frame of which move. A port that reaches the closing card with the
+hero's health at 9, as the original does, has the rules right along that whole
+route; one that diverges says where.
+
 **And say what you changed on purpose.** A port that fixes the CGA palette, adds
 a pause key or runs the music in tune is a better program and a different one.
 The port is worth more when the reader knows which parts are faithful.

@@ -573,7 +573,9 @@ the wrong guesses are part of the record:
   level progression, the cutscene engine, scene drawing, the data files,
   sound and the title cards are specified routine by routine, and wherever
   the toolkit could run both sides, checked by running the original against a
-  rewrite on every input of a declared domain.
+  rewrite on every input of a declared domain. The game was then played to the
+  end under emulation, to watch the rules that could only be read
+  ([05-the-fighting.md](05-the-fighting.md#played-to-the-end)).
 
 ## What is still unknown
 

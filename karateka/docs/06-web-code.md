@@ -260,6 +260,10 @@ without being guards, the eagle and Mariko
 ([05-the-fighting.md](05-the-fighting.md#the-guards-ai)). Nothing now stands
 between this port and the game's own guard except the work of replacing
 `guardAction`; the substitute is a choice, no longer a gap in what is known.
+And there is now a route to check the replacement against: the original was
+played to the end under emulation with a logged sequence of keys, and
+[04-porting.md](04-porting.md#how-to-know-your-port-is-right) says how a port
+can replay it.
 
 **Striking frames are approximated** as "the middle frame of any strike
 move". The real flag is set_pos's second byte, a single bit that marks

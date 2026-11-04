@@ -582,9 +582,17 @@ are `bal00` to `bal03`.)
   triggered again for ten frames after it rises.
 
 So the way through is to set it off from further back — which only a strike
-does — let it fall and rise, and walk on before it is ready again. **[inferred]** that is the reading of "mistime it": the rules above
-are read from the code; the advice is what they imply, not something a run
-has shown.
+does — let it fall and rise, and walk on before it is ready again. This was
+first written as an inference from the code; a playthrough then did exactly
+that (see [Played to the end](#played-to-the-end)): a punch 76 pixels short of
+the mark, the gate down and up again in about twenty frames, and a walk from
+72 to 20 pixels short during the ten frames it cannot fire. One thing the code
+reading had not made obvious: **leaning on the lowered gate hurts.** While it
+is down the wall sits 68 pixels short of the mark, and reaching that wall runs
+the scene's exit check, which answers "not open yet" with a scripted
+knock-back and a lost point of health. The bot lost four points that way,
+leaning on the gate while it waited, and won them back by regeneration
+before the next room.
 
 ## Mariko, and the ending everyone gets wrong
 
@@ -607,6 +615,52 @@ ends…") with tune 21 looping until a key is pressed.
 Approach in a stance and she kicks you; approach standing and you win. The
 joke in [01-the-game.md](01-the-game.md#the-ending-everyone-gets-wrong-the-first-time)
 is two comparisons in the code.
+
+## Played to the end
+
+Everything above was read out of the code. To see it happen, the original
+was played through from the title to the closing card inside the toolkit's
+emulator, by a small bot: at each moment the hero's routine asks for input,
+the bot read the game's own variables — positions, poses, health — and pressed
+one key. The emulator is deterministic, so the run repeats instruction for
+instruction. The bot is [`tools/playthrough.py`](../tools/playthrough.py); with
+your own copy of the game in `original/` and the toolkit beside this
+repository, `python tools/playthrough.py --film 2` plays the same game and
+writes its log and frames under `review/playthrough/`, which is gitignored —
+the frames are the game's pictures.
+
+It took 438 million instructions and 3,184 decisions, and the hero never died:
+
+| | what happened |
+|---|---|
+| the shore, the cliff path | low kick, high kick, repeated, beat every guard; health 13 → 12 |
+| the fortress wall | the eagle came **six times**, and each time a punch at the height it was dealt drove it back without a scratch; a guard at the gate; the gate set off from out of reach and walked under; health 12 → 10 |
+| the interior | six rooms, a guard in the first, third, fourth and fifth; in the fifth the eagle again, beaten with five punches after its first swoop landed |
+| Akuma | 127 decisions of kicks; his health 17 → 0, the hero's untouched |
+| Mariko | the bot rose out of the stance and walked to her upright; the closing card |
+
+Three things the bot had to learn, each by failing first, and each now
+readable in the code once you know to look:
+
+- **The eagle must be punched early.** A punch reaches its striking frame
+  three frames after the key, and the bird closes twelve pixels a frame, so
+  the key has to go in when it is 56–63 pixels away to land in its 20–27
+  window. Punched at 48, the first attempt struck at 12 and missed.
+- **A guard standing at the gate comes first.** The first run walked toward
+  the gate's mark with a guard beside it and was beaten to death while it
+  worked out where to stand.
+- **Inside the fortress, a room opens to a kick.** Once a room's guard is
+  down, the exit opens only when the hero *kicks* past x 236. The routine
+  that opens it runs only on a striking frame, and only for a kick, not a
+  punch. Walking into the closed exit instead is a scripted knock-back and a
+  lost point of health — the second run died that way, against the wall of
+  the second room, ten times over.
+
+**What transfers.** A bot that reads a game's own memory is the cheapest way
+to find out whether a reading of its rules is complete: every place it got
+stuck was a rule nobody had written down plainly, and every one of them was
+then found in the code in minutes, because the bot said exactly where to
+look.
 
 ## The pose switch is where input becomes a move
 

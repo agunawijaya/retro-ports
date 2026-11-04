@@ -83,9 +83,12 @@ game by script lost every fight.
 
 **Most guards fall to a low kick and a high kick, repeated.** It is not elegant
 and it works; the guards vary in how quickly they close and how far they back
-off, not in what beats them. Driving the original under emulation with `x`
-then `w` beat both guards it was tried on; "most" is the published advice,
-and two guards cannot confirm a word like that.
+off, not in what beats them. Driving the original under emulation, `x` then
+`w` beat every man the run met — the guards of the shore, the cliff path and
+the fortress wall, the guards of four of the six interior rooms (the second
+and the sixth had none), and Akuma — without the hero dying once. So "most" undersells it: in the one complete run there
+is, it was all of them. The eagle and Mariko are the exceptions, and need
+something else.
 
 The eagle and the death gate turned out to be read straight out of the code;
 how each works, and how to get past it, is in
@@ -174,6 +177,13 @@ The flag is set when a guard has been beaten on that level. So which room you
 see is **not random**: section 3, or 4 once you have beaten the guard there,
 or 5 on the last level — fixed outcomes, chosen by where you are and what you
 have done.
+
+And a room does not let you out just because its guard is down. The exit
+opens when, with the guard beaten, you **kick** somewhere past x 236 — the
+routine that opens it runs only on the striking frame of a kick. Walk into the
+closed exit instead and the game knocks you back and takes a point of health,
+every time. A bot that walked politely to the door died against it, which is
+how the rule was found ([05-the-fighting.md](05-the-fighting.md#played-to-the-end)).
 
 ### What *is* random
 

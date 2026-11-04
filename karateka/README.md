@@ -129,7 +129,11 @@ check and the title-card font in
 [02-architecture.md](docs/02-architecture.md#sound-is-one-bit-flipped-on-time),
 and the real order of scenes in
 [01-the-game.md](docs/01-the-game.md#the-map-from-the-beach-to-the-princess).
-Two things it could not settle are stated there too: how long a sound loop
+The original was then played to the end under the toolkit's emulator by a
+small bot that reads the game's own memory — eagle, death gate, Akuma and
+Mariko included, no death — and that run is in
+[05-the-fighting.md](docs/05-the-fighting.md#played-to-the-end).
+Two things the specification could not settle are stated there too: how long a sound loop
 lasts in seconds on a 4.77 MHz PC, and whether the game was rotoscoped —
 which no program can show. The specification itself stays out of the
 repository, because it quotes the game.
