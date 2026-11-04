@@ -18,31 +18,52 @@
   "routines": {
     "0x0002": [
       "entry",
-      "the MZ entry from CS:IP; sets DS once and never again"
+      [
+        "sets DS=0x6CA, SS=0x155C, SP=0x80, enables interrupts (cli...sti) -- the classic Lattice C MZ-entry prologue, lines 363-369",
+        "calls INT 21h AH=0x30 (get DOS version) as literally the first service request the program makes, line 370-371"
+      ]
     ],
     "0x00220": [
       "abort_with_message",
-      "the load-failure path: SP back to the saved top, then INT 21h AH=9 on the message at 0xC7. Three places jump here"
+      [
+        "DX=0xc7, AH=9, INT 21h -- DOS print-string of the message at DS:0xC7, lines 633-635",
+        "AH=0x4C01, INT 21h after a DOS-version gate -- terminates with exit code 1, lines 637-639"
+      ]
     ],
     "0x0023C": [
       "dos_version_check",
-      "INT 21h for the version, then the heap flag -- the tail of the C start-up"
+      [
+        "cmp byte[dos_version],2 / jl L_0024C gates everything that follows on the DOS version, lines 645-646",
+        "falls through to AH=0x4C / INT 21h only when the version check passes, lines 647-649 -- an exit, not a mere query, so the name covers a version-gated exit path"
+      ]
     ],
     "0x0255": [
       "startup",
-      "detects the display, loads the libraries, then calls main"
+      [
+        "calls choose_adapter, load_input_table and load_player_library in sequence before anything else runs, lines 672/681/707 -- a one-time startup phase",
+        "calls main exactly once (line 724) between the startup phase and the L_00316 loop -- named 'startup' because it is what hands off to main, even though the function also goes on to host the game loop afterward (see October's note, not wrong, just a second phase of the same function)"
+      ]
     ],
     "0x03C7": [
       "main",
-      "loads allgal and fuji.bcg, then the title and the scene chain"
+      [
+        "loads ALLVAL (compile_script), fuji.bcg (load_backdrop) and scene 0 (load_scene) before any card is shown, lines 827-839 -- more than a title loop alone",
+        "loops through show_frame/card_author/card_port_credit/card_sprite/card_opening, each falling to play_attract on timeout, lines 845-875 -- the part October's 'title_loop' correctly captures, kept as a second observation rather than renaming"
+      ]
     ],
     "0x0569": [
       "check_level_exit",
-      "player down, pose 67, or x reached the right wall"
+      [
+        "cmp word[player_down],1 then cmp word[player_pose],0x43 -- two of the three level-end conditions, testing player state, not keyboard hardware",
+        "cmp word[player_x],word[level_right] -- the third level-end condition, comparing the player's position against the level's right wall global"
+      ]
     ],
     "0x05AD": [
       "play_attract",
-      "castle.bcg, then fuji.bcg, scene 0 and cal01 -- the sequence that runs when nobody presses a key"
+      [
+        "calls show_castle, then load_backdrop on fuji.bcg -- the two-backdrop sequence that gives the routine its name",
+        "calls load_scene(0) followed by compile_script and advance_script -- loads and runs the attract-mode script after the images are shown"
+      ]
     ],
     "0x05E5": [
       "show_fuji",
@@ -50,11 +71,17 @@
     ],
     "0x0608": [
       "set_video_mode",
-      "int 0x10 with AH=0 and AL from its argument"
+      [
+        "AH=0 before INT 10h -- the BIOS 'set video mode' function number, not merely 'a video interrupt'",
+        "AL comes straight from word[bp+4], the caller's single argument -- a thin one-argument wrapper, matching the name"
+      ]
     ],
     "0x0614": [
       "set_cursor",
-      "int 0x10 AH=2, DL and DH from its two arguments, BH=0"
+      [
+        "AH=2 before INT 10h -- BIOS set-cursor-position, not a generic video call",
+        "DL and DH are built from the routine's two stack arguments (bp+4, bp+6) -- a two-argument (row, col) wrapper"
+      ]
     ],
     "0x0629": [
       "random",
@@ -62,11 +89,17 @@
     ],
     "0x0640": [
       "draw_sprite_shifted",
-      "the dispatcher's sibling; sets the same stream globals plus the shift"
+      [
+        "and al,3 / shl al,1 / mov[shift_in_byte],al -- a 2-bit sub-byte shift amount is computed and stored, unique to the shifted variant",
+        "mov byte[shape_run_count],0 / mov byte[mask_run_count],0 at entry -- resets both RLE run counters before decoding a fresh sprite, shared setup with draw_sprite proper"
+      ]
     ],
     "0x083C": [
       "draw_sprite",
-      "takes an id, sets both stream pointers from two tables"
+      [
+        "mov byte[shape_run_count],0 / mov byte[mask_run_count],0 at entry -- same RLE-stream setup as draw_sprite_shifted, confirming it is the sibling blit routine",
+        "jmp draw_sprite_clip when the destination column goes negative -- delegates clipping instead of handling the sub-byte shift itself"
+      ]
     ],
     "0x0093F": [
       "draw_sprite_row",
@@ -102,11 +135,17 @@
     ],
     "0x00B4E": [
       "clear_frame",
-      "0x1F40 words of zero over screen_buffer: the whole 16,000-byte off-screen frame. Fourteen callers"
+      [
+        "lea di,[screen_buffer] -- targets the named off-screen frame buffer specifically, not any other region",
+        "mov cx,0x1f40 (8000) / rep stosw with AX=0 -- a full zero-fill of exactly the buffer's word count"
+      ]
     ],
     "0x00B5E": [
       "advance_run_pair",
-      "one step of both run-length streams at once -- shape_run_count against shape_stream, mask_run_count against mask_stream"
+      [
+        "cmp byte[si+sprite_data],0x7b (lines 1677-1678) -- recognises the 0x7B escape byte that starts a run",
+        "on escape, reads count then value, in that order (lines 1679-1682), both from the shape stream -- the opposite byte order October's evidence describes"
+      ]
     ],
     "0x0B95": [
       "next_pixel_byte",
@@ -114,19 +153,31 @@
     ],
     "0x00BC9": [
       "draw_layers",
-      "walks draw_layer from draw_layer_min to draw_layer_max, dispatching on scene_kind"
+      [
+        "mov word[draw_layer],3 at function start, then add word[draw_layer],4 each iteration -- a counted walk over fixed-stride table entries",
+        "terminates on byte==0xFF and dispatches draw_sprite_shifted or draw_sprite per layer"
+      ]
     ],
     "0x00C52": [
       "compose_scene",
-      "the whole picture: the backdrop bands at screen_r32c0 and screen_r154c0, then the sprites from sprite_table_b, gated on draw_enable and redraw_all"
+      [
+        "lea si,[sprite_table_b] / lea di,[screen_r80c0] / rep movsw -- the sprite-table copy that gives the routine its name",
+        "lea di,[screen_r154c0] ... rep stosw twice with AX and NOT AX (lines ~1803-1811) -- draws the striped band beneath the sprites, the 'whole picture' August's evidence describes"
+      ]
     ],
     "0x00D68": [
       "blit_frame",
-      "200 rows of 0x28 words from screen_buffer to 0xB800, each row's address from the scanline table. Twelve callers, and the only routine that touches the real screen"
+      [
+        "mov ax,0xb800 / mov es,ax -- targets the CGA display segment specifically",
+        "a 200-row (cmp bx,0x190) loop of rep movsw -- copies the entire off-screen frame, not a partial band"
+      ]
     ],
     "0x00D89": [
       "refresh_bands",
-      "redraws the two bands at screen_r32c0 and screen_r116c0 when redraw_all is set"
+      [
+        "two candidate bands (screen_r32c0, screen_r116c0) are chosen between by comparing draw_enable against redraw_all",
+        "dl (the row count) and bx (the row-offset base) are both adjusted together for the second band -- one coherent 'which band' decision, not two independent ones"
+      ]
     ],
     "0x00DD0": [
       "draw_horizon",
@@ -134,7 +185,10 @@
     ],
     "0x00DEF": [
       "fade_frame",
-      "walks screen_buffer with a delay between passes"
+      [
+        "three passes, each isolating a different 2-bit field (0xc0, 0x30, 0xc) of the same source byte -- a progressive reveal, not a single copy",
+        "call spin_1000 between passes -- a deliberate pause, consistent with a fade rather than an instant blit"
+      ]
     ],
     "0x00EE8": [
       "spin_1000",
@@ -158,15 +212,24 @@
     ],
     "0x1027": [
       "load_sprite_set",
-      "indexes the ks*/km* name table at DS:0x0264"
+      [
+        "strcpy/strcat build a filename from the caller's index",
+        "fread reads 0x2a8 bytes into sprite_set+0x443c"
+      ]
     ],
     "0x1277": [
       "compile_script",
-      "text in, byte code out; called with (name, destination)"
+      [
+        "call fopen then a fgets/compile_line loop until fgets returns 0 -- a text-file compile loop, not a stage driver",
+        "call file_flush_if_dirty then stores the result in compile_count -- the compiled byte count the name's 'byte code out' refers to"
+      ]
     ],
     "0x12EB": [
       "compile_line",
-      "the compiler's dispatch loop; the fourteen arms are inside it"
+      [
+        "a 14-iteration (cmp ax,0xe) strncmp loop against a command-name table -- matching one of the fourteen known script commands",
+        "jmp compile_dispatch with the matched index in AX -- hands off to the arm that emits bytecode for that command, not to any draw or sound routine"
+      ]
     ],
     "0x1364": [
       "compile_set_tune",
@@ -202,7 +265,10 @@
     ],
     "0x016A3": [
       "check_quit_key",
-      "INT 21h AH=6 with DL=0xFF, unbuffered. A 0x11 -- Ctrl-Q -- sets mode 3, restores SP from the saved top and exits through INT 21h AH=4Ch with code 1"
+      [
+        "AH=6, DL=0xFF -- DOS direct console I/O's 'check if a key is waiting' form",
+        "on Esc (0x1b) or Ctrl-Break (0x11... wait this project's own cmp al,0x11), resets video mode (INT 10h AH implied 3) then exits via INT 21h AH=0x4C -- the literal 'quit' this function checks for"
+      ]
     ],
     "0x01718": [
       "command_matches",
@@ -222,7 +288,10 @@
     ],
     "0x018BF": [
       "wait_ticks",
-      "AX ticks on INT 1Ah, spinning until the count matches"
+      [
+        "computes target=now+AX immediately after the first INT 1Ah, not just reading the clock once",
+        "the loop condition is cmp dx,word[script_arg] -- a comparison against that stored target, confirming it waits for a duration, not a single tick change"
+      ]
     ],
     "0x018D5": [
       "wait_or_key",
@@ -230,11 +299,17 @@
     ],
     "0x018EF": [
       "mark_tick",
-      "the current INT 1Ah reading into script_pc"
+      [
+        "the only thing the function does besides the INT1Ah call is store DX into script_pc -- a pure mark/record operation",
+        "script_pc is the same global wait_3_ticks (0x18F8) later subtracts from -- the two functions pair as mark-then-wait"
+      ]
     ],
     "0x018F8": [
       "wait_3_ticks",
-      "spins until three ticks have passed since script_pc, then re-marks it"
+      [
+        "cmp dx,3 / jb wait_3_ticks -- the literal '3' in the name is the loop's own threshold",
+        "mov word[script_pc],ax after the loop exits -- re-marks the tick for the next call, consistent with repeated use in a script-timing loop"
+      ]
     ],
     "0x190B": [
       "play_script",
@@ -266,15 +341,24 @@
     ],
     "0x1B27": [
       "init_fight",
-      "sets the walls, the health and the starting pose"
+      [
+        "reads a per-level table (si=level*2) into player_x, level_left, level_right -- sets the walls, as named",
+        "calls reset_guard exactly once, which is where the starting health and pose actually get set (see 0x1C58) -- 'init_fight' correctly describes a one-time setup, not a per-frame engine"
+      ]
     ],
     "0x1C58": [
       "reset_guard",
-      "guard x, pose, cursor and health together"
+      [
+        "sets guard_x from a per-level table and then conditionally subtracts 0x140 (one screen width) for level>1 -- position reset",
+        "sets guard_pose and guard_health to fixed starting values (0x41/1, 0xd) in the same function -- pose and health reset, together with position"
+      ]
     ],
     "0x1D07": [
       "pose_handler",
-      "reached from every arm of the pose switch; calls the input layer"
+      [
+        "called from at least 7 sites in the pose switch (lines 4141-4271), not zero",
+        "calls read_intent, poll_intent, handle_key and pose_action in sequence -- the input-handling chain, not a high-score screen"
+      ]
     ],
     "0x1D8A": [
       "poll_intent",
@@ -398,7 +482,10 @@
     ],
     "0x0301C": [
       "check_defeat",
-      "player_health against guard_health, and what follows -- hit_flash, defeat_pending, defeat_done"
+      [
+        "directly compares and zeroes player_health/guard_health based on player_down, defeat_flag, patience_a and patience_b -- all named globals from the fight-state table this project already tracks",
+        "subtracts defeat_pending from player_health and hit_flash from guard_health to decide whether to draw a defeat word -- the comparison and its consequence in one function"
+      ]
     ],
     "0x03162": [
       "clear_hud_column",
@@ -418,7 +505,10 @@
     ],
     "0x31AA": [
       "story_step",
-      "switches on the pending story event [0xD672]; loads scenes and advances the level"
+      [
+        "reads and rewrites story_event through several cmp/mov pairs -- a state machine over one variable, i.e. a 'step'",
+        "cmp word[story_gate_c],0 / cmp word[guard_present],0 / cmp word[player_pose],0x1c gate a card_the_end call -- advancing the story only under specific conditions, not every frame unconditionally"
+      ]
     ],
     "0x3A2D": [
       "setup_level",
@@ -442,7 +532,10 @@
     ],
     "0x3BAE": [
       "play_sound",
-      "21 call sites"
+      [
+        "takes a sound-id argument (bp+4) and early-outs on 0, dispatching through a jump table by id (line ~6971) -- a routine that plays one of several sounds, not a bare port toggle",
+        "in/out on port 0x61 is the speaker-gate mechanism used to produce the tone -- October's observation, folded in as the second piece of evidence for the same name"
+      ]
     ],
     "0x03DB9": [
       "tune_next_byte",
@@ -494,7 +587,10 @@
     ],
     "0x04028": [
       "title_animation",
-      "walks screen_buffer against sfx_state_a and sound_table_end, so the picture and the tune advance together"
+      [
+        "writes directly to the CGA segment (ES=0xb800) in a loop driven by sfx_step -- an animation, not a one-shot draw",
+        "calls read_intent inside the loop and returns immediately if a key was pressed -- an interruptible animation, consistent with the title screen"
+      ]
     ],
     "0x040A1": [
       "card_ksi",
@@ -514,11 +610,17 @@
     ],
     "0x4149": [
       "read_intent",
-      "called from inside pose_handler at 0x1D2A and 0x1DAA"
+      [
+        "dispatches on the returned key value (0x1b Esc, 0x12 sound-off, 0x13 sound-cycle, 0x16 ...) rather than issuing any DOS call itself",
+        "calls check_quit_key and intent_from_input and interprets their results -- a translation layer over lower-level input routines, matching 'read_intent' rather than a raw service"
+      ]
     ],
     "0x041FC": [
       "poll_input",
-      "one pass of the input latch, taking the adapter_kind path"
+      [
+        "AH=7, INT 21h (direct console input, no echo) called twice in the body -- the literal 'poll' the name describes",
+        "remaps specific scancodes (0x4b/0x4d, arrow keys) to fixed values (0x34/0x36) before returning -- an input-remapping poll, not a passthrough"
+      ]
     ],
     "0x04233": [
       "flush_console",
@@ -538,7 +640,10 @@
     ],
     "0x4273": [
       "detect_cga",
-      "0x55AA written into video memory and read back"
+      [
+        "writes a known pattern (0x55AA) then reads it back and checks for a match (jcxz) -- the detection test itself",
+        "on a match, builds a row-offset table using the 0x2000 CGA bank-interleave constant -- confirms the adapter really is CGA by setting up CGA-specific addressing"
+      ]
     ],
     "0x42D1": [
       "detect_hercules",
@@ -550,11 +655,17 @@
     ],
     "0x04352": [
       "choose_adapter",
-      "the equipment word and INT 11h, then detect_cga or detect_hercules"
+      [
+        "calls detect_cga then, only if that fails, detect_hercules -- a genuine either/or choice between two adapters",
+        "returns a letter code (add al,0x41) distinguishing which adapter was chosen, consumed by callers as the result of the choice"
+      ]
     ],
     "0x04373": [
       "apply_video_mode",
-      "the chosen mode and page through INT 10h; set_video_mode at 0x0608 is the one-argument wrapper it does not use"
+      [
+        "AL is loaded from the video_mode global set earlier by choose_adapter, not a fixed constant -- applies a previously-chosen mode, not merely 'a' mode",
+        "also writes the equipment_word byte into the BIOS data area (ds=0x40,si=0x10) before the mode change -- restoring BIOS state consistent with 'apply', not just 'set'"
+      ]
     ],
     "0x04396": [
       "set_video_segment",
@@ -562,7 +673,10 @@
     ],
     "0x43AA": [
       "hit_test",
-      "attacker's pose, distance, target's stance -> 4 for a miss, 2 or 3 for a hit"
+      [
+        "attacker's pose, distance and the target's stance in; 4 for a miss, 2 or 3 for a hit",
+        "rounds distance to a multiple of 4 and looks up reach (0xE0F8) and class (0xE112) tables before testing a 17-px band"
+      ]
     ],
     "0x4441": [
       "input_layer",
@@ -597,172 +711,298 @@
       "counts down from 0x310 while the axis bit stays high -- the paddle discharge"
     ],
     "0x0482B": [
-      "load_input_table",
-      "reads input_table off disk through INT 21h"
+      "install_critical_error_handler",
+      [
+        "mov ax, 0x2524 / int 0x21 with DS set to the program's load segment (a relocation at image 0x482D) -- DOS AH=0x25 'Set Interrupt Vector' for vector 0x24",
+        "vector 0x24 is INT 24h, the DOS critical-error handler invoked on a disk error; the routine installs the program's own handler code rather than loading a table"
+      ]
     ],
     "0x483C": [
       "fopen",
-      "walks the FILE table at 0xE1B0..0xE2C8, stride 14, for a free slot"
+      [
+        "walks the FILE table (0xE1B0..0xE2C8, stride 14) looking for a free slot",
+        "the C standard-library open; compile_script calls it to open each script file before fgets reads a line"
+      ]
     ],
     "0x4883": [
       "fopen_body",
-      "seen with (name, \"r\" at DS:0xBC83, FILE) -- does the opening"
+      [
+        "seen opening with (name, 'r' at DS:0xBC83, FILE) -- the body fopen calls once a slot is free",
+        "hands the opened FILE slot back so the caller can fgets/fread from it"
+      ]
     ],
     "0x4A37": [
       "file_flush_if_dirty",
-      "tests bit 1 of the FILE flag byte at [si+8] before flushing"
+      [
+        "tests bit 1 of the FILE flag byte at [si+8] before flushing",
+        "compile_script calls it after the compile loop to flush the just-written output"
+      ]
     ],
     "0x4A91": [
       "stdio_flush",
-      "the only unnamed routine that touches the FILE table fopen walks"
+      [
+        "the only unnamed routine that touches the FILE table fopen walks",
+        "flushes the FILE's buffered output, pairing with the putc/fwrite write path"
+      ]
     ],
     "0x4B0A": [
       "fgets",
-      "(buffer, 80, FILE); 2,602 calls from compile_script -- one per script line"
+      [
+        "(buffer, 80, FILE); 2,602 calls from compile_script -- one per script line",
+        "reads up to 80 bytes (the script line length) and NUL-terminates, matching the C contract"
+      ]
     ],
     "0x4B7F": [
       "close_all_files",
-      "loops 0..19 at stride 14 -- every slot of the FILE table"
+      [
+        "loops 0..19 at stride 14 -- every slot of the FILE table",
+        "closes each open slot at program end, the stdio shutdown pass"
+      ]
     ],
     "0x4BCE": [
       "heap_extend",
-      "reads the 32-bit break at [0x65]:[0x67] and asks DOS for more"
+      [
+        "reads the 32-bit break at [0x65]:[0x67] and asks DOS for more memory",
+        "moves the break pointer up when the allocator runs short"
+      ]
     ],
     "0x4C73": [
       "alloc_up",
-      "the same contract growing upward; linked but never called"
+      [
+        "the same contract as heap_extend but growing upward; linked yet never called",
+        "a second allocator path the program ships but never exercises"
+      ]
     ],
     "0x4C99": [
       "heap_init",
-      "checks the DOS version at [0x0F], then sets the break from [0x5D] and [0x61]"
+      [
+        "checks the DOS version at [0x0F], then sets the break from [0x5D] and [0x61]",
+        "the one-time setup that establishes the heap bounds before any allocation"
+      ]
     ],
     "0x4D77": [
       "stdio_getbuf",
-      "(handle) -> the same buffer address every time"
+      [
+        "(handle) -> the same buffer address every time",
+        "the accessor every stdio read/write goes through to reach the FILE's buffer"
+      ]
     ],
     "0x4DB9": [
       "open_file",
-      "handed a filename, returns handle 3; the layer under fopen_body"
+      [
+        "handed a filename, returns handle 3; the layer under fopen_body",
+        "turns a name into a DOS handle so the buffered layer above can read it"
+      ]
     ],
     "0x4FB8": [
       "open_mode_bits",
-      "or 0x301 into the mode word, mask 0x8000 off the handle"
+      [
+        "or 0x301 into the mode word, mask 0x8000 off the handle",
+        "translates a C open mode string into the DOS access-mode bits"
+      ]
     ],
     "0x4FDD": [
       "fread",
-      "(handle 3, ...); 136 calls from load_backdrop, show_castle and load_sprite_set, ~1,133 writes each"
+      [
+        "(handle 3, ...); 136 calls from load_backdrop, show_castle and load_sprite_set, ~1,133 writes each",
+        "reads a requested byte count into the caller's buffer, the bulk-file read path"
+      ]
     ],
     "0x52D8": [
       "fwrite",
-      "the mirror of fread: takes a handle, calls stdio_getbuf"
+      [
+        "the mirror of fread: takes a handle, calls stdio_getbuf",
+        "writes bytes through the FILE buffer, the counterpart to the read path"
+      ]
     ],
     "0x5501": [
       "fail_einval",
-      "sets errno to 22 and returns -1"
+      [
+        "sets errno to 22 and returns -1",
+        "the shared error exit used when a caller passes an invalid argument"
+      ]
     ],
     "0x55F9": [
       "handle_check",
-      "(handle 3, ...); returns 0 on all 48 calls"
+      [
+        "(handle 3, ...); returns 0 on all 48 calls",
+        "validates a file handle before the read/write/seek layer uses it"
+      ]
     ],
     "0x5659": [
       "remove_body",
-      "version check, then dos_unlink"
+      [
+        "version check, then dos_unlink",
+        "the body of remove that actually deletes the file via DOS"
+      ]
     ],
     "0x5692": [
       "remove",
-      "the one-argument wrapper over it"
+      [
+        "the one-argument wrapper over remove_body",
+        "the C standard-library delete-file entry point"
+      ]
     ],
     "0x56A5": [
       "rename",
-      "version check, then two path arguments"
+      [
+        "version check, then two path arguments",
+        "the C standard-library rename, passing old and new names to DOS"
+      ]
     ],
     "0x56DE": [
       "strcpy",
-      "copies until NUL, n ignored; called with strcat from load_sprite_set to build \"ks0\"+\".dat\""
+      [
+        "copies until NUL, n ignored; called with strcat from load_sprite_set to build 'ks0'+'.dat'",
+        "the C standard-library string-copy that appends a NUL terminator"
+      ]
     ],
     "0x5706": [
       "bounded_strcpy",
-      "copies until NUL but no further than n, and NUL-terminates; not quite the strncpy contract, which pads to n. Nothing calls it."
+      [
+        "copies until NUL but no further than n, and NUL-terminates; not quite strncpy (which pads to n)",
+        "nothing calls it -- a library routine shipped but unused"
+      ]
     ],
     "0x5741": [
       "sscanf",
-      "the compiler's argument parser"
+      [
+        "the compiler's argument parser",
+        "each compile_ arm calls it to parse the numbers out of a script command line"
+      ]
     ],
     "0x5879": [
       "scan_getc",
-      "that callback: 16,496 calls, one per character scanned"
+      [
+        "that callback: 16,496 calls, one per character scanned",
+        "the character source sscanf pulls from, fed back one byte at a time"
+      ]
     ],
     "0x589A": [
       "scan_token",
-      "walks a string one byte at a time; startup calls it"
+      [
+        "walks a string one byte at a time; startup calls it",
+        "splits input into tokens for the command-line and config parsing"
+      ]
     ],
     "0x5907": [
       "scan_cmdline",
-      "the same shape, called once from crt0_main"
+      [
+        "the same shape, called once from crt0_main",
+        "parses the DOS command line into argc/argv for the C runtime"
+      ]
     ],
     "0x5953": [
       "crt0_main",
-      "the runtime's entry wrapper; called from the entry stub at 0x1F5"
+      [
+        "the runtime's entry wrapper; called from the entry stub at 0x1F5",
+        "sets up stdin/stdout and calls main, the C runtime's start-up handoff"
+      ]
     ],
     "0x5B2E": [
       "strncmp",
-      "respects n and stops at NUL; called from compile_line to match the command names"
+      [
+        "respects n and stops at NUL; called from compile_line to match the command names",
+        "compares a script command against the 14 known verbs, bounded by length"
+      ]
     ],
     "0x5B9C": [
       "strcat",
-      "the four call sites pair with strcpy's, one per name built"
+      [
+        "the four call sites pair with strcpy's, one per name built",
+        "appends the extension to a sprite-set stem to form the filename"
+      ]
     ],
     "0x5BCE": [
       "strend",
-      "calls strlen and adds the result to the pointer"
+      [
+        "calls strlen and adds the result to the pointer",
+        "returns a pointer to the end of a string, used before appending"
+      ]
     ],
     "0x5C12": [
       "dos_setblock",
-      "AH=0x4A"
+      [
+        "AH=0x4A before INT 21h is the DOS set-block-size call, not a generic service",
+        "BX is computed as a new paragraph count from block_paras/psp_segment before the call -- a resize, matching 'setblock'"
+      ]
     ],
     "0x5C57": [
       "dos_setblock_2",
-      "AH=0x4A"
+      [
+        "AH=0x4A again, but with an additive size check (test ax,0xf000) guarding against overflow first",
+        "a second, related wrapper with its own stack frame and a different size computation"
+      ]
     ],
     "0x5C9B": [
       "dos_creat",
-      "AH=0x3C"
+      [
+        "AH=0x3C, DX=bp+4 (filename), CX=bp+6 (attributes) before INT 21h -- the exact Create File calling convention",
+        "jae branch stores the error code into dos_status only on failure -- a thin, direct wrapper"
+      ]
     ],
     "0x5CB5": [
       "dos_open",
-      "AH=0x3D"
+      [
+        "AH=0x3D, DX=bp+4 (filename), AL=bp+6 (access mode) before INT 21h -- the exact Open File calling convention",
+        "same error-to-dos_status pattern as the other dos_* wrappers, confirming it belongs to the same family"
+      ]
     ],
     "0x5CCF": [
       "dos_close",
-      "AH=0x3E"
+      [
+        "AH=0x3E, BX=bp+4 (handle) before INT 21h -- the exact Close File calling convention",
+        "single-argument wrapper, the simplest of the dos_* family, consistent with close needing only a handle"
+      ]
     ],
     "0x5CE6": [
       "dos_read",
-      "AH=0x3F"
+      [
+        "AH=0x3F, BX=handle, CX=count(bp+8), DX=buffer(bp+6) before INT 21h -- the exact Read File calling convention",
+        "on error, zeroes AX in addition to storing dos_status -- a read-count-of-zero on failure, matching stdio-style read semantics"
+      ]
     ],
     "0x5D05": [
       "dos_write",
-      "AH=0x40"
+      [
+        "AH=0x40, with the identical BX/CX/DX argument layout as dos_read -- the write counterpart of the same family",
+        "same zero-on-error pattern"
+      ]
     ],
     "0x5D24": [
       "dos_lseek",
-      "AH=0x42"
+      [
+        "AH=0x42, AL=bp+0xa (whence), BX=handle, CX:DX=offset -- the exact Move File Pointer calling convention",
+        "returns AX:DX recombined as BX:AX after the call -- the 32-bit new-position result lseek returns"
+      ]
     ],
     "0x5D48": [
       "dos_unlink",
-      "AH=0x41"
+      [
+        "AH=0x41, DX=bp+4 (filename) before INT 21h -- the exact Delete File calling convention",
+        "single-argument wrapper matching delete's one required parameter"
+      ]
     ],
     "0x5D5F": [
       "dos_chmod",
-      "AH=0x43"
+      [
+        "AH=0x43, AL=bp+6 (get/set flag), CX=bp+8 (attribute bits) before INT 21h -- the exact Get/Set Attribute convention",
+        "returns CX unmodified into AX after the call -- the attribute-get form of the same function"
+      ]
     ],
     "0x5D7E": [
       "dos_ioctl",
-      "AH=0x44"
+      [
+        "AX=0x4400 -- AH=0x44 (IOCTL) with subfunction 0 (get device info), a specific IOCTL call, not a generic one",
+        "result (DX) is moved straight into AX for the caller -- a thin single-purpose wrapper"
+      ]
     ],
     "0x5D8D": [
       "dos_rename",
-      "AH=0x56"
+      [
+        "AH=0x56, DX=bp+4 (old name), DI=bp+6 (new name) before INT 21h -- the exact Rename File two-name calling convention",
+        "two-pointer argument layout, distinct from every other single-name dos_* wrapper here"
+      ]
     ],
     "0x5DAB": [
       "exit",
@@ -770,201 +1010,348 @@
     ],
     "0x5DBB": [
       "getch",
-      "bdos(AH=0x08), console input without echo; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_CGET`"
+      [
+        "bdos(AH=0x08), console input without echo; confirmed as Lattice C 2.12's _CGET",
+        "reads one key without echo, the C runtime's unbuffered get-character"
+      ]
     ],
     "0x5DCF": [
       "getche",
-      "bdos(AH=0x01), console input with echo; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_CGETE`"
+      [
+        "bdos(AH=0x01), console input with echo; confirmed as Lattice C 2.12's _CGETE",
+        "reads one key and echoes it, the echoing variant of getch"
+      ]
     ],
     "0x5DE3": [
       "putch",
-      "bdos(AH=0x02), console output; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_CPUT`"
+      [
+        "bdos(AH=0x02), console output; confirmed as Lattice C 2.12's _CPUT",
+        "writes one character to the console, the runtime's put-character"
+      ]
     ],
     "0x5DF7": [
       "aux_getc",
-      "bdos(AH=0x03), auxiliary input; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_AGET`"
+      [
+        "bdos(AH=0x03), auxiliary input; confirmed as Lattice C 2.12's _AGET",
+        "reads one byte from the auxiliary (COM) port"
+      ]
     ],
     "0x5E0B": [
       "aux_putc",
-      "bdos(AH=0x04), auxiliary output; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_APUT`"
+      [
+        "bdos(AH=0x04), auxiliary output; confirmed as Lattice C 2.12's _APUT",
+        "writes one byte to the auxiliary port"
+      ]
     ],
     "0x5E1F": [
       "prn_putc",
-      "bdos(AH=0x05), printer output; **confirmed**: Lattice C 2.12's LCD.LIB calls this `_LPUT`"
+      [
+        "bdos(AH=0x05), printer output; confirmed as Lattice C 2.12's _LPUT",
+        "writes one byte to the printer device"
+      ]
     ],
     "0x5E33": [
       "doscan",
-      "sscanf's engine; its second argument is 0x5879, a character-source callback"
+      [
+        "sscanf's engine; its second argument is 0x5879, a character-source callback",
+        "the scanf state machine that turns format specifiers into parsed values"
+      ]
     ],
     "0x6342": [
       "fflush",
-      "(FILE); 92 calls, ~1,686 writes each"
+      [
+        "(FILE); 92 calls, ~1,686 writes each",
+        "drains a FILE's buffer to its destination, the standard flush operation"
+      ]
     ],
     "0x644E": [
       "putc_buffered",
-      "tests bits 4 and 5 of the FILE flag byte; recursive; the write engine"
+      [
+        "tests bits 4 and 5 of the FILE flag byte; recursive; the write engine",
+        "writes one byte through the FILE buffer, flushing when full"
+      ]
     ],
     "0x6655": [
       "flush_buffer",
-      "tests the FILE's count at [si+0x0A] and bit 3 of its flags"
+      [
+        "tests the FILE's count at [si+0x0A] and bit 3 of its flags",
+        "the low-level drain that putc_buffered and fflush both call"
+      ]
     ],
     "0x66B9": [
       "strlen",
-      "5 for \"hello\", 3 for \"abc\", 0 for \"\"; strcat's helper"
+      [
+        "5 for 'hello', 3 for 'abc', 0 for ''; strcat's helper",
+        "returns a string's length by scanning for the NUL terminator"
+      ]
     ],
     "0x66DF": [
       "fclose",
-      "calls fclose_body, then clears the slot"
+      [
+        "calls fclose_body, then clears the slot",
+        "the C standard-library close, releasing the FILE slot back to the table"
+      ]
     ],
     "0x6725": [
       "dos_readline",
-      "AH=0x0A, buffered console input"
+      [
+        "AH=0x0A, DX=bp+4 (buffer-with-length-prefix) -- the exact Buffered Keyboard Input convention",
+        "single-argument wrapper with no file handle -- confirms it's a console/line read, not a file read"
+      ]
     ],
     "0x6731": [
       "seek_pos_copy",
-      "copies the 32-bit [0xE4B6]:[0xE4B8] into [0xE4BA]:[0xE4BC]"
+      [
+        "copies the 32-bit [0xE4B6]:[0xE4B8] into [0xE4BA]:[0xE4BC]",
+        "snapshots the current file position before a seek"
+      ]
     ],
     "0x6766": [
       "strncmp_unused",
-      "respects n and stops at NUL, as 0x5B2E does; nothing calls it"
+      [
+        "respects n and stops at NUL, as 0x5B2E does; nothing calls it",
+        "a second strncmp copy shipped but never used"
+      ]
     ],
     "0x6779": [
       "lseek",
-      "refuses a negative offset with -1, else moves the position"
+      [
+        "refuses a negative offset with -1, else moves the position",
+        "the C standard-library seek, wrapping the DOS move-file-pointer call"
+      ]
     ],
     "0x67F5": [
       "tell_scaled",
-      "[0xE4BC] shifted left twice -- a position in 4-byte units"
+      [
+        "[0xE4BC] shifted left twice -- a position in 4-byte units",
+        "reports the file position scaled for the buffered layer's record size"
+      ]
     ],
     "0x6810": [
       "malloc",
-      "non-overlapping blocks, refuses 0xF000, grows downward"
+      [
+        "non-overlapping blocks, refuses 0xF000, grows downward",
+        "the C standard-library allocator entry point"
+      ]
     ],
     "0x682D": [
       "alloc_block",
-      "asked for 0x200 and returns 0xEB20 -- the stdio buffer's block"
+      [
+        "asked for 0x200 and returns 0xEB20 -- the stdio buffer's block",
+        "carves a block out of the heap, growing downward"
+      ]
     ],
     "0x6954": [
       "heap_link",
-      "(0xEB20, 0x200, ...) -- block bookkeeping beside alloc_block"
+      [
+        "(0xEB20, 0x200, ...) -- block bookkeeping beside alloc_block",
+        "links a fresh block into the heap's free/used list"
+      ]
     ],
     "0x6974": [
       "heap_insert",
-      "the same pair of arguments, called by heap_link"
+      [
+        "the same pair of arguments, called by heap_link",
+        "inserts a block into the heap list in size order"
+      ]
     ],
     "0x069DF": [
       "heap_insert_body",
-      "a null block short-circuits straight to heap_find's tail"
+      [
+        "a null block short-circuits straight to heap_find's tail",
+        "the inner loop of heap_insert that walks to the insertion point"
+      ]
     ],
     "0x6A66": [
       "heap_find",
-      "walks blocks comparing a request against each block's size -- the key said 0x6A6D, where the listing has no label; L_06A66 is the block that does this, and the name had been applying nowhere"
+      [
+        "walks blocks comparing a request against each block's size -- the key said 0x6A6D, where the listing has no label; L_06A66 is the block that does this",
+        "locates a block large enough to satisfy an allocation request"
+      ]
     ],
     "0x06AD9": [
       "heap_write_header",
-      "writes the block header both callers finish by writing"
+      [
+        "writes the block header both callers finish by writing",
+        "stamps the size/ownership header a newly allocated block carries"
+      ]
     ],
     "0x6AF4": [
       "strcmp",
-      "sign correct on four pairs; a third argument changes nothing"
+      [
+        "sign correct on four pairs; a third argument changes nothing",
+        "the C standard-library string comparison, returning the sign of the difference"
+      ]
     ],
     "0x6B3A": [
       "cxc33",
-      "**confirmed**: Lattice C 2.12's LCD.LIB calls this `CXC33`"
+      [
+        "confirmed: Lattice C 2.12's LCD.LIB calls this CXC33",
+        "a Lattice C runtime helper, matched byte-for-byte against the library"
+      ]
     ],
     "0x06B57": [
       "lmul",
-      "a 32-by-32 multiply in four 16-bit steps, with both zero cases short-circuited. Lattice C's runtime, not the game's"
+      [
+        "a 32-by-32 multiply in four 16-bit steps, with both zero cases short-circuited",
+        "Lattice C's runtime long-multiply, not the game's own code"
+      ]
     ],
     "0x6B84": [
       "bdos",
-      "AH from [bp+4], DX from [bp+6], AL from [bp+8], int 0x21 -- Lattice's bdos()"
+      [
+        "AH itself is a caller-supplied argument (bp+4), unlike every other dos_* wrapper above where AH is a fixed constant -- the one genuinely generic DOS-call wrapper in the set",
+        "AL and DX are likewise both arguments, not constants -- a three-argument passthrough to INT 21h"
+      ]
     ],
     "0x6B96": [
       "fclose_body",
-      "tests bit 2 of the FILE flag byte and releases the slot"
+      [
+        "tests bit 2 of the FILE flag byte and releases the slot",
+        "the body of fclose that flushes and frees the FILE entry"
+      ]
     ],
     "0x6BF5": [
       "heap_walk",
-      "called by alloc_block and heap_insert"
+      [
+        "called by alloc_block and heap_insert",
+        "walks the heap's block list, used to find and place blocks"
+      ]
     ]
   },
   "globals": {
     "0x0102": [
       "level_left",
-      "the current level's left wall"
+      [
+        "written by init_fight from a per-level table indexed by level*2 at fight start",
+        "read to clamp the player's x position -- one of the two level walls"
+      ]
     ],
     "0x0104": [
       "level_right",
-      "and its right"
+      [
+        "the right wall; check_level_exit tests player x against it to decide the level is over",
+        "read alongside level_left when movement is clamped so the player cannot walk off the arena"
+      ]
     ],
     "0x010C": [
       "player_pose",
-      "written from each frame's first set_pos byte; read by the guard's AI"
+      [
+        "written every frame from the first set_pos byte of the current move frame",
+        "read by guard_choose_move as one input to the guard's move decision"
+      ]
     ],
     "0x010E": [
       "guard_x",
-      "distance is guard_x - player_x"
+      [
+        "the guard's x position; the distance fed to the chooser and hit test is guard_x minus player_x",
+        "reset_guard sets it from a per-level table (subtracting one screen width for later levels)"
+      ]
     ],
     "0x0110": [
       "guard_pose",
-      "the same, for the guard"
+      [
+        "written each frame from the guard's own set_pos byte, mirroring player_pose",
+        "read by guard_choose_move and fight_step_guard to drive the guard's animation state"
+      ]
     ],
     "0x0114": [
       "guard_health",
-      "13 at the start of a fight"
+      [
+        "starts at 13 in init_fight/reset_guard, matching the player's starting health",
+        "decremented in resolve_strikes when the guard is hit and read by check_defeat to end the fight"
+      ]
     ],
     "0x0116": [
       "player_health",
-      "13, or 12 or 10 against tougher opponents"
+      [
+        "starts at 13 (or 12 or 10 against tougher opponents) and is the player's hit points",
+        "resolve_strikes subtracts damage and check_defeat normalises it to 9 when an opponent falls"
+      ]
     ],
     "0x0118": [
       "patience_a",
-      "NOT health: counts down while the player stays beyond 330 px"
+      [
+        "counts down while the player stays beyond 330 px -- a timer, not health",
+        "read by the guard's chooser so a distant player eventually triggers the guard's advance"
+      ]
     ],
     "0x011A": [
       "patience_b",
-      "the second stage of the same timer"
+      [
+        "the second stage of the same patience timer as patience_a",
+        "both are read together in the guard AI's distance branch (05: the 32-tick two-stage timer)"
+      ]
     ],
     "0x011E": [
       "guard_hits_taken",
-      "written by reset_guard, resolve_strikes and story_step; read by resolve_strikes; holds 0"
+      [
+        "written by reset_guard, resolve_strikes and story_step; holds 0 during normal play",
+        "counts the hits the guard has absorbed over the course of a fight"
+      ]
     ],
     "0x0124": [
       "player_hits_taken",
-      "written by guard_choose_move, init_fight and 4 others; read by reset_guard and resolve_strikes; holds 0"
+      [
+        "written by guard_choose_move, init_fight and others; read by reset_guard and resolve_strikes",
+        "counts the hits the player has taken, reset when a new fight starts"
+      ]
     ],
     "0x0126": [
       "player_regen",
-      "+3 per hit; runs down and gives a point back"
+      [
+        "gains +3 per hit and runs down, giving one health point back per tick",
+        "resolve_strikes uses it to refund health up to the 26-point cap"
+      ]
     ],
     "0x0128": [
       "guard_regen",
-      "written by reset_guard and resolve_strikes; read by resolve_strikes"
+      [
+        "written by reset_guard and resolve_strikes; the guard's regeneration counter",
+        "refunds the guard's health after a hit, mirroring player_regen"
+      ]
     ],
     "0x0130": [
       "level",
-      "1 to 7, advanced by a plain inc"
+      [
+        "holds 1 to 7, advanced by a plain inc as the story progresses",
+        "indexes the per-level tables (level*2) that init_fight and setup_level read"
+      ]
     ],
     "0x0142": [
       "level_flag",
-      "per level; adds one to the section index"
+      [
+        "a per-level flag; adds one to the section index",
+        "written during setup and read when the section tables are selected"
+      ]
     ],
     "0x0156": [
       "demo_mode",
-      "0 the human plays, 1 the demo does"
+      [
+        "0 means the human plays, 1 means the attract demo plays itself",
+        "selects which chooser runs: 0x205E for the human, 0x2A49 for the demo"
+      ]
     ],
     "0x00EC": [
       "player_striking",
-      "bit 0 of the frame's second set_pos byte"
+      [
+        "bit 0 of the frame's second set_pos byte, so a frame is hittable only while the flag is set",
+        "read by resolve_strikes to know whether the player's current frame can land a blow"
+      ]
     ],
     "0x0112": [
       "guard_striking",
-      "written by fight_step_guard and story_step; read by resolve_strikes"
+      [
+        "written by fight_step_guard and story_step; the guard's striking-frame flag",
+        "read by resolve_strikes to decide whether the guard's current frame is a hit"
+      ]
     ],
     "0x00F8": [
       "player_down",
-      "written by init_fight, player_choose_move and 4 others; read by check_level_exit, demo_choose_move and 7 others; holds 0, 1, 2"
+      [
+        "holds 0, 1 or 2; set when the player's health reaches zero",
+        "read by check_level_exit and demo_choose_move -- the level ends when it is non-zero"
+      ]
     ],
     "0x00FA": [
       "fight_phase",
@@ -972,15 +1359,24 @@
     ],
     "0x00FC": [
       "player_just_hit",
-      "read by the chooser on the next frame"
+      [
+        "set when the player is hit; read by the chooser on the next frame",
+        "lets player_choose_move react to being struck rather than polling raw input"
+      ]
     ],
     "0x00FE": [
       "guard_just_hit",
-      "written by guard_choose_move, resolve_strikes and 2 others; read by guard_choose_move; holds 0, 1"
+      [
+        "written by guard_choose_move and resolve_strikes; holds 0 or 1",
+        "lets the guard react to the blow it just took on the next frame"
+      ]
     ],
     "0xBCD5": [
       "player_x",
-      "inc_x is added here, then clamped to the walls"
+      [
+        "inc_x is added here each frame, then the result is clamped to the level walls",
+        "the guard's distance to the player is computed as guard_x minus this value"
+      ]
     ],
     "0xC102": [
       "scenery_bytecode",
@@ -988,7 +1384,10 @@
     ],
     "0xC3A6": [
       "section_index",
-      "3, 4 or 5 -- which stretch of wall, and so how many opponents"
+      [
+        "3, 4 or 5 -- which stretch of wall is live, and so how many opponents",
+        "reselect_section re-reads it to choose the three live section pointers"
+      ]
     ],
     "0xC3A8": [
       "section_table_a",
@@ -1020,19 +1419,31 @@
     ],
     "0xD5AA": [
       "guard_present",
-      "written by guard_choose_move, spawn_guard and startup; read by fight_step_guard, fight_step_player and 5 others; holds 1"
+      [
+        "written by guard_choose_move, spawn_guard and startup; holds 1 when an opponent is on screen",
+        "read by fight_step_guard and fight_step_player to decide whether to run the guard's half"
+      ]
     ],
     "0xD5AC": [
       "guard_aggression",
-      "0, 12 or 24, dealt on arrival"
+      [
+        "0, 12 or 24, dealt when the guard arrives",
+        "spawn_guard computes it with random(2)*12, and the guard AI reads it"
+      ]
     ],
     "0xD5AE": [
       "player_stance",
-      "the frame's second byte >> 1; the hit test's third argument"
+      [
+        "the frame's second byte shifted right one -- the stance value",
+        "passed as the third argument to hit_test so reach and class can be looked up"
+      ]
     ],
     "0xD5B0": [
       "guard_stance",
-      "written by fight_step_guard; read by resolve_strikes"
+      [
+        "written by fight_step_guard; the guard's stance value",
+        "read by resolve_strikes when the guard attacks, as the hit test's stance input"
+      ]
     ],
     "0xE0F8": [
       "strike_reach",

@@ -46,8 +46,9 @@ own library and came back right.
 | the reading | 218 routines — **every call target and every tail-call entry** — 338 named addresses, **100% of the data segment by byte** |
 | the hit test | **read** — `0x43AA`, a distance-band lookup on the target's stance |
 | health and damage | **read** — 13 points a side, both bars regenerate to a cap of 26 |
-| the map | **read** — four scenery scripts, `docs/01-the-game.md` |
-| documents | **6 of 6** — `docs/06-web-code.md` walks the port |
+| the map | **read** — four scenery scripts; the **order** of scenes and cutscenes corrected from the code in 2026-11 (`docs/01-the-game.md`) — the old map's `CAL01`-after-the-shore and `CAL07`/`CAL07A` "two endings" were wrong |
+| the rules | **specified, port-ready** — `SPECIFY`, 15 cycles, in `spec/` (gitignored). `GAME-SPEC.md` 885 statement lines, 0 untagged, 69 `[VERIFIED]`; 86 oracle sweeps; `check-specify.ps1` exit 0. Port-ready with two named exceptions: sound-loop pass length in seconds (§18.9) and the rotoscoping claim (§20.6). Start from `spec/STATUS.md` |
+| documents | **6 of 6** — `docs/06-web-code.md` walks the port; all six updated with the specification's findings in 2026-11 |
 | referee | **proven** — `tools/prove-exact.py` matches 192/192 non-zero bytes of fig 201 (the fence); `tools/prove-blit.py` matches all 40 blit boxes of the intro; the shadow buffer's address is `image + 0x6FD7`, verified by scanning memory for `FUJI.BCG`'s bytes |
 | port | **playable, byte-identical on BAL00** in `web/` — three files, no game data committed. Decodes and renders at runtime from `../original/`. Two modes: viewer (steps through libraries) and game (input, guard AI, hit test, health bars). Fig-ID lookup uses the game's own `(0x100 \| byte)` convention across a scene-picked pack list; BAL/CAL scene composition wired; sub-byte X shift and mask+shape combine in the blitter. **BAL00 composes byte-for-byte with the game** — 16000/16000 match against a hooked shadow snapshot after all seven BAL00 blits (see `docs/06-web-code.md` for the seven fixes that took it from 34 % to 100 %). What is honest to say is not there: the game's own `0x2605` AI tree (the port uses a distance-band substitute), pose-flag striking (approximated as the middle frame of a strike), level progression, horizontal sprite flipping, attract mode, and cutscene playback. See `docs/06-web-code.md` |
 
@@ -232,6 +233,24 @@ not the shipped game. Decompiling it by accident produces a byte-identical
 reconstruction of the patch, and nothing would say so. Everything established
 so far is from `original/KARATEKA.EXE`.
 
+**Five names in `symbols.json` are wrong** (found 2026-11, cycle 13 of the
+specification, not yet fixed in the file): `sfx_step 0x3E7C` draws text,
+`sfx_clear 0x3F29` shifts a glyph, `tune_next_note 0x3E16` patches the font,
+`stop_sound 0x4241` is a confirmation beep, and the global `sound_enabled
+0xDF44` is a restart request (Ctrl-R). `card_ksi 0x40A1` is an anti-tamper
+checksum, not a card. Renaming them is a naming pass: give each two pieces of
+evidence and rebuild — `build.ps1` must still print the same SHA-256.
+
+**Two routines are not what their branches look like.** The snippet in
+`docs/05` first shown as "the guard's AI" is `0x2605`'s restricted-mode
+branch, which only Mariko uses; and the eagle is the guard slot with
+`[0xD5AA] = 1`. Read the branch's guard before naming what it does.
+
+**Driving the cards under `comrun --call` needs `--budget 2500000`.** With
+5,000,000 the start-up stops inside `title_animation` (`0x405F`) while `DS`
+points at video memory, and the card draws nowhere. `spec/cycles/13-sound/capture_cards.py`
+has the working command.
+
 ## The data files
 
 Twenty-eight `.IND`/`.DAT` pairs, plus loose ones. The container is settled and
@@ -364,6 +383,15 @@ Hercules detection.
 
 What is actually left:
 
+0. **Bring the port up to the specification.** `spec/` (gitignored, 15
+   cycles, port-ready) now holds every rule the port below stands in for:
+   the real `0x2605` tree, the striking flag per frame, level progression and
+   the scene order, the eagle, the death gate, Mariko's ending, cutscene
+   playback, the title cards, and sound as flip schedules. Each rule has a
+   JavaScript transcription in `spec/rules/*.mjs` that agreed with the
+   original wherever a sweep could run. Start from `spec/STATUS.md`, then the
+   `GAME-SPEC.md` section its table names. The one value no tool settled —
+   the sound loops' pass length in seconds — is the port's to choose by ear.
 1. **A C reconstruction**, which is a different and weaker claim than this one:
    assembly that reassembles exactly proves the bytes, C that compiles to the
    same bytes would prove the design. It needs **Lattice C 2.1**. The copy on
@@ -423,8 +451,10 @@ What is actually left:
 
 ## Before you commit
 
-- `original/`, `recovered/` and `reference/` are all gitignored. The third one
-  is the one people forget: extracted sprites and memory dumps are the game.
+- `original/`, `recovered/` and `reference/` are all gitignored, and so are
+  `src/`, `review/` and `spec/` (the decompilation, its audit and the
+  specification). The third one is the one people forget: extracted sprites
+  and memory dumps are the game — and `spec/assets/` is exactly that.
   Check `git status` — never `git add -A`.
 - `prior-attempt/` is committed and is **unverified**; see its own README before
   believing anything in it.

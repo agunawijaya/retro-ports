@@ -5,9 +5,16 @@ cinematic cutscenes to home computers, four years before *Prince of Persia*. You
 walk right, you fight Akuma's guards, you rescue Princess Mariko, and if you
 approach her in a fighting stance she kicks you to death.
 
-**Not decompiled yet.** This folder is set up and triaged, and there is
-substantial material from an earlier attempt that predates the toolkit — see
-[`prior-attempt/`](prior-attempt/).
+**Where it stands.** The executable **rebuilds byte for byte** from
+reconstructed source; every routine it calls and every byte of its data
+segment is named; its rules are **specified routine by routine and checked
+against the running original** — the fighting, the guards' minds, the eagle,
+the death gate, Mariko, level progression, cutscenes, drawing, the data
+files, sound and the title cards; and a [web port](web/) decodes the game's
+own art at run time and composes the opening shore scene byte-identically to
+it. The six [documents](docs/) explain all of it
+from the beginning. An earlier attempt that predates the toolkit is kept in
+[`prior-attempt/`](prior-attempt/), unverified.
 
 *Part of [retro-ports](../README.md).*
 
@@ -59,9 +66,13 @@ Karateka is not:
 
 - **The game is an `.EXE` plus ninety data files.** `KM*.DAT` / `KM*.IND` and
   `KS*.DAT` / `KS*.IND` are paired — a data file and an index into it — and
-  there are twenty-two such pairs. `ALLPAL`, `ALLBAL`, `ALLCAL`, `ALLGAL`,
-  `ALLVAL` look like combined versions of the `BAL*`, `CAL*`, `PAL*`, `VAL*`
-  series. `CASTLE.BCG` and `FUJI.BCG` are backdrops.
+  there are twenty-eight such pairs, plus one index with no data file.
+  `ALLPAL`, `ALLGAL`, `ALLVAL` and `PRNGAL` are the move libraries of the
+  hero, the guards, Akuma and Mariko, and `BAL*`/`CAL*` the scene and
+  cutscene scripts — plain text, compiled when they load. Fourteen of the
+  script files are never opened by the program at all. `CASTLE.BCG`,
+  `FUJI.BCG` and `TITLE.BCG` are backdrops. (This list was first written as
+  guesses from the file names; the corrected version is what the code reads.)
 - **Nothing in this toolkit reads a data-file format yet.** ParaTrooper and Hard
   Hat Mack keep their artwork inside the executable, so `gfxdump.py` takes an
   offset into one file. Karateka will need the pairing understood first.
@@ -106,6 +117,35 @@ python tools/render-sprites.py --sheet KSC --toolkit <path-to>/DOS-Decompiler
 
 Sixty frames of Jordan Mechner's rotoscoped animation, out of the file.
 
+**The program's rules are specified, and port-ready.** Fifteen cycles of the
+toolkit's `SPECIFY` method read every subsystem routine by routine, wrote
+each rule down with its evidence, and — wherever the toolkit can run both —
+checked a JavaScript rewrite against the original on every input of a
+declared domain: 86 such sweeps, from the hit test's 90,454 cases down to the
+single case of the start-up font patch. What it settled is written up in the documents:
+the fight and the three characters that run through the guard's code in
+[05-the-fighting.md](docs/05-the-fighting.md), the sound, the start-up speed
+check and the title-card font in
+[02-architecture.md](docs/02-architecture.md#sound-is-one-bit-flipped-on-time),
+and the real order of scenes in
+[01-the-game.md](docs/01-the-game.md#the-map-from-the-beach-to-the-princess).
+Two things it could not settle are stated there too: how long a sound loop
+lasts in seconds on a 4.77 MHz PC, and whether the game was rotoscoped —
+which no program can show. The specification itself stays out of the
+repository, because it quotes the game.
+
+## Playing the port
+
+```
+cd karateka
+python -m http.server 8765
+```
+
+Open <http://localhost:8765/web/>. The port reads the game's own data files
+from `original/` at run time, so it needs your copy there; nothing of the
+game is committed. [06-web-code.md](docs/06-web-code.md) walks through it,
+and says plainly what it still stands in for.
+
 ## What is here
 
 | | |
@@ -113,7 +153,11 @@ Sixty frames of Jordan Mechner's rotoscoped animation, out of the file.
 | `original/` | the game as it shipped, plus the archive it came in — **not committed** |
 | `prior-attempt/` | an earlier session's work: notes, extraction scripts, a web remake. Committed, and **unverified** — see its own README |
 | `reference/` | the Apple II disk images, extracted sprites, memory dumps, screenshots, and a patched copy of the executable someone else made — **not committed** |
-| `docs/` | [four documents](docs/) — the game, the architecture, the code, and porting |
+| `docs/` | [six documents](docs/) — the game, the architecture, the code, porting, the fighting, and the port's code |
+| `web/` | the playable port — three files, no game data |
+| `tools/` | the readers, renderers and referees this work used, each runnable on your own copy |
+| `symbols.json` | the names, each with its evidence — the reconstruction's readable half |
+| `recovered/`, `src/`, `review/`, `spec/` | the reconstruction, the decompilation, its audit and the specification — all derived from the game, **not committed** |
 
 ## A note on `KARATEKA_NOCHK.EXE`
 

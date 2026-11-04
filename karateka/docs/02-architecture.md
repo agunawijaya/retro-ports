@@ -400,6 +400,139 @@ takes a Python replica of the port's renderer from 34 % to
 16000 of 16000 bytes agree. The account is in
 [06-web-code.md](06-web-code.md).
 
+## Sound is one bit, flipped on time
+
+The IBM PC's speaker is a paper cone wired to two bits of I/O port `0x61`.
+Bit 0 connects the timer chip's channel 2 to it, so that a program can ask
+the timer for a square wave of a given pitch and walk away. Bit 1 is the
+speaker line itself. Most programs use the timer. **Karateka switches it off
+and drives bit 1 by hand**:
+
+```nasm
+speaker_toggle:            ; image 0x3DD5 — the whole of the sound hardware
+    push ax
+    in   al, 0x61
+    xor  al, 2             ; flip the speaker line
+    out  0x61, al
+    pop  ax
+    ret
+```
+
+Every sound the game makes is a sequence of calls to those six instructions,
+and what decides the sound is *when* they happen. The time between flips is
+set by counted loops on the CPU, which is why this technique is called
+**bit-banging**: the program is the oscillator.
+
+One routine, `play_sound` at `0x3BAE`, holds all of it. It takes a number from
+1 to 26 and jumps through a table of 26 addresses:
+
+| kind | sounds | what it is |
+|---|---|---|
+| clicks | 1–7 | a short loop — flip, wait, flip — whose wait grows, shrinks or stays fixed. Sound 1, the hit, flips 38 times with a wait that rises, so it falls in pitch |
+| a recording | 8, 22, 23, 24 | one 256-byte recording at `DS:0xDA56`, played **one bit at a time** — 2,048 samples of one-bit sound — at four speeds |
+| tunes | 9–21, 25, 26 | fifteen short pieces of two-voice music, 241 notes between them |
+
+The recording is the interesting one. A one-bit sample cannot say *how loud*,
+only *on or off*, so the routine simply sets the speaker to each bit in turn:
+it flips the line whenever the next bit differs from the last. Played fast
+enough, a stream of on/off decisions is heard as a sound — the same idea later
+PC games used to squeeze speech out of this speaker. The four speeds turn one
+recording into four voices; nothing else in the program is sampled.
+
+The tunes interleave two square waves in one loop: two counters run down side
+by side, and each flips the speaker when it runs out. That is how a single
+on/off line plays a chord. The loop is transcribed in the specification
+exactly as the program runs it, including a test in front of every flip that
+can never succeed — `cmp byte [tune_step], 0x80 / jl` asks whether a signed
+byte is below −128 — so the format has no way to write a rest.
+
+What decides which sound plays is mostly not code. Every frame of every
+animation names a sound with `set_tune` (see [03-the-code.md](03-the-code.md#2-the-animation-language)),
+and the drawing loop plays it after the frame is on screen. Of the 334
+`set_tune` commands in the scripts, 308 say 0 — silence. The fights themselves
+make almost no sound of their own — three frames in all the move libraries
+name one. The sounds of a connecting strike, a beaten guard and the eagle's
+fights come from the fight loop, which checks one variable, `fight_state`,
+after each frame.
+
+Ctrl-S cycles the sound through three modes: everything, sound effects
+without music, and silence. A short beep — sound 5, played whatever the mode
+— confirms each settings key.
+
+**Every one of those claims was checked by running the original.** The oracle
+sweep put the program's `play_sound` and a JavaScript rewrite of it side by
+side on every sound number in every mode, and on all fifteen tunes call for
+call: 135 + 12 + 45 cases, no disagreement.
+
+**What transfers.** Bit-banging is how most early PC games made sound, and
+how many still did on the PC speaker until sound cards were common; reading
+any of them starts with finding the one routine that writes port `0x61`. And
+the hidden lesson is about data: the sound is *chosen* by the animation
+scripts, so a port that plays the scripts gets the right sound at the right
+moment without a line of game logic.
+
+## It times the machine before it plays a note
+
+A loop that waits by counting waits longer on a slow machine and shorter on a
+fast one, so a game that makes its sound this way plays a different tune on
+every PC. Karateka knows this. Once, at start-up, the second half of
+`calibrate_stick` (`0x4619`) counts how many times a fixed loop runs in
+exactly **seven ticks of the BIOS clock** — about 385 ms — and then edits its
+own sound data:
+
+| count | the machine | what changes |
+|---|---|---|
+| ≤ 11,000 | slow | the delay constants are halved, and every tune's tempo byte |
+| 11,001 – 13,500 | a little slow | every tempo byte is trimmed by one or two |
+| 13,501 – 19,999 | as intended | nothing |
+| ≥ 20,000 | fast | the same constants and every tempo byte are doubled |
+
+It reaches the fifteen tunes through a table of their addresses at
+`DS:0xD718` — a table nothing else reads. The slow branch also has a slip in
+it: its loop covers five bytes, which reaches the first three of the five
+delay constants and not the last two, so two of the four sample speeds are
+never corrected.
+
+**[inferred]** the "as intended" band is an IBM PC at 4.77 MHz: one pass of
+the counting loop is roughly 100–130 clock cycles by Intel's published
+timings, which puts the count around 14,000–18,000. Nothing ran the original
+on such a machine to measure it; that is listed below.
+
+**What transfers.** Calibrating against a clock you trust — here the BIOS
+tick, 18.2 times a second whatever the CPU — is the standard cure for
+software timing, and the question to ask of any old game is whether it does
+it at all. Many did not, which is why turbo buttons existed.
+
+## The title cards carry their own font
+
+"a game by / jordan mechner", "the end", the disk prompt and the closing text
+are not drawn with the BIOS's text characters. They come from a proportional
+font of thirty-one glyphs in the data segment — `a` to `z`, a full stop, a
+comma, a colon and a dash — each with its own width, height and advance, drawn
+by a routine at `0x3E7C` that widens every pixel of the one-bit glyph into the
+two-bit CGA pixel and slides it into place across byte boundaries.
+
+Two details are worth knowing before anyone draws it:
+
+- **Bit 0 of a glyph byte is the leftmost pixel**, not bit 7. The routine
+  pulls bits off the top and rotates each into the output twice, which
+  reverses the order. A font sheet drawn the obvious way comes out mirrored
+  letter by letter — this project's first one did.
+- **The font is patched once at start-up** (`0x3E16`) before anything is
+  drawn: the glyphs for `i` and `z` swap places, the punctuation slots shift
+  down by one, and the leftmost pixel of nine rows is cleared in twelve
+  letters. A port has to apply the patch, or load the font after it.
+
+Drawn by a JavaScript copy of that routine, the five cards match the
+program's own off-screen frame **byte for byte — 16,000 of 16,000 on each**.
+Left without the start-up patch, all five fail.
+
+**What transfers.** A symbol file that names routines by where they sit
+rather than by what they do will be wrong in exactly the places where a
+programmer filed something oddly: here the text renderer sat between the
+sound routines, and was named as sound until its callers were read. The
+callers decide what a routine is.
+
 ## The copy protection
 
 `reference/` contains `KARATEKA_NOCHK.EXE`, a copy with the disk check removed.
@@ -410,25 +543,48 @@ patched binary is a byte-identical reconstruction of the patch, and it would say
 so nowhere. Everything in this document is from `original/KARATEKA.EXE`, where
 the check is still present.
 
+## What used to be unknown
+
+This list stood here before the program's rules were specified (the
+`SPECIFY` pass, fifteen cycles, kept in `spec/` and out of the repository
+because it quotes the game). Each item is left with what settled it, because
+the wrong guesses are part of the record:
+
+- **What a record holds beyond the pixels it is asked for.** It held exactly
+  one byte more, in all 666 records. The decoder is called once per output
+  byte and the blitter stops asking at `width × height`, so a run that would
+  overrun is cut short and one stream byte is left unread. The earlier
+  **[inferred]** margin for the shifted edge, fitted with `(w+1)×h`, was
+  wrong — a formula that fitted 112 records, not a routine that was read.
+- **What the twenty-eight pairs are for.** `KS` is the shape and `KM` the
+  mask, now read rather than inferred: where the mask byte is zero the screen
+  is left alone, elsewhere the screen is cleared under the mask and the shape
+  ORed in. Figures from id `0xC8` up have no mask at all and are written
+  opaquely — the ground pieces that draw black over the plateau.
+- **The loose files.** `ALLPAL`, `ALLGAL` and `ALLVAL` are the move libraries
+  of the hero, the guards (the eagle included) and Akuma, and `PRNGAL` is
+  Mariko's; `BAL*` and `CAL*` are scene and cutscene scripts. All are text,
+  compiled when they load. [05-the-fighting.md](05-the-fighting.md) reads
+  them.
+- **The 59,673 bytes of the data tail.** The data segment proper — the
+  59,670 of them from `image + 0x6CA0` — is now inside 58 named, checked spans
+  with no gap ([CLAUDE.md](../CLAUDE.md#state-of-the-work)).
+- **What the program does.** The game loop, the fighting, the guard's mind,
+  level progression, the cutscene engine, scene drawing, the data files,
+  sound and the title cards are specified routine by routine, and wherever
+  the toolkit could run both sides, checked by running the original against a
+  rewrite on every input of a declared domain.
+
 ## What is still unknown
 
-- **What a record holds beyond the pixels it is asked for.** The stream is
-  settled and every one of the 666 decodes, but a record usually carries more
-  than `width × height` bytes and nothing here explains how much more or why.
-  **[inferred]** the extra is a margin for the shifted-edge column the blitter
-  needs, since `(w+1)×h` accounts for 112 of them — but that is a formula that
-  fits, not a routine that was read, and this document has been burned by the
-  difference already.
-- **What the twenty-eight pairs are for.** **[inferred]** `KS` is the shape and
-  `KM` the mask. Both are read through the same decoder but through separate
-  stream pointers and separate run state — `0x421E` with `0x422C`/`0x422D` for
-  one, `0x4220` with `0x422E`/`0x422F` for the other — which is what two
-  independent streams consumed in lockstep looks like. Which is which has not
-  been established.
-- **The loose files.** `ALLPAL`, `ALLBAL`, `ALLCAL`, `ALLGAL`, `ALLVAL` look
-  like combined versions of the `PAL*`, `BAL*`, `CAL*`, `VAL*` series;
-  `CASTLE.BCG` and `FUJI.BCG` are backdrops by their names alone.
-- **All 59,673 bytes of the data tail.**
+- **How long one sound-loop pass lasts, in seconds.** Every flip of the
+  speaker is fixed in loop passes and checked; converting a pass to time needs
+  the clock cycles of an 8088, which the toolkit's emulator does not count. The
+  estimates above are floors from Intel's tables. Reading the calibration's
+  count on a real 4.77 MHz machine, or a cycle-exact emulator, would settle
+  it.
+- **Whether the game was rotoscoped.** It is in every account of it, and
+  nothing in a program can confirm how its art was made.
 - **254 bytes of the code region**, which is what is left of a gap that used to
   be 15% and was never data. Karateka's `switch` tables sit directly behind the
   functions that switch, so a table and the arms it names go unreached together
@@ -443,6 +599,3 @@ the check is still present.
   alignment padding; and roughly thirty bytes are genuinely unread code,
   including a five-byte function that is `push bp / mov bp, sp / pop bp / ret`
   and does nothing whatever.
-- **Everything the program does.** This document is about its shape. Nothing
-  here has yet followed the game loop, the fighting, or the animation that made
-  Karateka worth remembering.

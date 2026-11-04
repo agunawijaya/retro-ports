@@ -24,6 +24,13 @@ Six games are reconstructed. All six rebuild **byte-identically**, which
 | [tapper](tapper/) | 583 | 336 | `EC85DB55…` |
 | [frogger](frogger/) | 0 | 0 | `D6437F96…` |
 
+**Karateka's rules are specified and port-ready** (2026-11-04): fifteen
+`SPECIFY` cycles in `karateka/spec/` (gitignored), 86 oracle sweeps,
+`check-specify.ps1` exit 0, with two named exceptions — the sound loops'
+length in seconds and the rotoscoping claim. Its six documents were updated
+with what that found; [karateka/CLAUDE.md](karateka/CLAUDE.md) says where to
+start.
+
 **Frogger arrived on 2026-08-02 and nothing in it is named yet.** That is
 deliberate: the release is patched, the patch runs the game in a segment ten
 paragraphs on, and every name written before that is fixed would be in the

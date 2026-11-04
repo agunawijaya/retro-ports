@@ -253,6 +253,14 @@ The port's `guardAction` picks by distance and a small random tilt: far
 means run, near means strike, just-hit means step back. It is enough to
 have a fight, not enough to have *the* fight.
 
+Since this was written, the real tree has been read whole and checked
+against the original on 40,000 sampled states — its branches, its three
+probability tables per scene, and the two characters who run through it
+without being guards, the eagle and Mariko
+([05-the-fighting.md](05-the-fighting.md#the-guards-ai)). Nothing now stands
+between this port and the game's own guard except the work of replacing
+`guardAction`; the substitute is a choice, no longer a gap in what is known.
+
 **Striking frames are approximated** as "the middle frame of any strike
 move". The real flag is set_pos's second byte, a single bit that marks
 which specific frames within a strike animation actually make contact.

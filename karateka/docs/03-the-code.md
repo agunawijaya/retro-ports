@@ -256,6 +256,18 @@ original exactly, header and all.
 - **`db` lines with a comment** are instructions pinned to a fixed encoding.
   They execute; they are just spelled in bytes.
 - The honest limits are at the end of
-  [02-architecture.md](02-architecture.md#what-is-still-unknown). The largest is
-  that this document covers the drawing and the scripting, and says almost
-  nothing about the fighting.
+  [02-architecture.md](02-architecture.md#what-is-still-unknown). This
+  document covers the drawing and the scripting; the fighting is in
+  [05-the-fighting.md](05-the-fighting.md), and sound, the start-up speed
+  check and the title-card font in
+  [02-architecture.md](02-architecture.md#sound-is-one-bit-flipped-on-time).
+- **Five names in `symbols.json` are wrong**, and the named listing
+  `build.ps1` writes still carries them. `sfx_step` (`0x3E7C`) draws text,
+  `sfx_clear` (`0x3F29`) shifts a glyph, `tune_next_note` (`0x3E16`) patches
+  the font, `stop_sound` (`0x4241`) plays a confirmation beep, and the global
+  `sound_enabled` (`0xDF44`) is a restart request. They were named for where
+  they sit — between the sound routines and the title cards — and their
+  callers say otherwise. Read a routine's callers before trusting its name;
+  that is the lesson, and it is the same one
+  [05-the-fighting.md](05-the-fighting.md#the-pose-switch-is-where-input-becomes-a-move)
+  draws from `strike_cycle`.

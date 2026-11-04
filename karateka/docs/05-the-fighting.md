@@ -197,7 +197,13 @@ onward.
 
 ## The guard's AI
 
-`0x2605`, and it is a decision tree over three inputs:
+`0x2605`, and it is a decision tree. **This section first showed the snippet
+below as that tree, and it is not.** It is one branch of it — the branch
+taken when `[0xF0]`, the restricted mode, is set, which happens in exactly
+one place in the game: when Mariko is put on screen at the end (see
+[Mariko](#mariko-and-the-ending-everyone-gets-wrong) below). The snippet is
+left here because it is still the clearest small example of what a fight
+decision looks like:
 
 ```nasm
     mov  ax, [0x10e]            ; the guard's x
@@ -219,12 +225,40 @@ onward.
 ```
 
 Three questions — *what is the other fighter doing*, *how far away is he*, *what
-am I doing* — and a move number out. Under emulation the guard's chooser fires
-64 times and returns 19, 0, 5, 9 and 7; the player's returns 30, 15 and 20.
+am I doing* — and a move number out.
 
-**That is the answer to what makes a guard step forward**, and it is more
-specific than the earlier one: the guard steps when the distance crosses a
-threshold its own routine names as a constant.
+The ordinary guard asks more. Read whole, the tree goes:
+
+1. **Is the hero down?** Move 19 if the guard is upright (pose 64 or 65),
+   else move 9.
+2. **Was I just hit?** Step back eight pixels, and play move 27 if it was in
+   the middle of a strike (poses 5–7).
+3. **Still closing in?** Beyond 110 pixels, keep coming (move 19, or 11 if
+   the hero is in pose 66); inside it, mark the fight as engaged.
+4. **Engaged.** If the hero is standing upright rather than in a stance,
+   reposition until 48 pixels away and then play move 5. If the gap is more
+   than 44 pixels, reposition.
+5. **Close.** Clamp the distance to at least 28, cut it into five 4-pixel
+   bands, and roll one random number from 0 to 255 against three tables
+   indexed by the band and the scene. The roll decides between holding still,
+   one of moves 4–6 (4–5 in the last fight, and moves 24–26 if a strike is
+   already under way, so one strike chains into the next), one of moves 2–4,
+   and repositioning.
+
+So the guard's temperament is three small tables, one row per scene: how
+often to hold, to strike, to move, at each distance. That is why the guards
+on the cliff fight differently from the guards inside the fortress without a
+line of code changing between them.
+
+Under emulation the guard's chooser fires 64 times in the attract demo and
+returns 19, 0, 5, 9 and 7; the player's returns 30, 15 and 20. The tree above
+was checked by running the program's `0x2605` and a rewrite side by side on
+40,000 sampled states at each of three random rolls, with no disagreement.
+
+**What transfers.** "Roll against a table indexed by the situation" is the
+standard shape of game AI that has to feel varied without being smart; the
+tables are where the design lives, and they are data a designer could tune
+without touching the code.
 
 ## Moving, and why fighters cannot walk through each other
 
@@ -477,6 +511,103 @@ the moment he closes. When they expire the guard is pushed into pose 70 and the
 chooser starts returning move 14. **It is the routine that stops you waiting
 the game out.**
 
+## The eagle is a guard
+
+The eagle that attacks in the fortress has no routine of its own. It is
+played by the guard's engine, with four moves from the guards' library,
+`ALLGAL`, that draw it instead of a man:
+
+| move | pose | what it does | drawn with |
+|---|---|---|---|
+| `gal31` | 31 | flies in, 12 pixels a frame | figures 154–156 |
+| `gal32` | 32 | flies back out, 16 a frame | 160–162 |
+| `gal33` | 33 | swoops — its first and third frames carry the striking flag | 157–159 |
+| `gal34` | 34 | falls | 192–194 |
+
+Figures 154–162 are the cyan bird in the `KS2` sprite pack; the same pack
+holds the portcullis below, and `KSJ2` holds Akuma with the eagle on his arm.
+
+What makes it an eagle rather than a guard is a flag, `[0xD5AA]`, which the
+spawning routine sets. With it set, both the chooser and the strike rules
+change:
+
+- **It flies in, and swoops when it is close.** Pose 31 becomes the swoop
+  (pose 33) once the distance is 12 pixels or less, and the swoop is followed
+  by the retreat. A swoop that reaches the hero **always lands** — the hit
+  test is not consulted.
+- **It can only be hit on the way in, and only with the right strike.** A
+  strike counts when the eagle is in pose 31, between 20 and 27 pixels away,
+  and the hero's strike matches a value the spawning routine dealt it at
+  random — `[0xD5AC]`, 0, 12 or 24. Each value admits exactly two of the
+  hero's six strikes:
+
+  | `[0xD5AC]` | strikes that hit (hero's pose) |
+  |---|---|
+  | 0 | 2 or 5 |
+  | 12 | 3 or 6 |
+  | 24 | 4 or 7 |
+
+  Poses 2–4 are the three punches and 5–7 the three kicks (`q a z`, `w s x`),
+  so each value is one punch and one kick. **[inferred]** the value is the
+  height the bird flies at, which is what would make the matching strike
+  readable on screen; the code shows only the pairing. That is the whole of
+  "it must be struck out of the air": a strike timed to an eight-pixel
+  window, of the one height out of three that the bird was dealt.
+- **On the fortress wall it can only be driven off; in the interior it can be
+  killed.** On the wall (`BAL02`) a hit just sends it back the way it came. In
+  the interior (`BAL03`) it is spawned with five points of health; each hit
+  plays sound 24, the fifth plays sound 22 and the bird falls (move 34).
+
+## The death gate
+
+The portcullis is not drawn by the fight at all. It is scenery: the fortress
+wall's script, `BAL02`, is cut into six blocks by `init_sal` markers, and each
+block places the gate at x 1860 one step further down — a longer stack of bar
+segments (figure 78) above the spiked bottom bar (figure 79), whose y runs
+113, 123, 133, 143, 153, 171. Which block is on screen is a counter, `[0x12C]`,
+and the code that moves it is in the level script runner (`0x31AA`), run only
+on the wall. (The files `BAL02A` to `BAL02E` beside it hold the same gate at
+five heights, but the program never opens them: the only scene names in it
+are `bal00` to `bal03`.)
+
+- When the hero comes within 94 pixels (`0x5E`) of the gate's mark, and is
+  either closer than 62 (`0x3E`) or in the middle of a strike (poses 2–7)
+  during a fight, the gate is triggered.
+- For the three frames it takes to fall, any hero **between 32 and 62 pixels**
+  from the mark is knocked flat (the collapse, move 29), and a fallen hero is
+  a dead one.
+- Once triggered the counter runs up a frame at a time — the bar drops — then
+  after a short wait runs back down, and while it is down the wall in front
+  of the hero moves 68 pixels back so he cannot walk through. It cannot be
+  triggered again for ten frames after it rises.
+
+So the way through is to set it off from further back — which only a strike
+does — let it fall and rise, and walk on before it is ready again. **[inferred]** that is the reading of "mistime it": the rules above
+are read from the code; the advice is what they imply, not something a run
+has shown.
+
+## Mariko, and the ending everyone gets wrong
+
+The last room is the same level script runner's fifth case. After Akuma, the
+level counter reaches 7 and the runner loads Mariko's library, `PRNGAL`, into
+the guard's slot, places her, and sets the restricted mode — which is the
+three-way chooser shown at the top of [the guard's AI](#the-guards-ai):
+
+- if the hero is **standing upright** (pose above 63), she plays move 1;
+- if he is **in a stance and within 56 pixels**, she plays move 2 — whose
+  second frame carries the striking flag. It is a kick;
+- otherwise she waits.
+
+At level 7 any strike that lands drops the hero's health to one and then
+applies the hit, so **one kick ends the game**. And the runner closes the game
+the other way when the hero reaches the end of the room standing upright: it
+plays the last script and shows the closing card ("and so this adventure
+ends…") with tune 21 looping until a key is pressed.
+
+Approach in a stance and she kicks you; approach standing and you win. The
+joke in [01-the-game.md](01-the-game.md#the-ending-everyone-gets-wrong-the-first-time)
+is two comparisons in the code.
+
 ## The pose switch is where input becomes a move
 
 `0x1D07` returns an *intent*, not a move. The eight arms of the switch turn it
@@ -524,6 +655,11 @@ a variable is weaker evidence than what the reader does with it.**
 **BIOS tick at `0040:006C`** — read the tick, wait for it to change, then count
 `in al, dx` until the RC line decays. Same clock the game uses for its frames.
 
+The same routine does one more thing after the stick, which has nothing to do
+with fighting: it counts how many passes of a loop fit into seven BIOS ticks,
+and uses the count to speed up or slow down the sound data for the machine
+it is on. That is in [02-architecture.md](02-architecture.md#it-times-the-machine-before-it-plays-a-note).
+
 ## What the stance classes turn out to mean
 
 Run every move in `ALLPAL` through the two tables and they line up with what the
@@ -547,7 +683,18 @@ they recover.** Only five stance values in the whole table reach those classes �
 ## What is still unread
 
 Nothing this document set out to read, and nothing it deferred. The eight arms
-and the calibration are above.
+and the calibration are above, and so — since the program's rules were
+specified routine by routine — are the eagle, the death gate and Mariko, which
+this document had listed as things the published accounts describe and the
+code had not yet been seen to do. One correction came out of that: the
+"guard's AI" this document first showed was Mariko's three-way chooser, and
+the guards' real tree is now above it.
+
+What stays open is what no reading can settle: what the eagle's random value
+looks like on screen (its height, **[inferred]** — the code only pairs it
+with strikes), and how long the sound's counted loops last in seconds on the
+machine it was written for. The fight itself is timed by the BIOS clock and
+does not have that problem.
 
 And the data is read too, since this was written: every address the code names,
 and 100% of the data segment by byte. What moved the last of it was not

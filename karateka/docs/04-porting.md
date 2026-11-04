@@ -79,7 +79,18 @@ game *easier* to time than [Hard Hat Mack](../../hard-hat-mack/), whose frame
 rate is a counted loop tuned by ear and therefore has no number to copy.
 
 Take 18.2 Hz as the tick and run a fixed-timestep loop over it. That is the whole
-of it.
+of it — for the game.
+
+**The sound is the exception.** It is made by flipping the speaker inside
+counted loops, so its pitch and length are set by how fast the CPU runs, and
+the program knows it: at start-up it counts loop passes over seven BIOS ticks
+and rescales its tune tempos and delays for a slow or fast machine
+([02-architecture.md](02-architecture.md#it-times-the-machine-before-it-plays-a-note)).
+What a port can copy exactly is the *schedule* — after how many passes of
+which loop each flip happens; every one of those was checked against the
+original. What it cannot copy is the length of a pass in seconds, which
+nobody has measured on a 4.77 MHz PC. Synthesise the flips with one tunable
+pass length per kind of loop, set it by ear, and say that you did.
 
 ---
 
@@ -171,9 +182,10 @@ If the goal is *understanding* rather than *reach*, take that.
 
 ---
 
-## Five things that will bite
+## Seven things that will bite
 
-Every one of these was paid for while writing the other three documents.
+The first five were paid for while writing the other documents; the last two
+came out of specifying the rules.
 
 **1. Sprite data is column-major.** The blitter walks down a column, one byte
 per scanline. Read it row-major and you get a recognisable figure lying on its
@@ -190,12 +202,29 @@ whole record.
 
 **4. Every sprite is two records.** A shape from `KS*` and a mask from `KM*`,
 same id, same dimensions, decoded in lockstep through two independent stream
-pointers. Draw the shape alone and it will have no transparency.
+pointers. Draw the shape alone and it will have no transparency. The
+exception is the other way round: 56 shapes have no mask partner at all —
+the ground and wall pieces among them — and the game draws those opaquely,
+black included. Treat a missing mask as "transparent" and the plateau shows
+through the ground.
 
 **5. CGA packs four pixels to a byte and sprites do not land on byte
 boundaries.** The original rotates and masks. A port with per-pixel addressing
 does not need to — but if you are comparing your output against the original's
 framebuffer, the edges are where you will differ first.
+
+**6. The title-card font is mirrored the obvious way, and patched at
+start-up.** In a glyph byte, bit 0 is the *leftmost* pixel, not bit 7; and
+before any card is drawn the program swaps two glyphs, shifts the punctuation
+slots and trims a pixel from twelve letters. Draw the font as stored and every
+letter is reversed; skip the patch and no card matches the original's frame.
+
+**7. Three characters that are not guards run through the guard's code.** The
+eagle is the guard slot with one flag set and four moves of its own; Mariko
+is the guard slot with her own library and a three-answer chooser; Akuma is
+the guard slot with his. A port that gives each its own class will find the
+rules spread across one routine's branches — the guard's chooser, its strike
+rules and its spawn — and should read them there rather than invent them.
 
 ---
 
