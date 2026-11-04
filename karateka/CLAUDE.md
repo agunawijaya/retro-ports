@@ -234,13 +234,32 @@ not the shipped game. Decompiling it by accident produces a byte-identical
 reconstruction of the patch, and nothing would say so. Everything established
 so far is from `original/KARATEKA.EXE`.
 
-**Five names in `symbols.json` are wrong** (found 2026-11, cycle 13 of the
-specification, not yet fixed in the file): `sfx_step 0x3E7C` draws text,
-`sfx_clear 0x3F29` shifts a glyph, `tune_next_note 0x3E16` patches the font,
-`stop_sound 0x4241` is a confirmation beep, and the global `sound_enabled
-0xDF44` is a restart request (Ctrl-R). `card_ksi 0x40A1` is an anti-tamper
-checksum, not a card. Renaming them is a naming pass: give each two pieces of
-evidence and rebuild — `build.ps1` must still print the same SHA-256.
+**Five names in `symbols.json` were wrong and were renamed on 2026-11-05**
+(found in cycle 13 of the specification): `sfx_step 0x3E7C` → `draw_text`,
+`sfx_clear 0x3F29` → `glyph_shift`, `tune_next_note 0x3E16` → `fix_font`,
+`stop_sound 0x4241` → `confirm_beep`, and the global `sound_enabled 0xDF44` →
+`restart_request` (Ctrl-R). Each now has two observations, citing image
+offsets rather than listing lines, and `build.ps1` still prints
+`BYTE-IDENTICAL C8736BBA…`.
+
+**Still wrong in the file, and not renamed yet:**
+
+- `card_ksi 0x40A1` is an anti-tamper checksum, not a card.
+- **Sixteen globals that those routines use still have sound names.** Each one's
+  evidence says `play_sound` reads it, but the listing shows that only `fix_font`,
+  `draw_text`, `glyph_shift`, `title_animation` and the cards touch them:
+  - nine words of the glyph-pointer table, `0xB86A..0xB8A6` (`tune_base`,
+    `tune_cursor`, `tune_pending`, `note_period`, `note_length`, `note_index`,
+    `note_a`, `note_b`, `note_table`);
+  - `draw_text`'s state, `0xDBB1`, `0xDBB2`, `0xDBB4` (`sfx_slot`,
+    `sfx_phase`, `sfx_ticks`);
+  - the card and crawl state, `0xDBB3`, `0xDDBE`, `0xDDC0`, `0xE0E7`
+    (`sfx_write`, `sfx_state_a`, `sfx_state_b`, `sound_table_end`).
+
+The nine table words are entries of one table indexed by letter, so decide
+whether the table should have one name before giving each entry its own. A
+naming pass is the same each time: two observations per name, then a rebuild
+that must print the same SHA-256.
 
 **Two routines are not what their branches look like.** The snippet in
 `docs/05` first shown as "the guard's AI" is `0x2605`'s restricted-mode

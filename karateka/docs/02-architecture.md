@@ -509,7 +509,7 @@ it at all. Many did not, which is why turbo buttons existed.
 are not drawn with the BIOS's text characters. They come from a proportional
 font of thirty-one glyphs in the data segment — `a` to `z`, a full stop, a
 comma, a colon and a dash — each with its own width, height and advance, drawn
-by a routine at `0x3E7C` that widens every pixel of the one-bit glyph into the
+by `draw_text` (`0x3E7C`), which widens every pixel of the one-bit glyph into the
 two-bit CGA pixel and slides it into place across byte boundaries.
 
 Two details are worth knowing before anyone draws it:
@@ -518,7 +518,7 @@ Two details are worth knowing before anyone draws it:
   pulls bits off the top and rotates each into the output twice, which
   reverses the order. A font sheet drawn the obvious way comes out mirrored
   letter by letter — this project's first one did.
-- **The font is patched once at start-up** (`0x3E16`) before anything is
+- **The font is patched once at start-up** (`fix_font`, `0x3E16`) before anything is
   drawn: the glyphs for `i` and `z` swap places, the punctuation slots shift
   down by one, and the leftmost pixel of nine rows is cleared in twelve
   letters. A port has to apply the patch, or load the font after it.
@@ -531,7 +531,9 @@ Left without the start-up patch, all five fail.
 rather than by what they do will be wrong in exactly the places where a
 programmer filed something oddly: here the text renderer sat between the
 sound routines, and was named as sound until its callers were read. The
-callers decide what a routine is.
+callers decide what a routine is. It is called `draw_text` now, and the
+symbol file keeps its old name inside the evidence for the new one, so the
+mistake stays on the record.
 
 ## The copy protection
 

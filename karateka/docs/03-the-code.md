@@ -261,11 +261,14 @@ original exactly, header and all.
   [05-the-fighting.md](05-the-fighting.md), and sound, the start-up speed
   check and the title-card font in
   [02-architecture.md](02-architecture.md#sound-is-one-bit-flipped-on-time).
-- **Five names in `symbols.json` are wrong**, and the named listing
-  `build.ps1` writes still carries them. `sfx_step` (`0x3E7C`) draws text,
-  `sfx_clear` (`0x3F29`) shifts a glyph, `tune_next_note` (`0x3E16`) patches
-  the font, `stop_sound` (`0x4241`) plays a confirmation beep, and the global
-  `sound_enabled` (`0xDF44`) is a restart request. They were named for where
+- **Five names in `symbols.json` were wrong** until 2026-11-05, and a named
+  listing built before then still carries them. `sfx_step` (`0x3E7C`) draws
+  text and is now `draw_text`; `sfx_clear` (`0x3F29`) shifts a glyph and is
+  `glyph_shift`; `tune_next_note` (`0x3E16`) patches the font and is
+  `fix_font`; `stop_sound` (`0x4241`) plays a confirmation beep and is
+  `confirm_beep`; and the global `sound_enabled` (`0xDF44`) is a restart
+  request and is `restart_request`. Renaming them changed no byte — the
+  rebuild still matches the original's SHA-256. They were named for where
   they sit — between the sound routines and the title cards — and their
   callers say otherwise. Read a routine's callers before trusting its name;
   that is the lesson, and it is the same one

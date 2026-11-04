@@ -550,16 +550,25 @@
       "tune_flags and sound_channel decide whether speaker_toggle fires this pass"
     ],
     "0x03E16": [
-      "tune_next_note",
-      "the next note: tune_cursor into note_table, giving note_period and note_length"
+      "fix_font",
+      [
+        "swaps the words at DS:0xB87A and DS:0xB89C, copies DS:0xB89E to DS:0xB87C and moves the four at 0xB8A0..0xB8A6 down one place (image 0x3E16..0x3E42), seven words in all -- entries of the glyph-pointer table that draw_text indexes by letter through [bx - 0x4796] = DS:0xB86A",
+        "then clears bit 0 (and al, 0xfe) of nine bytes of each of twelve glyphs, bx = 2..0x22 skipping 4-8, 0xC and 0x1C; no port I/O; its one caller is startup at image 0x281, before the first card is drawn. Renamed 2026-11 from 'tune_next_note', which was named for its neighbours, not its body"
+      ]
     ],
     "0x03E7C": [
-      "sfx_step",
-      "the four sfx_slot entries, their phases and their remaining ticks"
+      "draw_text",
+      [
+        "reads [si] until a 0; sub bl, 0x61 makes a letter an index, anything below 'a' only steps di by 2; a letter's glyph pointer comes through [bx - 0x4796] and its rows are ORed into [di] and [di + 2] with add di, 0x50 per row -- one 80-byte scanline; no port I/O",
+        "every caller loads SI with a string and DI with a screen position first (card_the_end: lea di, [0x20b6] / lea si, [0xdeb6]; title_animation: DI = the shadow at DS:0x337); the five title cards it draws matched the game's own frame 16000 of 16000 bytes (specification cycle 13). Renamed 2026-11 from 'sfx_step'"
+      ]
     ],
     "0x03F29": [
-      "sfx_clear",
-      "empties a slot"
+      "glyph_shift",
+      [
+        "shifts DX:AX right by 2 x byte [0xDBB1] bits (shl cl, 1 / shr dx, 1 / rcr ax, 1) and returns at once when that byte is 0 -- a CGA pixel is two bits, so this moves a glyph row right by that many pixels",
+        "its one caller is draw_text at image 0x3ECD, between widening a glyph byte to two bits a pixel and ORing it into the frame; draw_text zeroes that byte on entry and after each letter adds the letter's advance and masks it with 3 -- the pixel phase within a byte. Renamed 2026-11 from 'sfx_clear'"
+      ]
     ],
     "0x03F3F": [
       "card_opening",
@@ -588,7 +597,7 @@
     "0x04028": [
       "title_animation",
       [
-        "writes directly to the CGA segment (ES=0xb800) in a loop driven by sfx_step -- an animation, not a one-shot draw",
+        "draws the next line of text into the shadow at DS:0x337 with draw_text, then scrolls the CGA segment (ES=0xb800) up and feeds that line in a scanline at a time -- an animation, not a one-shot draw",
         "calls read_intent inside the loop and returns immediately if a key was pressed -- an interruptible animation, consistent with the title screen"
       ]
     ],
@@ -627,8 +636,11 @@
       "calls check_quit_key until the buffer is empty, then clears input_latch"
     ],
     "0x04241": [
-      "stop_sound",
-      "saves sound_on, clears it, runs play_sound(5) with the speaker disabled, and puts the flag back"
+      "confirm_beep",
+      [
+        "pushes sound_on, sets it to 0 -- which is 'all sounds', not off -- calls play_sound(5) and pops sound_on back (image 0x4241..0x4256): sound 5 plays whatever mode the player chose",
+        "every caller is a settings key that has just been taken: Ctrl-R, Ctrl-S and Ctrl-V in read_intent (image 0x417F, 0x4190, 0x41B2) and j and k in handle_key (0x1DFD, 0x1E14). Renamed 2026-11 from 'stop_sound', which read the 0 as 'speaker off'"
+      ]
     ],
     "0x04257": [
       "ret_stub",
@@ -2098,8 +2110,11 @@
       "play_sound reads and writes it"
     ],
     "0xDF44": [
-      "sound_enabled",
-      "0 or 1; four routines set it, play_sound and startup read it"
+      "restart_request",
+      [
+        "set to 1 in exactly one place, read_intent's Ctrl-R arm (image 0x4182, straight after confirm_beep); the other three writes store 0, in the reset paths at 0x412, 0x5D5 (from xor ax, ax) and 0x600",
+        "startup's loop at L_00316 leaves for the full reset at L_002B8 when it is above 0, and card_closing's wait at 0x3F9D stops waiting for a key when it is non-zero; play_sound never touches it. Renamed 2026-11 from 'sound_enabled'"
+      ]
     ],
     "0xDF48": [
       "video_segment",
